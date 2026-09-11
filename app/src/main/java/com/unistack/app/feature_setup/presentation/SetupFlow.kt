@@ -607,19 +607,11 @@ private fun WelcomeHeroCard() {
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
-            val isEn = java.util.Locale.getDefault().language == "en"
             Text(
                 text = buildAnnotatedString {
-                    if (isEn) {
-                        append("Your semester,\n")
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append("your way")
-                        }
-                    } else {
-                        append("Tu semestre,\n")
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append("a tu medida")
-                        }
+                    append(stringResource(R.string.setup_welcome_hero_lead))
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append(stringResource(R.string.setup_welcome_hero_accent))
                     }
                 },
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -646,64 +638,28 @@ private data class WelcomeFeature(
 
 @Composable
 private fun WelcomeFeaturesGrid() {
-    val isEn = java.util.Locale.getDefault().language == "en"
-    val features = remember {
-        if (isEn) {
-            listOf(
-                WelcomeFeature(
-                    icon = Icons.Rounded.School,
-                    label = "Organize courses",
-                    description = "Log each course with its color, instructor, and schedule. " +
-                        "This powers your grades, tasks, and reminders."
-                ),
-                WelcomeFeature(
-                    icon = Icons.Rounded.CalendarMonth,
-                    label = "Manage tasks",
-                    description = "Create tasks with due dates and priorities. " +
-                        "Upcoming deadlines are highlighted on your home screen."
-                ),
-                WelcomeFeature(
-                    icon = Icons.Rounded.Percent,
-                    label = "Track grades",
-                    description = "Log your grades by term cut and UniStack calculates your GPA " +
-                        "and what you need to hit your goal. UniStack does it for you!"
-                ),
-                WelcomeFeature(
-                    icon = Icons.Rounded.GridView,
-                    label = "Configure modules",
-                    description = "Enable only what you need: grades, tasks, expenses, or schedule. " +
-                        "Change anytime in Settings."
-                )
-            )
-        } else {
-            listOf(
-                WelcomeFeature(
-                    icon = Icons.Rounded.School,
-                    label = "Organizar materias",
-                    description = "Registra cada materia con su color, su docente y su horario. " +
-                        "Es la base sobre la que UniStack arma tus notas, tus tareas y tus recordatorios."
-                ),
-                WelcomeFeature(
-                    icon = Icons.Rounded.CalendarMonth,
-                    label = "Gestionar tareas",
-                    description = "Crea tareas con fecha de entrega y prioridad. " +
-                        "Las que vencen pronto aparecen destacadas en tu panel de inicio."
-                ),
-                WelcomeFeature(
-                    icon = Icons.Rounded.Percent,
-                    label = "Seguir tus notas",
-                    description = "Anota tus calificaciones por corte y UniStack calcula tu promedio " +
-                        "y cuánto necesitas en lo que falta para llegar a tu meta. ¡UniStack lo hace por ti!"
-                ),
-                WelcomeFeature(
-                    icon = Icons.Rounded.GridView,
-                    label = "Configurar módulos",
-                    description = "Activa solo lo que vayas a usar: notas, tareas, gastos u horario. " +
-                        "Puedes cambiarlo cuando quieras desde Ajustes."
-                )
-            )
-        }
-    }
+    val features = listOf(
+        WelcomeFeature(
+            icon = Icons.Rounded.School,
+            label = stringResource(R.string.setup_welcome_feature1_title),
+            description = stringResource(R.string.setup_welcome_feature1_desc)
+        ),
+        WelcomeFeature(
+            icon = Icons.Rounded.CalendarMonth,
+            label = stringResource(R.string.setup_welcome_feature2_title),
+            description = stringResource(R.string.setup_welcome_feature2_desc)
+        ),
+        WelcomeFeature(
+            icon = Icons.Rounded.Percent,
+            label = stringResource(R.string.setup_welcome_feature3_title),
+            description = stringResource(R.string.setup_welcome_feature3_desc)
+        ),
+        WelcomeFeature(
+            icon = Icons.Rounded.GridView,
+            label = stringResource(R.string.setup_welcome_feature4_title),
+            description = stringResource(R.string.setup_welcome_feature4_desc)
+        )
+    )
     // La selección persiste tras cerrar el diálogo; por eso son dos estados y no uno.
     var selectedIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     var dialogIndex by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -856,7 +812,7 @@ private fun WelcomeFeatureDialog(
         confirmButton = {
             TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Entendido",
+                    text = stringResource(R.string.setup_welcome_btn_understood),
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
@@ -1078,19 +1034,11 @@ private fun SetupNameTitle() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        val isEn = java.util.Locale.getDefault().language == "en"
         Text(
             text = buildAnnotatedString {
-                if (isEn) {
-                    append("What is ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("your name?")
-                    }
-                } else {
-                    append("¿Cómo ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("te llamas?")
-                    }
+                append(stringResource(R.string.setup_name_title_lead))
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    append(stringResource(R.string.setup_name_title_accent))
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
@@ -1413,19 +1361,11 @@ private fun SetupEducationTitle() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
-        val isEn = java.util.Locale.getDefault().language == "en"
         Text(
             text = buildAnnotatedString {
-                if (isEn) {
-                    append("What are you\n")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("studying?")
-                    }
-                } else {
-                    append("¿Qué estás\n")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("estudiando?")
-                    }
+                append(stringResource(R.string.setup_career_title_lead))
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    append(stringResource(R.string.setup_career_title_accent))
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
@@ -1906,7 +1846,7 @@ private fun GradingCutsBottomActions(
     onContinueClick: () -> Unit
 ) {
     UniStackButton(
-        text = "Continuar",
+        text = stringResource(R.string.setup_btn_continue),
         onClick = onContinueClick,
         enabled = enabled,
         trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
@@ -2102,7 +2042,7 @@ fun SetupDoneScreen(
     institutionName: String = ""
 ) {
     BackHandler(onBack = onBackClick)
-    val displayName = name.ifBlank { "Usuario" }
+    val displayName = name.ifBlank { stringResource(R.string.setup_default_user) }
     val program = resolvedProgram(selectedProgram, customProgram)
     val weights = cutWeights.filter { it.isNotBlank() }
 
@@ -2405,22 +2345,13 @@ private fun SetupModulesInfoCard() {
             horizontalArrangement = Arrangement.spacedBy(11.dp)
         ) {
             SetupInfoDot(size = 38.dp)
-            val isEn = java.util.Locale.getDefault().language == "en"
             Text(
                 text = buildAnnotatedString {
-                    if (isEn) {
-                        append("You can always enable or disable modules\nfrom ")
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
-                            append("Settings")
-                        }
-                        append(" later.")
-                    } else {
-                        append("Siempre puedes activar o desactivar módulos\ndesde ")
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
-                            append("Ajustes")
-                        }
-                        append(" más adelante.")
+                    append(stringResource(R.string.setup_modules_footer_lead))
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
+                        append(stringResource(R.string.setup_modules_footer_accent))
                     }
+                    append(stringResource(R.string.setup_modules_footer_tail))
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
@@ -2499,19 +2430,11 @@ private fun SetupFinishHero(name: String) {
                 }
             }
         }
-        val isEn = java.util.Locale.getDefault().language == "en"
         Text(
             text = buildAnnotatedString {
-                if (isEn) {
-                    append("All set, ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("$name.")
-                    }
-                } else {
-                    append("Listo, ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("$name.")
-                    }
+                append(stringResource(R.string.setup_done_lead))
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    append("$name.")
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
@@ -2562,67 +2485,37 @@ private fun SetupInfoDot(size: androidx.compose.ui.unit.Dp) {
     }
 }
 
+@Composable
 private fun setupModuleOptions(): List<ModuleOption> = allModuleOptions()
     .filter { it.module in offerableModules() }
 
-private fun allModuleOptions(): List<ModuleOption> {
-    val isEn = java.util.Locale.getDefault().language == "en"
-    return if (isEn) {
-        listOf(
-            ModuleOption(
-                module = AppModule.GRADES,
-                label = "Grades & courses",
-                description = "GPA, percentages, and targets.",
-                icon = Icons.AutoMirrored.Rounded.MenuBook
-            ),
-            ModuleOption(
-                module = AppModule.TASKS,
-                label = "Tasks",
-                description = "Deadlines, dates, and pending items.",
-                icon = Icons.Rounded.CheckCircle
-            ),
-            ModuleOption(
-                module = AppModule.EXPENSES,
-                label = "Expenses",
-                description = "Quick logs and weekly summary.",
-                icon = Icons.Rounded.AccountBalanceWallet
-            ),
-            ModuleOption(
-                module = AppModule.ACADEMIC_TEMPLATES,
-                label = "Academic Works",
-                description = "Checklist, essays, and APA format.",
-                icon = Icons.AutoMirrored.Rounded.Assignment
-            )
-        )
-    } else {
-        listOf(
-            ModuleOption(
-                module = AppModule.GRADES,
-                label = "Notas y materias",
-                description = "Promedios, porcentajes y metas.",
-                icon = Icons.AutoMirrored.Rounded.MenuBook
-            ),
-            ModuleOption(
-                module = AppModule.TASKS,
-                label = "Tareas",
-                description = "Entregas, fechas y pendientes.",
-                icon = Icons.Rounded.CheckCircle
-            ),
-            ModuleOption(
-                module = AppModule.EXPENSES,
-                label = "Gastos",
-                description = "Registros rápidos y resumen semanal.",
-                icon = Icons.Rounded.AccountBalanceWallet
-            ),
-            ModuleOption(
-                module = AppModule.ACADEMIC_TEMPLATES,
-                label = "Trabajos",
-                description = "Checklist, ensayos y formato APA.",
-                icon = Icons.AutoMirrored.Rounded.Assignment
-            )
-        )
-    }
-}
+@Composable
+private fun allModuleOptions(): List<ModuleOption> = listOf(
+    ModuleOption(
+        module = AppModule.GRADES,
+        label = stringResource(R.string.settings_module_grades_title),
+        description = stringResource(R.string.settings_module_grades_desc),
+        icon = Icons.AutoMirrored.Rounded.MenuBook
+    ),
+    ModuleOption(
+        module = AppModule.TASKS,
+        label = stringResource(R.string.settings_module_tasks_title),
+        description = stringResource(R.string.settings_module_tasks_desc),
+        icon = Icons.Rounded.CheckCircle
+    ),
+    ModuleOption(
+        module = AppModule.EXPENSES,
+        label = stringResource(R.string.settings_module_expenses_title),
+        description = stringResource(R.string.settings_module_expenses_desc),
+        icon = Icons.Rounded.AccountBalanceWallet
+    ),
+    ModuleOption(
+        module = AppModule.ACADEMIC_TEMPLATES,
+        label = stringResource(R.string.settings_module_templates_title),
+        description = stringResource(R.string.setup_module_templates_desc),
+        icon = Icons.AutoMirrored.Rounded.Assignment
+    )
+)
 
 @Composable
 internal fun SetupScaffold(

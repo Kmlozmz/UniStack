@@ -9,6 +9,8 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesSort
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /**
  * El retrato que hay que pintar, venga de donde venga.
@@ -268,9 +270,13 @@ data class GradingCut(
  * corte. Sin esos niveles queda una sola forma de decirlo, asi que es una constante y no una
  * pregunta. Ademas libera la palabra «periodo», que pasa a significar el semestre.
  */
+/**
+ * La palabra con que la app llama a cada tramo de la nota. Era una constante en espanol
+ * repartida por veintiocho sitios; ahora sale de los recursos, asi que en ingles es «cut».
+ */
 object Corte {
-    const val Singular = "Corte"
-    const val Plural = "Cortes"
+    val Singular: String get() = Textos.get(R.string.corte_singular)
+    val Plural: String get() = Textos.get(R.string.corte_plural)
 }
 
 enum class GradingScale {

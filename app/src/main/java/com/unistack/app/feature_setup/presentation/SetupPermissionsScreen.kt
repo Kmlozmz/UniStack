@@ -67,6 +67,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 /**
  * ¿Existe el permiso de notificaciones como permiso de ejecución en este dispositivo?
  *
@@ -187,19 +188,11 @@ fun SetupPermissionsScreen(
              * todavía no hay ni una clase creada, así que cualquier hora sería inventada.
              * Por eso la maqueta va marcada como ejemplo.
              */
-            val isEn = java.util.Locale.getDefault().language == "en"
             Text(
                 text = buildAnnotatedString {
-                    if (isEn) {
-                        append("Should I notify you\n")
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append("of upcoming events?")
-                        }
-                    } else {
-                        append("¿Te aviso de\n")
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append("lo que se aproxima?")
-                        }
+                    append(stringResource(R.string.setup_permissions_title_lead))
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append(stringResource(R.string.setup_permissions_title_accent))
                     }
                 },
                 color = MaterialTheme.colorScheme.onSurface,
@@ -292,50 +285,20 @@ fun SetupPermissionsScreen(
 
 /** Los tres avisos que la app sabe dar, con la pinta que tienen en la pantalla de bloqueo. */
 private enum class PermissionExampleKind(
-    private val spanishChip: String,
+    private val chipRes: Int,
     val clock: String,
-    private val spanishAgo: String,
-    private val spanishTitle: String,
-    private val spanishBody: String
+    private val agoRes: Int,
+    private val titleRes: Int,
+    private val bodyRes: Int
 ) {
-    CLASS("Clases", "9:41", "ahora", "Cálculo III empieza en 15 minutos", "Aula 302 · hasta las 11:40"),
-    TASK("Entregas", "8:00", "8:00", "Hoy vence el ensayo de Ética", "Antes de las 18:00 · te quedan 10 h"),
-    GRADE("Notas", "19:20", "19:20", "Tu promedio de Redes subió a 4.1", "Con el quiz que acabas de registrar");
+    CLASS(R.string.setup_perm_chip_class, "9:41", R.string.setup_perm_ago_now, R.string.setup_perm_class_title, R.string.setup_perm_class_body),
+    TASK(R.string.setup_perm_chip_task, "8:00", R.string.setup_perm_ago_8, R.string.setup_perm_task_title, R.string.setup_perm_task_body),
+    GRADE(R.string.setup_perm_chip_grade, "19:20", R.string.setup_perm_ago_19, R.string.setup_perm_grade_title, R.string.setup_perm_grade_body);
 
-    val chip: String
-        get() = if (java.util.Locale.getDefault().language == "en") {
-            when (this) {
-                CLASS -> "Classes"
-                TASK -> "Deadlines"
-                GRADE -> "Grades"
-            }
-        } else spanishChip
-
-    val ago: String
-        get() = if (java.util.Locale.getDefault().language == "en") {
-            when (this) {
-                CLASS -> "now"
-                else -> spanishAgo
-            }
-        } else spanishAgo
-
-    val title: String
-        get() = if (java.util.Locale.getDefault().language == "en") {
-            when (this) {
-                CLASS -> "Calculus III starts in 15 minutes"
-                TASK -> "Ethics essay due today"
-                GRADE -> "Your Networks GPA increased to 4.1"
-            }
-        } else spanishTitle
-
-    val body: String
-        get() = if (java.util.Locale.getDefault().language == "en") {
-            when (this) {
-                CLASS -> "Room 302 · until 11:40"
-                TASK -> "Before 18:00 · 10 h remaining"
-                GRADE -> "From the quiz you just recorded"
-            }
-        } else spanishBody
+    val chip: String get() = Textos.get(chipRes)
+    val ago: String get() = Textos.get(agoRes)
+    val title: String get() = Textos.get(titleRes)
+    val body: String get() = Textos.get(bodyRes)
 }
 
 @Composable

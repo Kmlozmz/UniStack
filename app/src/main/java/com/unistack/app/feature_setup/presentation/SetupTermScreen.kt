@@ -814,18 +814,15 @@ private fun TermDateField(
     }
 }
 
-private fun getShortMonths(): List<String> = if (java.util.Locale.getDefault().language == "en") {
-    listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-} else {
-    listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
-}
+private fun mesCorto(date: LocalDate): String =
+    date.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()).trimEnd('.')
 
 private fun fechaLarga(date: LocalDate): String =
-    "${date.dayOfMonth} ${getShortMonths()[date.monthValue - 1]} ${date.year}"
+    "${date.dayOfMonth} ${mesCorto(date)} ${date.year}"
 
 /** Sin el año: en un tramo del mismo periodo, repetirlo tres veces es ruido. */
 private fun fechaCorta(date: LocalDate): String =
-    "${date.dayOfMonth} ${getShortMonths()[date.monthValue - 1]}"
+    "${date.dayOfMonth} ${mesCorto(date)}"
 
 /** Redondeadas: «5 semanas» informa, «4,7 semanas» no. Nunca menos de una. */
 private fun semanasEntre(desde: LocalDate, hasta: LocalDate): Long =

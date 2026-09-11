@@ -2535,4 +2535,34 @@ a tu medida</string>
     <string name="fab_close_menu">Cerrar menú</string>
     <string name="time_picker_clock">Reloj</string>
     <string name="time_picker_keyboard">Teclado</string>
+
+    <!-- Bloque D: el onboarding y la palabra Corte -->
+    <string name="corte_singular">Corte</string>
+    <string name="corte_plural">Cortes</string>
+    <string name="setup_welcome_hero_lead">Tu semestre,\n</string>
+    <string name="setup_welcome_hero_accent">a tu medida</string>
+    <string name="setup_name_title_lead">¿Cómo </string>
+    <string name="setup_name_title_accent">te llamas?</string>
+    <string name="setup_career_title_lead">¿Qué estás\n</string>
+    <string name="setup_career_title_accent">estudiando?</string>
+    <string name="setup_default_user">Usuario</string>
+    <string name="setup_modules_footer_lead">Siempre puedes activar o desactivar módulos\ndesde </string>
+    <string name="setup_modules_footer_accent">Ajustes</string>
+    <string name="setup_modules_footer_tail"> más adelante.</string>
+    <string name="setup_done_lead">Listo, </string>
+    <string name="setup_module_templates_desc">Checklist, ensayos y formato APA.</string>
+    <string name="setup_permissions_title_lead">¿Te aviso de\n</string>
+    <string name="setup_permissions_title_accent">lo que se aproxima?</string>
+    <string name="setup_perm_chip_class">Clases</string>
+    <string name="setup_perm_ago_now">ahora</string>
+    <string name="setup_perm_class_title">Cálculo III empieza en 15 minutos</string>
+    <string name="setup_perm_class_body">Aula 302 · hasta las 11:40</string>
+    <string name="setup_perm_chip_task">Entregas</string>
+    <string name="setup_perm_ago_8">8:00</string>
+    <string name="setup_perm_task_title">Hoy vence el ensayo de Ética</string>
+    <string name="setup_perm_task_body">Antes de las 18:00 · te quedan 10 h</string>
+    <string name="setup_perm_chip_grade">Notas</string>
+    <string name="setup_perm_ago_19">19:20</string>
+    <string name="setup_perm_grade_title">Tu promedio de Redes subió a 4.1</string>
+    <string name="setup_perm_grade_body">Con el quiz que acabas de registrar</string>
 </resources>

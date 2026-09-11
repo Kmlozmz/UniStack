@@ -2536,4 +2536,34 @@ your course catalog.</string>
     <string name="fab_close_menu">Close menu</string>
     <string name="time_picker_clock">Clock</string>
     <string name="time_picker_keyboard">Keyboard</string>
+
+    <!-- Bloque D: el onboarding y la palabra Corte -->
+    <string name="corte_singular">Cut</string>
+    <string name="corte_plural">Cuts</string>
+    <string name="setup_welcome_hero_lead">Your semester,\n</string>
+    <string name="setup_welcome_hero_accent">your way</string>
+    <string name="setup_name_title_lead">What is </string>
+    <string name="setup_name_title_accent">your name?</string>
+    <string name="setup_career_title_lead">What are you\n</string>
+    <string name="setup_career_title_accent">studying?</string>
+    <string name="setup_default_user">User</string>
+    <string name="setup_modules_footer_lead">You can always enable or disable modules\nfrom </string>
+    <string name="setup_modules_footer_accent">Settings</string>
+    <string name="setup_modules_footer_tail"> later.</string>
+    <string name="setup_done_lead">All set, </string>
+    <string name="setup_module_templates_desc">Checklist, essays, and APA format.</string>
+    <string name="setup_permissions_title_lead">Should I notify you\n</string>
+    <string name="setup_permissions_title_accent">of upcoming events?</string>
+    <string name="setup_perm_chip_class">Classes</string>
+    <string name="setup_perm_ago_now">now</string>
+    <string name="setup_perm_class_title">Calculus III starts in 15 minutes</string>
+    <string name="setup_perm_class_body">Room 302 · until 11:40</string>
+    <string name="setup_perm_chip_task">Deadlines</string>
+    <string name="setup_perm_ago_8">8:00</string>
+    <string name="setup_perm_task_title">Ethics essay due today</string>
+    <string name="setup_perm_task_body">Before 18:00 · 10 h remaining</string>
+    <string name="setup_perm_chip_grade">Grades</string>
+    <string name="setup_perm_ago_19">19:20</string>
+    <string name="setup_perm_grade_title">Your Networks GPA increased to 4.1</string>
+    <string name="setup_perm_grade_body">From the quiz you just recorded</string>
 </resources>
