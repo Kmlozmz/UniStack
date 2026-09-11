@@ -449,9 +449,8 @@ private val manchaDeTinta = listOf(
  * particulas con peso —suben, giran y caen—, dura 2200 ms y ocupa la pantalla entera; y las
  * otras tres variantes crecen hasta las esquinas en vez de quedarse en un circulo del centro.
  *
- * [mensaje] es lo que se celebra, en palabras —«¡Todo hecho!», «¡Corte cerrado!»—. Lo pinta
- * la onda en el centro: unos circulos creciendo solos no decian nada; las otras tres llevan
- * su figura y no lo necesitan.
+ * [mensaje] es lo que se celebra, en palabras —«¡Todo hecho!», «¡Corte cerrado!»—, y lo
+ * llevan las cuatro: una figura sola, sea confeti, rayos o un aro, no dice que se celebra.
  */
 @Composable
 fun Modifier.celebracionDelDia(
@@ -493,6 +492,7 @@ fun Modifier.celebracionDelDia(
     val acento = MaterialTheme.colorScheme.primary
     val verde = Color(0xFF11C045)
     val ambar = Color(0xFFE0A400)
+    val fondo = MaterialTheme.colorScheme.surface
     val medidor = rememberTextMeasurer()
     val tipoDelMensaje = TextStyle(
         color = acento,
@@ -586,22 +586,6 @@ fun Modifier.celebracionDelDia(
                             radius = 30.dp.toPx() + (alcance - 30.dp.toPx()) * e,
                             center = centro,
                             style = Stroke(width = 12.dp.toPx() * (1f - 0.7f * e) + 2.dp.toPx())
-                        )
-                    }
-                }
-                // El mensaje, en el centro de las ondas: entra con un pequeno rebote, se
-                // queda mientras salen, y se va con la ultima.
-                if (mensaje != null) {
-                    val entra = EaseOutBack.transform((t / 0.22f).coerceAtMost(1f))
-                    val vida = 1f - EaseInOutCubic.transform(((t - 0.7f) / 0.3f).coerceIn(0f, 1f))
-                    val medida = medidor.measure(
-                        mensaje,
-                        tipoDelMensaje.copy(color = acento.copy(alpha = vida * entra.coerceIn(0f, 1f)))
-                    )
-                    scale(scale = 0.8f + 0.2f * entra, pivot = centro) {
-                        drawText(
-                            textLayoutResult = medida,
-                            topLeft = Offset(centro.x - medida.size.width / 2f, centro.y - medida.size.height / 2f)
                         )
                     }
                 }
@@ -699,6 +683,43 @@ fun Modifier.celebracionDelDia(
                 }
             }
             CelebrationMotion.NINGUNA -> Unit
+        }
+
+        /*
+         * **El mensaje, en las cuatro.** Entra con un pequeno rebote, se queda mientras dura
+         * la figura y se va con ella. Cada variante lo pone donde no estorba a lo suyo: en el
+         * centro, o debajo del aro del sello, que ya lleva el visto dentro; y del color que
+         * lleva la figura. Sin palabras, un confeti o unos rayos no decian que se celebraba.
+         */
+        if (mensaje != null && estilo != CelebrationMotion.NINGUNA) {
+            val (desde, color, y) = when (estilo) {
+                CelebrationMotion.SELLO -> Triple(0.30f, verde, centro.y + minOf(w, h) * 0.28f + 46.dp.toPx())
+                CelebrationMotion.DESTELLO -> Triple(0f, ambar, centro.y)
+                else -> Triple(0f, acento, centro.y)
+            }
+            val entra = EaseOutBack.transform(((t - desde) / 0.22f).coerceIn(0f, 1f))
+            val vida = 1f - EaseInOutCubic.transform(((t - 0.72f) / 0.28f).coerceIn(0f, 1f))
+            if (entra > 0f && vida > 0f) {
+                val medida = medidor.measure(
+                    mensaje,
+                    tipoDelMensaje.copy(color = color.copy(alpha = vida * entra.coerceAtMost(1f)))
+                )
+                val punto = Offset(centro.x, y)
+                scale(scale = 0.8f + 0.2f * entra, pivot = punto) {
+                    // Un halo del fondo detras de la letra, para que se lea sobre el confeti
+                    // y los rayos sin taparlos.
+                    drawRoundRect(
+                        color = fondo.copy(alpha = 0.55f * vida * entra.coerceAtMost(1f)),
+                        topLeft = Offset(punto.x - medida.size.width / 2f - 18.dp.toPx(), punto.y - medida.size.height / 2f - 8.dp.toPx()),
+                        size = Size(medida.size.width + 36.dp.toPx(), medida.size.height + 16.dp.toPx()),
+                        cornerRadius = CornerRadius(22.dp.toPx(), 22.dp.toPx())
+                    )
+                    drawText(
+                        textLayoutResult = medida,
+                        topLeft = Offset(punto.x - medida.size.width / 2f, punto.y - medida.size.height / 2f)
+                    )
+                }
+            }
         }
     }
 }

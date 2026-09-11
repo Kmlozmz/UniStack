@@ -11,6 +11,7 @@ import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_updates.data.UpdateCheckWorker
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.core.utils.Textos
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +47,8 @@ class UniStackApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        // Antes que nada: lo primero que arranca son los avisos, y ya piden textos.
+        Textos.desde(this)
         ReminderCoordinator.start(
             context = this,
             userRepository = userRepository,
