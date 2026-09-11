@@ -277,8 +277,10 @@ internal fun AttendanceHistoryScreen(
                         }
                         if (pasadas.isNotEmpty()) {
                             item("pasado-rotulo") {
+                                // El detalle dice lo que la fila no puede decir sola: que se toca.
                                 Rotulo(
-                                    texto = stringResource(R.string.attendance_history_what_happened_already),
+                                    texto = stringResource(R.string.attendance_history_past_classes),
+                                    detalle = stringResource(R.string.attendance_history_tap_to_fix),
                                     modifier = Modifier.padding(top = 20.dp, bottom = 4.dp)
                                 )
                             }
@@ -296,7 +298,7 @@ internal fun AttendanceHistoryScreen(
                         if (porVenir.isNotEmpty()) {
                             item("venir-rotulo") {
                                 Rotulo(
-                                    texto = stringResource(R.string.attendance_history_upcoming),
+                                    texto = stringResource(R.string.attendance_history_upcoming_section),
                                     modifier = Modifier.padding(top = 20.dp, bottom = 4.dp)
                                 )
                             }

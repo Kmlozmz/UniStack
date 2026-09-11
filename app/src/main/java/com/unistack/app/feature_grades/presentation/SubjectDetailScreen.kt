@@ -714,8 +714,9 @@ fun SubjectCutDetailScreen(
      * decia si con esa nota ibas bien o mal. Cerrar un corte es un momento de balance
      * —como cerrar la ultima pendiente del dia, que se celebra— y el balance tiene que
      * decirse con palabras: cumpliste la meta, aprobaste por debajo de ella, o quedo en
-     * rojo. Sale cuando el sello ya ha pegado, y si la meta se cumplio lo acompana la
-     * misma celebracion que la ultima tarea del dia.
+     * rojo. Sale cuando el sello ya ha pegado, y si el corte no quedo en rojo lo acompana
+     * la misma celebracion que la ultima tarea del dia: cerrar aprobado tambien se celebra,
+     * que un corte cerrado es un corte menos.
      */
     var veredicto by remember { mutableStateOf(false) }
     var celebrar by remember { mutableStateOf(false) }
@@ -728,7 +729,7 @@ fun SubjectCutDetailScreen(
             veredicto = false
             kotlinx.coroutines.delay((esperaDelSello * 0.45f).toLong())
             veredicto = comoFue != null
-            if (comoFue == Veredicto.META) celebrar = true
+            if (comoFue == Veredicto.META || comoFue == Veredicto.APROBADO) celebrar = true
         }
         if (!estaCerrado) veredicto = false
         cierreVisto = estaCerrado

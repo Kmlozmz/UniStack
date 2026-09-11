@@ -1166,21 +1166,30 @@ private fun DrawScope.celebracion(v: String, t: Float, c: TintaDemo) {
     when (v) {
         "ninguna" -> texto("¡Todo hecho!", 50f, 32f, c, c.tinta, tamano = 11f, centrado = true)
 
+        // Dos canones en las esquinas de abajo, como en la pantalla: cada papel sube frenando,
+        // cae y voltea. Es la misma fisica de la pieza, a escala.
         "confeti" -> {
             val colores = listOf(c.acento, c.verde, c.ambar, c.gasto)
-            repeat(14) { indice ->
-                val angulo = indice / 14f * 2f * PI.toFloat() + 0.4f
-                val dist = 40f * suave(golpe)
-                val caida = 26f * golpe * golpe
+            repeat(28) { indice ->
+                val azar = kotlin.random.Random(indice * 7919 + 13)
+                val izquierda = indice % 2 == 0
+                val retraso = azar.nextFloat() * 0.16f
+                val tau = ((t - 0.05f - retraso) / (0.95f - retraso)).coerceIn(0f, 1f)
+                if (tau <= 0f || tau >= 1f) return@repeat
+                val boca = Offset(if (izquierda) 8f else 92f, 66f)
+                val empuje = 0.45f + azar.nextFloat() * 0.5f
+                val lateral = (0.25f + azar.nextFloat() * 0.75f) * (if (izquierda) 1f else -1f)
                 val punto = Offset(
-                    centro.x + cos(angulo) * dist,
-                    centro.y + sin(angulo) * dist * 0.62f + caida
+                    boca.x + 100f * lateral * tau,
+                    boca.y - 64f * empuje * (2.2f * tau - 1.7f * tau * tau)
                 )
-                rotate(degrees = indice * 40f + golpe * 300f, pivot = punto) {
+                val alfa = if (tau < 0.66f) 1f else 1f - (tau - 0.66f) / 0.34f
+                val volteo = abs(cos(tau * (6f + azar.nextFloat() * 8f)))
+                rotate(degrees = azar.nextFloat() * 360f + (1f + azar.nextFloat() * 2.5f) * 360f * tau, pivot = punto) {
                     drawRect(
-                        color = colores[indice % colores.size].copy(alpha = 1f - golpe),
-                        topLeft = punto - Offset(3f, 1.6f),
-                        size = Size(6f, 3.2f)
+                        color = colores[indice % colores.size].copy(alpha = alfa),
+                        topLeft = punto - Offset(2.6f * (0.25f + 0.75f * volteo), 1.4f),
+                        size = Size(5.2f * (0.25f + 0.75f * volteo), 2.8f)
                     )
                 }
             }
@@ -1190,47 +1199,92 @@ private fun DrawScope.celebracion(v: String, t: Float, c: TintaDemo) {
         }
 
         "onda" -> {
-            repeat(2) { indice ->
-                val p = tramo(t, 0.1f + indice * 0.2f, 0.9f + indice * 0.2f)
-                if (p > 0f && p < 1f) {
-                    drawCircle(
-                        color = c.acento.copy(alpha = 0.6f * (1f - p)),
-                        radius = 14f + 38f * p,
+            val resplandor = (1f - t / 0.5f).coerceIn(0f, 1f)
+            if (resplandor > 0f) {
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        0f to c.acento.copy(alpha = 0.30f * resplandor),
+                        1f to c.acento.copy(alpha = 0f),
                         center = centro,
-                        style = Stroke(3f)
+                        radius = 60f
+                    ),
+                    radius = 60f,
+                    center = centro
+                )
+            }
+            repeat(4) { indice ->
+                val p = tramo(t, 0.05f + indice * 0.13f, 0.67f + indice * 0.13f)
+                if (p > 0f && p < 1f) {
+                    val e = 1f - (1f - p) * (1f - p) * (1f - p)
+                    drawCircle(
+                        color = c.acento.copy(alpha = 0.7f * (1f - e)),
+                        radius = 8f + 54f * e,
+                        center = centro,
+                        style = Stroke(4f * (1f - 0.7f * e) + 0.6f)
                     )
                 }
             }
             texto("¡Todo hecho!", 50f, 32f, c, c.acento, tamano = 11f, centrado = true)
         }
 
+        // El aro cae de fuera hacia dentro, pega con su onda, y dentro se dibuja el visto.
         "sello" -> {
-            val escala = 2.3f - 1.3f * suave(tramo(t, 0.1f, 0.45f))
-            scale(escala, pivot = centro) {
-                drawRoundRect(
-                    color = c.verde.copy(alpha = entrada * 0.85f),
-                    topLeft = Offset(16f, 22f),
-                    size = Size(68f, 20f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f),
-                    style = Stroke(2.5f)
-                )
-                // 8,5 dentro del anillo: a diez, las doce letras miden setenta y dos unidades
-                // y el sello sesenta y ocho, o sea que el texto salia por los dos lados.
-                texto("¡Todo hecho!", 50f, 32f, c, c.verde, tamano = 8.5f, centrado = true, alfa = entrada)
+            val caida = tramo(t, 0.05f, 0.33f).let { it * it * it }
+            val radio = 40f - 22f * caida
+            val onda = tramo(t, 0.33f, 0.65f)
+            val trazo = tramo(t, 0.35f, 0.6f).let { 1f - (1f - it) * (1f - it) * (1f - it) }
+            val vida = 1f - suave(tramo(t, 0.75f, 1f))
+            val alfa = (tramo(t, 0.05f, 0.33f) / 0.4f).coerceAtMost(1f) * vida
+            if (onda > 0f && onda < 1f) {
+                val e = 1f - (1f - onda) * (1f - onda) * (1f - onda)
+                drawCircle(c.verde.copy(alpha = 0.55f * (1f - e)), radius = 18f + 50f * e, center = centro, style = Stroke(3f * (1f - e) + 0.4f))
+            }
+            drawCircle(c.verde.copy(alpha = alfa), radius = radio, center = centro, style = Stroke(4f))
+            if (trazo > 0f) {
+                val a = centro + Offset(-radio * 0.42f, radio * 0.02f)
+                val b = centro + Offset(-radio * 0.12f, radio * 0.32f)
+                val cc = centro + Offset(radio * 0.46f, -radio * 0.30f)
+                val primero = (trazo / 0.4f).coerceAtMost(1f)
+                val segundo = tramo(trazo, 0.4f, 1f)
+                drawLine(c.verde.copy(alpha = alfa), a, a + (b - a) * primero, 4f, androidx.compose.ui.graphics.StrokeCap.Round)
+                if (segundo > 0f) drawLine(c.verde.copy(alpha = alfa), b, b + (cc - b) * segundo, 4f, androidx.compose.ui.graphics.StrokeCap.Round)
             }
         }
 
         "destello" -> {
-            repeat(8) { indice ->
-                val angulo = indice / 8f * 2f * PI.toFloat()
-                val dentro = 24f + 10f * suave(golpe)
-                drawLine(
-                    color = c.ambar.copy(alpha = 1f - golpe),
-                    start = centro + Offset(cos(angulo) * dentro, sin(angulo) * dentro * 0.7f),
-                    end = centro + Offset(cos(angulo) * (dentro + 11f * (1f - golpe)), sin(angulo) * (dentro + 11f * (1f - golpe)) * 0.7f),
-                    strokeWidth = 3f,
-                    cap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
+            val rayos = tramo(t, 0.05f, 0.6f).let { 1f - (1f - it) * (1f - it) * (1f - it) }
+            val vida = 1f - suave(tramo(t, 0.55f, 1f))
+            rotate(degrees = t * 24f, pivot = centro) {
+                repeat(12) { indice ->
+                    val angulo = indice / 12f * 2f * PI.toFloat()
+                    val dentro = 8f + 14f * rayos
+                    val fuera = dentro + 30f * rayos
+                    drawLine(
+                        color = c.ambar.copy(alpha = 0.55f * vida),
+                        start = centro + Offset(cos(angulo) * dentro, sin(angulo) * dentro),
+                        end = centro + Offset(cos(angulo) * fuera, sin(angulo) * fuera),
+                        strokeWidth = 2f * (1f - 0.6f * rayos) + 0.4f,
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                    )
+                }
+            }
+            repeat(12) { indice ->
+                val azar = kotlin.random.Random(indice * 4241 + 7)
+                val desde = azar.nextFloat() * 0.6f
+                val p = tramo(t, desde, desde + 0.38f)
+                if (p <= 0f || p >= 1f) return@repeat
+                val vivo = sin(p * PI.toFloat())
+                val r = (3f + azar.nextFloat() * 4f) * vivo
+                val punto = Offset(6f + azar.nextFloat() * 88f, 5f + azar.nextFloat() * 54f)
+                val estrella = Path().apply {
+                    moveTo(punto.x, punto.y - r)
+                    quadraticTo(punto.x, punto.y, punto.x + r, punto.y)
+                    quadraticTo(punto.x, punto.y, punto.x, punto.y + r)
+                    quadraticTo(punto.x, punto.y, punto.x - r, punto.y)
+                    quadraticTo(punto.x, punto.y, punto.x, punto.y - r)
+                    close()
+                }
+                drawPath(estrella, color = (if (azar.nextFloat() < 0.7f) c.ambar else c.tinta).copy(alpha = vivo))
             }
             texto("¡Todo hecho!", 50f, 32f, c, c.ambar, tamano = 11f, centrado = true)
         }

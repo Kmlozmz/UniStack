@@ -438,10 +438,16 @@ private val manchaDeTinta = listOf(
 // ------------------------------------------------------------------ celebrar al terminar
 
 /**
- * La celebración de haber cerrado la última pendiente del día.
+ * La celebración de haber cerrado la última pendiente del día, o un corte.
  *
  * Se pinta **encima** de lo que envuelva, sin ocupar sitio, para que la lista no dé un salto al
- * aparecer. Dura lo suyo y se apaga sola: [visible] vuelve a falso cuando termina.
+ * aparecer. Dura lo suyo y se apaga sola: [disparada] vuelve a falso cuando termina.
+ *
+ * **Tiene que notarse.** La primera version eran dieciseis rectangulos de diez **pixeles**
+ * volando 1100 ms desde el centro: en una pantalla de 3x eso son tres puntos, y a esa
+ * velocidad ni se veian. Un confeti asi no transmite nada. Ahora todo se mide en dp, hay cien
+ * particulas con peso —suben, giran y caen—, dura 2200 ms y ocupa la pantalla entera; y las
+ * otras tres variantes crecen hasta las esquinas en vez de quedarse en un circulo del centro.
  */
 @Composable
 fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Modifier {
@@ -453,6 +459,11 @@ fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Mod
         return this
     }
 
+    val haptica = LocalHapticFeedback.current
+    LaunchedEffect(disparada) {
+        if (disparada) haptica.performSafely(HapticFeedbackType.LongPress)
+    }
+
     val avance by animateFloatAsState(
         targetValue = if (disparada) 1f else 0f,
         /*
@@ -461,7 +472,7 @@ fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Mod
          * las particulas volvian a recogerse en el centro, como un video en reversa. Lo
          * que se apaga tiene que apagarse, no rebobinarse.
          */
-        animationSpec = if (disparada) tweenDeMovimiento(baseMs = 1100) else snap(),
+        animationSpec = if (disparada) tween(duracion(2200).coerceAtLeast(1), easing = LinearEasing) else snap(),
         label = "celebracion",
         finishedListener = { if (it >= 1f) onTerminada() }
     )
@@ -469,60 +480,254 @@ fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Mod
 
     // Las partículas se sortean una sola vez: con un sorteo por fotograma, el confeti tiembla
     // en vez de volar.
-    val semillas = remember { List(16) { Random(it * 7919).nextFloat() } }
+    val confeti = remember { List(100) { indice -> Particula.sortear(indice) } }
+    val chispas = remember { List(34) { indice -> Chispa.sortear(indice) } }
+    val acento = MaterialTheme.colorScheme.primary
+    val verde = Color(0xFF11C045)
+    val ambar = Color(0xFFE0A400)
 
     return this.drawWithContent {
         drawContent()
-        val centro = Offset(size.width / 2f, size.height / 2f)
+        val t = avance
+        val w = size.width
+        val h = size.height
+        val centro = Offset(w / 2f, h / 2f)
+        val alcance = kotlin.math.hypot(w, h) / 2f
         when (estilo) {
-            CelebrationMotion.CONFETI -> semillas.forEachIndexed { indice, semilla ->
-                val angulo = indice / semillas.size.toFloat() * 2f * PI.toFloat() + semilla
-                val dist = size.minDimension * 0.9f * avance
-                val punto = Offset(
-                    centro.x + cos(angulo) * dist,
-                    centro.y + sin(angulo) * dist * 0.55f + size.height * 0.5f * avance * avance
-                )
-                rotate(degrees = semilla * 360f + avance * 300f, pivot = punto) {
+            /*
+             * **Dos cañones en las esquinas de abajo.** Cada particula sale con su angulo, su
+             * velocidad y su retraso, sube frenando, cae y gira; el `cos` sobre el ancho la hace
+             * voltear como un papel. Se apagan en el ultimo tercio, cuando ya van cayendo.
+             */
+            CelebrationMotion.CONFETI -> {
+                // El fogonazo de salida, en los dos cañones.
+                val fogonazo = (1f - t / 0.18f).coerceIn(0f, 1f)
+                if (fogonazo > 0f) {
+                    listOf(Offset(w * 0.08f, h), Offset(w * 0.92f, h)).forEach { boca ->
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                0f to Color.White.copy(alpha = 0.35f * fogonazo),
+                                1f to Color.White.copy(alpha = 0f),
+                                center = boca,
+                                radius = 140.dp.toPx()
+                            ),
+                            radius = 140.dp.toPx(),
+                            center = boca
+                        )
+                    }
+                }
+                confeti.forEach { p ->
+                    val tau = ((t - p.retraso) / (1f - p.retraso)).coerceIn(0f, 1f)
+                    if (tau <= 0f || tau >= 1f) return@forEach
+                    val boca = if (p.izquierda) Offset(w * 0.08f, h + 8.dp.toPx()) else Offset(w * 0.92f, h + 8.dp.toPx())
+                    // Sube y cae: la altura alcanza su maximo hacia los dos tercios del vuelo.
+                    val subida = h * p.empuje * (2.2f * tau - 1.7f * tau * tau)
+                    val deriva = w * p.lateral * tau + sin(tau * 9f + p.fase) * 10.dp.toPx()
+                    val punto = Offset(boca.x + deriva, boca.y - subida)
+                    val alfa = if (tau < 0.66f) 1f else 1f - (tau - 0.66f) / 0.34f
+                    val ancho = p.tamano.dp.toPx()
+                    val alto = ancho * 0.55f
+                    rotate(degrees = p.giro + p.vueltas * 360f * tau, pivot = punto) {
+                        // El volteo: el ancho se estrecha y se ensancha como un papel girando.
+                        val volteo = abs(cos(tau * p.volteo + p.fase))
+                        val a = ancho * (0.25f + 0.75f * volteo)
+                        if (p.redonda) {
+                            drawOval(
+                                color = p.color.copy(alpha = alfa),
+                                topLeft = Offset(punto.x - a / 2f, punto.y - alto / 2f),
+                                size = Size(a, alto)
+                            )
+                        } else {
+                            drawRect(
+                                color = p.color.copy(alpha = alfa),
+                                topLeft = Offset(punto.x - a / 2f, punto.y - alto / 2f),
+                                size = Size(a, alto)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Cuatro ondas del centro a las esquinas, con un resplandor que llena la pantalla
+            // al arrancar y se va apagando.
+            CelebrationMotion.ONDA -> {
+                val resplandor = (1f - t / 0.5f).coerceIn(0f, 1f)
+                if (resplandor > 0f) {
                     drawRect(
-                        color = paletaDeConfeti[indice % paletaDeConfeti.size].copy(alpha = 1f - avance),
-                        topLeft = punto - Offset(5f, 2.5f),
-                        size = Size(10f, 5f)
+                        brush = Brush.radialGradient(
+                            0f to acento.copy(alpha = 0.30f * resplandor),
+                            1f to acento.copy(alpha = 0f),
+                            center = centro,
+                            radius = alcance
+                        )
                     )
                 }
-            }
-            CelebrationMotion.ONDA -> repeat(2) { indice ->
-                val p = ((avance - indice * 0.18f) / 0.82f).coerceIn(0f, 1f)
-                if (p > 0f && p < 1f) {
-                    drawCircle(
-                        color = Color(0xFF7F77DD).copy(alpha = 0.6f * (1f - p)),
-                        radius = size.minDimension * (0.2f + 0.9f * p),
-                        center = centro,
-                        style = Stroke(4f)
-                    )
+                repeat(4) { indice ->
+                    val p = ((t - indice * 0.13f) / 0.62f).coerceIn(0f, 1f)
+                    if (p > 0f && p < 1f) {
+                        val e = EaseOutCubic.transform(p)
+                        drawCircle(
+                            color = acento.copy(alpha = 0.7f * (1f - e)),
+                            radius = 30.dp.toPx() + (alcance - 30.dp.toPx()) * e,
+                            center = centro,
+                            style = Stroke(width = 12.dp.toPx() * (1f - 0.7f * e) + 2.dp.toPx())
+                        )
+                    }
                 }
             }
+
+            /*
+             * Un sello grande en el centro: el aro cae de fuera hacia dentro, pega —con su
+             * onda—, y dentro se dibuja el visto de un trazo. Se queda un momento y se va.
+             */
             CelebrationMotion.SELLO -> {
-                val escala = 2.2f - 1.2f * minOf(avance * 2.5f, 1f)
+                val lado = minOf(w, h)
+                val caida = EaseInCubic.transform((t / 0.28f).coerceAtMost(1f))
+                val radio = lado * (0.62f - 0.34f * caida)
+                val onda = ((t - 0.28f) / 0.32f).coerceIn(0f, 1f)
+                val trazo = EaseOutCubic.transform(((t - 0.30f) / 0.25f).coerceIn(0f, 1f))
+                val vida = 1f - EaseInOutCubic.transform(((t - 0.72f) / 0.28f).coerceIn(0f, 1f))
+                val alfa = (caida / 0.4f).coerceAtMost(1f) * vida
+                if (onda > 0f && onda < 1f) {
+                    val e = EaseOutCubic.transform(onda)
+                    drawCircle(
+                        color = verde.copy(alpha = 0.55f * (1f - e)),
+                        radius = lado * 0.28f + alcance * 0.9f * e,
+                        center = centro,
+                        style = Stroke(width = 10.dp.toPx() * (1f - e) + 1f)
+                    )
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            0f to verde.copy(alpha = 0.28f * (1f - e)),
+                            1f to verde.copy(alpha = 0f),
+                            center = centro,
+                            radius = lado * 0.5f
+                        ),
+                        radius = lado * 0.5f,
+                        center = centro
+                    )
+                }
                 drawCircle(
-                    color = Color(0xFF11C045).copy(alpha = (1f - avance) * 0.9f),
-                    radius = size.minDimension * 0.32f * escala,
+                    color = verde.copy(alpha = alfa),
+                    radius = radio,
                     center = centro,
-                    style = Stroke(4f)
+                    style = Stroke(width = 16.dp.toPx())
                 )
+                if (trazo > 0f) {
+                    // El visto, de un trazo: primero el palo corto, luego el largo.
+                    val a = centro + Offset(-radio * 0.42f, radio * 0.02f)
+                    val b = centro + Offset(-radio * 0.12f, radio * 0.32f)
+                    val c = centro + Offset(radio * 0.46f, -radio * 0.30f)
+                    val primero = (trazo / 0.4f).coerceAtMost(1f)
+                    val segundo = ((trazo - 0.4f) / 0.6f).coerceIn(0f, 1f)
+                    drawLine(verde.copy(alpha = alfa), a, a + (b - a) * primero, 16.dp.toPx(), StrokeCap.Round)
+                    if (segundo > 0f) {
+                        drawLine(verde.copy(alpha = alfa), b, b + (c - b) * segundo, 16.dp.toPx(), StrokeCap.Round)
+                    }
+                }
             }
-            CelebrationMotion.DESTELLO -> repeat(10) { indice ->
-                val angulo = indice / 10f * 2f * PI.toFloat()
-                val dentro = size.minDimension * (0.3f + 0.25f * avance)
-                val fuera = dentro + size.minDimension * 0.2f * (1f - avance)
-                drawLine(
-                    color = Color(0xFFE0A400).copy(alpha = 1f - avance),
-                    start = centro + Offset(cos(angulo) * dentro, sin(angulo) * dentro * 0.6f),
-                    end = centro + Offset(cos(angulo) * fuera, sin(angulo) * fuera * 0.6f),
-                    strokeWidth = 4f,
-                    cap = StrokeCap.Round
-                )
+
+            /*
+             * Rayos del centro a las esquinas girando despacio, y chispas de cuatro puntas que
+             * saltan por toda la pantalla, cada una en su momento.
+             */
+            CelebrationMotion.DESTELLO -> {
+                val rayos = EaseOutCubic.transform((t / 0.6f).coerceAtMost(1f))
+                val vida = 1f - EaseInOutCubic.transform(((t - 0.55f) / 0.45f).coerceIn(0f, 1f))
+                rotate(degrees = t * 24f, pivot = centro) {
+                    repeat(12) { indice ->
+                        val angulo = indice / 12f * 2f * PI.toFloat()
+                        val dentro = 24.dp.toPx() + alcance * 0.35f * rayos
+                        val fuera = dentro + alcance * 0.75f * rayos
+                        drawLine(
+                            color = ambar.copy(alpha = 0.55f * vida),
+                            start = centro + Offset(cos(angulo) * dentro, sin(angulo) * dentro),
+                            end = centro + Offset(cos(angulo) * fuera, sin(angulo) * fuera),
+                            strokeWidth = 5.dp.toPx() * (1f - 0.6f * rayos) + 1f,
+                            cap = StrokeCap.Round
+                        )
+                    }
+                }
+                chispas.forEach { ch ->
+                    val p = ((t - ch.retraso) / 0.38f).coerceIn(0f, 1f)
+                    if (p <= 0f || p >= 1f) return@forEach
+                    val vivo = sin(p * PI.toFloat())
+                    val r = ch.tamano.dp.toPx() * vivo
+                    val punto = Offset(w * ch.x, h * ch.y)
+                    rotate(degrees = ch.giro + p * 90f, pivot = punto) {
+                        val estrella = Path().apply {
+                            moveTo(punto.x, punto.y - r)
+                            quadraticTo(punto.x, punto.y, punto.x + r, punto.y)
+                            quadraticTo(punto.x, punto.y, punto.x, punto.y + r)
+                            quadraticTo(punto.x, punto.y, punto.x - r, punto.y)
+                            quadraticTo(punto.x, punto.y, punto.x, punto.y - r)
+                            close()
+                        }
+                        drawPath(estrella, color = ch.color.copy(alpha = vivo))
+                    }
+                }
             }
             CelebrationMotion.NINGUNA -> Unit
+        }
+    }
+}
+
+/** Un papelito del confeti, con todo lo suyo sorteado una vez. */
+private class Particula(
+    val izquierda: Boolean,
+    val empuje: Float,
+    val lateral: Float,
+    val retraso: Float,
+    val tamano: Float,
+    val giro: Float,
+    val vueltas: Float,
+    val volteo: Float,
+    val fase: Float,
+    val redonda: Boolean,
+    val color: Color
+) {
+    companion object {
+        fun sortear(indice: Int): Particula {
+            val azar = Random(indice * 7919 + 13)
+            val izquierda = indice % 2 == 0
+            return Particula(
+                izquierda = izquierda,
+                empuje = 0.45f + azar.nextFloat() * 0.5f,
+                // Hacia el lado contrario del cañon, abriendo en abanico.
+                lateral = (0.25f + azar.nextFloat() * 0.75f) * (if (izquierda) 1f else -1f),
+                retraso = azar.nextFloat() * 0.16f,
+                tamano = 7f + azar.nextFloat() * 7f,
+                giro = azar.nextFloat() * 360f,
+                vueltas = 1f + azar.nextFloat() * 2.5f,
+                volteo = 6f + azar.nextFloat() * 8f,
+                fase = azar.nextFloat() * 6.28f,
+                redonda = azar.nextFloat() < 0.3f,
+                color = paletaDeConfeti[indice % paletaDeConfeti.size]
+            )
+        }
+    }
+}
+
+/** Una chispa del destello: donde salta, cuando, y como de grande. */
+private class Chispa(
+    val x: Float,
+    val y: Float,
+    val retraso: Float,
+    val tamano: Float,
+    val giro: Float,
+    val color: Color
+) {
+    companion object {
+        fun sortear(indice: Int): Chispa {
+            val azar = Random(indice * 4241 + 7)
+            return Chispa(
+                x = 0.06f + azar.nextFloat() * 0.88f,
+                y = 0.08f + azar.nextFloat() * 0.84f,
+                retraso = azar.nextFloat() * 0.6f,
+                tamano = 10f + azar.nextFloat() * 16f,
+                giro = azar.nextFloat() * 90f,
+                color = if (azar.nextFloat() < 0.7f) Color(0xFFFFD34D) else Color.White
+            )
         }
     }
 }

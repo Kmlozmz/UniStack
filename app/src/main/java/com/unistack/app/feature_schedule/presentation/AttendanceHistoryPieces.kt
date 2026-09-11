@@ -66,7 +66,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -81,7 +80,6 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
-import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
@@ -215,24 +213,22 @@ internal fun HeroDeAsistencia(
     onMarcarLoQueFalta: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val section = LocalSectionColors.current
     val restantes = summary.remainingAbsences
-    val tono = when {
-        restantes != null -> when {
-            summary.atLimit -> section.expenses
-            summary.oneLeft -> section.atRisk
-            else -> section.onTrack
-        }
-        summary.rate == null -> MaterialTheme.colorScheme.onSurfaceVariant
-        summary.rate >= 80 -> section.onTrack
-        summary.rate >= 60 -> section.atRisk
-        else -> section.expenses
-    }
-    // El contenedor tonal: la superficie tenida con el color, mas en oscuro para que se lea
-    // como bloque y no como velo.
     val oscuro = LocalIsDarkTheme.current
-    val contenedor = lerp(MaterialTheme.colorScheme.surfaceContainerHigh, tono, if (oscuro) 0.30f else 0.20f)
-    val tinta = MaterialTheme.colorScheme.onSurface
+    // Verde, ambar o rojo segun como vayas; sin ningun dato, la superficie neutra.
+    val tono: TonoDeAsistencia? = when {
+        restantes != null -> when {
+            summary.atLimit -> tonoDeAsistencia(RojoProfundo, RojoPalido, oscuro)
+            summary.oneLeft -> tonoDeAsistencia(AmbarProfundo, AmbarPalido, oscuro)
+            else -> tonoDeAsistencia(VerdeProfundo, VerdePalido, oscuro)
+        }
+        summary.rate == null -> null
+        summary.rate >= 80 -> tonoDeAsistencia(VerdeProfundo, VerdePalido, oscuro)
+        summary.rate >= 60 -> tonoDeAsistencia(AmbarProfundo, AmbarPalido, oscuro)
+        else -> tonoDeAsistencia(RojoProfundo, RojoPalido, oscuro)
+    }
+    val contenedor = tono?.contenedor ?: MaterialTheme.colorScheme.surfaceContainerHigh
+    val tinta = tono?.sobre ?: MaterialTheme.colorScheme.onSurface
     val fraccion = when {
         summary.absenceLimit != null && summary.absenceLimit > 0 ->
             (summary.absent.toFloat() / summary.absenceLimit).coerceIn(0f, 1f)
@@ -286,7 +282,7 @@ internal fun HeroDeAsistencia(
             }
             AnilloDeFaltas(
                 fraccion = fraccion,
-                color = tono,
+                color = tinta,
                 tinta = tinta,
                 arriba = if (summary.absenceLimit != null) {
                     "${summary.absent}/${summary.absenceLimit}"
@@ -336,7 +332,8 @@ internal fun HeroDeAsistencia(
                         stringResource(R.string.attendance_history_change_limit_short)
                     }) to onLimitClick
                 )
-                if (sinMarcar > 0) add(stringResource(R.string.attendance_history_mark_missing) to onMarcarLoQueFalta)
+                if (sinMarcar == 1) add(stringResource(R.string.attendance_history_mark_pending_one) to onMarcarLoQueFalta)
+                if (sinMarcar > 1) add(stringResource(R.string.attendance_history_mark_pending_many, sinMarcar) to onMarcarLoQueFalta)
             }
             mandos.forEachIndexed { indice, (rotulo, accion) ->
                 val interaccion = remember { MutableInteractionSource() }
@@ -353,7 +350,7 @@ internal fun HeroDeAsistencia(
                         else -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                     },
                     colors = ToggleButtonDefaults.toggleButtonColors(
-                        containerColor = tinta.copy(alpha = 0.12f),
+                        containerColor = tinta.copy(alpha = 0.16f),
                         contentColor = tinta
                     ),
                     interactionSource = interaccion,
@@ -376,7 +373,7 @@ private fun Pildora(texto: String, tinta: Color) {
         fontWeight = FontWeight.Bold,
         modifier = Modifier
             .clip(CircleShape)
-            .background(tinta.copy(alpha = 0.12f))
+            .background(tinta.copy(alpha = 0.14f))
             .padding(horizontal = 12.dp, vertical = 6.dp)
     )
 }
@@ -394,7 +391,7 @@ private fun AnilloDeFaltas(fraccion: Float, color: Color, tinta: Color, arriba: 
             progress = { fraccion },
             modifier = Modifier.size(96.dp),
             color = color,
-            trackColor = tinta.copy(alpha = 0.16f),
+            trackColor = tinta.copy(alpha = 0.22f),
             stroke = grosor,
             trackStroke = grosor,
             amplitude = { 0.25f + 0.75f * fraccion },

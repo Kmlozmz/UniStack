@@ -23,7 +23,26 @@ internal val AttendanceAttended = Color(0xFF58D68D)
 internal val AttendanceAbsent = Color(0xFFF1706F)
 internal val AttendanceCancelled = Color(0xFFF0B429)
 internal val AttendanceRescheduled = Color(0xFF8AA6F2)
+
+/*
+ * Los contenedores tonales del hero del historial, tal cual el diseño aprobado: el bloque
+ * profundo con el texto pálido en oscuro, y al revés en claro, que es exactamente la
+ * pareja contenedor / sobre-contenedor de M3. Estuvo como una mezcla del color con la
+ * superficie y salía un verde apagado que no era el del artifact.
+ */
+internal val VerdeProfundo = Color(0xFF0A5C23)
+internal val VerdePalido = Color(0xFFB4F2C4)
+internal val AmbarProfundo = Color(0xFF6B4E00)
+internal val AmbarPalido = Color(0xFFFFE29E)
+internal val RojoProfundo = Color(0xFF8C1F0A)
+internal val RojoPalido = Color(0xFFFFDCD5)
 // design-tokens-ok-end
+
+/** Un contenedor tonal de asistencia: el bloque y lo que se escribe encima. */
+internal data class TonoDeAsistencia(val contenedor: Color, val sobre: Color)
+
+internal fun tonoDeAsistencia(profundo: Color, palido: Color, oscuro: Boolean): TonoDeAsistencia =
+    if (oscuro) TonoDeAsistencia(profundo, palido) else TonoDeAsistencia(palido, profundo)
 
 /**
  * El color de un estado.
