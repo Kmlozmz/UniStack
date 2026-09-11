@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RoomAcademicTermRepository(
@@ -59,7 +61,7 @@ class RoomAcademicTermRepository(
         }
         // Se pregunta a la base, no al flujo en cache: ver `activeFor`.
         check(dao.activeFor(userIds) == null) {
-            "Ya hay un periodo en curso. Ciérralo antes de empezar otro."
+            Textos.get(R.string.term_err_already_active)
         }
         val now = System.currentTimeMillis()
         val term = AcademicTerm(
@@ -79,16 +81,16 @@ class RoomAcademicTermRepository(
     }
 
     override suspend fun update(term: AcademicTerm): Result<Unit> = runCatching {
-        require(term.isValid) { "Ese periodo no es válido." }
+        require(term.isValid) { Textos.get(R.string.term_err_invalid) }
         dao.upsert(term.copy(updatedAt = System.currentTimeMillis()).toEntity())
     }
 
     override suspend fun close(termId: String, closedOn: LocalDate): Result<Unit> = runCatching {
         val term = dao.byId(termId, userIds)?.toDomain()
-            ?: error("Ese periodo ya no existe.")
-        check(term.isActive) { "Ese periodo ya estaba cerrado." }
+            ?: error(Textos.get(R.string.term_err_missing))
+        check(term.isActive) { Textos.get(R.string.term_err_closed) }
         require(!closedOn.isBefore(term.start)) {
-            "No se puede cerrar un periodo antes del día en que empezó."
+            Textos.get(R.string.term_err_close_before_start)
         }
         val cambiadas = dao.close(
             termId = termId,
@@ -97,7 +99,7 @@ class RoomAcademicTermRepository(
             userIds = userIds
         )
         // Cero filas significa que alguien lo cerro entremedias; la primera fecha es la buena.
-        check(cambiadas > 0) { "Ese periodo ya estaba cerrado." }
+        check(cambiadas > 0) { Textos.get(R.string.term_err_closed) }
     }
 
     override suspend fun delete(termId: String): Result<Unit> = runCatching {

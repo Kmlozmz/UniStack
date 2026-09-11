@@ -50,7 +50,6 @@ import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
 
 internal object HomeSummaryFactory {
-    private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
     fun create(
         content: HomeContent,
         profile: UserProfile?,
@@ -452,7 +451,7 @@ internal object HomeSummaryFactory {
         val faltan = session.startMinute - nowMinute
         val diaDeLaSemana = date.dayOfWeek.getDisplayName(
             java.time.format.TextStyle.FULL,
-            if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es")
+            java.util.Locale.getDefault()
         )
         val (puntos, texto, cuando) = when {
             date == today && faltan <= 0 ->
@@ -707,8 +706,8 @@ internal object HomeSummaryFactory {
     private fun upcomingDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
         today.plusDays(1) -> Textos.get(R.string.schedule_identity_tomorrow)
         else -> date.dayOfWeek
-            .getDisplayName(java.time.format.TextStyle.FULL, if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es"))
-            .replaceFirstChar { it.uppercase(if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es")) }
+            .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
+            .replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }
     }
 
     private fun todayTimelineItems(
@@ -906,7 +905,8 @@ internal object HomeSummaryFactory {
         weeklyExpenseTotal: Int
     ): String {
         if (!hasSubjects) return Textos.get(R.string.home_crea_tus_materias_para_ver_un)
-        if (overdueTasks > 0) return if (isEnglish) "There ${if (overdueTasks == 1) "is 1 overdue task" else "are $overdueTasks overdue tasks"} best closed first." else "Hay $overdueTasks tarea${if (overdueTasks == 1) "" else "s"} vencida${if (overdueTasks == 1) "" else "s"} que conviene cerrar primero."
+        if (overdueTasks == 1) return Textos.get(R.string.home_overdue_one_first)
+        if (overdueTasks > 1) return Textos.get(R.string.home_overdue_many_first, overdueTasks)
         if (riskSubject?.severity == SubjectRiskSeverity.CRITICAL) return Textos.get(R.string.home_necesita_atencion_academica_hoy, riskSubject.subjectName)
         if (riskSubject?.severity == SubjectRiskSeverity.ATTENTION) return Textos.get(R.string.home_esta_cerca_de_la_meta_pero, riskSubject.subjectName)
         if (nextAcademicWork != null) return Textos.get(R.string.home_tu_proximo_trabajo_es, nextAcademicWork.title)
@@ -937,7 +937,7 @@ internal object HomeSummaryFactory {
                 Textos.get(R.string.home_hoy_conviene_enfocarte_en_antes_de, todayItems.first { it.state == HomeTimelineState.CURRENT }.title)
             pendingTasks == 0 -> Textos.get(R.string.home_dia_tranquilo_perfecto_para_repasar_o, shortName)
             priority.action == HomePriorityAction.TEMPLATES ->
-                if (isEnglish) "A little progress on ${priority.title.substringBefore(" is ")} today can save pressure later." else "Un avance pequeño en ${priority.title.substringBefore(" es ")} hoy puede ahorrarte presión después."
+                Textos.get(R.string.home_small_progress_saves_pressure, priority.title.substringBefore(Textos.get(R.string.home_title_verb_separator)))
             else -> Textos.get(R.string.home_vas_bien_prioriza_una_cosa_importante, shortName)
         }
     }

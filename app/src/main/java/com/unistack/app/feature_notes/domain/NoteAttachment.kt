@@ -1,6 +1,8 @@
 package com.unistack.app.feature_notes.domain
 
 import java.util.Locale
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /** Las tres cosas que se pueden colgar de una nota. */
 enum class AttachmentKind {
@@ -90,9 +92,9 @@ object Attachments {
      * La cámara y el grabador no dan ninguno, y «content://media/external/…» no es un nombre.
      */
     fun fallbackName(kind: AttachmentKind, createdAt: Long): String = when (kind) {
-        AttachmentKind.IMAGE -> "Foto"
-        AttachmentKind.AUDIO -> "Grabación"
-        AttachmentKind.FILE -> "Archivo"
+        AttachmentKind.IMAGE -> Textos.get(R.string.attachment_photo)
+        AttachmentKind.AUDIO -> Textos.get(R.string.attachment_recording)
+        AttachmentKind.FILE -> Textos.get(R.string.attachment_file)
     }
 
     /** La extensión que le toca a lo que se guarda, para que el sistema sepa abrirlo luego. */

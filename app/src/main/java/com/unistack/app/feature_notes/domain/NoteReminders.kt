@@ -6,6 +6,8 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /**
  * Los recordatorios de una nota.
@@ -18,7 +20,6 @@ import java.util.Locale
  */
 object NoteReminders {
 
-    private val spanish = Locale.forLanguageTag("es-ES")
 
     /**
      * Cómo se lee un recordatorio: «Hoy 8:00», «Mañana 8:00», «14 de septiembre, 8:00».
@@ -34,15 +35,21 @@ object NoteReminders {
         val cuando = Instant.ofEpochMilli(at).atZone(zone).toLocalDateTime()
         val hoy = now.toLocalDate()
         val dia = cuando.toLocalDate()
-        val hora = cuando.toLocalTime().format(DateTimeFormatter.ofPattern("H:mm", spanish))
+        val hora = cuando.toLocalTime().format(DateTimeFormatter.ofPattern("H:mm", Locale.getDefault()))
 
         return when {
-            dia == hoy -> "Hoy $hora"
-            dia == hoy.plusDays(1) -> "Mañana $hora"
-            dia == hoy.minusDays(1) -> "Ayer $hora"
+            dia == hoy -> Textos.get(R.string.reminder_today_at, hora)
+            dia == hoy.plusDays(1) -> Textos.get(R.string.reminder_tomorrow_at, hora)
+            dia == hoy.minusDays(1) -> Textos.get(R.string.reminder_yesterday_at, hora)
             else -> {
-                val patron = if (dia.year == hoy.year) "d 'de' MMMM" else "d 'de' MMMM 'de' yyyy"
-                dia.format(DateTimeFormatter.ofPattern(patron, spanish)) + ", " + hora
+                val en = Locale.getDefault().language == "en"
+                val patron = when {
+                    en && dia.year == hoy.year -> "MMMM d"
+                    en -> "MMMM d, yyyy"
+                    dia.year == hoy.year -> "d 'de' MMMM"
+                    else -> "d 'de' MMMM 'de' yyyy"
+                }
+                dia.format(DateTimeFormatter.ofPattern(patron, Locale.getDefault())) + ", " + hora
             }
         }
     }

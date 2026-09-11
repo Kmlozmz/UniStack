@@ -1,5 +1,8 @@
 package com.unistack.app.feature_user.domain
 
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
+
 /**
  * Lo que hace que la app se pueda usar, y no solo se vea bien.
  *
@@ -129,12 +132,14 @@ enum class UndoDuration(val segundos: Int) {
  */
 enum class DateFormatPreference(
     val pattern: String,
-    val label: String,
+    val labelRes: Int,
     val previewDate: String
 ) {
-    DMY("dd/MM/yyyy", "Día / Mes / Año", "31/12/2026"),
-    MDY("MM/dd/yyyy", "Mes / Día / Año", "12/31/2026"),
-    YMD("yyyy/MM/dd", "Año / Mes / Día", "2026/12/31")
+    DMY("dd/MM/yyyy", R.string.date_format_dmy, "31/12/2026"),
+    MDY("MM/dd/yyyy", R.string.date_format_mdy, "12/31/2026"),
+    YMD("yyyy/MM/dd", R.string.date_format_ymd, "2026/12/31");
+
+    val label: String get() = Textos.get(labelRes)
 }
 
 /**
@@ -143,14 +148,16 @@ enum class DateFormatPreference(
 enum class CurrencyPreference(
     val code: String,
     val symbol: String,
-    val label: String,
+    val labelRes: Int,
     val preview: String
 ) {
-    COP("COP", "$", "Peso colombiano (COP)", "$ 50.000 COP"),
-    USD("USD", "$", "Dólar estadounidense (USD)", "$ 50 USD"),
-    EUR("EUR", "€", "Euro (EUR)", "50 € EUR"),
-    MXN("MXN", "$", "Peso mexicano (MXN)", "$ 50 MXN"),
-    ARS("ARS", "$", "Peso argentino (ARS)", "$ 50.000 ARS"),
-    CLP("CLP", "$", "Peso chileno (CLP)", "$ 50.000 CLP"),
-    PEN("PEN", "S/", "Sol peruano (PEN)", "S/ 50 PEN")
+    COP("COP", "$", R.string.currency_cop, "$ 50.000 COP"),
+    USD("USD", "$", R.string.currency_usd, "$ 50 USD"),
+    EUR("EUR", "€", R.string.currency_eur, "50 € EUR"),
+    MXN("MXN", "$", R.string.currency_mxn, "$ 50 MXN"),
+    ARS("ARS", "$", R.string.currency_ars, "$ 50.000 ARS"),
+    CLP("CLP", "$", R.string.currency_clp, "$ 50.000 CLP"),
+    PEN("PEN", "S/", R.string.currency_pen, "S/ 50 PEN");
+
+    val label: String get() = Textos.get(labelRes)
 }

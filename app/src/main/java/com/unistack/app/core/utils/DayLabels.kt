@@ -1,6 +1,8 @@
 package com.unistack.app.core.utils
 
 import java.time.DayOfWeek
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /**
  * Nombres de los días de la semana, en un solo sitio.
@@ -20,17 +22,13 @@ object DayLabels {
     /** Una letra. En inglés: M T W T F S S. En español: L M X J V S D. */
     val short: List<String>
         get() {
-            val isEn = java.util.Locale.getDefault().language == "en"
-            return if (isEn) listOf("M", "T", "W", "T", "F", "S", "S")
-            else listOf("L", "M", "X", "J", "V", "S", "D")
+            return Textos.get(R.string.day_labels_short).split(",")
         }
 
     /** Tres letras. En inglés: MON TUE WED... En español: LUN MAR MIÉ... */
     val medium: List<String>
         get() {
-            val isEn = java.util.Locale.getDefault().language == "en"
-            return if (isEn) listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
-            else listOf("LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM")
+            return Textos.get(R.string.day_labels_medium).split(",")
         }
 
     fun short(day: DayOfWeek): String = short[day.value - 1]

@@ -1,9 +1,20 @@
 package com.unistack.app.core.utils
 
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
+
+/**
+ * El resultado de validar un texto. El mensaje es un recurso y se resuelve **al leerlo**, en el
+ * idioma de la app: asi el validador sigue siendo puro y las pruebas no necesitan recursos.
+ */
 data class ValidationResult(
     val isValid: Boolean,
-    val errorMessage: String? = null
-)
+    val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList()
+) {
+    val errorMessage: String?
+        get() = errorRes?.let { Textos.get(it, *errorArgs.toTypedArray()) }
+}
 
 object TextValidators {
     private val letterRegex = Regex(".*\\p{L}.*")
@@ -17,21 +28,21 @@ object TextValidators {
         text: String,
         minLength: Int,
         maxLength: Int,
-        emptyError: String,
-        shortError: String,
-        longError: String,
-        repetitiveError: String,
-        noLetterError: String
+        emptyError: Int,
+        shortError: Int,
+        longError: Int,
+        repetitiveError: Int,
+        noLetterError: Int
     ): ValidationResult {
         val normalized = normalizeText(text)
         if (normalized.isBlank()) {
             return ValidationResult(false, emptyError)
         }
         if (normalized.length < minLength) {
-            return ValidationResult(false, shortError)
+            return ValidationResult(false, shortError, listOf(minLength))
         }
         if (normalized.length > maxLength) {
-            return ValidationResult(false, longError)
+            return ValidationResult(false, longError, listOf(maxLength))
         }
         if (repetitionRegex.containsMatchIn(normalized)) {
             return ValidationResult(false, repetitiveError)
@@ -47,11 +58,11 @@ object TextValidators {
             text = text,
             minLength = 2,
             maxLength = 30,
-            emptyError = "No puede estar vacío",
-            shortError = "Debe tener al menos 2 caracteres",
-            longError = "No puede exceder 30 caracteres",
-            repetitiveError = "Contiene repeticiones inválidas",
-            noLetterError = "Debe contener al menos una letra"
+            emptyError = R.string.validate_empty,
+            shortError = R.string.validate_min_chars,
+            longError = R.string.validate_max_chars,
+            repetitiveError = R.string.validate_repetitions,
+            noLetterError = R.string.validate_needs_letter
         )
     }
 
@@ -60,11 +71,11 @@ object TextValidators {
             text = text,
             minLength = 3,
             maxLength = 40,
-            emptyError = "Ingresa el nombre de la materia",
-            shortError = "El nombre es muy corto (mínimo 3 caracteres)",
-            longError = "El nombre es muy largo (máximo 40 caracteres)",
-            repetitiveError = "Contiene repeticiones inválidas",
-            noLetterError = "Debe contener letras (no solo números/símbolos)"
+            emptyError = R.string.validate_subject_empty,
+            shortError = R.string.validate_name_short,
+            longError = R.string.validate_name_long,
+            repetitiveError = R.string.validate_repetitions,
+            noLetterError = R.string.validate_needs_letters
         )
     }
 
@@ -73,11 +84,11 @@ object TextValidators {
             text = text,
             minLength = 3,
             maxLength = 40,
-            emptyError = "Ingresa el nombre de la actividad",
-            shortError = "El nombre es muy corto (mínimo 3 caracteres)",
-            longError = "El nombre es muy largo (máximo 40 caracteres)",
-            repetitiveError = "Contiene repeticiones inválidas",
-            noLetterError = "Debe contener al menos una letra"
+            emptyError = R.string.validate_activity_empty,
+            shortError = R.string.validate_name_short,
+            longError = R.string.validate_name_long,
+            repetitiveError = R.string.validate_repetitions,
+            noLetterError = R.string.validate_needs_letter
         )
     }
 
@@ -86,11 +97,11 @@ object TextValidators {
             text = text,
             minLength = 4,
             maxLength = 60,
-            emptyError = "Ingresa el nombre de la carrera o programa",
-            shortError = "El nombre es muy corto (mínimo 4 caracteres)",
-            longError = "El nombre es muy largo (máximo 60 caracteres)",
-            repetitiveError = "Contiene repeticiones inválidas",
-            noLetterError = "Debe contener letras (no solo números/símbolos)"
+            emptyError = R.string.validate_career_empty,
+            shortError = R.string.validate_name_short,
+            longError = R.string.validate_name_long,
+            repetitiveError = R.string.validate_repetitions,
+            noLetterError = R.string.validate_needs_letters
         )
     }
 }

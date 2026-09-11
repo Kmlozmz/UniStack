@@ -1,18 +1,24 @@
 package com.unistack.app.feature_notes.domain
 
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
+
 /** Lo que puede hacer la barra flotante del modo sencillo. */
-enum class NoteAction(val label: String) {
-    NEGRITA("Negrita"),
-    CURSIVA("Cursiva"),
-    TACHADO("Tachado"),
-    VINETA("Lista"),
-    NUMERADA("Lista numerada"),
-    CASILLA("Casilla"),
-    TITULO1("Título"),
-    TITULO2("Subtítulo"),
-    NORMAL("Texto normal"),
-    LIMPIAR("Quitar el formato"),
-    TABLA("Tabla")
+enum class NoteAction(val labelRes: Int) {
+    NEGRITA(R.string.note_action_bold),
+    CURSIVA(R.string.note_action_italic),
+    TACHADO(R.string.note_action_strike),
+    VINETA(R.string.note_action_list),
+    NUMERADA(R.string.note_action_numbered),
+    CASILLA(R.string.note_action_checkbox),
+    TITULO1(R.string.note_action_title),
+    TITULO2(R.string.note_action_subtitle),
+    NORMAL(R.string.note_action_normal),
+    LIMPIAR(R.string.note_action_clear),
+    TABLA(R.string.note_action_table);
+
+    /** El nombre en el idioma de la app. */
+    val label: String get() = Textos.get(labelRes)
 }
 
 /** Un texto y donde queda la seleccion despues de tocarlo. */

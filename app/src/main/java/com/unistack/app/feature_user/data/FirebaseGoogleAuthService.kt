@@ -17,6 +17,8 @@ import com.unistack.app.feature_user.domain.AccountAuthService
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.LinkedAccount
 import kotlinx.coroutines.tasks.await
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 class FirebaseGoogleAuthService : AccountAuthService {
 
@@ -40,7 +42,7 @@ class FirebaseGoogleAuthService : AccountAuthService {
                 .getCredential(context = context, request = request)
                 .credential
         } catch (exception: NoCredentialException) {
-            throw IllegalStateException("No hay credenciales de Google disponibles para iniciar sesión.", exception)
+            throw IllegalStateException(Textos.get(R.string.auth_err_no_credentials), exception)
         }
 
         val googleCredential = when {
@@ -57,7 +59,7 @@ class FirebaseGoogleAuthService : AccountAuthService {
 
         val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)
         val authResult = Firebase.auth.signInWithCredential(firebaseCredential).await()
-        val user = authResult.user ?: error("Firebase no devolvió usuario autenticado.")
+        val user = authResult.user ?: error(Textos.get(R.string.auth_err_no_user))
 
         LinkedAccount(
             provider = AuthProvider.GOOGLE,

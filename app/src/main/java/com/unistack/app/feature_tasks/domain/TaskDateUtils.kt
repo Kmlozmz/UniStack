@@ -14,6 +14,8 @@ import java.time.format.DateTimeFormatterBuilder
 import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 object TaskDateUtils {
     private val inputFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
@@ -86,26 +88,15 @@ object TaskDateUtils {
         val time = timeFromMillis(dueDateMillis)
         val timeText = if (time == LocalTime.MIDNIGHT) "" else " ${formatTime(time, use24HourTime)}"
         val diff = ChronoUnit.DAYS.between(today, dueDate)
-        val isEn = Locale.getDefault().language == "en"
-        return if (isEn) {
-            when (diff) {
-                -1L -> "overdue yesterday$timeText"
-                0L -> "due today$timeText"
-                1L -> "due tomorrow$timeText"
-                in Long.MIN_VALUE..-2L -> "overdue ${-diff} days ago$timeText"
-                in 2L..6L -> "due in $diff days$timeText"
-                else -> "due ${formatDate(dueDate, dateFormat)}$timeText"
-            }
-        } else {
-            when (diff) {
-                -1L -> "venció ayer$timeText"
-                0L -> "vence hoy$timeText"
-                1L -> "vence mañana$timeText"
-                in Long.MIN_VALUE..-2L -> "venció hace ${-diff} días$timeText"
-                in 2L..6L -> "vence en $diff días$timeText"
-                else -> "vence ${formatDate(dueDate, dateFormat)}$timeText"
-            }
-        }
+        // Fragmentos para ir dentro de una frase, en minuscula: quien los abra los levanta.
+        return when (diff) {
+            -1L -> Textos.get(R.string.due_overdue_yesterday)
+            0L -> Textos.get(R.string.due_today)
+            1L -> Textos.get(R.string.due_tomorrow)
+            in Long.MIN_VALUE..-2L -> Textos.get(R.string.due_overdue_days_ago, -diff)
+            in 2L..6L -> Textos.get(R.string.due_in_days, diff)
+            else -> Textos.get(R.string.due_on_date, formatDate(dueDate, dateFormat))
+        } + timeText
     }
 
     fun isToday(dueDateMillis: Long, today: LocalDate = today()): Boolean {

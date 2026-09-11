@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RoomAcademicBreakRepository(
@@ -47,8 +49,8 @@ class RoomAcademicBreakRepository(
         end: LocalDate
     ): Result<AcademicBreak> = runCatching {
         val limpio = name.trim()
-        require(limpio.isNotBlank()) { "Ponle un nombre para reconocerlo después." }
-        require(!end.isBefore(start)) { "No puede acabar antes de empezar." }
+        require(limpio.isNotBlank()) { Textos.get(R.string.break_err_name) }
+        require(!end.isBefore(start)) { Textos.get(R.string.break_err_order) }
 
         val existente = id?.let { dao.byId(it, userIds) }
         val now = System.currentTimeMillis()

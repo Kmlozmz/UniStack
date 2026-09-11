@@ -2389,4 +2389,135 @@ your course catalog.</string>
     <string name="update_no_notes">No release notes.</string>
     <string name="update_err_unsigned">The downloaded update is not signed by UniStack.</string>
     <string name="update_err_download">The download failed. Try again.</string>
+
+    <!-- Programas por area, para el onboarding -->
+    <string-array name="setup_programs_engineering">
+        <item>Systems Engineering</item>
+        <item>Industrial Engineering</item>
+        <item>Civil Engineering</item>
+        <item>Mechanical Engineering</item>
+        <item>Electronic Engineering</item>
+        <item>Environmental Engineering</item>
+        <item>Software Engineering</item>
+    </string-array>
+    <string-array name="setup_programs_economics">
+        <item>Public Accounting</item>
+        <item>Business Administration</item>
+        <item>Economics</item>
+        <item>Finance</item>
+        <item>Marketing</item>
+        <item>International Business</item>
+    </string-array>
+    <string-array name="setup_programs_law">
+        <item>Law</item>
+        <item>Political Science</item>
+        <item>Criminology</item>
+    </string-array>
+    <string-array name="setup_programs_health">
+        <item>Medicine</item>
+        <item>Nursing</item>
+        <item>Dentistry</item>
+        <item>Physical Therapy</item>
+        <item>Nutrition</item>
+        <item>Bacteriology</item>
+    </string-array>
+    <string-array name="setup_programs_education">
+        <item>Early Childhood Education</item>
+        <item>Mathematics Education</item>
+        <item>Languages Education</item>
+        <item>Social Studies Education</item>
+        <item>Physical Education</item>
+    </string-array>
+    <string-array name="setup_programs_arts">
+        <item>Graphic Design</item>
+        <item>Industrial Design</item>
+        <item>Fashion Design</item>
+        <item>Visual Arts</item>
+        <item>Music</item>
+    </string-array>
+    <string-array name="setup_programs_social">
+        <item>Psychology</item>
+        <item>Social Work</item>
+        <item>Social Communication</item>
+        <item>Sociology</item>
+        <item>Anthropology</item>
+    </string-array>
+    <string-array name="setup_programs_basic">
+        <item>Mathematics</item>
+        <item>Physics</item>
+        <item>Chemistry</item>
+        <item>Biology</item>
+        <item>Statistics</item>
+    </string-array>
+
+    <!-- Bloque B: validadores, fechas, notas, preferencias, repositorios -->
+    <string name="validate_empty">It cannot be empty</string>
+    <string name="validate_min_chars">It needs at least %1$s characters</string>
+    <string name="validate_max_chars">It cannot exceed %1$s characters</string>
+    <string name="validate_repetitions">It contains invalid repetitions</string>
+    <string name="validate_needs_letter">It needs at least one letter</string>
+    <string name="validate_subject_empty">Enter the subject name</string>
+    <string name="validate_name_short">The name is too short (at least %1$s characters)</string>
+    <string name="validate_name_long">The name is too long (at most %1$s characters)</string>
+    <string name="validate_needs_letters">It needs letters (not only numbers or symbols)</string>
+    <string name="validate_activity_empty">Enter the activity name</string>
+    <string name="validate_career_empty">Enter the degree or program name</string>
+    <string name="due_overdue_yesterday">overdue yesterday</string>
+    <string name="due_today">due today</string>
+    <string name="due_tomorrow">due tomorrow</string>
+    <string name="due_overdue_days_ago">overdue %1$s days ago</string>
+    <string name="due_in_days">due in %1$s days</string>
+    <string name="due_on_date">due %1$s</string>
+    <string name="day_labels_medium">MON,TUE,WED,THU,FRI,SAT,SUN</string>
+    <string name="day_labels_short">M,T,W,T,F,S,S</string>
+    <string name="reminder_today_at">Today %1$s</string>
+    <string name="reminder_tomorrow_at">Tomorrow %1$s</string>
+    <string name="reminder_yesterday_at">Yesterday %1$s</string>
+    <string name="note_action_bold">Bold</string>
+    <string name="note_action_italic">Italic</string>
+    <string name="note_action_strike">Strikethrough</string>
+    <string name="note_action_list">List</string>
+    <string name="note_action_numbered">Numbered list</string>
+    <string name="note_action_checkbox">Checkbox</string>
+    <string name="note_action_title">Title</string>
+    <string name="note_action_subtitle">Subtitle</string>
+    <string name="note_action_normal">Normal text</string>
+    <string name="note_action_clear">Clear formatting</string>
+    <string name="note_action_table">Table</string>
+    <string name="attachment_photo">Photo</string>
+    <string name="attachment_recording">Recording</string>
+    <string name="attachment_file">File</string>
+    <string name="date_format_dmy">Day / Month / Year</string>
+    <string name="date_format_mdy">Month / Day / Year</string>
+    <string name="date_format_ymd">Year / Month / Day</string>
+    <string name="currency_cop">Colombian peso (COP)</string>
+    <string name="currency_usd">US dollar (USD)</string>
+    <string name="currency_eur">Euro (EUR)</string>
+    <string name="currency_mxn">Mexican peso (MXN)</string>
+    <string name="currency_ars">Argentine peso (ARS)</string>
+    <string name="currency_clp">Chilean peso (CLP)</string>
+    <string name="currency_pen">Peruvian sol (PEN)</string>
+    <string name="term_err_already_active">There is already a period in progress. Close it before starting another.</string>
+    <string name="term_err_invalid">That period is not valid.</string>
+    <string name="term_err_missing">That period no longer exists.</string>
+    <string name="term_err_closed">That period was already closed.</string>
+    <string name="term_err_close_before_start">A period cannot be closed before the day it started.</string>
+    <string name="break_err_name">Give it a name so you can recognise it later.</string>
+    <string name="break_err_order">It cannot end before it starts.</string>
+    <string name="backup_err_version">Unsupported backup version.</string>
+    <string name="report_title">UniStack academic report</string>
+    <string name="report_student">Student: %1$s</string>
+    <string name="auth_err_no_credentials">No Google credentials are available to sign in.</string>
+    <string name="auth_err_no_user">Firebase did not return a signed-in user.</string>
+    <string name="count_grade_one">1 grade</string>
+    <string name="count_grade_many">%1$s grades</string>
+    <string name="count_subject_one">1 subject</string>
+    <string name="count_subject_many">%1$s subjects</string>
+    <string name="home_overdue_one_first">There is one overdue task best closed first.</string>
+    <string name="home_overdue_many_first">There are %1$s overdue tasks best closed first.</string>
+    <string name="home_small_progress_saves_pressure">A little progress on %1$s today can save pressure later.</string>
+    <string name="home_title_verb_separator"> is </string>
+    <string name="term_gap_unmarked_one">%1$s — 1 class unmarked</string>
+    <string name="term_gap_unmarked_many">%1$s — %2$s classes unmarked</string>
+    <string name="setup_other_option">Other</string>
 </resources>

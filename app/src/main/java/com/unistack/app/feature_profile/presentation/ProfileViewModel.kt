@@ -61,17 +61,8 @@ data class GradingScaleChangeImpact(
     val isDestructive: Boolean get() = gradeCount > 0
 
     fun describe(): String {
-        val isEn = java.util.Locale.getDefault().language == "en"
-        val notas = if (isEn) {
-            if (gradeCount == 1) "1 grade" else "$gradeCount grades"
-        } else {
-            if (gradeCount == 1) "1 nota" else "$gradeCount notas"
-        }
-        val materias = if (isEn) {
-            if (subjectCount == 1) "1 subject" else "$subjectCount subjects"
-        } else {
-            if (subjectCount == 1) "1 materia" else "$subjectCount materias"
-        }
+        val notas = if (gradeCount == 1) Textos.get(R.string.count_grade_one) else Textos.get(R.string.count_grade_many, gradeCount)
+        val materias = if (subjectCount == 1) Textos.get(R.string.count_subject_one) else Textos.get(R.string.count_subject_many, subjectCount)
         return Textos.get(R.string.profile_en, notas, materias)
     }
 }

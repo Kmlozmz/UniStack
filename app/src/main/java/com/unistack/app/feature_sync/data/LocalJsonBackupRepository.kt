@@ -59,6 +59,8 @@ import com.unistack.app.feature_user.domain.VisualPreference
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 class LocalJsonBackupRepository(
     private val userRepository: UserRepository,
@@ -88,7 +90,7 @@ class LocalJsonBackupRepository(
 
     override fun previewBackupJson(json: String): Result<LocalBackupPreview> = runCatching {
         val root = JSONObject(json)
-        check(root.optInt("schemaVersion") in 1..SCHEMA_VERSION) { "Versión de backup no soportada." }
+        check(root.optInt("schemaVersion") in 1..SCHEMA_VERSION) { Textos.get(R.string.backup_err_version) }
         val subjects = root.optJSONArray("subjects") ?: JSONArray()
         val grades = (0 until subjects.length()).sumOf { index ->
             subjects.optJSONObject(index)?.optJSONArray("grades")?.length() ?: 0
@@ -154,8 +156,8 @@ class LocalJsonBackupRepository(
         val profile = userRepository.userProfile.value
         val scale = profile?.gradingScale
         return buildString {
-            appendLine("Reporte académico UniStack")
-            appendLine("Estudiante: ${profile?.preferredName?.takeIf { it.isNotBlank() } ?: "Estudiante"}")
+            appendLine(Textos.get(R.string.report_title))
+            appendLine(Textos.get(R.string.report_student, profile?.preferredName?.takeIf { it.isNotBlank() } ?: Textos.get(R.string.settings_profile_student)))
             appendLine()
             gradesRepository.subjects.value.forEach { subject ->
                 val average = GradeCalculator.calculateCurrentAverageByCuts(
@@ -185,7 +187,7 @@ class LocalJsonBackupRepository(
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
         var page = document.startPage(pageInfo)
         var y = 48f
-        page.canvas.drawText("Reporte académico UniStack", 40f, y, titlePaint)
+        page.canvas.drawText(Textos.get(R.string.report_title), 40f, y, titlePaint)
         y += 28f
         exportAcademicReport().lineSequence().forEach { line ->
             if (y > 800f) {

@@ -2388,4 +2388,135 @@ a tu medida</string>
     <string name="update_no_notes">Sin notas de la versión.</string>
     <string name="update_err_unsigned">La actualización descargada no está firmada por UniStack.</string>
     <string name="update_err_download">La descarga falló. Intenta de nuevo.</string>
+
+    <!-- Programas por area, para el onboarding -->
+    <string-array name="setup_programs_engineering">
+        <item>Ingeniería de Sistemas</item>
+        <item>Ingeniería Industrial</item>
+        <item>Ingeniería Civil</item>
+        <item>Ingeniería Mecánica</item>
+        <item>Ingeniería Electrónica</item>
+        <item>Ingeniería Ambiental</item>
+        <item>Ingeniería de Software</item>
+    </string-array>
+    <string-array name="setup_programs_economics">
+        <item>Contaduría Pública</item>
+        <item>Administración de Empresas</item>
+        <item>Economía</item>
+        <item>Finanzas</item>
+        <item>Mercadeo</item>
+        <item>Negocios Internacionales</item>
+    </string-array>
+    <string-array name="setup_programs_law">
+        <item>Derecho</item>
+        <item>Ciencias Políticas</item>
+        <item>Criminalística</item>
+    </string-array>
+    <string-array name="setup_programs_health">
+        <item>Medicina</item>
+        <item>Enfermería</item>
+        <item>Odontología</item>
+        <item>Fisioterapia</item>
+        <item>Nutrición</item>
+        <item>Bacteriología</item>
+    </string-array>
+    <string-array name="setup_programs_education">
+        <item>Licenciatura en Educación Infantil</item>
+        <item>Licenciatura en Matemáticas</item>
+        <item>Licenciatura en Lenguas</item>
+        <item>Licenciatura en Ciencias Sociales</item>
+        <item>Licenciatura en Educación Física</item>
+    </string-array>
+    <string-array name="setup_programs_arts">
+        <item>Diseño Gráfico</item>
+        <item>Diseño Industrial</item>
+        <item>Diseño de Modas</item>
+        <item>Artes Visuales</item>
+        <item>Música</item>
+    </string-array>
+    <string-array name="setup_programs_social">
+        <item>Psicología</item>
+        <item>Trabajo Social</item>
+        <item>Comunicación Social</item>
+        <item>Sociología</item>
+        <item>Antropología</item>
+    </string-array>
+    <string-array name="setup_programs_basic">
+        <item>Matemáticas</item>
+        <item>Física</item>
+        <item>Química</item>
+        <item>Biología</item>
+        <item>Estadística</item>
+    </string-array>
+
+    <!-- Bloque B: validadores, fechas, notas, preferencias, repositorios -->
+    <string name="validate_empty">No puede estar vacío</string>
+    <string name="validate_min_chars">Debe tener al menos %1$s caracteres</string>
+    <string name="validate_max_chars">No puede exceder %1$s caracteres</string>
+    <string name="validate_repetitions">Contiene repeticiones inválidas</string>
+    <string name="validate_needs_letter">Debe contener al menos una letra</string>
+    <string name="validate_subject_empty">Ingresa el nombre de la materia</string>
+    <string name="validate_name_short">El nombre es muy corto (mínimo %1$s caracteres)</string>
+    <string name="validate_name_long">El nombre es muy largo (máximo %1$s caracteres)</string>
+    <string name="validate_needs_letters">Debe contener letras (no solo números/símbolos)</string>
+    <string name="validate_activity_empty">Ingresa el nombre de la actividad</string>
+    <string name="validate_career_empty">Ingresa el nombre de la carrera o programa</string>
+    <string name="due_overdue_yesterday">venció ayer</string>
+    <string name="due_today">vence hoy</string>
+    <string name="due_tomorrow">vence mañana</string>
+    <string name="due_overdue_days_ago">venció hace %1$s días</string>
+    <string name="due_in_days">vence en %1$s días</string>
+    <string name="due_on_date">vence %1$s</string>
+    <string name="day_labels_medium">LUN,MAR,MIÉ,JUE,VIE,SÁB,DOM</string>
+    <string name="day_labels_short">L,M,X,J,V,S,D</string>
+    <string name="reminder_today_at">Hoy %1$s</string>
+    <string name="reminder_tomorrow_at">Mañana %1$s</string>
+    <string name="reminder_yesterday_at">Ayer %1$s</string>
+    <string name="note_action_bold">Negrita</string>
+    <string name="note_action_italic">Cursiva</string>
+    <string name="note_action_strike">Tachado</string>
+    <string name="note_action_list">Lista</string>
+    <string name="note_action_numbered">Lista numerada</string>
+    <string name="note_action_checkbox">Casilla</string>
+    <string name="note_action_title">Título</string>
+    <string name="note_action_subtitle">Subtítulo</string>
+    <string name="note_action_normal">Texto normal</string>
+    <string name="note_action_clear">Quitar el formato</string>
+    <string name="note_action_table">Tabla</string>
+    <string name="attachment_photo">Foto</string>
+    <string name="attachment_recording">Grabación</string>
+    <string name="attachment_file">Archivo</string>
+    <string name="date_format_dmy">Día / Mes / Año</string>
+    <string name="date_format_mdy">Mes / Día / Año</string>
+    <string name="date_format_ymd">Año / Mes / Día</string>
+    <string name="currency_cop">Peso colombiano (COP)</string>
+    <string name="currency_usd">Dólar estadounidense (USD)</string>
+    <string name="currency_eur">Euro (EUR)</string>
+    <string name="currency_mxn">Peso mexicano (MXN)</string>
+    <string name="currency_ars">Peso argentino (ARS)</string>
+    <string name="currency_clp">Peso chileno (CLP)</string>
+    <string name="currency_pen">Sol peruano (PEN)</string>
+    <string name="term_err_already_active">Ya hay un periodo en curso. Ciérralo antes de empezar otro.</string>
+    <string name="term_err_invalid">Ese periodo no es válido.</string>
+    <string name="term_err_missing">Ese periodo ya no existe.</string>
+    <string name="term_err_closed">Ese periodo ya estaba cerrado.</string>
+    <string name="term_err_close_before_start">No se puede cerrar un periodo antes del día en que empezó.</string>
+    <string name="break_err_name">Ponle un nombre para reconocerlo después.</string>
+    <string name="break_err_order">No puede acabar antes de empezar.</string>
+    <string name="backup_err_version">Versión de backup no soportada.</string>
+    <string name="report_title">Reporte académico UniStack</string>
+    <string name="report_student">Estudiante: %1$s</string>
+    <string name="auth_err_no_credentials">No hay credenciales de Google disponibles para iniciar sesión.</string>
+    <string name="auth_err_no_user">Firebase no devolvió usuario autenticado.</string>
+    <string name="count_grade_one">1 nota</string>
+    <string name="count_grade_many">%1$s notas</string>
+    <string name="count_subject_one">1 materia</string>
+    <string name="count_subject_many">%1$s materias</string>
+    <string name="home_overdue_one_first">Hay una tarea vencida que conviene cerrar primero.</string>
+    <string name="home_overdue_many_first">Hay %1$s tareas vencidas que conviene cerrar primero.</string>
+    <string name="home_small_progress_saves_pressure">Un avance pequeño en %1$s hoy puede ahorrarte presión después.</string>
+    <string name="home_title_verb_separator"> es </string>
+    <string name="term_gap_unmarked_one">%1$s — 1 clase sin marcar</string>
+    <string name="term_gap_unmarked_many">%1$s — %2$s clases sin marcar</string>
+    <string name="setup_other_option">Otra</string>
 </resources>

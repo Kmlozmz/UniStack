@@ -198,13 +198,10 @@ object TermCloseCheck {
 }
 
 /** Cómo se dice un hueco en una línea, para la lista de la comprobación. */
-private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
 
 fun TermGap.title(): String = when (this) {
     is TermGap.MissingCut -> Textos.get(R.string.term_falta_el, subjectName, cutName)
-    is TermGap.UnmarkedClasses ->
-        if (isEnglish) "$subjectName — $count ${if (count == 1) "class" else "classes"} unmarked"
-        else "$subjectName — $count ${if (count == 1) "clase" else "clases"} sin marcar"
+    is TermGap.UnmarkedClasses -> if (count == 1) Textos.get(R.string.term_gap_unmarked_one, subjectName) else Textos.get(R.string.term_gap_unmarked_many, subjectName, count)
     is TermGap.OverdueTask -> Textos.get(R.string.term_sin_entregar, title)
 }
 
@@ -221,14 +218,5 @@ fun List<TermGap>.summaryLine(): String = when (size) {
     else -> Textos.get(R.string.term_hay_cosas_sin_terminar, size)
 }
 
-private val MesesLargosEs = listOf(
-    "enero", "febrero", "marzo", "abril", "mayo", "junio",
-    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-)
-private val MesesLargosEn = listOf(
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-)
-
 private fun mesLargo(date: LocalDate): String =
-    if (isEnglish) MesesLargosEn[date.monthValue - 1] else MesesLargosEs[date.monthValue - 1]
+    date.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
