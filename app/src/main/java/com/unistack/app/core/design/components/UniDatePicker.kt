@@ -31,6 +31,8 @@ import androidx.compose.runtime.Composable
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * Convierte a la fecha local que el usuario ve.
@@ -114,7 +116,7 @@ fun UniDatePickerDialog(
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        TextButton(onClick = onDismiss) { Text("Cancelar") }
+                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                         TextButton(
                             onClick = {
                                 state.selectedDateMillis?.let { onDateSelected(it.toLocalDate()) }
@@ -123,7 +125,7 @@ fun UniDatePickerDialog(
                             // Sin fecha marcada no hay nada que aceptar, y un botón que no
                             // hace nada se pulsa igual y deja pensando que se ha colgado.
                             enabled = state.selectedDateMillis != null
-                        ) { Text("Aceptar") }
+                        ) { Text(stringResource(R.string.action_accept)) }
                     }
                 }
             }
@@ -186,7 +188,7 @@ fun UniDateRangePickerDialog(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancelar") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                     TextButton(
                         onClick = {
                             val from = state.selectedStartDateMillis
@@ -199,7 +201,7 @@ fun UniDateRangePickerDialog(
                         // Con un solo extremo marcado el periodo no existe todavía.
                         enabled = state.selectedStartDateMillis != null &&
                             state.selectedEndDateMillis != null
-                    ) { Text("Aceptar") }
+                    ) { Text(stringResource(R.string.action_accept)) }
                 }
             }
         }

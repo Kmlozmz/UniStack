@@ -2519,4 +2519,20 @@ a tu medida</string>
     <string name="term_gap_unmarked_one">%1$s — 1 clase sin marcar</string>
     <string name="term_gap_unmarked_many">%1$s — %2$s clases sin marcar</string>
     <string name="setup_other_option">Otra</string>
+
+    <!-- Bloque C: el horario y las piezas de core -->
+    <string name="schedule_identity_item_one">1 elemento</string>
+    <string name="schedule_identity_item_many">%1$s elementos</string>
+    <string name="schedule_identity_class_count_one">1 clase</string>
+    <string name="schedule_identity_class_count_many">%1$s clases</string>
+    <string name="schedule_identity_week_range_same_month">%1$s - %2$s de %3$s</string>
+    <string name="schedule_identity_week_range_two_months">%1$s de %2$s - %3$s de %4$s</string>
+    <string name="common_replay_animation">Repetir animación</string>
+    <string name="common_clear_search">Vaciar la búsqueda</string>
+    <string name="common_press_again_to_exit">Presiona de nuevo para salir</string>
+    <string name="fab_task">Tarea</string>
+    <string name="fab_expense">Gasto</string>
+    <string name="fab_close_menu">Cerrar menú</string>
+    <string name="time_picker_clock">Reloj</string>
+    <string name="time_picker_keyboard">Teclado</string>
 </resources>

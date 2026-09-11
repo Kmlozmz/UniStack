@@ -2520,4 +2520,20 @@ your course catalog.</string>
     <string name="term_gap_unmarked_one">%1$s — 1 class unmarked</string>
     <string name="term_gap_unmarked_many">%1$s — %2$s classes unmarked</string>
     <string name="setup_other_option">Other</string>
+
+    <!-- Bloque C: el horario y las piezas de core -->
+    <string name="schedule_identity_item_one">1 item</string>
+    <string name="schedule_identity_item_many">%1$s items</string>
+    <string name="schedule_identity_class_count_one">1 class</string>
+    <string name="schedule_identity_class_count_many">%1$s classes</string>
+    <string name="schedule_identity_week_range_same_month">%3$s %1$s - %2$s</string>
+    <string name="schedule_identity_week_range_two_months">%2$s %1$s - %4$s %3$s</string>
+    <string name="common_replay_animation">Replay animation</string>
+    <string name="common_clear_search">Clear the search</string>
+    <string name="common_press_again_to_exit">Press again to exit</string>
+    <string name="fab_task">Task</string>
+    <string name="fab_expense">Expense</string>
+    <string name="fab_close_menu">Close menu</string>
+    <string name="time_picker_clock">Clock</string>
+    <string name="time_picker_keyboard">Keyboard</string>
 </resources>

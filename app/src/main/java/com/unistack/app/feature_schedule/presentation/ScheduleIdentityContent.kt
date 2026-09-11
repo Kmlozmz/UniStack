@@ -110,6 +110,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 internal enum class IdentityScheduleView {
     TIMETABLE,
     CALENDAR
@@ -237,7 +238,7 @@ internal fun ScheduleIdentityContent(
                     FullScheduleLaunchCard(onClick = onOpenFullSchedule)
                 }
                 item {
-                    IdentityPrimaryButton(label = "Agregar clase", onClick = onAddClass)
+                    IdentityPrimaryButton(label = stringResource(R.string.schedule_add_class), onClick = onAddClass)
                 }
             }
 
@@ -276,7 +277,7 @@ internal fun ScheduleIdentityContent(
                     )
                 }
                 item {
-                    IdentityPrimaryButton(label = "Agregar a la agenda", onClick = onAddEvent)
+                    IdentityPrimaryButton(label = stringResource(R.string.schedule_identity_add_agenda), onClick = onAddEvent)
                 }
             }
         }
@@ -332,20 +333,20 @@ private fun FullScheduleLaunchCard(onClick: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "Horario completo",
+                    stringResource(R.string.schedule_identity_full_schedule),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "Las 24 horas, los 7 días, semana a semana",
+                    stringResource(R.string.schedule_identity_full_schedule_desc),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = "Abrir horario completo",
+                contentDescription = stringResource(R.string.schedule_identity_open_full_schedule),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(22.dp)
             )
@@ -392,11 +393,11 @@ private fun IdentitySurface(
 @Composable
 private fun IdentityHeader(view: IdentityScheduleView) {
     SectionHeader(
-        title = if (view == IdentityScheduleView.TIMETABLE) "Horario" else "Calendario",
+        title = if (view == IdentityScheduleView.TIMETABLE) stringResource(R.string.schedule_identity_schedule) else stringResource(R.string.schedule_identity_calendar),
         subtitle = if (view == IdentityScheduleView.TIMETABLE) {
-            "Clases y bloques de tu semana en un mismo lugar."
+            stringResource(R.string.schedule_identity_schedule_desc)
         } else {
-            "Fechas, eventos y entregas de tu mes."
+            stringResource(R.string.schedule_identity_calendar_desc)
         }
     )
 }
@@ -409,8 +410,8 @@ private fun IdentityModeSwitch(
     UniSegmentedControl(
         selected = view,
         options = listOf(
-            UniSegmentedOption(IdentityScheduleView.TIMETABLE, "Horario", Icons.AutoMirrored.Rounded.MenuBook),
-            UniSegmentedOption(IdentityScheduleView.CALENDAR, "Calendario", Icons.Rounded.CalendarMonth)
+            UniSegmentedOption(IdentityScheduleView.TIMETABLE, stringResource(R.string.schedule_identity_schedule), Icons.AutoMirrored.Rounded.MenuBook),
+            UniSegmentedOption(IdentityScheduleView.CALENDAR, stringResource(R.string.schedule_identity_calendar), Icons.Rounded.CalendarMonth)
         ),
         onSelected = onViewChange,
         modifier = Modifier.fillMaxWidth()
@@ -459,7 +460,7 @@ private fun TimetableMetrics(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             iconColor = LocalSectionColors.current.schedule,
             value = subjectCount.toString(),
-            label = if (subjectCount == 1) "Materia" else "Materias",
+            label = if (subjectCount == 1) stringResource(R.string.schedule_identity_subject) else stringResource(R.string.schedule_identity_subjects),
             onClick = onSubjectsClick
         )
         // Etiquetas de una palabra: en tres columnas, «Clases hoy» y «Esta semana» salían
@@ -605,11 +606,11 @@ private fun IdentityMetricDetailsSheet(
 
     val title = when (detail) {
         IdentityMetricDetail.SUBJECTS -> stringResource(R.string.schedule_identity_subjects_in_schedule)
-        IdentityMetricDetail.TODAY -> "Clases de hoy"
-        IdentityMetricDetail.WEEK -> "Horas de clase"
+        IdentityMetricDetail.TODAY -> stringResource(R.string.schedule_identity_classes_today)
+        IdentityMetricDetail.WEEK -> stringResource(R.string.schedule_identity_class_hours)
         IdentityMetricDetail.EVENTS -> stringResource(R.string.schedule_identity_events_of_month, month.format(DateTimeFormatter.ofPattern("MMMM", IdentityLocale)).identityCapitalized())
-        IdentityMetricDetail.DELIVERIES -> "Entregas pendientes"
-        IdentityMetricDetail.EXAMS -> "Exámenes pendientes"
+        IdentityMetricDetail.DELIVERIES -> stringResource(R.string.schedule_identity_pending_due_dates)
+        IdentityMetricDetail.EXAMS -> stringResource(R.string.schedule_identity_pending_exams)
     }
     val icon = when (detail) {
         IdentityMetricDetail.SUBJECTS -> Icons.AutoMirrored.Rounded.MenuBook
@@ -640,9 +641,9 @@ private fun IdentityMetricDetailsSheet(
             val weekStart = selectedDate.weekStartIdentity()
             val range = "${weekStart.format(DateTimeFormatter.ofPattern("d MMM", IdentityLocale))} - " +
                 weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("d MMM", IdentityLocale))
-            "${weeklyHoursLabel(weekMinutes)} en total  •  $range"
+            stringResource(R.string.schedule_identity_weekly_total, weeklyHoursLabel(weekMinutes), range)
         }
-        else -> "$count ${if (count == 1) "elemento" else "elementos"}"
+        else -> if (count == 1) stringResource(R.string.schedule_identity_item_one) else stringResource(R.string.schedule_identity_item_many, count)
     }
     val emptyMessage = when (detail) {
         IdentityMetricDetail.TODAY -> stringResource(R.string.schedule_identity_no_classes_today)
@@ -713,7 +714,7 @@ private fun IdentityMetricDetailsSheet(
                             IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                                 IdentityEventRow(
                                     color = subject.identityColor(),
-                                    title = subject?.name ?: "Materia",
+                                    title = subject?.name ?: stringResource(R.string.schedule_identity_subject),
                                     detail = "$days  \u2022  ${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  \u2022  ${session.identityPlace().room.ifBlank { stringResource(R.string.schedule_detail_no_room) }}",
                                     onClick = { onSessionClick(occurrenceDate, session) }
                                 )
@@ -728,7 +729,7 @@ private fun IdentityMetricDetailsSheet(
                             IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                                 IdentityEventRow(
                                     color = subject.identityColor(),
-                                    title = subject?.name ?: "Clase",
+                                    title = subject?.name ?: stringResource(R.string.schedule_detail_class),
                                     detail = "${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  •  ${session.identityPlace().room.ifBlank { stringResource(R.string.schedule_detail_no_room) }}",
                                     onClick = { onSessionClick(today, session) }
                                 )
@@ -744,7 +745,7 @@ private fun IdentityMetricDetailsSheet(
                                 IdentityEventRow(
                                     color = IdentityAccent,
                                     title = date.format(DateTimeFormatter.ofPattern("EEEE d", IdentityLocale)).identityCapitalized(),
-                                    detail = "${weeklyHoursLabel(dayMinutes)}  •  ${daySessions.size} ${if (daySessions.size == 1) "clase" else "clases"}  •  ${formatIdentityMinute(daySessions.first().startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(daySessions.maxOf { it.endMinute }, uiState.accessibility.use24HourTime)}",
+                                    detail = "${weeklyHoursLabel(dayMinutes)}  •  ${if (daySessions.size == 1) stringResource(R.string.schedule_identity_class_count_one) else stringResource(R.string.schedule_identity_class_count_many, daySessions.size)}  •  ${formatIdentityMinute(daySessions.first().startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(daySessions.maxOf { it.endMinute }, uiState.accessibility.use24HourTime)}",
                                     onClick = { onSessionClick(date, daySessions.first()) }
                                 )
                             }
@@ -852,7 +853,7 @@ private fun IdentityWeeklyTimeline(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = weeklyHoursLabel(weekMinutes) + " de clase",
+                text = weeklyHoursLabel(weekMinutes) + stringResource(R.string.schedule_identity_of_class),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold
@@ -1007,9 +1008,9 @@ private fun weekRangeLabel(weekStart: LocalDate, lastVisibleDay: Int): String {
     val startMonth = weekStart.format(month)
     val endMonth = weekEnd.format(month)
     return if (weekStart.month == weekEnd.month) {
-        "${weekStart.dayOfMonth} - ${weekEnd.dayOfMonth} de $startMonth"
+        Textos.get(R.string.schedule_identity_week_range_same_month, weekStart.dayOfMonth, weekEnd.dayOfMonth, startMonth)
     } else {
-        "${weekStart.dayOfMonth} de $startMonth - ${weekEnd.dayOfMonth} de $endMonth"
+        Textos.get(R.string.schedule_identity_week_range_two_months, weekStart.dayOfMonth, startMonth, weekEnd.dayOfMonth, endMonth)
     }
 }
 
@@ -1090,7 +1091,7 @@ private fun WeekDayClassList(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = subject?.name ?: "Clase",
+                        text = subject?.name ?: stringResource(R.string.schedule_detail_class),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
@@ -1150,11 +1151,11 @@ private fun WeekDayClassList(
 @Composable
 private fun AttendanceDot(status: ClassAttendanceStatus) {
     val (tono, texto) = when (status) {
-        ClassAttendanceStatus.ATTENDED -> LocalSectionColors.current.schedule to "Asistí"
-        ClassAttendanceStatus.ABSENT -> MaterialTheme.colorScheme.error to "Falta"
-        ClassAttendanceStatus.CANCELLED -> MaterialTheme.colorScheme.tertiary to "Cancelada"
-        ClassAttendanceStatus.RESCHEDULED -> MaterialTheme.colorScheme.secondary to "Movida"
-        ClassAttendanceStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant to "Sin marcar"
+        ClassAttendanceStatus.ATTENDED -> LocalSectionColors.current.schedule to stringResource(R.string.schedule_status_attended)
+        ClassAttendanceStatus.ABSENT -> MaterialTheme.colorScheme.error to stringResource(R.string.schedule_status_absent)
+        ClassAttendanceStatus.CANCELLED -> MaterialTheme.colorScheme.tertiary to stringResource(R.string.schedule_status_canceled)
+        ClassAttendanceStatus.RESCHEDULED -> MaterialTheme.colorScheme.secondary to stringResource(R.string.schedule_status_moved)
+        ClassAttendanceStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant to stringResource(R.string.schedule_status_unmarked)
     }
     Surface(shape = CircleShape, color = tono.copy(alpha = 0.16f)) {
         Text(
@@ -1231,12 +1232,12 @@ private fun NextClassPanel(
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "PRÓXIMA CLASE",
+                        stringResource(R.string.schedule_identity_upcoming_class),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = SectionLabelStyle
                     )
                     Text(
-                        "No hay clases programadas",
+                        stringResource(R.string.schedule_identity_no_upcoming_classes),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
@@ -1277,12 +1278,12 @@ private fun NextClassPanel(
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "PRÓXIMA CLASE",
+                    stringResource(R.string.schedule_identity_upcoming_class),
                     color = section.onScheduleContainer,
                     style = SectionLabelStyle
                 )
                 Text(
-                    subject?.name ?: "Clase",
+                    subject?.name ?: stringResource(R.string.schedule_detail_class),
                     color = section.onScheduleContainer,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
@@ -1310,7 +1311,7 @@ private fun NextClassPanel(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "Abrir",
+                    stringResource(R.string.schedule_identity_open),
                     color = section.scheduleContainer,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
@@ -1343,13 +1344,13 @@ private fun nextClassDetail(
             val now = LocalTime.now()
             val minutesAway = session.startMinute - (now.hour * 60 + now.minute)
             when {
-                minutesAway <= 0 -> "Ahora"
-                minutesAway < 60 -> "En $minutesAway min"
-                minutesAway < 120 -> "En 1 h"
-                else -> "En ${minutesAway / 60} h"
+                minutesAway <= 0 -> Textos.get(R.string.schedule_identity_now)
+                minutesAway < 60 -> Textos.get(R.string.schedule_identity_in_minutes, minutesAway)
+                minutesAway < 120 -> Textos.get(R.string.schedule_identity_in_one_hour)
+                else -> Textos.get(R.string.schedule_identity_in_hours, minutesAway / 60)
             }
         }
-        date == today.plusDays(1) -> "Mañana"
+        date == today.plusDays(1) -> Textos.get(R.string.schedule_identity_tomorrow)
         else -> date.format(DateTimeFormatter.ofPattern("EEEE", IdentityLocale)).identityCapitalized()
     }
     return listOfNotNull(lead, time, room).joinToString("  •  ")
@@ -1575,7 +1576,7 @@ private fun SelectedDayPanel(
             IdentityAgendaRow(
                 kind = "CLASE",
                 color = subject.identityColor(),
-                title = subject?.name ?: "Clase",
+                title = subject?.name ?: stringResource(R.string.schedule_detail_class),
                 detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
                     formatIdentityMinute(session.endMinute, use24Hour) + "  •  " +
                     session.identityPlace().room.ifBlank { stringResource(R.string.schedule_detail_no_room) },
@@ -1590,7 +1591,7 @@ private fun SelectedDayPanel(
                 kind = if (isExam) "EXAMEN" else "ENTREGA",
                 color = subject.identityColor(),
                 title = task.title,
-                detail = subject?.name ?: if (isExam) "Evaluación" else "Entrega",
+                detail = subject?.name ?: if (isExam) stringResource(R.string.schedule_identity_type_evaluation) else stringResource(R.string.schedule_identity_type_assignment),
                 onClick = { onTaskClick(task.id) }
             )
         }
@@ -1652,10 +1653,10 @@ private fun IdentityAgendaRow(
 
 /** Cómo se llama cada tipo de evento cuando cabe en una etiqueta de nueve píxeles. */
 private fun AgendaEvent.identityKindLabel(): String = when (kind) {
-    AgendaEventKind.PERSONAL -> "EVENTO"
-    AgendaEventKind.MEETING -> "REUNIÓN"
-    AgendaEventKind.REMINDER -> "AVISO"
-    AgendaEventKind.CUSTOM -> "OTRO"
+    AgendaEventKind.PERSONAL -> Textos.get(R.string.schedule_identity_tag_event)
+    AgendaEventKind.MEETING -> Textos.get(R.string.schedule_identity_tag_meeting)
+    AgendaEventKind.REMINDER -> Textos.get(R.string.schedule_identity_tag_notice)
+    AgendaEventKind.CUSTOM -> Textos.get(R.string.schedule_identity_tag_other)
 }
 
 @Composable
@@ -1697,7 +1698,7 @@ private fun IdentityEventRow(
         }
         Icon(
             Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-            contentDescription = "Abrir evento",
+            contentDescription = stringResource(R.string.schedule_identity_open_event),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(22.dp)
         )
@@ -1744,7 +1745,7 @@ private fun AgendaEvent.identityColor(): Color = colorArgb?.let(::Color) ?: when
 }
 
 private fun AgendaEvent.identityTimeText(use24Hour: Boolean): String {
-    if (allDay) return "Todo el día"
+    if (allDay) return Textos.get(R.string.schedule_identity_all_day)
     val zone = ZoneId.systemDefault()
     val start = Instant.ofEpochMilli(startMillis).atZone(zone).toLocalTime()
     val startText = formatIdentityMinute(start.hour * 60 + start.minute, use24Hour)
@@ -1901,9 +1902,9 @@ private fun CatchUpBanner(count: Int, onClick: () -> Unit) {
             )
             Text(
                 text = if (count == 1) {
-                    "Tienes 1 clase sin marcar"
+                    stringResource(R.string.schedule_identity_unmarked_one)
                 } else {
-                    "Tienes $count clases sin marcar"
+                    stringResource(R.string.schedule_identity_unmarked_count, count)
                 },
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.onSurface,
@@ -1913,7 +1914,7 @@ private fun CatchUpBanner(count: Int, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "Ponerse al día",
+                text = stringResource(R.string.schedule_identity_catch_up),
                 color = tono,
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Bold,

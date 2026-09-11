@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import java.time.LocalTime
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * Poner una hora, escribiéndola.
@@ -76,7 +78,7 @@ fun UniTimePickerDialog(
             TextButton(onClick = {
                 onTimeSelected(LocalTime.of(state.hour, state.minute))
                 onDismiss()
-            }) { Text("Aceptar") }
+            }) { Text(stringResource(R.string.action_accept)) }
         },
         dismissButton = {
             // El cambio de modo va aquí, en el hueco que Material reserva a la izquierda de
@@ -88,7 +90,7 @@ fun UniTimePickerDialog(
                     contentDescription = null
                 )
                 Text(
-                    text = if (typing) " Reloj" else " Teclado",
+                    text = " " + if (typing) stringResource(R.string.time_picker_clock) else stringResource(R.string.time_picker_keyboard),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

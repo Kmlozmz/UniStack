@@ -26,6 +26,8 @@ import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * El botón de crear, con sus opciones.
@@ -61,7 +63,7 @@ fun UniStackFabMenu(
     BackHandler(enabled = expanded) { expanded = false }
 
     val entries = buildList {
-        if (showAddGrade) add(Triple("Nota", Icons.Rounded.EditNote, onAddGradeClick))
+        if (showAddGrade) add(Triple(stringResource(R.string.grade_tab_grade), Icons.Rounded.EditNote, onAddGradeClick))
         /*
          * «Apunte» y no «Nota».
          *
@@ -70,10 +72,10 @@ fun UniStackFabMenu(
          * que las dos entradas del mismo menu signifiquen cosas distintas con la misma
          * palabra.
          */
-        if (showAddNote) add(Triple("Apunte", Icons.Rounded.StickyNote2, onAddNoteClick))
-        if (showAddTask) add(Triple("Tarea", Icons.Rounded.TaskAlt, onAddTaskClick))
-        if (showAddExpense) add(Triple("Gasto", Icons.Rounded.AccountBalanceWallet, onAddExpenseClick))
-        if (showAddSubject) add(Triple("Materia", Icons.AutoMirrored.Rounded.MenuBook, onAddSubjectClick))
+        if (showAddNote) add(Triple(stringResource(R.string.shortcut_note_short), Icons.Rounded.StickyNote2, onAddNoteClick))
+        if (showAddTask) add(Triple(stringResource(R.string.fab_task), Icons.Rounded.TaskAlt, onAddTaskClick))
+        if (showAddExpense) add(Triple(stringResource(R.string.fab_expense), Icons.Rounded.AccountBalanceWallet, onAddExpenseClick))
+        if (showAddSubject) add(Triple(stringResource(R.string.schedule_identity_subject), Icons.AutoMirrored.Rounded.MenuBook, onAddSubjectClick))
     }
 
     FloatingActionButtonMenu(
@@ -94,7 +96,7 @@ fun UniStackFabMenu(
                 modifier = Modifier.semantics { traversalIndex = -1f }
             ) {
                 val icon: ImageVector = if (expanded) Icons.Rounded.Close else Icons.Rounded.Add
-                Icon(icon, contentDescription = if (expanded) "Cerrar menú" else "Crear")
+                Icon(icon, contentDescription = if (expanded) stringResource(R.string.fab_close_menu) else stringResource(R.string.action_create))
             }
         }
     ) {

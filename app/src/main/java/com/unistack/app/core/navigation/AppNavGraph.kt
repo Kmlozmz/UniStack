@@ -148,6 +148,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.R
 
 private const val MAIN_TRANSITION_MILLIS = 220
 private const val MAIN_EXIT_MILLIS = 150
@@ -217,7 +218,7 @@ fun MainNavGraph(
             activity?.finish()
         } else {
             lastBackPressAt = now
-            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.common_press_again_to_exit), Toast.LENGTH_SHORT).show()
         }
     }
 

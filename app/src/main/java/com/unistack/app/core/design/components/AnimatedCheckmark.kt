@@ -24,6 +24,8 @@ import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import kotlinx.coroutines.launch
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 /**
  * Marca de verificación que se dibuja trazo a trazo, en vez de aparecer ya hecha.
  *
@@ -61,7 +63,7 @@ fun AnimatedCheckmark(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 enabled = motionEnabled,
-                onClickLabel = "Repetir animación"
+                onClickLabel = stringResource(R.string.common_replay_animation)
             ) {
                 scope.launch { draw() }
             }

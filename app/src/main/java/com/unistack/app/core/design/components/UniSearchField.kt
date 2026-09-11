@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * El campo de búsqueda de la app.
@@ -67,7 +69,7 @@ fun UniSearchField(
                 IconButton(onClick = { onQueryChange("") }) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Vaciar la búsqueda",
+                        contentDescription = stringResource(R.string.common_clear_search),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
