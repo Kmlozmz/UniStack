@@ -2576,4 +2576,40 @@ your course catalog.</string>
     <string name="settings_account_year_many"> years</string>
     <string name="settings_account_and_months"> and %1$s mo.</string>
     <string name="settings_account_months">%1$s months</string>
+
+    <!-- Bloque F: respaldos, detalle academico, franja de la escala y fechas de corte -->
+    <string name="backup_saved">Backup saved.</string>
+    <string name="backup_save_failed">The backup could not be saved.</string>
+    <string name="backup_read_failed">The file could not be read.</string>
+    <string name="backup_csv_tasks_saved">Tasks CSV saved.</string>
+    <string name="backup_csv_expenses_saved">Expenses CSV saved.</string>
+    <string name="backup_share_failed">The backup could not be shared.</string>
+    <string name="backup_pdf_failed">The PDF could not be created.</string>
+    <string name="backup_pdf_open_failed">The PDF could not be opened.</string>
+    <string name="backup_csv_failed">The CSV could not be saved.</string>
+    <string name="backup_tasks_csv_label">Tasks CSV</string>
+    <string name="backup_expenses_csv_label">Expenses CSV</string>
+    <string name="backup_restored">Backup restored.</string>
+    <string name="backup_restore_failed">The file could not be restored.</string>
+    <string name="settings_scale_updated_deleted">Scale updated. %1$s were deleted.</string>
+    <string name="scale_strip_title">YOUR SCALE AT A GLANCE</string>
+    <string name="scale_strip_range">0 to %1$s</string>
+    <string name="scale_strip_help_cd">What this strip means</string>
+    <string name="scale_zone_failed">Failed</string>
+    <string name="scale_zone_passed">Passed</string>
+    <string name="scale_help_title">How to read the strip</string>
+    <string name="scale_help_intro">The bar is your whole scale, from 0 to %1$s, split into the three ranges a grade can fall in.</string>
+    <string name="scale_help_failed">Below %1$s, the passing grade you set.</string>
+    <string name="scale_help_passed">From %1$s to %2$s: you pass the subject, but you have not reached your goal yet.</string>
+    <string name="scale_help_goal">From %1$s upward: the average you set for yourself.</string>
+    <string name="scale_help_width">The width of each range is the room it takes on the scale. If you raise the goal, the green range narrows: you leave yourself less margin.</string>
+    <string name="cuts_weights_ok">It adds up: the whole 100 %% is distributed.</string>
+    <string name="cuts_weights_over">You are %1$s points over. Lower one.</string>
+    <string name="cuts_weights_missing">You still have %1$s points to distribute.</string>
+    <string name="cuts_how_many">HOW MANY %1$s?</string>
+    <string name="cuts_split_evenly">Split evenly</string>
+    <string name="cut_dates_ends">Ends</string>
+    <string name="cut_dates_with_period">with the period</string>
+    <string name="cut_dates_weight_of_grade">%1$s%% of the grade</string>
+    <string name="cut_dates_weeks">%1$s weeks</string>
 </resources>

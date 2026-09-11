@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.feature_user.domain.Corte
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * El día en que cierra cada corte, encadenados.
@@ -94,7 +96,7 @@ fun CutDatesSection(
                                 style = MaterialTheme.typography.titleSmallEmphasized
                             )
                             Text(
-                                text = "$peso% de la nota",
+                                text = stringResource(R.string.cut_dates_weight_of_grade, peso),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp
                             )
@@ -110,7 +112,7 @@ fun CutDatesSection(
                      */
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CutDateField(
-                            label = "Empieza",
+                            label = stringResource(R.string.setup_term_dates_start),
                             date = desde,
                             vacio = "—",
                             enabled = false,
@@ -119,16 +121,16 @@ fun CutDatesSection(
                         )
                         if (ultimo) {
                             CutDateField(
-                                label = "Acaba",
+                                label = stringResource(R.string.cut_dates_ends),
                                 date = hasta,
-                                vacio = "con el periodo",
+                                vacio = stringResource(R.string.cut_dates_with_period),
                                 enabled = false,
                                 modifier = Modifier.weight(1f),
                                 onClick = {}
                             )
                         } else {
                             CutDateField(
-                                label = "Acaba",
+                                label = stringResource(R.string.cut_dates_ends),
                                 date = cutEndDates.getOrNull(indice),
                                 modifier = Modifier.weight(1f),
                                 onClick = { picking = indice }
@@ -143,7 +145,7 @@ fun CutDatesSection(
                     ) {
                         if (desde != null && hasta != null) {
                             Text(
-                                text = "${semanasEntreCortes(desde, hasta)} semanas",
+                                text = stringResource(R.string.cut_dates_weeks, semanasEntreCortes(desde, hasta)),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp
                             )
@@ -172,7 +174,7 @@ private fun CutDateField(
     date: LocalDate?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    vacio: String = "Elegir",
+    vacio: String = stringResource(R.string.terms_field_choose),
     enabled: Boolean = true
 ) {
     UniCard(
@@ -205,11 +207,8 @@ private fun CutDateField(
     }
 }
 
-private val MesesDeCorte =
-    listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
-
 internal fun fechaLargaDeCorte(date: LocalDate): String =
-    "${date.dayOfMonth} ${MesesDeCorte[date.monthValue - 1]} ${date.year}"
+    "${date.dayOfMonth} ${date.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()).trimEnd('.')} ${date.year}"
 
 /** Redondeadas: «5 semanas» informa, «4,7 semanas» no. Nunca menos de una. */
 private fun semanasEntreCortes(desde: LocalDate, hasta: LocalDate): Long =

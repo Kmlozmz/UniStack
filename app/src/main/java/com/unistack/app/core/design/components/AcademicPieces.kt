@@ -57,6 +57,8 @@ import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /*
  * Las piezas con las que se configura lo académico: la franja de la escala, las notas con
@@ -109,13 +111,13 @@ internal fun ScaleZoneBar(
         verticalAlignment = Alignment.Bottom
     ) {
         Text(
-            text = "TU ESCALA, DE UN VISTAZO",
+            text = stringResource(R.string.scale_strip_title),
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.primary,
             style = SectionLabelStyle
         )
         Text(
-            text = "0 a ${formatGradeValue(max, max)}",
+            text = stringResource(R.string.scale_strip_range, formatGradeValue(max, max)),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold
@@ -123,7 +125,7 @@ internal fun ScaleZoneBar(
         Spacer(modifier = Modifier.width(8.dp))
         Icon(
             imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
-            contentDescription = "Qué significa esta franja",
+            contentDescription = stringResource(R.string.scale_strip_help_cd),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
@@ -144,9 +146,9 @@ internal fun ScaleZoneBar(
      */
     val vivid = LocalVividAccents.current
     val zones = listOf(
-        Triple("Reprobado", (pass / max).toFloat(), vivid.coral to vivid.inkOn(vivid.coral)),
-        Triple("Aprobado", ((goal - pass) / max).toFloat(), vivid.amber to vivid.inkOn(vivid.amber)),
-        Triple("Meta", ((max - goal) / max).toFloat(), vivid.green to vivid.inkOn(vivid.green))
+        Triple(stringResource(R.string.scale_zone_failed), (pass / max).toFloat(), vivid.coral to vivid.inkOn(vivid.coral)),
+        Triple(stringResource(R.string.scale_zone_passed), ((goal - pass) / max).toFloat(), vivid.amber to vivid.inkOn(vivid.amber)),
+        Triple(stringResource(R.string.subject_stat_target), ((max - goal) / max).toFloat(), vivid.green to vivid.inkOn(vivid.green))
     )
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -220,9 +222,9 @@ internal fun ScaleZoneBar(
              * que la franja viene a ahorrar.
              */
             val zona = when {
-                marker < pass -> "Reprobado" to vivid.coral
-                marker < goal -> "Aprobado" to vivid.amber
-                else -> "Meta" to vivid.green
+                marker < pass -> stringResource(R.string.scale_zone_failed) to vivid.coral
+                marker < goal -> stringResource(R.string.scale_zone_passed) to vivid.amber
+                else -> stringResource(R.string.subject_stat_target) to vivid.green
             }
             Row(
                 modifier = Modifier.padding(top = 6.dp),
@@ -293,40 +295,37 @@ internal fun ScaleZoneExplainer(
                 tint = MaterialTheme.colorScheme.primary
             )
         },
-        title = { Text("Cómo leer la franja") },
+        title = { Text(stringResource(R.string.scale_help_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "La barra es tu escala completa, de 0 a ${formatGradeValue(max, max)}, " +
-                        "partida en los tres tramos en los que puede caer una nota.",
+                    text = stringResource(R.string.scale_help_intro, formatGradeValue(max, max)),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 ScaleZoneLegendRow(
                     color = MaterialTheme.colorScheme.errorContainer,
-                    title = "Reprobado",
-                    detail = "Por debajo de ${formatGradeValue(passing, max)}, la nota mínima que pusiste."
+                    title = stringResource(R.string.scale_zone_failed),
+                    detail = stringResource(R.string.scale_help_failed, formatGradeValue(passing, max))
                 )
                 ScaleZoneLegendRow(
                     color = LocalSectionColors.current.atRiskContainer,
-                    title = "Aprobado",
-                    detail = "De ${formatGradeValue(passing, max)} a ${formatGradeValue(target, max)}: " +
-                        "pasas la materia, pero aún no llegas a tu meta."
+                    title = stringResource(R.string.scale_zone_passed),
+                    detail = stringResource(R.string.scale_help_passed, formatGradeValue(passing, max), formatGradeValue(target, max))
                 )
                 ScaleZoneLegendRow(
                     color = LocalSectionColors.current.onTrackContainer,
-                    title = "Meta",
-                    detail = "De ${formatGradeValue(target, max)} en adelante: el promedio que te propusiste."
+                    title = stringResource(R.string.subject_stat_target),
+                    detail = stringResource(R.string.scale_help_goal, formatGradeValue(target, max))
                 )
                 Text(
-                    text = "El ancho de cada tramo es el sitio que ocupa en la escala. Si subes " +
-                        "la meta, el tramo verde se estrecha: te dejas menos margen.",
+                    text = stringResource(R.string.scale_help_width),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Entendido") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_understood)) }
         },
         shape = MaterialTheme.shapes.extraLarge
     )
@@ -607,9 +606,9 @@ internal fun CutBalanceNotice(total: Double, remaining: Double, isValid: Boolean
     ) {
         Text(
             text = when {
-                isValid -> "Cuadra: el 100 % está repartido."
-                over -> "Te pasas ${formatSetupPercent(total - 100.0)} puntos. Baja alguno."
-                else -> "Te faltan ${formatSetupPercent(remaining)} puntos por repartir."
+                isValid -> stringResource(R.string.cuts_weights_ok)
+                over -> stringResource(R.string.cuts_weights_over, formatSetupPercent(total - 100.0))
+                else -> stringResource(R.string.cuts_weights_missing, formatSetupPercent(remaining))
             },
             modifier = Modifier.padding(horizontal = 15.dp, vertical = 12.dp),
             color = if (isValid) {
@@ -640,7 +639,7 @@ internal fun CutCountSection(
     val custom = count > 0 && count !in options
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Text(
-            text = "¿CUÁNTOS ${Corte.Plural.uppercase(java.util.Locale.forLanguageTag("es"))}?",
+            text = stringResource(R.string.cuts_how_many, Corte.Plural.uppercase(java.util.Locale.getDefault())),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = SectionLabelStyle
         )
@@ -726,7 +725,7 @@ internal fun SetupEvenSplitAction(count: Int, onSplit: (List<String>) -> Unit) {
             )
             Spacer(modifier = Modifier.width(9.dp))
             Text(
-                text = "Repartir en partes iguales",
+                text = stringResource(R.string.cuts_split_evenly),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold

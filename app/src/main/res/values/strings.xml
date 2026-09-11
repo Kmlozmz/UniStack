@@ -2575,4 +2575,40 @@ a tu medida</string>
     <string name="settings_account_year_many"> años</string>
     <string name="settings_account_and_months"> y %1$s m.</string>
     <string name="settings_account_months">%1$s meses</string>
+
+    <!-- Bloque F: respaldos, detalle academico, franja de la escala y fechas de corte -->
+    <string name="backup_saved">Copia guardada.</string>
+    <string name="backup_save_failed">No se pudo guardar la copia.</string>
+    <string name="backup_read_failed">No se pudo leer el archivo.</string>
+    <string name="backup_csv_tasks_saved">CSV de tareas guardado.</string>
+    <string name="backup_csv_expenses_saved">CSV de gastos guardado.</string>
+    <string name="backup_share_failed">No se pudo compartir la copia.</string>
+    <string name="backup_pdf_failed">No se pudo crear el PDF.</string>
+    <string name="backup_pdf_open_failed">No se pudo abrir el PDF.</string>
+    <string name="backup_csv_failed">No se pudo guardar el CSV.</string>
+    <string name="backup_tasks_csv_label">Tareas CSV</string>
+    <string name="backup_expenses_csv_label">Gastos CSV</string>
+    <string name="backup_restored">Copia restaurada.</string>
+    <string name="backup_restore_failed">No se pudo restaurar el archivo.</string>
+    <string name="settings_scale_updated_deleted">Escala actualizada. Se borraron %1$s.</string>
+    <string name="scale_strip_title">TU ESCALA, DE UN VISTAZO</string>
+    <string name="scale_strip_range">0 a %1$s</string>
+    <string name="scale_strip_help_cd">Qué significa esta franja</string>
+    <string name="scale_zone_failed">Reprobado</string>
+    <string name="scale_zone_passed">Aprobado</string>
+    <string name="scale_help_title">Cómo leer la franja</string>
+    <string name="scale_help_intro">La barra es tu escala completa, de 0 a %1$s, partida en los tres tramos en los que puede caer una nota.</string>
+    <string name="scale_help_failed">Por debajo de %1$s, la nota mínima que pusiste.</string>
+    <string name="scale_help_passed">De %1$s a %2$s: pasas la materia, pero aún no llegas a tu meta.</string>
+    <string name="scale_help_goal">De %1$s en adelante: el promedio que te propusiste.</string>
+    <string name="scale_help_width">El ancho de cada tramo es el sitio que ocupa en la escala. Si subes la meta, el tramo verde se estrecha: te dejas menos margen.</string>
+    <string name="cuts_weights_ok">Cuadra: el 100 %% está repartido.</string>
+    <string name="cuts_weights_over">Te pasas %1$s puntos. Baja alguno.</string>
+    <string name="cuts_weights_missing">Te faltan %1$s puntos por repartir.</string>
+    <string name="cuts_how_many">¿CUÁNTOS %1$s?</string>
+    <string name="cuts_split_evenly">Repartir en partes iguales</string>
+    <string name="cut_dates_ends">Acaba</string>
+    <string name="cut_dates_with_period">con el periodo</string>
+    <string name="cut_dates_weight_of_grade">%1$s%% de la nota</string>
+    <string name="cut_dates_weeks">%1$s semanas</string>
 </resources>

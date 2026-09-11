@@ -108,6 +108,7 @@ fun AcademicScaleScreen(
         mutableStateOf(academicGradeInput(current.targetAverage, current.gradingScale))
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var feedbackEsError by rememberSaveable { mutableStateOf(false) }
     var pendingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
     var confirmingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
 
@@ -128,11 +129,9 @@ fun AcademicScaleScreen(
         if (selectedScale != current.gradingScale && impact.isDestructive) {
             pendingScaleChange = impact
         } else {
-            feedback = if (viewModel.updateGradingSettings(selectedScale, passingInput, targetInput)) {
-                scaleUpdatedMsg
-            } else {
-                scaleReviewMsg
-            }
+            val ok = viewModel.updateGradingSettings(selectedScale, passingInput, targetInput)
+            feedbackEsError = !ok
+            feedback = if (ok) scaleUpdatedMsg else scaleReviewMsg
         }
     }
 
@@ -207,7 +206,7 @@ fun AcademicScaleScreen(
                 Text(
                     message,
                     modifier = Modifier.padding(horizontal = 4.dp),
-                    color = if (message.startsWith("Revisa")) {
+                    color = if (feedbackEsError) {
                         MaterialTheme.colorScheme.error
                     } else {
                         LocalSectionColors.current.onTrack
@@ -232,12 +231,12 @@ fun AcademicScaleScreen(
                         confirmingScaleChange = impact
                     }
                 ) {
-                    Text("Continuar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.setup_btn_continue), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingScaleChange = null }) {
-                    Text("Cancelar", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_cancel), fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = MaterialTheme.colorScheme.background
@@ -255,10 +254,12 @@ fun AcademicScaleScreen(
                 TextButton(
                     onClick = {
                         confirmingScaleChange = null
-                        feedback = if (viewModel.updateGradingSettings(selectedScale, passingInput, targetInput)) {
-                            "Escala actualizada. Se borraron ${impact.describe()}."
+                        val ok = viewModel.updateGradingSettings(selectedScale, passingInput, targetInput)
+                        feedbackEsError = !ok
+                        feedback = if (ok) {
+                            Textos.get(R.string.settings_scale_updated_deleted, impact.describe())
                         } else {
-                            "Revisa que las notas estén dentro de la escala."
+                            Textos.get(R.string.settings_scale_review_msg)
                         }
                     }
                 ) {
@@ -267,7 +268,7 @@ fun AcademicScaleScreen(
             },
             dismissButton = {
                 TextButton(onClick = { confirmingScaleChange = null }) {
-                    Text("Cancelar", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_cancel), fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = MaterialTheme.colorScheme.background
@@ -300,6 +301,7 @@ fun AcademicCutsScreen(
         )
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var feedbackEsError by rememberSaveable { mutableStateOf(false) }
 
     val total = weights.sumOf { setupPercentValue(it) }
     val weightsAreValid = kotlin.math.abs(total - 100.0) < 0.01
@@ -398,11 +400,9 @@ fun AcademicCutsScreen(
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
-                    feedback = if (viewModel.updateGradingCutSettings(weights, cutDates)) {
-                        cutsUpdatedMsg
-                    } else {
-                        cutsReviewWeightsMsg
-                    }
+                    val ok = viewModel.updateGradingCutSettings(weights, cutDates)
+                    feedbackEsError = !ok
+                    feedback = if (ok) cutsUpdatedMsg else cutsReviewWeightsMsg
                 },
                 enabled = weightsAreValid && dateProblem == null,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -418,7 +418,7 @@ fun AcademicCutsScreen(
                 Text(
                     message,
                     modifier = Modifier.padding(horizontal = 4.dp),
-                    color = if (message.startsWith("Revisa")) {
+                    color = if (feedbackEsError) {
                         MaterialTheme.colorScheme.error
                     } else {
                         LocalSectionColors.current.onTrack
@@ -449,6 +449,7 @@ fun AcademicAbsenceScreen(
 
     var valor by rememberSaveable(current.userId) { mutableStateOf(current.absenceLimit ?: 6) }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var feedbackEsError by rememberSaveable { mutableStateOf(false) }
 
     LargeTitleScaffold(
         title = stringResource(R.string.settings_absences_title),
@@ -509,7 +510,7 @@ fun AcademicAbsenceScreen(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
                     viewModel.setAbsenceLimit(valor)
-                    val isEn = java.util.Locale.getDefault().language == "en"
+                    feedbackEsError = false
                     feedback = Textos.get(R.string.settings_absences_updated)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -517,7 +518,7 @@ fun AcademicAbsenceScreen(
                     .fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
-                Text("Guardar")
+                Text(stringResource(R.string.action_save))
             }
         }
         if (current.absenceLimit != null) {
@@ -526,7 +527,7 @@ fun AcademicAbsenceScreen(
                     onClick = {
                         viewModel.setAbsenceLimit(null)
                         valor = 6
-                        val isEn = java.util.Locale.getDefault().language == "en"
+                        feedbackEsError = false
                         feedback = Textos.get(R.string.settings_absences_cleared)
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -645,6 +646,7 @@ fun AcademicTermScreen(
     }
     var eligiendo by remember { mutableStateOf<FechaDePeriodo?>(null) }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var feedbackEsError by rememberSaveable { mutableStateOf(false) }
 
     val valido = nombre.isNotBlank() && (fin == null || fin!!.isAfter(inicio))
     val focusManager = LocalFocusManager.current
@@ -738,7 +740,7 @@ fun AcademicTermScreen(
                     .fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
-                Text("Guardar")
+                Text(stringResource(R.string.action_save))
             }
         }
         feedback?.let { message ->
@@ -748,7 +750,7 @@ fun AcademicTermScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp),
-                    color = if (message.startsWith("Revisa")) {
+                    color = if (feedbackEsError) {
                         MaterialTheme.colorScheme.error
                     } else {
                         LocalSectionColors.current.onTrack
@@ -807,7 +809,7 @@ private fun TermFechaField(
     date: LocalDate?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    vacio: String = "Elegir"
+    vacio: String = stringResource(R.string.terms_field_choose)
 ) {
     UniCard(
         modifier = modifier,
@@ -819,9 +821,7 @@ private fun TermFechaField(
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             Text(
                 text = date?.let {
-                    val isEn = java.util.Locale.getDefault().language == "en"
-                    val meses = if (isEn) TermMesesEn else TermMeses
-                    "${it.dayOfMonth} ${meses[it.monthValue - 1]} ${it.year}"
+                    "${it.dayOfMonth} ${it.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()).trimEnd('.')} ${it.year}"
                 } ?: vacio,
                 color = if (date != null) {
                     MaterialTheme.colorScheme.onSurface
@@ -835,10 +835,6 @@ private fun TermFechaField(
     }
 }
 
-private val TermMeses =
-    listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
-private val TermMesesEn =
-    listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 /** Las fechas sobreviven a un giro de pantalla; el `Bundle` solo entiende texto. */
 private val TermFechaSaver = androidx.compose.runtime.saveable.Saver<LocalDate?, String>(

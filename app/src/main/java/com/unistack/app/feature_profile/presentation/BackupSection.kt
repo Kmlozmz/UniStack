@@ -64,6 +64,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 private val BackupLocale = Locale.forLanguageTag("es")
 
 /** Lo que se ha elegido restaurar, mientras se decide. */
@@ -104,9 +105,9 @@ internal fun BackupSection(
             .onSuccess {
                 BackupFiles.rememberBackupDone(context)
                 lastBackup = BackupFiles.lastBackupAt(context)
-                onFeedback("Copia guardada.")
+                onFeedback(Textos.get(R.string.backup_saved))
             }
-            .onFailure { onFeedback("No se pudo guardar la copia.") }
+            .onFailure { onFeedback(Textos.get(R.string.backup_save_failed)) }
     }
 
     val openBackup = rememberLauncherForActivityResult(
@@ -124,7 +125,7 @@ internal fun BackupSection(
                     current = viewModel.currentContents()
                 )
             }
-            .onFailure { onFeedback("No se pudo leer el archivo.") }
+            .onFailure { onFeedback(Textos.get(R.string.backup_read_failed)) }
     }
 
     val saveTasksCsv = rememberLauncherForActivityResult(
@@ -132,8 +133,8 @@ internal fun BackupSection(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         BackupFiles.writeText(context, uri, viewModel.exportTasksCsv())
-            .onSuccess { onFeedback("CSV de tareas guardado.") }
-            .onFailure { onFeedback("No se pudo guardar el CSV.") }
+            .onSuccess { onFeedback(Textos.get(R.string.backup_csv_tasks_saved)) }
+            .onFailure { onFeedback(Textos.get(R.string.backup_csv_failed)) }
     }
 
     val saveExpensesCsv = rememberLauncherForActivityResult(
@@ -141,8 +142,8 @@ internal fun BackupSection(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         BackupFiles.writeText(context, uri, viewModel.exportExpensesCsv())
-            .onSuccess { onFeedback("CSV de gastos guardado.") }
-            .onFailure { onFeedback("No se pudo guardar el CSV.") }
+            .onSuccess { onFeedback(Textos.get(R.string.backup_csv_expenses_saved)) }
+            .onFailure { onFeedback(Textos.get(R.string.backup_csv_failed)) }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -209,7 +210,7 @@ internal fun BackupSection(
                                     BackupFiles.rememberBackupDone(context)
                                     lastBackup = BackupFiles.lastBackupAt(context)
                                 }
-                                .onFailure { onFeedback("No se pudo compartir la copia.") }
+                                .onFailure { onFeedback(Textos.get(R.string.backup_share_failed)) }
                         },
                         shape = CircleShape,
                         color = Color.Transparent
@@ -342,22 +343,22 @@ internal fun BackupSection(
                     onClick = {
                         val file = viewModel.academicPdfFile(context)
                         if (file == null) {
-                            onFeedback("No se pudo crear el PDF.")
+                            onFeedback(Textos.get(R.string.backup_pdf_failed))
                         } else {
                             BackupFiles.shareFile(context, file, "application/pdf")
-                                .onFailure { onFeedback("No se pudo abrir el PDF.") }
+                                .onFailure { onFeedback(Textos.get(R.string.backup_pdf_open_failed)) }
                         }
                     }
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     BackupButton(
-                        label = "Tareas CSV",
+                        label = stringResource(R.string.backup_tasks_csv_label),
                         icon = Icons.Rounded.Download,
                         modifier = Modifier.weight(1f),
                         onClick = { saveTasksCsv.launch(BackupFiles.suggestedName("unistack-tareas", "csv")) }
                     )
                     BackupButton(
-                        label = "Gastos CSV",
+                        label = stringResource(R.string.backup_expenses_csv_label),
                         icon = Icons.Rounded.Download,
                         modifier = Modifier.weight(1f),
                         onClick = { saveExpensesCsv.launch(BackupFiles.suggestedName("unistack-gastos", "csv")) }
@@ -383,8 +384,7 @@ internal fun BackupSection(
                     )
                     if (incoming == null) {
                         Text(
-                            "No es una copia de UniStack, o está incompleto. Elige el archivo " +
-                                "que guardaste desde «Guardar».",
+                            stringResource(R.string.settings_backup_invalid_desc),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 13.sp,
                             lineHeight = 18.sp
@@ -428,7 +428,7 @@ internal fun BackupSection(
                         onClick = {
                             val restored = viewModel.restoreLocalBackup(pending.json)
                             pendingRestore = null
-                            onFeedback(if (restored) "Copia restaurada." else "No se pudo restaurar el archivo.")
+                            onFeedback(if (restored) Textos.get(R.string.backup_restored) else Textos.get(R.string.backup_restore_failed))
                         }
                     ) {
                         Text(stringResource(R.string.settings_backup_btn_restore), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
