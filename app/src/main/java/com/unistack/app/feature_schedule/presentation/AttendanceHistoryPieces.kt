@@ -1,9 +1,17 @@
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_schedule.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,221 +20,759 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.EventRepeat
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
+import com.unistack.app.core.design.components.UniStackButtonDefaults
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.contentColorOn
+import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
 import com.unistack.app.feature_schedule.domain.AttendanceSummary
 import com.unistack.app.feature_schedule.domain.AttendanceWeek
+import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassModality
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val AppLocale: Locale get() = Locale.getDefault()
 private val DiaMes: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", AppLocale)
-private val SoloDia: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d", AppLocale)
-private val Mes: DateTimeFormatter get() = DateTimeFormatter.ofPattern("MMMM", AppLocale)
 private val DiaSemanaYfecha: DateTimeFormatter get() = DateTimeFormatter.ofPattern(
     if (AppLocale.language == "en") "EEE, MMMM d" else "EEE d 'de' MMMM",
     AppLocale
 )
+private val DiaEntero: DateTimeFormatter get() = DateTimeFormatter.ofPattern(
+    if (AppLocale.language == "en") "EEEE, MMMM d" else "EEEE d 'de' MMMM",
+    AppLocale
+)
+
+private fun String.conMayuscula(): String = replaceFirstChar { it.titlecase(AppLocale) }
+
+internal fun formatoDeHora(minuto: Int, en24: Boolean): String {
+    val h = minuto / 60
+    val m = minuto % 60
+    if (en24) return "%02d:%02d".format(h, m)
+    val h12 = (h % 12).takeIf { it != 0 } ?: 12
+    val sufijo = if (AppLocale.language == "en") {
+        if (h < 12) "AM" else "PM"
+    } else {
+        if (h < 12) "a. m." else "p. m."
+    }
+    return "%d:%02d %s".format(h12, m, sufijo)
+}
+
+/** «15:00 – 20:00», la franja de una clase. */
+internal fun AttendanceHistoryEntry.franja(en24: Boolean): String =
+    formatoDeHora(session.startMinute, en24) + " – " + formatoDeHora(session.endMinute, en24)
+
+// ================================================================== la rueda
 
 /**
- * El color con que se pinta cada estado en la tira y en las semanas.
+ * La rueda de un estado: **la misma que llena el gesto en «Ponerse al dia»**.
  *
- * Sale de [attendanceColor] y no del tema: ver [AttendanceAttended]. Lo pendiente sí toma el
- * gris de la superficie, porque no es un hecho sino la falta de uno.
+ * El primer rediseño codificaba el estado en siluetas —trebol, rafaga, pildora, rombo— y se
+ * veia raro: cuatro formas que habia que aprender para una cosa que la app ya dice con un
+ * visto y una equis desde que se marca. Asi que aqui va lo mismo que alli: verde con visto,
+ * rojo con equis, ambar con guion para la cancelada, azul con la flecha para la reprogramada.
+ * Lo que no esta marcado es un aro vacio, y lo que no ha llegado, un aro punteado.
  */
 @Composable
-private fun ClassAttendanceStatus.cuadro(): Color =
-    attendanceColor() ?: MaterialTheme.colorScheme.surfaceContainerHighest
-
-/**
- * La cabecera del historial: faltas que quedan, y las clases dibujadas.
- *
- * Antes era un porcentaje enorme con su anillo, y con una sola clase marcada anunciaba
- * «100 %» —un dato sostenido por nada, presentado como titular—. Lo que de verdad se mira en
- * la universidad es cuántas faltas caben todavía.
- *
- * La tira de abajo cuenta **dos cosas con un solo gráfico**: los cuadros rojos son las faltas
- * gastadas, y los verdes seguidos del final son la racha. Así la racha no es un número que
- * haya que creerse, se ve.
- *
- * Sin tope de faltas puesto no se promete ninguno: se enseña el porcentaje diciendo sobre
- * cuántas clases se calcula, que es lo único honesto mientras falte el dato.
- */
-@Composable
-internal fun AttendanceSummaryCard(
-    summary: AttendanceSummary,
-    entries: List<AttendanceHistoryEntry>,
-    weeks: List<AttendanceWeek>,
-    today: LocalDate,
-    onLimitClick: () -> Unit,
+internal fun RuedaDeEstado(
+    status: ClassAttendanceStatus,
+    tamano: Dp,
     modifier: Modifier = Modifier,
-    /** Cómo se llama lo que se está mirando: «el periodo», «el Corte 2». */
-    scopeName: String = stringResource(R.string.attendance_history_term),
-    /**
-     * El tope de la materia, que existe aunque no se esté aplicando.
-     *
-     * Mirando un corte suelto, [summary] llega sin tope a propósito —contar las faltas del
-     * corte contra un tope del semestre diría «te quedan 5» cuando llevas 6 gastadas— pero el
-     * botón sigue teniendo que decir la verdad: el tope está puesto y se puede cambiar.
-     */
-    absenceLimit: Int? = summary.absenceLimit
+    /** Todavia no ha pasado: aro punteado, sin estado que dar. */
+    porVenir: Boolean = false
 ) {
-    val restantes = summary.remainingAbsences
-    /*
-     * El mapa esta siempre, pero pequeño.
-     *
-     * Enseñarlo desplegado obliga a pasar por encima de el cada vez que vienes al detalle, y
-     * esconderlo del todo lo hace facil de no descubrir nunca. La tira es el mismo mapa en su
-     * forma corta: ocupa una linea y se abre a la cuadricula por semanas cuando la tocas.
-     */
-    var mapaAbierto by rememberSaveable { mutableStateOf(false) }
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = if (restantes != null) stringResource(R.string.attendance_history_you_have_left) else stringResource(R.string.attendance_history_attendance),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp
-                    )
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = when {
-                                restantes != null -> "$restantes"
-                                summary.rate != null -> "${summary.rate}%"
-                                else -> "—"
-                            },
-                            letterSpacing = (-0.02).em,
-                            color = if (summary.atLimit) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            fontSize = 33.sp,
-                            fontWeight = FontWeight.Black
+    val color = status.attendanceColor()
+    val aro = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.32f)
+    val trazo = (tamano.value * 0.075f).coerceAtLeast(1.5f).dp
+    when {
+        porVenir && status == ClassAttendanceStatus.PENDING -> Box(
+            modifier = modifier
+                .size(tamano)
+                .drawBehind {
+                    drawCircle(
+                        color = aro.copy(alpha = 0.22f),
+                        radius = (size.minDimension - trazo.toPx()) / 2f,
+                        style = Stroke(
+                            width = trazo.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(trazo.toPx() * 2.2f, trazo.toPx() * 1.8f))
                         )
-                        if (restantes != null) {
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.attendance_history_of_absences, summary.absenceLimit ?: 0),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(bottom = 3.dp)
-                            )
-                        }
-                    }
-                    Text(
-                        text = leyendaDeApoyo(summary),
-                        color = if (summary.atLimit || summary.oneLeft) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        fontSize = 11.5.sp,
-                        lineHeight = 15.sp,
-                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
-                if (summary.streak > 1) {
-                    RachaChip(summary.streak)
-                }
-            }
+        )
+        color == null -> Box(
+            modifier = modifier
+                .size(tamano)
+                .clip(CircleShape)
+                .border(trazo, aro, CircleShape)
+        )
+        else -> Box(
+            modifier = modifier
+                .size(tamano)
+                .clip(CircleShape)
+                .background(color),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = when (status) {
+                    ClassAttendanceStatus.ATTENDED -> Icons.Rounded.Check
+                    ClassAttendanceStatus.ABSENT -> Icons.Rounded.Close
+                    ClassAttendanceStatus.CANCELLED -> Icons.Rounded.Remove
+                    else -> Icons.Rounded.EventRepeat
+                },
+                contentDescription = status.legendName(),
+                tint = contentColorOn(color),
+                modifier = Modifier.size(tamano * 0.52f)
+            )
+        }
+    }
+}
 
-            /*
-             * El tope se pone desde aqui, que es donde se echa en falta.
-             *
-             * Sin el, la cifra grande no puede ser «te quedan N» y cae al porcentaje. Pedirlo
-             * en el formulario de la materia lo habria escondido en un sitio al que solo se
-             * entra a cambiar el nombre.
-             */
-            /*
-             * Un boton pequeño, no un texto de color.
-             *
-             * Pintarlo con el acento lo hacia el unico morado de la tarjeta y se llevaba la
-             * vista antes que la cifra, que es lo que se viene a leer. Con fondo propio se
-             * nota que se toca sin necesidad de gritar.
-             */
-            Surface(
-                onClick = onLimitClick,
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHighest
-            ) {
+// ================================================================== el hero
+
+/**
+ * La cabecera del historial: un contenedor tonal entero, del color de como vas.
+ *
+ * **El color rellena, no bordea.** Habia una tarjeta neutra con borde y una cifra; ahora el
+ * bloque entero es verde, ambar o rojo segun lo que quede, y la cifra vive dentro. A la
+ * derecha, las faltas gastadas en el anillo ondulado de M3E, que ondula mas cuanto mas cerca
+ * del tope. Debajo, las cuentas en pildoras y los dos mandos en un grupo conectado.
+ *
+ * Sin tope de faltas no se promete ninguno: la cifra es el porcentaje y el anillo, las
+ * asistidas sobre las decididas.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun HeroDeAsistencia(
+    summary: AttendanceSummary,
+    /** Clases que ya pasaron, marcadas o no: lo que se «dio». */
+    dadas: Int,
+    sinMarcar: Int,
+    absenceLimit: Int?,
+    onLimitClick: () -> Unit,
+    onMarcarLoQueFalta: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val section = LocalSectionColors.current
+    val restantes = summary.remainingAbsences
+    val tono = when {
+        restantes != null -> when {
+            summary.atLimit -> section.expenses
+            summary.oneLeft -> section.atRisk
+            else -> section.onTrack
+        }
+        summary.rate == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        summary.rate >= 80 -> section.onTrack
+        summary.rate >= 60 -> section.atRisk
+        else -> section.expenses
+    }
+    // El contenedor tonal: la superficie tenida con el color, mas en oscuro para que se lea
+    // como bloque y no como velo.
+    val oscuro = LocalIsDarkTheme.current
+    val contenedor = lerp(MaterialTheme.colorScheme.surfaceContainerHigh, tono, if (oscuro) 0.30f else 0.20f)
+    val tinta = MaterialTheme.colorScheme.onSurface
+    val fraccion = when {
+        summary.absenceLimit != null && summary.absenceLimit > 0 ->
+            (summary.absent.toFloat() / summary.absenceLimit).coerceIn(0f, 1f)
+        summary.rate != null -> summary.rate / 100f
+        else -> 0f
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(32.dp))
+            .background(contenedor)
+            .padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 18.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = if (absenceLimit == null) {
-                        stringResource(R.string.attendance_history_set_limit)
+                    text = if (restantes != null) {
+                        stringResource(R.string.attendance_history_you_have_left)
                     } else {
-                        stringResource(R.string.attendance_history_change_limit, absenceLimit.toString())
+                        stringResource(R.string.attendance_history_attendance)
+                    }.uppercase(AppLocale),
+                    color = tinta.copy(alpha = 0.78f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 0.14.em
+                )
+                Text(
+                    text = when {
+                        restantes != null -> "$restantes"
+                        summary.rate != null -> "${summary.rate}%"
+                        else -> "—"
                     },
-                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    color = tinta,
+                    fontSize = 58.sp,
+                    lineHeight = 58.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.04).em,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                Text(
+                    text = when {
+                        restantes != null -> stringResource(R.string.attendance_history_of_absences, summary.absenceLimit ?: 0)
+                        summary.decided > 0 -> stringResource(R.string.attendance_history_over_classes, summary.decided)
+                        else -> stringResource(R.string.attendance_history_empty)
+                    },
+                    color = tinta.copy(alpha = 0.78f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
-
-            val pasadas = entries.filter { !it.date.isAfter(today) }
-            if (pasadas.isNotEmpty()) {
-                Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
-                if (mapaAbierto) {
-                    AlternaMapa(
-                        texto = stringResource(R.string.attendance_history_by_week, scopeName.replaceFirstChar { it.uppercase() }),
-                        abierto = true,
-                        onClick = { mapaAbierto = false }
-                    )
-                    RejillaPorSemanas(weeks = weeks, today = today)
-                    Leyenda(pasadas)
+            AnilloDeFaltas(
+                fraccion = fraccion,
+                color = tono,
+                tinta = tinta,
+                arriba = if (summary.absenceLimit != null) {
+                    "${summary.absent}/${summary.absenceLimit}"
                 } else {
-                    TiraDeClases(
-                        pasadas = pasadas,
-                        onClick = { mapaAbierto = true }
-                    )
-                    AlternaMapa(
-                        texto = stringResource(R.string.attendance_history_view_by_weeks, scopeName),
-                        abierto = false,
-                        onClick = { mapaAbierto = true }
-                    )
+                    "${summary.attended}/${summary.decided}"
+                },
+                abajo = if (summary.absenceLimit != null) {
+                    stringResource(R.string.attendance_history_ring_spent)
+                } else {
+                    stringResource(R.string.attendance_history_ring_attended)
+                }
+            )
+        }
+
+        FlowRow(
+            modifier = Modifier.padding(top = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val isEn = AppLocale.language == "en"
+            fun plural(n: Int, uno: String, varios: String) = "$n " + if (n == 1) uno else varios
+            Pildora(plural(summary.absent, if (isEn) "absence" else "falta", if (isEn) "absences" else "faltas"), tinta)
+            Pildora(plural(summary.attended, if (isEn) "attendance" else "asistencia", if (isEn) "attendances" else "asistencias"), tinta)
+            Pildora(plural(dadas, if (isEn) "class held" else "clase dada", if (isEn) "classes held" else "clases dadas"), tinta)
+            if (sinMarcar > 0) {
+                Pildora(plural(sinMarcar, if (isEn) "unmarked" else "sin marcar", if (isEn) "unmarked" else "sin marcar"), tinta)
+            }
+            if (summary.streak > 1) {
+                Pildora(if (isEn) "🔥 ${summary.streak} in a row" else "🔥 ${summary.streak} seguidas", tinta)
+            }
+        }
+
+        /*
+         * Los dos mandos en un grupo conectado de M3E: se tocan, y el pulsado se ensancha
+         * mientras el vecino cede. Es la misma interaccion que la app ya usa en Materias.
+         */
+        @Suppress("DEPRECATION")
+        ButtonGroup(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+        ) {
+            val mandos = buildList {
+                add(
+                    (if (absenceLimit == null) {
+                        stringResource(R.string.attendance_history_set_limit)
+                    } else {
+                        stringResource(R.string.attendance_history_change_limit_short)
+                    }) to onLimitClick
+                )
+                if (sinMarcar > 0) add(stringResource(R.string.attendance_history_mark_missing) to onMarcarLoQueFalta)
+            }
+            mandos.forEachIndexed { indice, (rotulo, accion) ->
+                val interaccion = remember { MutableInteractionSource() }
+                ToggleButton(
+                    checked = false,
+                    onCheckedChange = { accion() },
+                    shapes = when {
+                        mandos.size == 1 -> ButtonGroupDefaults.connectedLeadingButtonShapes(
+                            shape = CircleShape,
+                            pressedShape = CircleShape,
+                            checkedShape = CircleShape
+                        )
+                        indice == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        else -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    },
+                    colors = ToggleButtonDefaults.toggleButtonColors(
+                        containerColor = tinta.copy(alpha = 0.12f),
+                        contentColor = tinta
+                    ),
+                    interactionSource = interaccion,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
+                    modifier = Modifier.weight(1f).animateWidth(interaccion)
+                ) {
+                    Text(rotulo, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
     }
 }
+
+@Composable
+private fun Pildora(texto: String, tinta: Color) {
+    Text(
+        text = texto,
+        color = tinta,
+        fontSize = 11.5.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(tinta.copy(alpha = 0.12f))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    )
+}
+
+/**
+ * Las faltas gastadas, en el indicador circular ondulado de M3E.
+ *
+ * La onda crece con lo gastado: cerca del tope se agita, y con cero es casi un aro liso.
+ */
+@Composable
+private fun AnilloDeFaltas(fraccion: Float, color: Color, tinta: Color, arriba: String, abajo: String) {
+    val grosor = with(LocalDensity.current) { Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round) }
+    Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+        CircularWavyProgressIndicator(
+            progress = { fraccion },
+            modifier = Modifier.size(96.dp),
+            color = color,
+            trackColor = tinta.copy(alpha = 0.16f),
+            stroke = grosor,
+            trackStroke = grosor,
+            amplitude = { 0.25f + 0.75f * fraccion },
+            wavelength = 16.dp
+        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(arriba, color = tinta, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 15.sp)
+            Text(
+                abajo.uppercase(AppLocale),
+                color = tinta.copy(alpha = 0.75f),
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.1.em,
+                lineHeight = 11.sp
+            )
+        }
+    }
+}
+
+// ================================================================== el mapa
+
+/** El rótulo pequeño en versales que separa los bloques. */
+@Composable
+internal fun Rotulo(texto: String, detalle: String? = null, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        Text(
+            text = texto.uppercase(AppLocale),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.14.em,
+            modifier = Modifier.weight(1f)
+        )
+        if (detalle != null) {
+            Text(
+                text = detalle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+/**
+ * El periodo entero de un vistazo: una fila por semana, una rueda por clase.
+ *
+ * Las semanas van de la primera a la ultima, como se lee un semestre. Las que aun no han
+ * llegado van con el aro punteado, para que se vea cuanto queda sin prometer nada de ello.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun MapaDelPeriodo(
+    semanas: List<AttendanceWeek>,
+    porVenir: List<AttendanceHistoryEntry>,
+    today: LocalDate,
+    onPick: (AttendanceHistoryEntry) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val futurasPorSemana = porVenir.groupBy { it.date.with(java.time.DayOfWeek.MONDAY) }
+        .map { (lunes, dentro) -> AttendanceWeek(start = lunes, entries = dentro.sortedBy { it.date }) }
+    val filas = (semanas.sortedBy { it.start } + futurasPorSemana.sortedBy { it.start })
+        .groupBy { it.start }
+        .map { (lunes, iguales) -> AttendanceWeek(lunes, iguales.flatMap { it.entries }.sortedBy { it.date }, iguales.firstNotNullOfOrNull { it.number }) }
+        .sortedBy { it.start }
+    val primera = filas.firstOrNull()?.number
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        filas.forEachIndexed { indice, semana ->
+            val numero = semana.number ?: (primera ?: 1) + indice
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "S$numero",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.width(26.dp)
+                )
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    semana.entries.forEach { entrada ->
+                        val futura = entrada.date.isAfter(today)
+                        RuedaDeEstado(
+                            status = entrada.status,
+                            tamano = 26.dp,
+                            porVenir = futura,
+                            modifier = if (futura) Modifier else Modifier.clip(CircleShape).clickable { onPick(entrada) }
+                        )
+                    }
+                }
+                Text(
+                    text = semana.entries.first().date.format(DiaMes),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
+        FlowRow(
+            modifier = Modifier.padding(top = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                ClassAttendanceStatus.ATTENDED,
+                ClassAttendanceStatus.ABSENT,
+                ClassAttendanceStatus.CANCELLED,
+                ClassAttendanceStatus.RESCHEDULED,
+                ClassAttendanceStatus.PENDING
+            ).forEach { estado ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    RuedaDeEstado(status = estado, tamano = 14.dp)
+                    Text(
+                        text = estado.legendName().conMayuscula(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                RuedaDeEstado(status = ClassAttendanceStatus.PENDING, tamano = 14.dp, porVenir = true)
+                Text(
+                    text = stringResource(R.string.attendance_history_upcoming),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+// ================================================================== las filas
+
+/**
+ * Una clase del historial: la rueda, la fecha en grande y lo que se anoto de ella.
+ *
+ * Se toca y se corrige: es lo que no se podia hacer. Las que aun no han pasado no se tocan
+ * —marcar por adelantado es la puerta a un historial inventado— y van atenuadas.
+ */
+@Composable
+internal fun FilaDelHistorial(
+    entrada: AttendanceHistoryEntry,
+    occurrence: ClassOccurrence?,
+    en24: Boolean,
+    porVenir: Boolean,
+    onPick: (AttendanceHistoryEntry) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val extras = buildList {
+        add(entrada.franja(en24))
+        if (occurrence != null) {
+            resumenDeDetalle(occurrence.status, occurrence.modality, occurrence.absenceReason, "")?.let { add(it) }
+            if (occurrence.note.isNotBlank()) add(stringResource(R.string.attendance_history_with_note))
+        }
+    }
+    val tono = entrada.status.attendanceColor() ?: MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .then(if (porVenir) Modifier.alpha(0.72f) else Modifier.clickable { onPick(entrada) })
+            .padding(horizontal = 15.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(13.dp)
+    ) {
+        RuedaDeEstado(status = entrada.status, tamano = 34.dp, porVenir = porVenir)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = entrada.date.format(DiaSemanaYfecha).conMayuscula(),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.5.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = extras.joinToString(" · "),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.5.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Text(
+            text = if (porVenir) {
+                stringResource(R.string.attendance_history_upcoming)
+            } else {
+                entrada.status.legendName().conMayuscula()
+            },
+            color = if (porVenir) MaterialTheme.colorScheme.onSurfaceVariant else tono,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.02.em
+        )
+    }
+}
+
+// ================================================================== la hoja
+
+/**
+ * La hoja que corrige una clase: que paso, y si quieres, el detalle.
+ *
+ * Los cuatro estados en un grupo conectado de M3E, con su rueda encima del nombre; el
+ * pulsado se ensancha y toma su color. El detalle —motivo si faltaste, modalidad si fuiste, y
+ * la nota— es el mismo [AttendanceDetail] de siempre y aparece solo cuando hay un estado:
+ * con el estado basta, y cada pregunta obligatoria es una razon mas para no marcar nada.
+ */
+@Composable
+internal fun HojaDeClase(
+    entrada: AttendanceHistoryEntry,
+    occurrence: ClassOccurrence?,
+    en24: Boolean,
+    onSave: (ClassAttendanceStatus, ClassModality, ClassAbsenceReason?, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val haptics = LocalHapticFeedback.current
+    var estado by remember { mutableStateOf(occurrence?.status ?: entrada.status) }
+    var modalidad by remember { mutableStateOf(occurrence?.modality ?: ClassModality.IN_PERSON) }
+    var motivo by remember { mutableStateOf(occurrence?.absenceReason) }
+    var nota by remember { mutableStateOf(occurrence?.note.orEmpty()) }
+    val aula = entrada.session.location.split('•', limit = 2).first().trim()
+        .ifBlank { stringResource(R.string.schedule_detail_no_room) }
+    val estados = listOf(
+        ClassAttendanceStatus.ATTENDED,
+        ClassAttendanceStatus.ABSENT,
+        ClassAttendanceStatus.CANCELLED,
+        ClassAttendanceStatus.RESCHEDULED
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(start = 20.dp, end = 20.dp, bottom = 26.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                RuedaDeEstado(status = estado, tamano = 44.dp)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(
+                        text = entrada.date.format(DiaEntero).conMayuscula(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.01).em
+                    )
+                    Text(
+                        text = entrada.franja(en24) + " · " + aula,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.5.sp
+                    )
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Rotulo(stringResource(R.string.attendance_history_what_happened))
+                @Suppress("DEPRECATION")
+                ButtonGroup(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    estados.forEachIndexed { indice, opcion ->
+                        val interaccion = remember { MutableInteractionSource() }
+                        val elegido = estado == opcion
+                        val color = opcion.attendanceColor() ?: MaterialTheme.colorScheme.primary
+                        ToggleButton(
+                            checked = elegido,
+                            onCheckedChange = {
+                                haptics.performSafely(HapticFeedbackType.SegmentTick)
+                                // Volver a tocar el elegido lo deshace: equivocarse no es definitivo.
+                                estado = if (elegido) ClassAttendanceStatus.PENDING else opcion
+                                if (estado != ClassAttendanceStatus.ABSENT) motivo = null
+                            },
+                            shapes = when (indice) {
+                                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                estados.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                            },
+                            colors = ToggleButtonDefaults.toggleButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                checkedContainerColor = color,
+                                checkedContentColor = contentColorOn(color)
+                            ),
+                            interactionSource = interaccion,
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 72.dp)
+                                .animateWidth(interaccion)
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(
+                                    imageVector = when (opcion) {
+                                        ClassAttendanceStatus.ATTENDED -> Icons.Rounded.Check
+                                        ClassAttendanceStatus.ABSENT -> Icons.Rounded.Close
+                                        ClassAttendanceStatus.CANCELLED -> Icons.Rounded.Remove
+                                        else -> Icons.Rounded.EventRepeat
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Text(
+                                    text = opcion.legendName().conMayuscula(),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            AttendanceDetail(
+                status = estado,
+                modality = modalidad,
+                absenceReason = motivo,
+                note = nota,
+                onModalityChange = { modalidad = it },
+                onReasonChange = { motivo = it },
+                onNoteChange = { nota = it }
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    shapes = UniStackButtonDefaults.shapes,
+                    onClick = {
+                        haptics.performSafely(HapticFeedbackType.Confirm)
+                        onSave(estado, modalidad, motivo, nota.trim())
+                    },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = UniStackButtonDefaults.PrimaryHeight),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ScheduleAccent,
+                        contentColor = contentColorOn(ScheduleAccent)
+                    )
+                ) {
+                    Text(stringResource(R.string.action_save), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                }
+                Text(
+                    text = stringResource(R.string.attendance_history_state_is_enough),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.5.sp,
+                    lineHeight = 17.sp,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+// ================================================================== los cortes
 
 /**
  * Mirar el semestre entero, o un corte suelto.
@@ -299,359 +845,4 @@ private fun FichaDeAlcance(texto: String, activa: Boolean, onClick: () -> Unit) 
             fontWeight = FontWeight.Bold
         )
     }
-}
-
-/** La frase de apoyo bajo la cifra, que cambia según lo que se pueda afirmar. */
-@Composable
-private fun leyendaDeApoyo(summary: AttendanceSummary): String = when {
-    summary.decided == 0 -> stringResource(R.string.attendance_history_empty)
-    summary.atLimit -> stringResource(R.string.attendance_history_none_left, summary.absent, summary.absenceLimit ?: 0)
-    summary.oneLeft -> stringResource(R.string.attendance_history_one_left, summary.absent, summary.absenceLimit ?: 0)
-    summary.absenceLimit != null ->
-        stringResource(R.string.attendance_history_held_summary, summary.absent, summary.attended, summary.decided)
-    summary.tooFewToTrust -> {
-        val classWord = if (Locale.getDefault().language == "en") {
-            if (summary.decided == 1) "class" else "classes"
-        } else {
-            if (summary.decided == 1) "clase" else "clases"
-        }
-        stringResource(R.string.attendance_history_too_few, summary.decided, classWord)
-    }
-    else -> stringResource(R.string.attendance_history_simple_summary, summary.attended, summary.absent)
-}
-
-@Composable
-private fun RachaChip(racha: Int) {
-    Surface(
-        shape = CircleShape,
-        color = ScheduleAccent.copy(alpha = 0.16f)
-    ) {
-        Text(
-            text = if (Locale.getDefault().language == "en") "🔥 $racha in a row" else "🔥 $racha seguidas",
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            color = ScheduleAccent,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-/**
- * Una fila de cuadros, uno por clase dada, del principio al final del periodo.
- *
- * Solo las pasadas: un cuadro vacío al final se leería como una clase sin marcar cuando en
- * realidad todavía no ha llegado.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TiraDeClases(pasadas: List<AttendanceHistoryEntry>, onClick: () -> Unit) {
-    val ordenadas = pasadas.sortedBy { it.date }
-    // Con un semestre entero la tira no cabe; las últimas veinte cuentan la historia igual.
-    val visibles = ordenadas.takeLast(20)
-    /*
-     * El relleno no sobra: sin el, el cuadro sale cortado.
-     *
-     * La columna entera se recorta con esquinas de 10 dp para que el toque tenga forma, y con
-     * una sola clase el cuadro cae justo en la esquina de abajo a la izquierda: la curva le
-     * mordia un pico. Separandolo del borde, la esquina redondea aire en vez de dato.
-     */
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 5.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        /*
-         * «Tus 1 clase» no lo dice nadie.
-         *
-         * El rotulo se componia metiendo el numero delante siempre, asi que el singular salia
-         * con el uno pegado. Cuando es una sola no hace falta contarla: se nombra.
-         */
-        Rotulo(
-            text = when {
-                visibles.size < ordenadas.size -> if (Locale.getDefault().language == "en") "Your last ${visibles.size} classes" else "Tus últimas ${visibles.size} clases"
-                ordenadas.size == 1 -> if (Locale.getDefault().language == "en") "Your first class" else "Tu primera clase"
-                else -> if (Locale.getDefault().language == "en") "Your ${ordenadas.size} classes" else "Tus ${ordenadas.size} clases"
-            }
-        )
-        /*
-         * Cuadros de tamaño fijo, no repartidos por el ancho.
-         *
-         * Con `weight` una sola clase ocupaba la fila entera y se leía como una barra de
-         * progreso llena: exactamente el «100 %» sin fundamento que esta cabecera venía a
-         * quitar. Fijos, una clase es un cuadro y once son once.
-         */
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            visibles.forEach { entrada ->
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(entrada.status.cuadro())
-                )
-            }
-        }
-        Leyenda(visibles)
-    }
-}
-
-/**
- * El periodo entero, una fila por semana.
- *
- * Es el mismo dato que la tira, ordenado: cada fila es una semana y su número la sitúa en el
- * semestre. Aquí los cuadros no llevan fecha escrita a propósito —no cabe— y para eso está el
- * detalle de abajo, que es donde se va a mirar cuál fue cuál.
- */
-@Composable
-private fun RejillaPorSemanas(weeks: List<AttendanceWeek>, today: LocalDate) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        weeks.forEach { semana ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp)
-            ) {
-                Text(
-                    text = semana.number?.toString() ?: semana.start.format(SoloDia),
-                    modifier = Modifier.width(24.dp),
-                    color = MaterialTheme.colorScheme.outline,
-                    fontSize = 9.5.sp,
-                    textAlign = TextAlign.End
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    semana.entries.forEach { entrada ->
-                        Box(
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(entrada.status.cuadro())
-                                .then(
-                                    if (entrada.date == today) {
-                                        Modifier.border(
-                                            1.5.dp,
-                                            ScheduleAccent,
-                                            RoundedCornerShape(4.dp)
-                                        )
-                                    } else {
-                                        Modifier
-                                    }
-                                )
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** La línea que abre y cierra el mapa, con su flecha. */
-@Composable
-private fun AlternaMapa(texto: String, abierto: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 3.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = texto,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Icon(
-            imageVector = if (abierto) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-            contentDescription = if (abierto) (if (Locale.getDefault().language == "en") "Close map" else "Cerrar el mapa") else (if (Locale.getDefault().language == "en") "Open map" else "Abrir el mapa"),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(17.dp)
-        )
-    }
-}
-
-/** El rótulo pequeño en versales que separa los bloques, como en el diseño aprobado. */
-@Composable
-private fun Rotulo(text: String) {
-    Text(
-        text = text.uppercase(AppLocale),
-        // `outline` y no `onSurfaceVariant`: es un rotulo de seccion, el escalon mas tenue.
-        color = MaterialTheme.colorScheme.outline,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Black,
-        letterSpacing = 0.13.em
-    )
-}
-
-/**
- * Qué significa cada color, y solo de los que salen.
- *
- * Sin leyenda la tira es decorativa: se ve que hay rojos, pero no que son las faltas, que es
- * justo la mitad de lo que este gráfico cuenta.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun Leyenda(visibles: List<AttendanceHistoryEntry>) {
-    val presentes = visibles.map { it.status }.toSet()
-    val orden = listOf(
-        ClassAttendanceStatus.ATTENDED,
-        ClassAttendanceStatus.ABSENT,
-        ClassAttendanceStatus.CANCELLED,
-        ClassAttendanceStatus.RESCHEDULED,
-        ClassAttendanceStatus.PENDING
-    ).filter { it in presentes }
-    if (orden.size < 2) return
-
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(13.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        orden.forEach { estado ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Box(
-                    Modifier
-                        .size(7.dp)
-                        .clip(CircleShape)
-                        .background(estado.cuadro())
-                )
-                Text(
-                    text = estado.legendName(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.5.sp
-                )
-            }
-        }
-    }
-}
-
-/**
- * El historial: lo que viene primero, y luego una fila por semana.
- *
- * Cada semana enseña sus clases como cuadros, así que se ve un periodo entero sin desplazarse
- * y sin perder las fechas —que era lo que fallaba de una cuadrícula suelta: un cuadro no dice
- * de qué día es—. Una semana de receso no aparece, y eso es exactamente lo que fue.
- */
-@Composable
-internal fun AttendanceWeekList(
-    weeks: List<AttendanceWeek>,
-    upcoming: List<AttendanceHistoryEntry>,
-    today: LocalDate,
-    onPick: (AttendanceHistoryEntry) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (upcoming.isNotEmpty()) {
-            EtiquetaDeGrupo(if (Locale.getDefault().language == "en") "Upcoming" else "Próxima")
-            upcoming.take(2).forEach { entrada ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        .clickable { onPick(entrada) }
-                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = entrada.date.format(DiaMes),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Normal
-                    )
-                    Text(
-                        text = formatoDeHora(entrada.session.startMinute),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.5.sp
-                    )
-                }
-            }
-        }
-
-        weeks.forEach { semana ->
-            /*
-             * «Semana 8 · 24–30 ago», y no solo el rango.
-             *
-             * Un rango suelto obliga a situarlo tu: hay que acordarse de en que mes estabas y
-             * de por donde va el semestre. El numero de semana es la unidad en la que se
-             * piensa un periodo, y la fecha al lado quita cualquier duda de cual es.
-             */
-            EtiquetaDeGrupo(tituloDeSemana(semana))
-            semana.entries.forEach { entrada ->
-                FilaDeClase(
-                    entrada = entrada,
-                    esHoy = entrada.date == today,
-                    onPick = onPick
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun EtiquetaDeGrupo(texto: String) {
-    // El sangrado horizontal lo pone la lista entera; aquí solo el aire de arriba.
-    Box(modifier = Modifier.padding(top = 5.dp, bottom = 1.dp)) {
-        Rotulo(texto)
-    }
-}
-
-/**
- * Una clase, con su fecha y su estado escritos.
- *
- * Antes cada semana era una fila y sus clases unos cuadros de color. Con eso, «24–30» obligaba
- * a deducir de que dia era cada cuadro, y con dos clases en la misma semana no habia forma de
- * saber cual era cual. El mapa denso ya esta arriba, en la tira: aqui abajo lo que hace falta
- * es el detalle, y el detalle es la fecha.
- */
-@Composable
-private fun FilaDeClase(
-    entrada: AttendanceHistoryEntry,
-    esHoy: Boolean,
-    onPick: (AttendanceHistoryEntry) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .clickable { onPick(entrada) }
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(entrada.status.cuadro())
-        )
-        Text(
-            text = entrada.date.format(DiaSemanaYfecha).replaceFirstChar { it.titlecase(AppLocale) },
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 13.sp,
-            fontWeight = if (esHoy) FontWeight.Bold else FontWeight.Normal
-        )
-        Text(
-            text = entrada.status.legendName().replaceFirstChar { it.titlecase(AppLocale) },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.5.sp
-        )
-    }
-}
-
-private fun formatoDeHora(minuto: Int): String = "%02d:%02d".format(minuto / 60, minuto % 60)
-
-/** «Semana 8 · 24–30 ago», o solo el rango si no hay periodo del que contar semanas. */
-private fun tituloDeSemana(semana: AttendanceWeek): String {
-    val rango = "${semana.start.format(SoloDia)}–${semana.end.format(DiaMes)}"
-    return semana.number?.let { if (Locale.getDefault().language == "en") "Week $it · $rango" else "Semana $it · $rango" } ?: rango
 }

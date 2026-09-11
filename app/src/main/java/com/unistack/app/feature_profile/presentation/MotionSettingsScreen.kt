@@ -575,7 +575,7 @@ private fun colorDe(id: String): Color = when (id) {
     "pulsacion", "recupera", "saludo" -> Color(0xFF4FBFA6)
     "carga", "cierreSem", "celebracion" -> Color(0xFFE0A63C)
     "transicion", "sello", "deshacer" -> Color(0xFF3F8FE0)
-    "listas", "asistencia", "tachar", "claseAhora", "gestos" -> Color(0xFF5FC96E)
+    "listas", "tachar", "claseAhora", "gestos" -> Color(0xFF5FC96E)
     "refresco" -> Color(0xFF3FC7B4)
     "subeNota", "barraAnim" -> Color(0xFFE062A8)
     "latido", "errorShake" -> Color(0xFFEA5A52)

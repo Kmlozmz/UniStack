@@ -31,7 +31,11 @@ data class MotionPreferences(
     val refresh: RefreshStyle = RefreshStyle.ONDA_CIRCULAR,
 
     // ------------------------------------------------------------------ académico
-    val attendance: AttendanceMotion = AttendanceMotion.RELLENO,
+    /*
+     * Marcar asistencia ya no tiene variantes: la rueda **rebota**, y siempre. Se miraron las
+     * cuatro en «Ponerse al dia» y el rebote era la unica que se sentia como marcar algo;
+     * las otras tres se quitaron con su apartado de Movimiento.
+     */
     val newGrade: NewGradeMotion = NewGradeMotion.LATERAL,
     val cutSeal: CutSealMotion = CutSealMotion.TINTA,
     val termClose: TermCloseMotion = TermCloseMotion.APILADO,
@@ -208,19 +212,6 @@ enum class RefreshStyle(override val id: String, override val label: String) : M
 
 // ---------------------------------------------------------------------- académico
 
-/**
- * Como se llena la rueda al marcar una clase.
- *
- * «Trazo» —el visto dibujandose de una linea— se retiro: sobre una rueda de 44 dp el trazo
- * es tan corto que no se distingue de aparecer, y al lado de las otras tres no hacia nada.
- */
-enum class AttendanceMotion(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    RELLENO("relleno", "Relleno"),
-    REBOTE("rebote", "Rebote"),
-    BARRIDO("barrido", "Barrido")
-}
-
 enum class NewGradeMotion(override val id: String, override val label: String) : MotionChoice {
     NINGUNA("ninguna", "Nada"),
 
@@ -357,7 +348,6 @@ data class MotionGesture(
             "carga" -> "Loading indicator"
             "transicion" -> "Between screens"
             "listas" -> "List entry"
-            "asistencia" -> "Mark attendance"
             "notaNueva" -> "Log a grade"
             "subeNota" -> "Grade increase"
             "recupera" -> "Subject recovery"
@@ -381,7 +371,6 @@ data class MotionGesture(
             "carga" -> "Material 3 Expressive morphs while spinning."
             "transicion" -> "How a new screen enters."
             "listas" -> "How rows appear when opening."
-            "asistencia" -> "When confirming attendance to class."
             "notaNueva" -> "When a new grade is entered for the term."
             "subeNota" -> "When your average improves."
             "recupera" -> "When rising out of the red."
@@ -465,11 +454,6 @@ object MotionCatalog {
             { it.listEntry }, { p, v -> p.copy(listEntry = v) }
         ),
 
-        gesto<AttendanceMotion>(
-            "asistencia", GROUP_ACADEMIC, "Marcar asistencia",
-            "Al confirmar que fuiste a clase.",
-            { it.attendance }, { p, v -> p.copy(attendance = v) }
-        ),
         gesto<NewGradeMotion>(
             "notaNueva", GROUP_ACADEMIC, "Registrar una nota",
             "Cuando entra una nota nueva al corte.",

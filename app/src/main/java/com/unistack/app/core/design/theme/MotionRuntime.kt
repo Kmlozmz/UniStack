@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.IntOffset
-import com.unistack.app.feature_user.domain.AttendanceMotion
 import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
@@ -74,7 +73,6 @@ fun motionActual(): MotionPreferences {
             screenTransition = ScreenTransition.NINGUNA,
             listEntry = ListEntry.NINGUNA,
             refresh = RefreshStyle.CIRCULO,
-            attendance = AttendanceMotion.NINGUNA,
             celebration = CelebrationMotion.NINGUNA,
             strikeThrough = StrikeMotion.LINEA,
             overdueBeat = OverdueBeat.NINGUNA,

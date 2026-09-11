@@ -90,9 +90,9 @@ import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.design.theme.tweenDeMovimiento
-import com.unistack.app.feature_user.domain.AttendanceMotion
 import com.unistack.app.feature_user.domain.AutosaveMotion
 import com.unistack.app.feature_user.domain.CelebrationMotion
+import com.unistack.app.feature_user.domain.MotionSpeed
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
 import com.unistack.app.feature_user.domain.NewGradeMotion
@@ -455,7 +455,13 @@ fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Mod
 
     val avance by animateFloatAsState(
         targetValue = if (disparada) 1f else 0f,
-        animationSpec = tweenDeMovimiento(baseMs = 1100),
+        /*
+         * **La vuelta es un salto.** Al terminar, `onTerminada` apaga `disparada` y el
+         * objetivo vuelve a cero: con el mismo tween, el confeti volaba **hacia atras** y
+         * las particulas volvian a recogerse en el centro, como un video en reversa. Lo
+         * que se apaga tiene que apagarse, no rebobinarse.
+         */
+        animationSpec = if (disparada) tweenDeMovimiento(baseMs = 1100) else snap(),
         label = "celebracion",
         finishedListener = { if (it >= 1f) onTerminada() }
     )
@@ -651,22 +657,16 @@ fun AvisoDePresupuestoArriba(pasado: Boolean, modifier: Modifier = Modifier) {
 }
 
 /**
- * La rueda del visto al marcar asistencia, con la variante elegida.
+ * La rueda del visto al marcar asistencia.
  *
- * **El gesto estaba puesto y no se veia, y el motivo era el color.** `marcaDeAsistencia` pinta
- * con el color del estado, y la rueda ya tenia ese mismo color de fondo en cuanto quedaba
- * marcada: verde sobre verde no es nada. Encima, «trazo» solo dibuja un contorno y «rebote»
- * solo escala, asi que ninguno de los cuatro llegaba a cambiar un pixel visible.
+ * **Nace neutra y el gesto la llena de color**: verde sobre verde no se veia, que fue lo que
+ * tuvo el gesto invisible durante meses. Y el gesto es uno solo, el rebote: se miraron las
+ * cuatro variantes en «Ponerse al dia» y el rebote era la unica que se sentia como marcar
+ * algo. Las otras tres se quitaron con su apartado de Movimiento.
  *
- * Aqui la rueda **nace neutra** y es el gesto el que la llena de color, que es exactamente lo
- * que la vista previa de Movimiento lleva dibujando desde siempre. La preferencia y lo que
- * pasa al marcar son por fin la misma imagen.
- *
- * **El rebote se pasa de largo por fuera de la rueda.** Antes escalaba el circulo de color
- * *dentro* del recorte de 44 dp, asi que todo lo que pasaba de 1 se cortaba: el muelle
- * rebotaba y no se veia rebotar, que es de donde salia lo de «muy suave». Ahora escala la
- * rueda entera, recorte incluido, con un muelle propio mas vivo que el general: lo que se ve
- * es la rueda saltando hasta un 20 % mas grande y volviendo.
+ * **El rebote se pasa de largo por fuera de la rueda.** La escala va antes del recorte de
+ * 44 dp, asi que el muelle la lleva hasta un 20 % mas grande y la vuelve: lo que se ve es la
+ * rueda saltando. Con el movimiento apagado el color aparece de golpe.
  */
 @Composable
 fun RuedaDeAsistencia(
@@ -675,67 +675,38 @@ fun RuedaDeAsistencia(
     icono: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    val estilo = motionActual().attendance
     val neutro = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
     val encima = MaterialTheme.colorScheme.surface
+    val conMovimiento = hayMovimiento() && motionActual().speed != MotionSpeed.INSTANTANEA
 
     val avance by animateFloatAsState(
         targetValue = if (marcada) 1f else 0f,
-        animationSpec = if (estilo == AttendanceMotion.REBOTE) {
-            // Muelle propio, no el general: aqui el rebote **es** el gesto, y con el
-            // amortiguado de «Suave» no rebotaria nada. Rigido para que sea rapido.
+        // Muelle propio, no el general: aqui el rebote **es** el gesto, y con el amortiguado
+        // de «Suave» no rebotaria nada. Rigido para que sea rapido.
+        animationSpec = if (conMovimiento && marcada) {
             spring(dampingRatio = 0.28f, stiffness = 900f / motionActual().speed.factor.coerceAtLeast(0.2f))
         } else {
-            tweenDeMovimiento(baseMs = 250)
+            snap()
         },
         label = "rueda"
     )
-    val sinMovimiento = !hayMovimiento() || estilo == AttendanceMotion.NINGUNA
-    // Sin gesto, el color aparece de golpe: eso es lo que significa «Nada».
-    val p = if (sinMovimiento) (if (marcada) 1f else 0f) else avance
-    val rebota = !sinMovimiento && estilo == AttendanceMotion.REBOTE
+    val p = if (conMovimiento) avance else (if (marcada) 1f else 0f)
 
     Box(
         modifier = modifier
             .size(44.dp)
-            // La escala va **antes** del recorte: asi el rebote se pasa de largo por fuera de
-            // los 44 dp en vez de cortarse en el borde. Arranca desde un 40 % —una rueda que
-            // nace de dentro— y el muelle la lleva mas alla del 100 % antes de asentarla.
+            // Arranca desde un 40 % —una rueda que nace de dentro— y el muelle la lleva mas
+            // alla del 100 % antes de asentarla.
             .graphicsLayer {
-                val escala = if (rebota && marcada) 0.4f + 0.6f * p else 1f
+                val escala = if (conMovimiento && marcada) 0.4f + 0.6f * p else 1f
                 scaleX = escala
                 scaleY = escala
             }
             .clip(CircleShape)
-            .background(neutro)
-            .drawWithContent {
-                val r = size.minDimension / 2f
-                val centro = Offset(size.width / 2f, size.height / 2f)
-                when {
-                    p <= 0f -> Unit
-                    // El relleno sube por dentro, como un vaso que se llena.
-                    !sinMovimiento && estilo == AttendanceMotion.RELLENO -> clipRect(
-                        top = size.height - size.height * p.coerceAtMost(1f)
-                    ) { drawCircle(color = color, radius = r, center = centro) }
-                    // El barrido la cruza de izquierda a derecha.
-                    !sinMovimiento && estilo == AttendanceMotion.BARRIDO -> clipRect(
-                        right = size.width * p.coerceAtMost(1f)
-                    ) { drawCircle(color = color, radius = r, center = centro) }
-                    // Rebote y «nada»: la rueda entera de color; el rebote lo pone la capa.
-                    else -> drawCircle(color = color, radius = r, center = centro)
-                }
-                // El contenido —el icono— por encima de todo lo pintado.
-                val visible = when {
-                    sinMovimiento -> p > 0f
-                    estilo == AttendanceMotion.BARRIDO -> p > 0.75f
-                    estilo == AttendanceMotion.REBOTE -> p > 0.15f
-                    else -> p > 0.5f
-                }
-                if (visible) this@drawWithContent.drawContent()
-            },
+            .background(if (marcada) color else neutro),
         contentAlignment = Alignment.Center
     ) {
-        if (p > 0f) {
+        if (marcada && p > 0.15f) {
             Icon(
                 imageVector = icono,
                 contentDescription = null,

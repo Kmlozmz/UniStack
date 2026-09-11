@@ -98,13 +98,14 @@ class MotionCatalogTest {
      *
      * Bajo de 102 a 101 al retirarse «Doble linea» del tachado, que se quito a proposito por
      * no distinguirse de la linea normal. De 78 a 72 al irse «Pasarse del presupuesto» entero
-     * (cinco variantes: queda el aviso arriba, fijo) y «Trazo» de la asistencia.
+     * (cinco variantes: queda el aviso arriba, fijo) y «Trazo» de la asistencia. De 72 a 68
+     * al irse «Marcar asistencia» entero: la rueda rebota, y siempre.
      */
     @Test
-    fun `el catalogo cubre los trece gestos y las setenta y dos variantes`() {
-        assertEquals(13, MotionCatalog.gestures.size)
+    fun `el catalogo cubre los doce gestos y las sesenta y ocho variantes`() {
+        assertEquals(12, MotionCatalog.gestures.size)
         assertEquals(0, MotionCatalog.toggles.size)
-        assertEquals(72, MotionCatalog.variantCount)
+        assertEquals(68, MotionCatalog.variantCount)
     }
 
     @Test
