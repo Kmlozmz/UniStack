@@ -87,16 +87,20 @@ fun NotificationSettingsScreen(
     val current = profile ?: return
 
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    // Si lo de abajo es un aviso de error o una confirmacion: antes se adivinaba leyendo
+    // el texto («Sin el permiso...»), que en ingles ya no empieza asi.
+    var feedbackEsError by rememberSaveable { mutableStateOf(false) }
     var granted by remember { mutableStateOf(context.hasNotificationPermission()) }
     var alreadyAsked by rememberSaveable { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { result ->
         granted = result || context.hasNotificationPermission()
+        feedbackEsError = !granted
         feedback = if (granted) {
-            "Ya puedes recibir avisos."
+            context.getString(R.string.settings_notif_ready)
         } else {
-            "Sin el permiso, los avisos que enciendas no van a llegar."
+            context.getString(R.string.settings_notif_no_perm)
         }
     }
     val askForPermission: () -> Unit = {
@@ -127,10 +131,11 @@ fun NotificationSettingsScreen(
 
     fun setReminders(tasks: Boolean, works: Boolean, overdue: Boolean, hours: Int) {
         granted = context.hasNotificationPermission()
+        feedbackEsError = true
         feedback = if (viewModel.updateReminderSettings(tasks, works, overdue, hours)) {
             null
         } else {
-            "Revisa las horas de anticipación."
+            context.getString(R.string.settings_notif_review_lead_time)
         }
     }
 
@@ -262,6 +267,7 @@ fun NotificationSettingsScreen(
                         start = quietStart,
                         end = quietEnd,
                         onChange = { on, from, to ->
+                            feedbackEsError = true
                             feedback = if (viewModel.updateQuietHours(on, from, to)) {
                                 null
                             } else {
@@ -277,7 +283,7 @@ fun NotificationSettingsScreen(
                 Text(
                     message,
                     modifier = Modifier.padding(horizontal = 4.dp),
-                    color = if (message.startsWith("Sin el permiso") || message.startsWith("Revisa") || message.startsWith("El horario")) {
+                    color = if (feedbackEsError) {
                         MaterialTheme.colorScheme.error
                     } else {
                         LocalSectionColors.current.onTrack
@@ -339,14 +345,14 @@ private fun NotificationPermissionCard(
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
-                    text = if (granted) "Las notificaciones están activadas" else "Las notificaciones están desactivadas",
+                    text = if (granted) stringResource(R.string.settings_notif_perm_enabled) else stringResource(R.string.settings_notif_perm_disabled),
                     style = MaterialTheme.typography.titleMediumEmphasized
                 )
                 Text(
                     text = if (granted) {
-                        "UniStack te notificará cuando haya novedades."
+                        stringResource(R.string.settings_notif_perm_msg_enabled)
                     } else {
-                        "Sin el permiso no te podremos enviar notificaciones."
+                        stringResource(R.string.settings_notif_perm_msg_disabled)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = ink.copy(alpha = 0.85f)
@@ -437,15 +443,15 @@ private fun DailyDigestRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Resumen de la mañana",
+                    text = stringResource(R.string.settings_notif_morning_summary_title),
                     style = MaterialTheme.typography.titleSmallEmphasized,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = if (on) {
-                        "Cada día a las %02d:%02d, con lo que tienes por delante.".format(hour, minute)
+                        stringResource(R.string.settings_notif_morning_summary_time, hour, minute)
                     } else {
-                        "Enciéndelo para elegir la hora"
+                        stringResource(R.string.settings_notif_morning_turn_on)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -499,15 +505,15 @@ private fun QuietHoursRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (on) "Nada de avisos durante:" else "Los avisos suenan a cualquier hora",
+                    text = if (on) stringResource(R.string.settings_notif_dnd_active_desc) else stringResource(R.string.settings_notif_dnd_inactive_desc),
                     style = MaterialTheme.typography.titleSmallEmphasized,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = if (on) {
-                        "De " + hourLabel(start) + " a " + hourLabel(end) + ". Lo que caiga dentro se avisa al terminar."
+                        stringResource(R.string.settings_notif_dnd_range, hourLabel(start), hourLabel(end))
                     } else {
-                        "Enciéndelo para elegir un tramo"
+                        stringResource(R.string.settings_notif_dnd_turn_on)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -580,8 +586,8 @@ private fun HourStepper(
         label = label,
         value = hourLabel(hour),
         enabled = enabled,
-        lessDescription = "Una hora menos en $label",
-        moreDescription = "Una hora más en $label",
+        lessDescription = stringResource(R.string.settings_notif_one_hour_less, label),
+        moreDescription = stringResource(R.string.settings_notif_one_hour_more, label),
         modifier = modifier,
         onLess = { onChange((hour + 23) % 24) },
         onMore = { onChange((hour + 1) % 24) }
@@ -606,8 +612,8 @@ private fun MinuteStepper(
         label = label,
         value = "%02d".format(minute),
         enabled = enabled,
-        lessDescription = "Cinco minutos menos en $label",
-        moreDescription = "Cinco minutos más en $label",
+        lessDescription = stringResource(R.string.settings_notif_five_min_less, label),
+        moreDescription = stringResource(R.string.settings_notif_five_min_more, label),
         modifier = modifier,
         onLess = { onChange((minute + 55) % 60) },
         onMore = { onChange((minute + 5) % 60) }

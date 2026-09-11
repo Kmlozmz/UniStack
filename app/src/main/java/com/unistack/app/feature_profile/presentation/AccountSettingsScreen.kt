@@ -101,6 +101,7 @@ import com.unistack.app.feature_setup.presentation.studyAreaIcon
 import com.unistack.app.feature_terms.domain.AcademicTermType
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.core.utils.Textos
 
 /**
  * Cuenta y perfil: quién eres y a qué cuenta está atado esto.
@@ -148,6 +149,7 @@ fun AccountSettingsScreen(
         if (uri != null) editing = uri
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var feedbackEsError by rememberSaveable { mutableStateOf(false) }
 
     LargeTitleScaffold(
         title = stringResource(R.string.settings_account_title),
@@ -248,7 +250,7 @@ fun AccountSettingsScreen(
                 Text(
                     message,
                     modifier = Modifier.padding(horizontal = 4.dp),
-                    color = if (message.startsWith("Revisa")) {
+                    color = if (feedbackEsError) {
                         MaterialTheme.colorScheme.error
                     } else {
                         LocalSectionColors.current.onTrack
@@ -296,7 +298,9 @@ fun AccountSettingsScreen(
                 TextButton(
                     enabled = validation.isValid,
                     onClick = {
-                        feedback = if (viewModel.updatePreferredName(nameInput)) {
+                        val guardado = viewModel.updatePreferredName(nameInput)
+                        feedbackEsError = !guardado
+                        feedback = if (guardado) {
                             editingName = false
                             nameUpdatedMsg
                         } else {
@@ -359,7 +363,7 @@ fun AccountSettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showUnlinkDialog = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             },
             containerColor = MaterialTheme.colorScheme.background
@@ -398,7 +402,7 @@ private fun AccountPortrait(
         Box {
             AccountAvatar(
                 photoUrl = photoUrl,
-                contentDescription = "Foto de perfil",
+                contentDescription = stringResource(R.string.settings_account_photo_title),
                 initial = name.first().uppercase(),
                 modifier = Modifier
                     .size(96.dp)
@@ -431,7 +435,7 @@ private fun AccountPortrait(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Rounded.PhotoCamera,
-                        contentDescription = "Cambiar foto de perfil",
+                        contentDescription = stringResource(R.string.settings_account_change_photo),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -459,7 +463,7 @@ private fun AccountPortrait(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Rounded.Edit,
-                            contentDescription = "Editar nombre",
+                            contentDescription = stringResource(R.string.settings_account_edit_name),
                             modifier = Modifier.size(15.dp)
                         )
                     }
@@ -528,7 +532,7 @@ private fun AccountLinkRow(
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            "Pronto",
+                            stringResource(R.string.settings_account_soon),
                             color = sections.atRisk,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold
@@ -553,8 +557,8 @@ private fun AccountLinkRow(
             Text(
                 text = when {
                     isBusy -> "..."
-                    linked -> "Desvincular"
-                    else -> "Vincular"
+                    linked -> stringResource(R.string.settings_account_btn_unlink)
+                    else -> stringResource(R.string.settings_account_btn_link)
                 },
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
@@ -598,7 +602,7 @@ private fun AcademicIdentityFields(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SetupDropdownField(
-            label = "Área de estudio",
+            label = stringResource(R.string.settings_account_field_area),
             value = profile.studyArea?.let(::labelFor).orEmpty(),
             options = StudyArea.entries.map(::labelFor),
             enabled = true,
@@ -769,7 +773,7 @@ private fun SemesterProgressCard(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Text("Cambiar", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.settings_account_btn_change), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -858,7 +862,7 @@ private fun MilestoneRow(current: Int, total: Int) {
                 )
             }
             Text(
-                "Inicio",
+                stringResource(R.string.settings_account_start),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = onSurfaceVariant,
@@ -887,7 +891,7 @@ private fun MilestoneRow(current: Int, total: Int) {
                 }
             }
             Text(
-                "Ahora",
+                stringResource(R.string.settings_account_now),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = onSurface,
@@ -909,14 +913,14 @@ private fun MilestoneRow(current: Int, total: Int) {
                 ) {
                     Icon(
                         Icons.Rounded.Flag,
-                        contentDescription = "Meta",
+                        contentDescription = stringResource(R.string.settings_account_goal),
                         tint = if (reached) onPrimary else primary,
                         modifier = Modifier.size(15.dp)
                     )
                 }
             }
             Text(
-                "Meta · $total",
+                stringResource(R.string.settings_account_goal_total, total),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = onSurfaceVariant,
@@ -955,7 +959,7 @@ private fun MilestoneLink(filled: Boolean, modifier: Modifier = Modifier, dashed
 private fun etaAnnotatedString(remaining: Int, termWeeks: Int): androidx.compose.ui.text.AnnotatedString {
     return buildAnnotatedString {
         if (remaining <= 0) {
-            append("Ya llegaste a tu último semestre.")
+            append(Textos.get(R.string.settings_account_reached_last))
         } else {
             val months = remaining * (termWeeks / 4.33)
             val years = (months / 12).toInt()
@@ -963,19 +967,17 @@ private fun etaAnnotatedString(remaining: Int, termWeeks: Int): androidx.compose
             val etaText = if (years > 0) {
                 buildString {
                     append(years)
-                    append(if (years == 1) " año" else " años")
+                    append(if (years == 1) Textos.get(R.string.settings_account_year_one) else Textos.get(R.string.settings_account_year_many))
                     if (restMonths > 0) {
-                        append(" y ")
-                        append(restMonths)
-                        append(" m.")
+                        append(Textos.get(R.string.settings_account_and_months, restMonths))
                     }
                 }
             } else {
-                "${Math.round(months)} meses"
+                Textos.get(R.string.settings_account_months, Math.round(months))
             }
-            append("Estimado: ")
+            append(Textos.get(R.string.settings_account_estimate_lead))
             withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(etaText) }
-            append(" más para llegar a la meta, al ritmo de siempre.")
+            append(Textos.get(R.string.settings_account_estimate_trail))
         }
     }
 }
@@ -1022,12 +1024,12 @@ private fun SemesterProgressDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(draftCurrent, draftTotal) }) {
-                Text("Guardar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -1048,7 +1050,7 @@ private fun SemesterStepperRow(
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            SemesterStepButton(icon = Icons.Rounded.Remove, description = "Menos", onClick = onDecrement)
+            SemesterStepButton(icon = Icons.Rounded.Remove, description = stringResource(R.string.settings_account_less), onClick = onDecrement)
             Text(
                 text = value.toString(),
                 style = MaterialTheme.typography.titleMediumEmphasized,
@@ -1056,7 +1058,7 @@ private fun SemesterStepperRow(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(min = 22.dp)
             )
-            SemesterStepButton(icon = Icons.Rounded.Add, description = "Más", onClick = onIncrement)
+            SemesterStepButton(icon = Icons.Rounded.Add, description = stringResource(R.string.settings_account_more), onClick = onIncrement)
         }
     }
 }

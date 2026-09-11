@@ -2566,4 +2566,14 @@ your course catalog.</string>
     <string name="setup_perm_ago_19">19:20</string>
     <string name="setup_perm_grade_title">Your Networks GPA increased to 4.1</string>
     <string name="setup_perm_grade_body">From the quiz you just recorded</string>
+
+    <!-- Bloque E: ajustes de notificaciones y cuenta -->
+    <string name="settings_notif_one_hour_less">One hour less in %1$s</string>
+    <string name="settings_notif_one_hour_more">One hour more in %1$s</string>
+    <string name="settings_notif_five_min_less">Five minutes less in %1$s</string>
+    <string name="settings_notif_five_min_more">Five minutes more in %1$s</string>
+    <string name="settings_account_year_one"> year</string>
+    <string name="settings_account_year_many"> years</string>
+    <string name="settings_account_and_months"> and %1$s mo.</string>
+    <string name="settings_account_months">%1$s months</string>
 </resources>

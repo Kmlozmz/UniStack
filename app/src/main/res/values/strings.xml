@@ -2565,4 +2565,14 @@ a tu medida</string>
     <string name="setup_perm_ago_19">19:20</string>
     <string name="setup_perm_grade_title">Tu promedio de Redes subió a 4.1</string>
     <string name="setup_perm_grade_body">Con el quiz que acabas de registrar</string>
+
+    <!-- Bloque E: ajustes de notificaciones y cuenta -->
+    <string name="settings_notif_one_hour_less">Una hora menos en %1$s</string>
+    <string name="settings_notif_one_hour_more">Una hora más en %1$s</string>
+    <string name="settings_notif_five_min_less">Cinco minutos menos en %1$s</string>
+    <string name="settings_notif_five_min_more">Cinco minutos más en %1$s</string>
+    <string name="settings_account_year_one"> año</string>
+    <string name="settings_account_year_many"> años</string>
+    <string name="settings_account_and_months"> y %1$s m.</string>
+    <string name="settings_account_months">%1$s meses</string>
 </resources>
