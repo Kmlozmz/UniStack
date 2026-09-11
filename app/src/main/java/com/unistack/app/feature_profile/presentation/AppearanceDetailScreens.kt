@@ -62,6 +62,7 @@ import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.TextFieldStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
+import com.unistack.app.core.utils.Textos
 
 /**
  * Las puertas de Apariencia, cada una con lo suyo.
@@ -489,91 +490,91 @@ private fun FilaDeInterruptor(
 internal fun ShadowIntensity.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        ShadowIntensity.SUAVE -> if (isEn) "Soft" else "Suave"
-        ShadowIntensity.MEDIA -> if (isEn) "Medium" else "Media"
-        ShadowIntensity.FUERTE -> if (isEn) "Strong" else "Fuerte"
+        ShadowIntensity.SUAVE -> Textos.get(R.string.settings_accent_soft)
+        ShadowIntensity.MEDIA -> Textos.get(R.string.templates_priority_medium)
+        ShadowIntensity.FUERTE -> Textos.get(R.string.appearance_fuerte)
     }
 }
 
 internal fun OutlineWeight.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        OutlineWeight.FINO -> if (isEn) "Thin" else "Fino"
-        OutlineWeight.MEDIO -> if (isEn) "Medium" else "Medio"
-        OutlineWeight.GRUESO -> if (isEn) "Thick" else "Grueso"
+        OutlineWeight.FINO -> Textos.get(R.string.appearance_fino)
+        OutlineWeight.MEDIO -> Textos.get(R.string.settings_accent_balanced)
+        OutlineWeight.GRUESO -> Textos.get(R.string.appearance_grueso)
     }
 }
 
 internal fun LineHeightStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        LineHeightStyle.COMPACTO -> if (isEn) "Compact" else "Compacto"
-        LineHeightStyle.NORMAL -> if (isEn) "Normal" else "Normal"
-        LineHeightStyle.AMPLIO -> if (isEn) "Wide" else "Amplio"
+        LineHeightStyle.COMPACTO -> Textos.get(R.string.appearance_compacto)
+        LineHeightStyle.NORMAL -> Textos.get(R.string.a11y_motion_normal)
+        LineHeightStyle.AMPLIO -> Textos.get(R.string.appearance_amplio)
     }
 }
 
 internal fun ButtonShapeStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        ButtonShapeStyle.RECTO -> if (isEn) "Sharp" else "Rectos"
-        ButtonShapeStyle.MEDIO -> if (isEn) "Medium" else "Medios"
-        ButtonShapeStyle.PASTILLA -> if (isEn) "Pill" else "Pastilla"
+        ButtonShapeStyle.RECTO -> Textos.get(R.string.appearance_rectos)
+        ButtonShapeStyle.MEDIO -> Textos.get(R.string.appearance_medios)
+        ButtonShapeStyle.PASTILLA -> Textos.get(R.string.appearance_pastilla)
     }
 }
 
 internal fun ButtonSizeStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        ButtonSizeStyle.PEQUENO -> if (isEn) "Small" else "Pequeño"
-        ButtonSizeStyle.MEDIO -> if (isEn) "Medium" else "Medio"
-        ButtonSizeStyle.GRANDE -> if (isEn) "Large" else "Grande"
+        ButtonSizeStyle.PEQUENO -> Textos.get(R.string.appearance_pequeno)
+        ButtonSizeStyle.MEDIO -> Textos.get(R.string.settings_accent_balanced)
+        ButtonSizeStyle.GRANDE -> Textos.get(R.string.appearance_grande)
     }
 }
 
 internal fun TextFieldStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        TextFieldStyle.RELLENO -> if (isEn) "Filled" else "Relleno"
-        TextFieldStyle.FILETE -> if (isEn) "Outlined" else "Filete"
-        TextFieldStyle.SUBRAYADO -> if (isEn) "Underlined" else "Subrayado"
+        TextFieldStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
+        TextFieldStyle.FILETE -> Textos.get(R.string.appearance_filete)
+        TextFieldStyle.SUBRAYADO -> Textos.get(R.string.appearance_subrayado)
     }
 }
 
 internal fun ChipStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        ChipStyle.FILETE -> if (isEn) "Outlined" else "Filete"
-        ChipStyle.RELLENO -> if (isEn) "Filled" else "Relleno"
-        ChipStyle.TEXTO -> if (isEn) "Text only" else "Solo texto"
+        ChipStyle.FILETE -> Textos.get(R.string.appearance_filete)
+        ChipStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
+        ChipStyle.TEXTO -> Textos.get(R.string.appearance_solo_texto)
     }
 }
 
 internal fun IconStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        IconStyle.REDONDEADO -> if (isEn) "Rounded" else "Redondeado"
-        IconStyle.LINEAL -> if (isEn) "Outlined" else "Lineal"
-        IconStyle.RELLENO -> if (isEn) "Filled" else "Relleno"
+        IconStyle.REDONDEADO -> Textos.get(R.string.appearance_redondeado)
+        IconStyle.LINEAL -> Textos.get(R.string.appearance_lineal)
+        IconStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
     }
 }
 
 internal fun BadgeShape.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        BadgeShape.CIRCULO -> if (isEn) "Circle" else "Círculo"
-        BadgeShape.GALLETA -> if (isEn) "Cookie" else "Galleta"
-        BadgeShape.TREBOL -> if (isEn) "Clover" else "Trébol"
-        BadgeShape.SOL -> if (isEn) "Sun" else "Sol"
-        BadgeShape.ROMBO -> if (isEn) "Diamond" else "Rombo"
-        BadgeShape.ALEATORIO -> if (isEn) "Random" else "Aleatorio"
+        BadgeShape.CIRCULO -> Textos.get(R.string.appearance_circulo)
+        BadgeShape.GALLETA -> Textos.get(R.string.appearance_galleta)
+        BadgeShape.TREBOL -> Textos.get(R.string.appearance_trebol)
+        BadgeShape.SOL -> Textos.get(R.string.appearance_sol)
+        BadgeShape.ROMBO -> Textos.get(R.string.appearance_rombo)
+        BadgeShape.ALEATORIO -> Textos.get(R.string.appearance_aleatorio)
     }
 }
 
 internal fun FirstDayOfWeek.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        FirstDayOfWeek.LUNES -> if (isEn) "Monday" else "Lunes"
-        FirstDayOfWeek.DOMINGO -> if (isEn) "Sunday" else "Domingo"
+        FirstDayOfWeek.LUNES -> Textos.get(R.string.appearance_lunes)
+        FirstDayOfWeek.DOMINGO -> Textos.get(R.string.appearance_domingo)
     }
 }

@@ -80,6 +80,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.draw.clip
+import com.unistack.app.core.utils.Textos
 
 /**
  * Las cuatro puertas del hub de Configuración académica.
@@ -509,7 +510,7 @@ fun AcademicAbsenceScreen(
                 onClick = {
                     viewModel.setAbsenceLimit(valor)
                     val isEn = java.util.Locale.getDefault().language == "en"
-                    feedback = if (isEn) "Limit updated." else "Tope actualizado."
+                    feedback = Textos.get(R.string.settings_absences_updated)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
@@ -526,7 +527,7 @@ fun AcademicAbsenceScreen(
                         viewModel.setAbsenceLimit(null)
                         valor = 6
                         val isEn = java.util.Locale.getDefault().language == "en"
-                        feedback = if (isEn) "Limit removed." else "Quitaste el tope."
+                        feedback = Textos.get(R.string.settings_absences_cleared)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -726,9 +727,9 @@ fun AcademicTermScreen(
                 onClick = {
                     val isEn = java.util.Locale.getDefault().language == "en"
                     feedback = if (viewModel.updateActiveTerm(nombre, tipo, inicio, fin)) {
-                        if (isEn) "Term updated." else "Periodo actualizado."
+                        Textos.get(R.string.settings_term_updated)
                     } else {
-                        if (isEn) "Check the name and dates." else "Revisa el nombre y las fechas."
+                        Textos.get(R.string.academic_revisa_el_nombre_y_las_fechas)
                     }
                 },
                 enabled = valido,

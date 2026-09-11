@@ -57,6 +57,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.unistack.app.core.utils.Textos
 
 private val FullScheduleLocale: Locale get() = Locale.getDefault()
 private val FullScheduleHourHeight = 64.dp
@@ -414,7 +415,7 @@ private fun fullScheduleTime(value: Int, use24Hour: Boolean): String {
     val minute = value % 60
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
-    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (if (Locale.getDefault().language == "en") "AM" else "a. m.") else (if (Locale.getDefault().language == "en") "PM" else "p. m."))
+    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (Textos.get(R.string.schedule_a_m)) else (Textos.get(R.string.schedule_p_m)))
 }
 
 private fun fullScheduleWeekLabel(start: LocalDate, end: LocalDate): String {

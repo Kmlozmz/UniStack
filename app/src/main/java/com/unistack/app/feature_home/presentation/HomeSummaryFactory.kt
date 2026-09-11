@@ -46,6 +46,8 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import com.unistack.app.feature_home.domain.HomePriorityTimeframe
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 internal object HomeSummaryFactory {
     private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
@@ -152,7 +154,7 @@ internal object HomeSummaryFactory {
         return HomeSummary(
             userName = profile?.preferredName?.takeIf { it.isNotBlank() }
                 ?: user.displayName?.takeIf { it.isNotBlank() }
-                ?: if (isEnglish) "Student" else "Estudiante",
+                ?: Textos.get(R.string.settings_profile_student),
             educationLine = profile?.educationSummary().orEmpty(),
             avatarPhotoUrl = profile?.portraitUrl ?: user.photoUrl,
             dashboardMessage = dashboardMessage(
@@ -185,7 +187,7 @@ internal object HomeSummaryFactory {
             companionInsight = companionInsight(
                 userName = profile?.preferredName?.takeIf { it.isNotBlank() }
                     ?: user.displayName?.takeIf { it.isNotBlank() }
-                    ?: if (isEnglish) "Student" else "Estudiante",
+                    ?: Textos.get(R.string.settings_profile_student),
                 priority = priority,
                 pendingTasks = pendingTasks.size,
                 overdueTasks = overdueTasks,
@@ -270,7 +272,7 @@ internal object HomeSummaryFactory {
                     id = work.id,
                     subjectId = work.subjectId,
                     title = work.title,
-                    dueText = work.dueDateMillis?.let(TaskDateUtils::dueText) ?: if (isEnglish) "no due date" else "sin fecha",
+                    dueText = work.dueDateMillis?.let(TaskDateUtils::dueText) ?: Textos.get(R.string.home_sin_fecha),
                     progress = work.checklistProgress
                 )
             }
@@ -303,8 +305,8 @@ internal object HomeSummaryFactory {
 
         if (subjects.isEmpty()) {
             return HomePrioritySummary(
-                title = if (isEnglish) "Prepare your semester" else "Prepara tu semestre",
-                shortDescription = if (isEnglish) "Add your subjects to activate real priorities." else "Agrega tus materias para activar prioridades reales.",
+                title = Textos.get(R.string.home_prepara_tu_semestre),
+                shortDescription = Textos.get(R.string.home_agrega_tus_materias_para_activar_prioridades),
                 action = HomePriorityAction.SUBJECTS
             )
         }
@@ -330,11 +332,11 @@ internal object HomeSummaryFactory {
             val next = waitingResults.maxByOrNull { it.completedAt ?: it.updatedAt }
             return HomePrioritySummary(
                 title = if (waitingResults.size == 1) {
-                    if (isEnglish) "${next?.title.orEmpty()} awaits grade" else "${next?.title.orEmpty()} espera su nota"
+                    Textos.get(R.string.home_espera_su_nota, next?.title.orEmpty())
                 } else {
-                    if (isEnglish) "${waitingResults.size} results awaiting entry" else "${waitingResults.size} resultados esperan registro"
+                    Textos.get(R.string.home_resultados_esperan_registro, waitingResults.size)
                 },
-                shortDescription = if (isEnglish) "Record the grade or indicate activity was ungraded." else "Registra la calificación o indica que la actividad no tuvo nota.",
+                shortDescription = Textos.get(R.string.home_registra_la_calificacion_o_indica_que),
                 action = HomePriorityAction.TASKS,
                 subjectId = next?.subjectId
             )
@@ -357,8 +359,8 @@ internal object HomeSummaryFactory {
         }
         if (incompleteHistory != null) {
             return HomePrioritySummary(
-                title = if (isEnglish) "Complete history for ${incompleteHistory.name}" else "Completa el historial de ${incompleteHistory.name}",
-                shortDescription = if (isEnglish) "Data from previous grading periods is needed for a reliable projection." else "Faltan datos de cortes anteriores para calcular una proyección fiable.",
+                title = Textos.get(R.string.home_completa_el_historial_de, incompleteHistory.name),
+                shortDescription = Textos.get(R.string.home_faltan_datos_de_cortes_anteriores_para),
                 action = HomePriorityAction.SUBJECT,
                 subjectId = incompleteHistory.id
             )
@@ -374,11 +376,11 @@ internal object HomeSummaryFactory {
                 it.source == GradeSource.ACTIVITY && it.weightStatus == GradeWeightStatus.UNKNOWN
             }
             return HomePrioritySummary(
-                title = if (isEnglish) "Adjust ${subjectWithUnknownWeights.name}" else "Ajusta ${subjectWithUnknownWeights.name}",
+                title = Textos.get(R.string.home_ajusta, subjectWithUnknownWeights.name),
                 shortDescription = if (count == 1) {
-                    if (isEnglish) "There is a grade with no weight; projection is provisional." else "Hay una nota sin porcentaje; la proyección todavía es provisional."
+                    Textos.get(R.string.home_hay_una_nota_sin_porcentaje_la)
                 } else {
-                    if (isEnglish) "There are $count grades with no weight; projection is provisional." else "Hay $count notas sin porcentaje; la proyección todavía es provisional."
+                    Textos.get(R.string.home_hay_notas_sin_porcentaje_la_proyeccion, count)
                 },
                 action = HomePriorityAction.SUBJECT,
                 subjectId = subjectWithUnknownWeights.id
@@ -413,7 +415,7 @@ internal object HomeSummaryFactory {
         val nowMinute = LocalTime.now().let { it.hour * 60 + it.minute }
 
         fun nombre(s: ClassSession): String = subjects.firstOrNull { it.id == s.subjectId }?.name
-            ?: if (isEnglish) "Your next class" else "Tu próxima clase"
+            ?: Textos.get(R.string.home_tu_proxima_clase)
         // El aula va delante del profesor en `location`, separados por el punto medio.
         fun conAula(texto: String, s: ClassSession): String {
             val aula = s.location.split('•', limit = 2).first().trim()
@@ -428,7 +430,7 @@ internal object HomeSummaryFactory {
             val hasta = formatClassMinute(enCurso.endMinute)
             return 960 to HomePrioritySummary(
                 title = nombre(enCurso),
-                shortDescription = conAula(if (isEnglish) "Until $hasta" else "Hasta las $hasta", enCurso),
+                shortDescription = conAula(Textos.get(R.string.home_hasta_las, hasta), enCurso),
                 action = HomePriorityAction.SCHEDULE,
                 subjectId = enCurso.subjectId,
                 timeframe = HomePriorityTimeframe.NOW
@@ -454,15 +456,15 @@ internal object HomeSummaryFactory {
         )
         val (puntos, texto, cuando) = when {
             date == today && faltan <= 0 ->
-                Triple(890, if (isEnglish) "Starting now" else "Empieza ahora mismo", HomePriorityTimeframe.TODAY)
+                Triple(890, Textos.get(R.string.home_empieza_ahora_mismo), HomePriorityTimeframe.TODAY)
             date == today && faltan <= 60 ->
-                Triple(890, if (isEnglish) "Starts in $faltan min" else "Empieza en $faltan min", HomePriorityTimeframe.TODAY)
+                Triple(890, Textos.get(R.string.home_empieza_en_min, faltan), HomePriorityTimeframe.TODAY)
             date == today ->
-                Triple(720, if (isEnglish) "Today at $hora" else "Hoy a las $hora", HomePriorityTimeframe.TODAY)
+                Triple(720, Textos.get(R.string.home_hoy_a_las, hora), HomePriorityTimeframe.TODAY)
             date == today.plusDays(1) ->
-                Triple(560, if (isEnglish) "Tomorrow at $hora" else "Mañana a las $hora", HomePriorityTimeframe.TOMORROW)
+                Triple(560, Textos.get(R.string.home_manana_a_las, hora), HomePriorityTimeframe.TOMORROW)
             else ->
-                Triple(450, if (isEnglish) "On $diaDeLaSemana at $hora" else "El $diaDeLaSemana a las $hora", HomePriorityTimeframe.LATER)
+                Triple(450, Textos.get(R.string.home_el_a_las, diaDeLaSemana, hora), HomePriorityTimeframe.LATER)
         }
         return puntos to HomePrioritySummary(
             title = nombre(session),
@@ -478,7 +480,7 @@ internal object HomeSummaryFactory {
     )
     private fun HomePrioritySummary.toDailyFocusItem(): DailyFocusItem {
         return DailyFocusItem(
-            slotLabel = if (isEnglish) "Now" else "Ahora",
+            slotLabel = Textos.get(R.string.settings_backup_now),
             title = title,
             detail = shortDescription,
             minutesText = when (action) {
@@ -487,12 +489,12 @@ internal object HomeSummaryFactory {
                 else -> "5 min"
             },
             actionLabel = when (action) {
-                HomePriorityAction.SUBJECT -> if (isEnglish) "Open" else "Abrir"
-                HomePriorityAction.SUBJECTS -> if (isEnglish) "Subjects" else "Materias"
-                HomePriorityAction.TASKS -> if (isEnglish) "Review" else "Revisar"
-                HomePriorityAction.EXPENSES -> if (isEnglish) "Expenses" else "Gastos"
-                HomePriorityAction.TEMPLATES -> if (isEnglish) "Assignments" else "Trabajos"
-                HomePriorityAction.SCHEDULE -> if (isEnglish) "Schedule" else "Horario"
+                HomePriorityAction.SUBJECT -> Textos.get(R.string.notif_btn_open)
+                HomePriorityAction.SUBJECTS -> Textos.get(R.string.settings_backup_subjects)
+                HomePriorityAction.TASKS -> Textos.get(R.string.tasks_review)
+                HomePriorityAction.EXPENSES -> Textos.get(R.string.setup_mod_expenses_title)
+                HomePriorityAction.TEMPLATES -> Textos.get(R.string.home_nav_assignments)
+                HomePriorityAction.SCHEDULE -> Textos.get(R.string.home_action_schedule_short)
             },
             action = action,
             subjectId = subjectId
@@ -515,24 +517,24 @@ internal object HomeSummaryFactory {
             works.any { it.status != AcademicWorkStatus.SUBMITTED }
         return when {
             canUseExpenses && index == 1 -> HomePrioritySummary(
-                title = if (isEnglish) "Expenses under control" else "Gastos bajo control",
-                shortDescription = if (isEnglish) "Good time to check if your week is on track." else "Buen momento para revisar si tu semana sigue en ritmo.",
+                title = Textos.get(R.string.home_gastos_bajo_control),
+                shortDescription = Textos.get(R.string.home_buen_momento_para_revisar_si_tu),
                 action = HomePriorityAction.EXPENSES
             )
             hasOpenWorks && index == 2 -> HomePrioritySummary(
-                title = if (isEnglish) "Room to make progress" else "Espacio para avanzar",
-                shortDescription = if (isEnglish) "Use a short block to move an assignment forward." else "Aprovecha un bloque corto para mover un trabajo.",
+                title = Textos.get(R.string.home_espacio_para_avanzar),
+                shortDescription = Textos.get(R.string.home_aprovecha_un_bloque_corto_para_mover),
                 action = HomePriorityAction.TEMPLATES
             )
             pendingTasks.isNotEmpty() && index == 3 -> HomePrioritySummary(
-                title = if (isEnglish) "Good rhythm" else "Buen ritmo",
-                shortDescription = if (isEnglish) "Sort out a small task and lighten your day." else "Ordena una tarea pequeña y deja el día más liviano.",
+                title = Textos.get(R.string.home_buen_ritmo),
+                shortDescription = Textos.get(R.string.home_ordena_una_tarea_pequena_y_deja),
                 action = HomePriorityAction.TASKS
             )
             academicFocus != null -> academicFocus.toPrioritySummary()
             else -> HomePrioritySummary(
-                title = if (isEnglish) "Clear day" else "Día despejado",
-                shortDescription = if (isEnglish) "Take advantage to review or prep your next grades." else "Aprovecha para repasar o preparar tus próximas notas.",
+                title = Textos.get(R.string.home_dia_despejado),
+                shortDescription = Textos.get(R.string.home_aprovecha_para_repasar_o_preparar_tus),
                 action = if (subjects.isNotEmpty()) HomePriorityAction.SUBJECTS else HomePriorityAction.TASKS
             )
         }
@@ -572,14 +574,14 @@ internal object HomeSummaryFactory {
         val averageText = average?.let { GradingScaleUtils.formatGrade(it, gradingScale) }
         return HomePrioritySummary(
             title = if (averageText != null) {
-                if (isEnglish) "$subjectName is at $averageText" else "$subjectName va en $averageText"
+                Textos.get(R.string.home_va_en, subjectName, averageText)
             } else {
-                if (isEnglish) "$subjectName awaits its first grade" else "$subjectName espera su primera nota"
+                Textos.get(R.string.home_espera_su_primera_nota, subjectName)
             },
             shortDescription = if (averageText != null) {
-                if (isEnglish) "${evaluatedPercentage.roundPercent()}% evaluated. ${remainingPercentage.roundPercent()}% remaining to record." else "${evaluatedPercentage.roundPercent()}% evaluado. Falta registrar ${remainingPercentage.roundPercent()}%. "
+                Textos.get(R.string.home_evaluado_falta_registrar, evaluatedPercentage.roundPercent(), remainingPercentage.roundPercent())
             } else {
-                if (isEnglish) "Add a grade to activate real projection and tracking." else "Agrega una nota para activar proyección y seguimiento real."
+                Textos.get(R.string.home_agrega_una_nota_para_activar_proyeccion)
             },
             action = HomePriorityAction.SUBJECT,
             subjectId = subjectId
@@ -590,19 +592,19 @@ internal object HomeSummaryFactory {
         val hasGrade = average != null
         return listOf(
             DailyFocusItem(
-                slotLabel = if (isEnglish) "Now" else "Ahora",
+                slotLabel = Textos.get(R.string.settings_backup_now),
                 title = if (hasGrade) {
-                    if (isEnglish) "Update $subjectName" else "Actualizar $subjectName"
+                    Textos.get(R.string.home_actualizar, subjectName)
                 } else {
-                    if (isEnglish) "Add first grade" else "Agregar primera nota"
+                    Textos.get(R.string.home_agregar_primera_nota)
                 },
                 detail = if (hasGrade) {
-                    if (isEnglish) "Record the next grade or check the remaining ${remainingPercentage.roundPercent()}%." else "Registra la próxima nota o revisa el ${remainingPercentage.roundPercent()}% restante."
+                    Textos.get(R.string.home_registra_la_proxima_nota_o_revisa, remainingPercentage.roundPercent())
                 } else {
-                    if (isEnglish) "Turn this subject into a dashboard with a real average." else "Convierte esta materia en un tablero con promedio real."
+                    Textos.get(R.string.home_convierte_esta_materia_en_un_tablero)
                 },
                 minutesText = if (hasGrade) "5 min" else "3 min",
-                actionLabel = if (isEnglish) "Open" else "Abrir",
+                actionLabel = Textos.get(R.string.notif_btn_open),
                 action = HomePriorityAction.SUBJECT,
                 subjectId = subjectId
             )
@@ -613,9 +615,9 @@ internal object HomeSummaryFactory {
 
     private fun heroActionPrefix(): String {
         return when (LocalTime.now().hour) {
-            in 5..11 -> if (isEnglish) "Start with" else "Arranca con"
-            in 18..23 -> if (isEnglish) "Wrap up" else "Deja listo"
-            else -> if (isEnglish) "Next step" else "Siguiente paso"
+            in 5..11 -> Textos.get(R.string.home_arranca_con)
+            in 18..23 -> Textos.get(R.string.home_deja_listo)
+            else -> Textos.get(R.string.notif_next_step)
         }
     }
 
@@ -649,8 +651,8 @@ internal object HomeSummaryFactory {
                         HomeUpcomingItem(
                             dayLabel = upcomingDayLabel(date, today),
                             timeText = formatClassMinute(session.startMinute),
-                            title = subjectNameById[session.subjectId] ?: if (isEnglish) "Class" else "Clase",
-                            subtitle = session.place.room.takeIf(String::isNotBlank)?.let { if (isEnglish) "Room $it" else "Aula $it" }.orEmpty(),
+                            title = subjectNameById[session.subjectId] ?: Textos.get(R.string.notif_cat_class),
+                            subtitle = session.place.room.takeIf(String::isNotBlank)?.let { Textos.get(R.string.home_aula, it) }.orEmpty(),
                             kind = HomeTimelineKind.CLASS
                         )
                     )
@@ -667,7 +669,7 @@ internal object HomeSummaryFactory {
                     24 * 60,
                     HomeUpcomingItem(
                         dayLabel = upcomingDayLabel(date, today),
-                        timeText = if (isEnglish) "Due" else "Entrega",
+                        timeText = Textos.get(R.string.home_entrega),
                         title = task.title,
                         subtitle = task.type.label(),
                         kind = task.type.timelineKind()
@@ -687,7 +689,7 @@ internal object HomeSummaryFactory {
                         24 * 60,
                         HomeUpcomingItem(
                             dayLabel = upcomingDayLabel(date, today),
-                            timeText = if (isEnglish) "Due" else "Entrega",
+                            timeText = Textos.get(R.string.home_entrega),
                             title = work.title,
                             subtitle = work.subjectId?.let(subjectNameById::get).orEmpty(),
                             kind = HomeTimelineKind.WORK
@@ -703,7 +705,7 @@ internal object HomeSummaryFactory {
     }
 
     private fun upcomingDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
-        today.plusDays(1) -> if (isEnglish) "Tomorrow" else "Mañana"
+        today.plusDays(1) -> Textos.get(R.string.schedule_identity_tomorrow)
         else -> date.dayOfWeek
             .getDisplayName(java.time.format.TextStyle.FULL, if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es"))
             .replaceFirstChar { it.uppercase(if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es")) }
@@ -740,7 +742,7 @@ internal object HomeSummaryFactory {
                 HomeTimelineSummary(
                     timeText = work.timelineTimeText(),
                     title = work.title,
-                    subtitle = listOfNotNull(subject, if (isEnglish) "$progress% done" else "$progress% listo").joinToString(" · "),
+                    subtitle = listOfNotNull(subject, Textos.get(R.string.home_listo, progress)).joinToString(" · "),
                     kind = HomeTimelineKind.WORK,
                     state = if (work.isDueTodayOrOverdue()) HomeTimelineState.CURRENT else HomeTimelineState.PENDING
                 )
@@ -750,7 +752,7 @@ internal object HomeSummaryFactory {
             ?.takeIf { it.severity != SubjectRiskSeverity.STABLE }
             ?.let {
                 HomeTimelineSummary(
-                    timeText = if (isEnglish) "Focus" else "Enfoque",
+                    timeText = Textos.get(R.string.home_enfoque),
                     title = it.subjectName,
                     subtitle = it.detail,
                     kind = HomeTimelineKind.FOCUS,
@@ -885,13 +887,13 @@ internal object HomeSummaryFactory {
     ): String {
         return when {
             severity == SubjectRiskSeverity.CRITICAL && average < passingGrade ->
-                if (isEnglish) "Average below passing grade: ${GradingScaleUtils.formatGrade(average, gradingScale)}." else "Promedio bajo la nota mínima: ${GradingScaleUtils.formatGrade(average, gradingScale)}."
+                Textos.get(R.string.home_promedio_bajo_la_nota_minima, GradingScaleUtils.formatGrade(average, gradingScale))
             neededGrade != null && neededGrade in 0.0..maxGrade && remainingPercentage > 0.0 ->
-                if (isEnglish) "You need ${GradingScaleUtils.formatGrade(neededGrade, gradingScale)} on remaining." else "Necesitas ${GradingScaleUtils.formatGrade(neededGrade, gradingScale)} en lo restante."
+                Textos.get(R.string.home_necesitas_en_lo_restante, GradingScaleUtils.formatGrade(neededGrade, gradingScale))
             average >= targetAverage ->
-                if (isEnglish) "Above target with ${GradingScaleUtils.formatGrade(average, gradingScale)}." else "Va sobre la meta con ${GradingScaleUtils.formatGrade(average, gradingScale)}."
+                Textos.get(R.string.home_va_sobre_la_meta_con, GradingScaleUtils.formatGrade(average, gradingScale))
             else ->
-                if (isEnglish) "Check upcoming percentages to recover your target." else "Revisa los próximos porcentajes para recuperar la meta."
+                Textos.get(R.string.home_revisa_los_proximos_porcentajes_para_recuper)
         }
     }
 
@@ -903,21 +905,21 @@ internal object HomeSummaryFactory {
         nextAcademicWork: AcademicWorkSummary?,
         weeklyExpenseTotal: Int
     ): String {
-        if (!hasSubjects) return if (isEnglish) "Create your subjects to see a real semester dashboard." else "Crea tus materias para ver un tablero real del semestre."
+        if (!hasSubjects) return Textos.get(R.string.home_crea_tus_materias_para_ver_un)
         if (overdueTasks > 0) return if (isEnglish) "There ${if (overdueTasks == 1) "is 1 overdue task" else "are $overdueTasks overdue tasks"} best closed first." else "Hay $overdueTasks tarea${if (overdueTasks == 1) "" else "s"} vencida${if (overdueTasks == 1) "" else "s"} que conviene cerrar primero."
-        if (riskSubject?.severity == SubjectRiskSeverity.CRITICAL) return if (isEnglish) "${riskSubject.subjectName} needs academic attention today." else "${riskSubject.subjectName} necesita atención académica hoy."
-        if (riskSubject?.severity == SubjectRiskSeverity.ATTENTION) return if (isEnglish) "${riskSubject.subjectName} is close to target, but worth monitoring." else "${riskSubject.subjectName} está cerca de la meta, pero vale la pena vigilarla."
-        if (nextAcademicWork != null) return if (isEnglish) "Your next assignment is ${nextAcademicWork.title}." else "Tu próximo trabajo es ${nextAcademicWork.title}."
-        if (nextTask != null) return if (isEnglish) "Your next clear action is ${nextTask.title}." else "Tu próxima acción clara es ${nextTask.title}."
-        if (weeklyExpenseTotal > 0) return if (isEnglish) "You already logged expenses this week; check if they fit your plan." else "Esta semana ya tienes gastos registrados; revisa si siguen dentro de tu plan."
-        return if (isEnglish) "Everything is under control. Keep grades and tasks updated." else "Todo está bajo control. Mantén notas y tareas actualizadas."
+        if (riskSubject?.severity == SubjectRiskSeverity.CRITICAL) return Textos.get(R.string.home_necesita_atencion_academica_hoy, riskSubject.subjectName)
+        if (riskSubject?.severity == SubjectRiskSeverity.ATTENTION) return Textos.get(R.string.home_esta_cerca_de_la_meta_pero, riskSubject.subjectName)
+        if (nextAcademicWork != null) return Textos.get(R.string.home_tu_proximo_trabajo_es, nextAcademicWork.title)
+        if (nextTask != null) return Textos.get(R.string.home_tu_proxima_accion_clara_es, nextTask.title)
+        if (weeklyExpenseTotal > 0) return Textos.get(R.string.home_esta_semana_ya_tienes_gastos_registrados)
+        return Textos.get(R.string.home_todo_esta_bajo_control_manten_notas)
     }
 
     private fun productivitySummary(completedTasks: Int, pendingTasks: Int, overdueTasks: Int): String {
         return when {
-            completedTasks == 0 && pendingTasks == 0 -> if (isEnglish) "No tasks yet." else "Sin tareas todavía."
-            overdueTasks > 0 -> if (isEnglish) "$completedTasks completed · $overdueTasks overdue" else "$completedTasks completadas · $overdueTasks vencidas"
-            else -> if (isEnglish) "$completedTasks completed · $pendingTasks pending" else "$completedTasks completadas · $pendingTasks pendientes"
+            completedTasks == 0 && pendingTasks == 0 -> Textos.get(R.string.home_sin_tareas_todavia)
+            overdueTasks > 0 -> Textos.get(R.string.home_completadas_vencidas, completedTasks, overdueTasks)
+            else -> Textos.get(R.string.home_completadas_pendientes, completedTasks, pendingTasks)
         }
     }
 
@@ -930,13 +932,13 @@ internal object HomeSummaryFactory {
     ): String {
         val shortName = userName.substringBefore(' ').takeIf { it.isNotBlank() } ?: userName
         return when {
-            overdueTasks > 0 -> if (isEnglish) "Close a pending task first, $shortName. Then the day feels lighter." else "Cierra una pendiente primero, $shortName. Después el día se siente más ligero."
+            overdueTasks > 0 -> Textos.get(R.string.home_cierra_una_pendiente_primero_despues_el, shortName)
             todayItems.any { it.state == HomeTimelineState.CURRENT } ->
-                if (isEnglish) "Today it helps to focus on ${todayItems.first { it.state == HomeTimelineState.CURRENT }.title} before opening more fronts." else "Hoy conviene enfocarte en ${todayItems.first { it.state == HomeTimelineState.CURRENT }.title} antes de abrir más frentes."
-            pendingTasks == 0 -> if (isEnglish) "Calm day, $shortName. Perfect to review or get upcoming notes ready." else "Día tranquilo, $shortName. Perfecto para repasar o dejar listas tus próximas notas."
+                Textos.get(R.string.home_hoy_conviene_enfocarte_en_antes_de, todayItems.first { it.state == HomeTimelineState.CURRENT }.title)
+            pendingTasks == 0 -> Textos.get(R.string.home_dia_tranquilo_perfecto_para_repasar_o, shortName)
             priority.action == HomePriorityAction.TEMPLATES ->
                 if (isEnglish) "A little progress on ${priority.title.substringBefore(" is ")} today can save pressure later." else "Un avance pequeño en ${priority.title.substringBefore(" es ")} hoy puede ahorrarte presión después."
-            else -> if (isEnglish) "Doing well, $shortName. Prioritize one important thing and keep the rest in order." else "Vas bien, $shortName. Prioriza una cosa importante y deja el resto en orden."
+            else -> Textos.get(R.string.home_vas_bien_prioriza_una_cosa_importante, shortName)
         }
     }
 
@@ -953,10 +955,10 @@ internal object HomeSummaryFactory {
         val days = ChronoUnit.DAYS.between(TaskDateUtils.today(), TaskDateUtils.fromMillis(dueDateMillis))
         val time = dueDateMillis.timelineTimeSuffix()
         return when {
-            days < 0 -> if (isEnglish) "Overdue$time" else "Vencida$time"
-            days == 0L -> if (isEnglish) "Today$time" else "Hoy$time"
-            days == 1L -> if (isEnglish) "Tomorrow$time" else "Mañana$time"
-            else -> if (isEnglish) "In $days days$time" else "En $days días$time"
+            days < 0 -> Textos.get(R.string.home_vencida, time)
+            days == 0L -> Textos.get(R.string.home_hoy, time)
+            days == 1L -> Textos.get(R.string.home_manana, time)
+            else -> Textos.get(R.string.home_en_dias, days, time)
         }
     }
 
@@ -972,14 +974,14 @@ internal object HomeSummaryFactory {
     }
 
     private fun AcademicWork.timelineTimeText(): String {
-        val due = dueDateMillis ?: return if (isEnglish) "No due date" else "Sin fecha"
+        val due = dueDateMillis ?: return Textos.get(R.string.home_sin_fecha_2)
         val days = ChronoUnit.DAYS.between(TaskDateUtils.today(), TaskDateUtils.fromMillis(due))
         val time = due.timelineTimeSuffix()
         return when {
-            days < 0 -> if (isEnglish) "Overdue$time" else "Vencido$time"
-            days == 0L -> if (isEnglish) "Today$time" else "Hoy$time"
-            days == 1L -> if (isEnglish) "Tomorrow$time" else "Mañana$time"
-            else -> if (isEnglish) "In $days days$time" else "En $days días$time"
+            days < 0 -> Textos.get(R.string.home_vencido, time)
+            days == 0L -> Textos.get(R.string.home_hoy, time)
+            days == 1L -> Textos.get(R.string.home_manana, time)
+            else -> Textos.get(R.string.home_en_dias, days, time)
         }
     }
 
@@ -990,16 +992,16 @@ internal object HomeSummaryFactory {
 
     private fun TaskType.label(): String {
         return when (this) {
-            TaskType.WORKSHOP -> if (isEnglish) "Workshop" else "Taller"
-            TaskType.EXAM -> if (isEnglish) "Exam" else "Examen"
-            TaskType.ESSAY -> if (isEnglish) "Essay" else "Ensayo"
-            TaskType.PRESENTATION -> if (isEnglish) "Presentation" else "Presentación"
-            TaskType.RESEARCH -> if (isEnglish) "Research" else "Investigación"
-            TaskType.TEST -> if (isEnglish) "Quiz" else "Quiz"
-            TaskType.PRACTICE -> if (isEnglish) "Practice" else "Práctica"
-            TaskType.PROJECT -> if (isEnglish) "Project" else "Proyecto"
-            TaskType.READING -> if (isEnglish) "Reading" else "Lectura"
-            TaskType.OTHER -> if (isEnglish) "Task" else "Tarea"
+            TaskType.WORKSHOP -> Textos.get(R.string.agenda_academic_type_workshop)
+            TaskType.EXAM -> Textos.get(R.string.tasks_type_exam)
+            TaskType.ESSAY -> Textos.get(R.string.agenda_academic_type_essay)
+            TaskType.PRESENTATION -> Textos.get(R.string.agenda_academic_type_presentation)
+            TaskType.RESEARCH -> Textos.get(R.string.agenda_academic_type_research)
+            TaskType.TEST -> Textos.get(R.string.grade_type_quiz)
+            TaskType.PRACTICE -> Textos.get(R.string.grade_type_practice)
+            TaskType.PROJECT -> Textos.get(R.string.agenda_academic_type_project)
+            TaskType.READING -> Textos.get(R.string.agenda_academic_type_reading)
+            TaskType.OTHER -> Textos.get(R.string.home_tarea)
         }
     }
 

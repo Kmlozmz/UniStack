@@ -63,6 +63,7 @@ import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.feature_user.domain.UserProfile
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 private val LeadChoices = listOf(1, 3, 6, 12, 24, 48, 72)
 
@@ -680,10 +681,9 @@ private fun leadChipLabel(hours: Int): String = when {
 }
 
 private fun leadLabel(hours: Int): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when {
-        hours < 24 -> if (isEn) "$hours hours before" else "$hours horas antes"
-        hours == 24 -> if (isEn) "one day before" else "un día antes"
-        else -> if (isEn) "${hours / 24} days before" else "${hours / 24} días antes"
+        hours < 24 -> Textos.get(R.string.notif_horas_antes, hours)
+        hours == 24 -> Textos.get(R.string.settings_notif_one_day_before)
+        else -> Textos.get(R.string.notif_dias_antes, hours / 24)
     }
 }

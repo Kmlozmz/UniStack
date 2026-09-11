@@ -34,24 +34,25 @@ import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
+import com.unistack.app.core.utils.Textos
 
 internal fun ClassAbsenceReason.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        ClassAbsenceReason.HEALTH -> if (isEn) "Health" else "Salud"
-        ClassAbsenceReason.TRANSPORT -> if (isEn) "Transport" else "Transporte"
-        ClassAbsenceReason.PERSONAL -> if (isEn) "Personal" else "Personal"
-        ClassAbsenceReason.ACADEMIC_CONFLICT -> if (isEn) "Another class" else "Otra clase"
-        ClassAbsenceReason.OTHER -> if (isEn) "Other" else "Otro"
+        ClassAbsenceReason.HEALTH -> Textos.get(R.string.attendance_reason_health)
+        ClassAbsenceReason.TRANSPORT -> Textos.get(R.string.attendance_reason_transport)
+        ClassAbsenceReason.PERSONAL -> Textos.get(R.string.attendance_reason_personal)
+        ClassAbsenceReason.ACADEMIC_CONFLICT -> Textos.get(R.string.attendance_reason_other_class)
+        ClassAbsenceReason.OTHER -> Textos.get(R.string.support_ticket_other)
     }
 }
 
 internal fun ClassModality.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        ClassModality.IN_PERSON -> if (isEn) "In-person" else "Presencial"
-        ClassModality.VIRTUAL -> if (isEn) "Online" else "Virtual"
-        ClassModality.HYBRID -> if (isEn) "Hybrid" else "Híbrida"
+        ClassModality.IN_PERSON -> Textos.get(R.string.attendance_modality_presential)
+        ClassModality.VIRTUAL -> Textos.get(R.string.attendance_modality_virtual)
+        ClassModality.HYBRID -> Textos.get(R.string.attendance_modality_hybrid)
     }
 }
 

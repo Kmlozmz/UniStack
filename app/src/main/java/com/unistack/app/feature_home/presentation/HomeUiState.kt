@@ -6,20 +6,21 @@ import com.unistack.app.feature_home.domain.HomeSummary
 
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 data class HomeUiState(
     val summary: HomeSummary = emptySummary
 ) {
     companion object {
-        private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
 
         fun createEmptySummary() = HomeSummary(
-            userName = if (isEnglish) "Student" else "Estudiante",
+            userName = Textos.get(R.string.settings_profile_student),
             avatarPhotoUrl = null,
-            dashboardMessage = if (isEnglish) "Set up your semester to see real priorities." else "Configura tu semestre para ver prioridades reales.",
+            dashboardMessage = Textos.get(R.string.home_configura_tu_semestre_para_ver_prioridades),
             priority = HomePrioritySummary(
-                title = if (isEnglish) "Prepare your semester" else "Prepara tu semestre",
-                shortDescription = if (isEnglish) "Add subjects and tasks to activate real priorities." else "Agrega materias y tareas para activar prioridades reales.",
+                title = Textos.get(R.string.home_prepara_tu_semestre),
+                shortDescription = Textos.get(R.string.home_agrega_materias_y_tareas_para_activar),
                 action = HomePriorityAction.SUBJECTS
             ),
             dailyFocusItems = emptyList(),
@@ -37,8 +38,8 @@ data class HomeUiState(
             todayItems = emptyList(),
             weeklyExpenses = null,
             weeklyExpenseTotal = 0,
-            productivitySummary = if (isEnglish) "No tasks yet." else "Sin tareas todavía.",
-            companionInsight = if (isEnglish) "Add your subjects so UniStack can support you better." else "Agrega tus materias para que UniStack te acompañe mejor.",
+            productivitySummary = Textos.get(R.string.home_sin_tareas_todavia),
+            companionInsight = Textos.get(R.string.home_agrega_tus_materias_para_que_unistack),
             gradingScale = GradingScale.ZERO_TO_FIVE,
             enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         )

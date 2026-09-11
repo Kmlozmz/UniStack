@@ -92,6 +92,7 @@ import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.unistack.app.core.utils.Textos
 
 private val AppLocale: Locale get() = Locale.getDefault()
 private val DiaMes: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", AppLocale)
@@ -304,14 +305,14 @@ internal fun HeroDeAsistencia(
         ) {
             val isEn = AppLocale.language == "en"
             fun plural(n: Int, uno: String, varios: String) = "$n " + if (n == 1) uno else varios
-            Pildora(plural(summary.absent, if (isEn) "absence" else "falta", if (isEn) "absences" else "faltas"), tinta)
-            Pildora(plural(summary.attended, if (isEn) "attendance" else "asistencia", if (isEn) "attendances" else "asistencias"), tinta)
-            Pildora(plural(dadas, if (isEn) "class held" else "clase dada", if (isEn) "classes held" else "clases dadas"), tinta)
+            Pildora(plural(summary.absent, Textos.get(R.string.schedule_falta_2), Textos.get(R.string.schedule_faltas)), tinta)
+            Pildora(plural(summary.attended, Textos.get(R.string.schedule_asistencia), Textos.get(R.string.schedule_asistencias)), tinta)
+            Pildora(plural(dadas, Textos.get(R.string.schedule_clase_dada), Textos.get(R.string.schedule_clases_dadas)), tinta)
             if (sinMarcar > 0) {
-                Pildora(plural(sinMarcar, if (isEn) "unmarked" else "sin marcar", if (isEn) "unmarked" else "sin marcar"), tinta)
+                Pildora(plural(sinMarcar, Textos.get(R.string.schedule_sin_marcar), Textos.get(R.string.schedule_sin_marcar)), tinta)
             }
             if (summary.streak > 1) {
-                Pildora(if (isEn) "🔥 ${summary.streak} in a row" else "🔥 ${summary.streak} seguidas", tinta)
+                Pildora(Textos.get(R.string.schedule_seguidas, summary.streak), tinta)
             }
         }
 

@@ -1,5 +1,6 @@
 package com.unistack.app.feature_tasks.presentation
 
+import com.unistack.app.TextosDePrueba
 import com.unistack.app.core.MainDispatcherRule
 import com.unistack.app.feature_grades.data.InMemoryGradesRepository
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -33,6 +34,7 @@ class TasksViewModelTest {
 
     @Before
     fun setUp() {
+        TextosDePrueba.instalar()
         tasksRepo = InMemoryTasksRepository()
         gradesRepo = InMemoryGradesRepository()
         userRepo = InMemoryUserRepository()

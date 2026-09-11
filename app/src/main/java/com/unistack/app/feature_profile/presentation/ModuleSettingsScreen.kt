@@ -41,6 +41,7 @@ import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_user.domain.AppModule
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 /**
  * Qué áreas de la app están encendidas.
@@ -159,20 +160,20 @@ private fun AppModule.icon(): ImageVector = when (this) {
 private fun AppModule.moduleLabel(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        AppModule.GRADES -> if (isEn) "Grades & subjects" else "Notas y materias"
-        AppModule.TASKS -> if (isEn) "Tasks" else "Tareas"
-        AppModule.EXPENSES -> if (isEn) "Expenses" else "Gastos"
-        AppModule.ACADEMIC_TEMPLATES -> if (isEn) "Academic works" else "Trabajos"
+        AppModule.GRADES -> Textos.get(R.string.settings_module_grades_title)
+        AppModule.TASKS -> Textos.get(R.string.setup_mod_tasks_title)
+        AppModule.EXPENSES -> Textos.get(R.string.setup_mod_expenses_title)
+        AppModule.ACADEMIC_TEMPLATES -> Textos.get(R.string.settings_backup_works)
     }
 }
 
 private fun AppModule.moduleDetail(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        AppModule.GRADES -> if (isEn) "Averages, percentages, and targets" else "Promedios, porcentajes y metas"
-        AppModule.TASKS -> if (isEn) "Due dates, deadlines, and pending tasks" else "Entregas, fechas y pendientes"
-        AppModule.EXPENSES -> if (isEn) "Records and weekly summary" else "Registros y resumen semanal"
-        AppModule.ACADEMIC_TEMPLATES -> if (isEn) "Templates and long assignments" else "Plantillas y entregas largas"
+        AppModule.GRADES -> Textos.get(R.string.settings_module_grades_desc)
+        AppModule.TASKS -> Textos.get(R.string.settings_module_tasks_desc)
+        AppModule.EXPENSES -> Textos.get(R.string.settings_module_expenses_desc)
+        AppModule.ACADEMIC_TEMPLATES -> Textos.get(R.string.settings_module_templates_desc)
     }
 }
 

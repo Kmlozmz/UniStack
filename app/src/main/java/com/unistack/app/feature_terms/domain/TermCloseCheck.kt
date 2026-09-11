@@ -7,6 +7,8 @@ import com.unistack.app.feature_user.domain.GradingCutScheme
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /** Algo del periodo que se quedó a medias. */
 sealed interface TermGap {
@@ -199,24 +201,24 @@ object TermCloseCheck {
 private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
 
 fun TermGap.title(): String = when (this) {
-    is TermGap.MissingCut -> if (isEnglish) "$subjectName — missing $cutName" else "$subjectName — falta el $cutName"
+    is TermGap.MissingCut -> Textos.get(R.string.term_falta_el, subjectName, cutName)
     is TermGap.UnmarkedClasses ->
         if (isEnglish) "$subjectName — $count ${if (count == 1) "class" else "classes"} unmarked"
         else "$subjectName — $count ${if (count == 1) "clase" else "clases"} sin marcar"
-    is TermGap.OverdueTask -> if (isEnglish) "$title — not submitted" else "$title — sin entregar"
+    is TermGap.OverdueTask -> Textos.get(R.string.term_sin_entregar, title)
 }
 
 fun TermGap.detail(): String = when (this) {
-    is TermGap.MissingCut -> if (isEnglish) "$weightPercent% of grade unrecorded" else "$weightPercent% de la nota sin registrar"
-    is TermGap.UnmarkedClasses -> if (isEnglish) "Attendance remains incomplete" else "La asistencia queda incompleta"
-    is TermGap.OverdueTask -> if (isEnglish) "Due on ${mesLargo(dueDate)} ${dueDate.dayOfMonth}" else "Venció el ${dueDate.dayOfMonth} de ${mesLargo(dueDate)}"
+    is TermGap.MissingCut -> Textos.get(R.string.term_de_la_nota_sin_registrar, weightPercent)
+    is TermGap.UnmarkedClasses -> Textos.get(R.string.term_la_asistencia_queda_incompleta)
+    is TermGap.OverdueTask -> Textos.get(R.string.term_vencio_el_de, dueDate.dayOfMonth, mesLargo(dueDate))
 }
 
 /** Qué palabra usar para el conjunto, que cambia con el número. */
 fun List<TermGap>.summaryLine(): String = when (size) {
-    0 -> if (isEnglish) "Nothing left to complete" else "No falta nada por terminar"
-    1 -> if (isEnglish) "1 thing left to finish" else "Hay 1 cosa sin terminar"
-    else -> if (isEnglish) "$size things left to finish" else "Hay $size cosas sin terminar"
+    0 -> Textos.get(R.string.term_no_falta_nada_por_terminar)
+    1 -> Textos.get(R.string.term_hay_1_cosa_sin_terminar)
+    else -> Textos.get(R.string.term_hay_cosas_sin_terminar, size)
 }
 
 private val MesesLargosEs = listOf(

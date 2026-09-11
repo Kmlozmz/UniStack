@@ -8,6 +8,8 @@ import androidx.core.content.edit
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 private const val BACKUP_PREFS = "unistack_backup_history"
 private const val LAST_BACKUP_AT = "last_backup_at"
@@ -58,7 +60,7 @@ object BackupFiles {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         val isEn = java.util.Locale.getDefault().language == "en"
-        context.startActivity(Intent.createChooser(intent, if (isEn) "Share" else "Compartir"))
+        context.startActivity(Intent.createChooser(intent, Textos.get(R.string.settings_backup_btn_share)))
     }
 
     /** El nombre del archivo elegido, para que se vea cuál se va a restaurar. */
@@ -70,7 +72,7 @@ object BackupFiles {
             }
         }.getOrNull()
         val isEn = java.util.Locale.getDefault().language == "en"
-        return fromProvider ?: uri.lastPathSegment?.substringAfterLast('/') ?: (if (isEn) "Chosen file" else "Archivo elegido")
+        return fromProvider ?: uri.lastPathSegment?.substringAfterLast('/') ?: (Textos.get(R.string.backup_archivo_elegido))
     }
 
     fun rememberBackupDone(context: Context) {

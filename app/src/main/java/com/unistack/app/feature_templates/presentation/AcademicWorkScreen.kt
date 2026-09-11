@@ -53,6 +53,7 @@ import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 /**
  * Un trabajo, con lo que le pertenece.
@@ -166,7 +167,7 @@ fun AcademicWorkScreen(
                     onSaved = {
                         editing = false
                         val isEn = java.util.Locale.getDefault().language == "en"
-                        feedback = if (isEn) "Work updated." else "Trabajo actualizado."
+                        feedback = Textos.get(R.string.templates_work_updated)
                     }
                 )
             }
@@ -184,7 +185,7 @@ fun AcademicWorkScreen(
                 onCopyClick = {
                     copyToClipboard(draft)
                     val isEn = java.util.Locale.getDefault().language == "en"
-                    feedback = if (isEn) "APA references copied." else "Referencias APA copiadas."
+                    feedback = Textos.get(R.string.templates_work_apa_copied)
                 }
             )
         }
@@ -211,7 +212,7 @@ fun AcademicWorkScreen(
                         onClick = {
                             copyToClipboard(work.exportText(subjects))
                             val isEn = java.util.Locale.getDefault().language == "en"
-                            feedback = if (isEn) "Work copied to clipboard." else "Trabajo copiado al portapapeles."
+                            feedback = Textos.get(R.string.templates_work_copied)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -352,7 +353,7 @@ private fun WorkEditorSection(
                 notes = notes
             )
             val isEn = java.util.Locale.getDefault().language == "en"
-            if (saved) onSaved() else error = if (isEn) "Check title and date before saving." else "Revisa el título y la fecha antes de guardar."
+            if (saved) onSaved() else error = Textos.get(R.string.templates_work_validation_error)
         }
     )
 }

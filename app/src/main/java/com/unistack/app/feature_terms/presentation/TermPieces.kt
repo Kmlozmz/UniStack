@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.LocalSectionColors
 import java.time.LocalDate
+import com.unistack.app.core.utils.Textos
 
 private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
 
@@ -42,12 +43,12 @@ private val MesesCortosEn =
 
 internal fun LocalDate.diaMes(): String {
     val m = if (isEnglish) MesesCortosEn[monthValue - 1] else MesesCortosEs[monthValue - 1]
-    return if (isEnglish) "$m $dayOfMonth" else "$dayOfMonth $m"
+    return Textos.get(R.string.term_texto, dayOfMonth, m)
 }
 
 internal fun LocalDate.diaMesAno(): String {
     val m = if (isEnglish) MesesCortosEn[monthValue - 1] else MesesCortosEs[monthValue - 1]
-    return if (isEnglish) "$m $dayOfMonth, $year" else "$dayOfMonth $m $year"
+    return Textos.get(R.string.term_texto_2, dayOfMonth, m, year)
 }
 
 /** El rótulo pequeño en versales que separa bloques, igual que en el historial de asistencia. */

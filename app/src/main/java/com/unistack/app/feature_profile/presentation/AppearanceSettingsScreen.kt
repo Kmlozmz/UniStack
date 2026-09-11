@@ -59,6 +59,7 @@ import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.feature_user.domain.portraitUrl
+import com.unistack.app.core.utils.Textos
 
 /**
  * Apariencia: un hub de cinco puertas, con la maqueta arriba.
@@ -195,18 +196,18 @@ private fun AppearancePreferences.resumenDeInicio(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     val encendidos = listOf(showHomeGreeting, showHomeHero, showHomeAgenda, showHomeSnapshot).count { it }
     return when (encendidos) {
-        4 -> if (isEn) "All 4 blocks turned on" else "Los 4 bloques encendidos"
-        0 -> if (isEn) "No blocks: logo only" else "Sin bloques: solo el logo"
-        else -> if (isEn) "$encendidos of 4 blocks" else "$encendidos de 4 bloques"
+        4 -> Textos.get(R.string.settings_appearance_home_4_on)
+        0 -> Textos.get(R.string.settings_appearance_home_0_on)
+        else -> Textos.get(R.string.appearance_de_4_bloques, encendidos)
     }
 }
 
 private fun Int.ejemploDeNota(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        0 -> if (isEn) "grades like 3" else "notas como 3"
-        1 -> if (isEn) "grades like 3.5" else "notas como 3,5"
-        else -> if (isEn) "grades like 3.50" else "notas como 3,50"
+        0 -> Textos.get(R.string.settings_appearance_grade_sample_0)
+        1 -> Textos.get(R.string.settings_appearance_grade_sample_1)
+        else -> Textos.get(R.string.settings_appearance_grade_sample_2)
     }
 }
 
@@ -336,21 +337,21 @@ internal fun AppearancePreferences.showsSection(section: HomeSection): Boolean =
 internal fun VisualPreference.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        VisualPreference.SYSTEM -> if (isEn) "System" else "Sistema"
-        VisualPreference.LIGHT -> if (isEn) "Light" else "Claro"
-        VisualPreference.DARK -> if (isEn) "Dark" else "Oscuro"
+        VisualPreference.SYSTEM -> Textos.get(R.string.appearance_sistema)
+        VisualPreference.LIGHT -> Textos.get(R.string.appearance_claro)
+        VisualPreference.DARK -> Textos.get(R.string.appearance_oscuro)
         VisualPreference.OLED -> "OLED"
-        VisualPreference.CUSTOM -> if (isEn) "Custom" else "Personalizado"
+        VisualPreference.CUSTOM -> Textos.get(R.string.appearance_personalizado)
     }
 }
 
 internal fun VisualPreference.themeDescription(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        VisualPreference.SYSTEM -> if (isEn) "Follows Android theme." else "Sigue el tema de Android."
-        VisualPreference.LIGHT -> if (isEn) "Always light, even if Android is dark." else "Siempre claro, aunque Android esté oscuro."
-        VisualPreference.DARK -> if (isEn) "Always dark, even if Android is light." else "Siempre oscuro, aunque Android esté claro."
-        VisualPreference.OLED -> if (isEn) "Pure black: uses less battery on OLED screens." else "Negro puro: en pantallas OLED gasta menos batería."
+        VisualPreference.SYSTEM -> Textos.get(R.string.appearance_sigue_el_tema_de_android)
+        VisualPreference.LIGHT -> Textos.get(R.string.appearance_siempre_claro_aunque_android_este_oscuro)
+        VisualPreference.DARK -> Textos.get(R.string.appearance_siempre_oscuro_aunque_android_este_claro)
+        VisualPreference.OLED -> Textos.get(R.string.appearance_negro_puro_en_pantallas_oled_gasta)
         VisualPreference.CUSTOM -> ""
     }
 }
@@ -358,9 +359,9 @@ internal fun VisualPreference.themeDescription(): String {
 internal fun InterfaceDensity.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        InterfaceDensity.COMPACT -> if (isEn) "Compact" else "Compacta"
-        InterfaceDensity.BALANCED -> if (isEn) "Balanced" else "Equilibrada"
-        InterfaceDensity.COMFORTABLE -> if (isEn) "Comfortable" else "Cómoda"
+        InterfaceDensity.COMPACT -> Textos.get(R.string.appearance_compacta)
+        InterfaceDensity.BALANCED -> Textos.get(R.string.appearance_equilibrada)
+        InterfaceDensity.COMFORTABLE -> Textos.get(R.string.appearance_comoda)
     }
 }
 
@@ -368,94 +369,94 @@ internal fun TypographyStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         TypographyStyle.SANS -> "Sans"
-        TypographyStyle.SYSTEM -> if (isEn) "System" else "Sistema"
+        TypographyStyle.SYSTEM -> Textos.get(R.string.appearance_sistema)
         TypographyStyle.SERIF -> "Serif"
         TypographyStyle.MONO -> "Mono"
-        TypographyStyle.ESTRECHA -> if (isEn) "Narrow" else "Estrecha"
-        TypographyStyle.REDONDEADA -> if (isEn) "Rounded" else "Redondeada"
+        TypographyStyle.ESTRECHA -> Textos.get(R.string.appearance_estrecha)
+        TypographyStyle.REDONDEADA -> Textos.get(R.string.appearance_redondeada)
     }
 }
 
 internal fun TypographyStyle.explicacion(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        TypographyStyle.SANS -> if (isEn) "System sans-serif. The default." else "La sans-serif del sistema. Es la de siempre."
-        TypographyStyle.SYSTEM -> if (isEn) "Whatever font your phone comes with." else "La que traiga tu teléfono como suya."
-        TypographyStyle.SERIF -> if (isEn) "With serifs: easier to read in long paragraphs." else "Con remates: se lee mejor en párrafos largos."
-        TypographyStyle.MONO -> if (isEn) "Monospace: digits align cleanly in columns." else "Ancho fijo: las cifras quedan alineadas en columna."
-        TypographyStyle.ESTRECHA -> if (isEn) "Condensed: fits longer course names without truncating." else "Condensada: cabe más nombre de materia antes de cortarse."
-        TypographyStyle.REDONDEADA -> if (isEn) "Softer stroke. If unavailable on your phone, uses Sans." else "De trazo más blando. Si tu teléfono no la tiene, usa la Sans."
+        TypographyStyle.SANS -> Textos.get(R.string.appearance_la_sans_serif_del_sistema_es)
+        TypographyStyle.SYSTEM -> Textos.get(R.string.appearance_la_que_traiga_tu_telefono_como)
+        TypographyStyle.SERIF -> Textos.get(R.string.appearance_con_remates_se_lee_mejor_en)
+        TypographyStyle.MONO -> Textos.get(R.string.appearance_ancho_fijo_las_cifras_quedan_alineadas)
+        TypographyStyle.ESTRECHA -> Textos.get(R.string.appearance_condensada_cabe_mas_nombre_de_materia)
+        TypographyStyle.REDONDEADA -> Textos.get(R.string.appearance_de_trazo_mas_blando_si_tu)
     }
 }
 
 internal fun HomeSection.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        HomeSection.HERO -> if (isEn) "Up next" else "Lo siguiente"
-        HomeSection.AGENDA -> if (isEn) "Today" else "Hoy"
-        HomeSection.SNAPSHOT -> if (isEn) "Stats" else "Cifras"
+        HomeSection.HERO -> Textos.get(R.string.appearance_lo_siguiente)
+        HomeSection.AGENDA -> Textos.get(R.string.notif_time_today)
+        HomeSection.SNAPSHOT -> Textos.get(R.string.appearance_cifras)
     }
 }
 
 internal fun HomeSection.detail(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        HomeSection.HERO -> if (isEn) "Card with the most urgent item" else "La tarjeta con lo más urgente"
-        HomeSection.AGENDA -> if (isEn) "Today's classes and deadlines" else "Clases y entregas del día"
-        HomeSection.SNAPSHOT -> if (isEn) "Average, pending, and spending" else "Promedio, pendientes y gasto"
+        HomeSection.HERO -> Textos.get(R.string.appearance_la_tarjeta_con_lo_mas_urgente)
+        HomeSection.AGENDA -> Textos.get(R.string.appearance_clases_y_entregas_del_dia)
+        HomeSection.SNAPSHOT -> Textos.get(R.string.appearance_promedio_pendientes_y_gasto)
     }
 }
 
 internal fun BottomBarStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        BottomBarStyle.LABELED -> if (isEn) "With text" else "Con texto"
-        BottomBarStyle.ICONS_ONLY -> if (isEn) "Icons only" else "Solo iconos"
+        BottomBarStyle.LABELED -> Textos.get(R.string.appearance_con_texto)
+        BottomBarStyle.ICONS_ONLY -> Textos.get(R.string.appearance_solo_iconos)
     }
 }
 
 internal fun ProgressShape.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        ProgressShape.FLAT -> if (isEn) "Straight" else "Rectas"
-        ProgressShape.WAVY -> if (isEn) "Wavy" else "Onduladas"
+        ProgressShape.FLAT -> Textos.get(R.string.appearance_rectas)
+        ProgressShape.WAVY -> Textos.get(R.string.appearance_onduladas)
     }
 }
 
 internal fun SwitchIconStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        SwitchIconStyle.BOTH -> if (isEn) "Always" else "Siempre"
-        SwitchIconStyle.CHECKED_ONLY -> if (isEn) "When checked" else "Al encender"
-        SwitchIconStyle.NONE -> if (isEn) "Never" else "Nunca"
+        SwitchIconStyle.BOTH -> Textos.get(R.string.appearance_siempre)
+        SwitchIconStyle.CHECKED_ONLY -> Textos.get(R.string.appearance_al_encender)
+        SwitchIconStyle.NONE -> Textos.get(R.string.appearance_nunca)
     }
 }
 
 internal fun SurfaceStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        SurfaceStyle.FLAT -> if (isEn) "Flat" else "Plana"
-        SurfaceStyle.OUTLINED -> if (isEn) "Outlined" else "Filete"
-        SurfaceStyle.ELEVATED -> if (isEn) "Elevated" else "Sombra"
-        SurfaceStyle.TRANSLUCENT -> if (isEn) "Glass" else "Cristal"
+        SurfaceStyle.FLAT -> Textos.get(R.string.appearance_plana)
+        SurfaceStyle.OUTLINED -> Textos.get(R.string.appearance_filete)
+        SurfaceStyle.ELEVATED -> Textos.get(R.string.appearance_sombra)
+        SurfaceStyle.TRANSLUCENT -> Textos.get(R.string.appearance_cristal)
     }
 }
 
 internal fun SurfaceStyle.explicacion(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        SurfaceStyle.FLAT -> if (isEn) "No borders or shadow: card distinguished only by tone." else "Sin bordes ni sombra: la tarjeta se distingue solo por su tono."
-        SurfaceStyle.OUTLINED -> if (isEn) "A thin stroke outlines each card edge." else "Un filete fino marca dónde acaba cada tarjeta."
-        SurfaceStyle.ELEVATED -> if (isEn) "Cards cast shadows and appear layered." else "Las tarjetas proyectan sombra y se leen como capas."
-        SurfaceStyle.TRANSLUCENT -> if (isEn) "Semi-transparent, showing the background underneath." else "Semitransparentes, dejando ver el fondo por debajo."
+        SurfaceStyle.FLAT -> Textos.get(R.string.appearance_sin_bordes_ni_sombra_la_tarjeta)
+        SurfaceStyle.OUTLINED -> Textos.get(R.string.appearance_un_filete_fino_marca_donde_acaba)
+        SurfaceStyle.ELEVATED -> Textos.get(R.string.appearance_las_tarjetas_proyectan_sombra_y_se)
+        SurfaceStyle.TRANSLUCENT -> Textos.get(R.string.appearance_semitransparentes_dejando_ver_el_fondo_por)
     }
 }
 
 internal fun CornerStyle.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        CornerStyle.COMPACT -> if (isEn) "Sharp" else "Rectas"
-        CornerStyle.BALANCED -> if (isEn) "Medium" else "Medias"
-        CornerStyle.SOFT -> if (isEn) "Soft" else "Suaves"
+        CornerStyle.COMPACT -> Textos.get(R.string.appearance_rectas_2)
+        CornerStyle.BALANCED -> Textos.get(R.string.appearance_medias)
+        CornerStyle.SOFT -> Textos.get(R.string.appearance_suaves)
     }
 }

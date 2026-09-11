@@ -87,6 +87,7 @@ import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 /**
  * Trabajos: la lista, y nada más.
  *
@@ -670,13 +671,13 @@ internal fun ApaReferenceGeneratorCard(
 
 internal fun AcademicWork.exportText(subjects: List<Subject>): String {
     val isEn = java.util.Locale.getDefault().language == "en"
-    val defaultSubject = if (isEn) "General" else "General"
+    val defaultSubject = Textos.get(R.string.templates_general_subject)
     val subjectName = subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name } ?: defaultSubject
     val checklist = AcademicTemplateLibrary.checklist.joinToString(separator = "\n") { item ->
         val mark = if (item.id in completedChecklistIds) "[x]" else "[ ]"
         "$mark ${item.title}: ${item.detail}"
     }
-    val due = dueDateMillis?.let { TaskDateUtils.fromMillis(it).toString() } ?: if (isEn) "No date" else "Sin fecha"
+    val due = dueDateMillis?.let { TaskDateUtils.fromMillis(it).toString() } ?: Textos.get(R.string.support_no_date)
     val apaReferences = buildApaReferenceDraft(sources)
     return if (isEn) {
         """
@@ -736,11 +737,11 @@ internal fun AcademicWork.exportText(subjects: List<Subject>): String {
 internal fun AcademicWorkStatus.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        AcademicWorkStatus.IDEA -> if (isEn) "Idea" else "Idea"
-        AcademicWorkStatus.DRAFT -> if (isEn) "Draft" else "Borrador"
-        AcademicWorkStatus.REVIEW -> if (isEn) "Review" else "Revisión"
-        AcademicWorkStatus.READY -> if (isEn) "Ready" else "Listo"
-        AcademicWorkStatus.SUBMITTED -> if (isEn) "Delivered" else "Entregado"
+        AcademicWorkStatus.IDEA -> Textos.get(R.string.templates_status_idea)
+        AcademicWorkStatus.DRAFT -> Textos.get(R.string.templates_status_draft)
+        AcademicWorkStatus.REVIEW -> Textos.get(R.string.templates_status_review)
+        AcademicWorkStatus.READY -> Textos.get(R.string.templates_status_ready)
+        AcademicWorkStatus.SUBMITTED -> Textos.get(R.string.templates_status_delivered)
     }
 }
 
@@ -759,9 +760,9 @@ internal fun AcademicWorkStatus.color(): Color {
 internal fun AcademicWorkPriority.label(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        AcademicWorkPriority.LOW -> if (isEn) "Low" else "Baja"
-        AcademicWorkPriority.MEDIUM -> if (isEn) "Medium" else "Media"
-        AcademicWorkPriority.HIGH -> if (isEn) "High" else "Alta"
+        AcademicWorkPriority.LOW -> Textos.get(R.string.templates_priority_low)
+        AcademicWorkPriority.MEDIUM -> Textos.get(R.string.templates_priority_medium)
+        AcademicWorkPriority.HIGH -> Textos.get(R.string.templates_priority_high)
     }
 }
 

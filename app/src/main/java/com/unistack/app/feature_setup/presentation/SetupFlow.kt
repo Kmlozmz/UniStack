@@ -1523,8 +1523,8 @@ internal fun SetupCustomProgramField(
     value: String,
     validation: ValidationResult?,
     onValueChange: (String) -> Unit,
-    label: String = if (java.util.Locale.getDefault().language == "en") "Program name" else "Nombre del programa",
-    placeholder: String = if (java.util.Locale.getDefault().language == "en") "e.g. Biomedical Engineering" else "Ej: Ingeniería Biomédica"
+    label: String = stringResource(R.string.setup_career_custom_label),
+    placeholder: String = stringResource(R.string.setup_career_custom_hint)
 ) {
     val showError = value.isNotBlank() && validation?.isValid == false
     MaterialTheme(

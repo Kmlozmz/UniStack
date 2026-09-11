@@ -136,6 +136,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import com.unistack.app.core.utils.Textos
 
 /** Los tres montones de notas que hay. */
 enum class NotesView(val titleRes: Int) {
@@ -492,8 +493,8 @@ fun NotesListScreen(
                     if (antes != null) {
                         alcance.launch {
                             val respuesta = snackbar.showSnackbar(
-                                message = if (Locale.getDefault().language == "en") "Moved to trash" else "Movida a la papelera",
-                                actionLabel = if (Locale.getDefault().language == "en") "Undo" else "Deshacer",
+                                message = Textos.get(R.string.notes_snack_moved_to_trash),
+                                actionLabel = Textos.get(R.string.tasks_snackbar_undo),
                                 withDismissAction = true,
                                 duration = duracionParaDeshacer
                             )
@@ -543,13 +544,12 @@ fun NotesListScreen(
                     trashingSelection = false
                     seleccion = emptySet()
                     alcance.launch {
-                        val isEn = Locale.getDefault().language == "en"
                         val multiMsg = if (antes.size == 1) {
-                            if (isEn) "Moved to trash" else "Movida a la papelera"
+                            Textos.get(R.string.notes_snack_moved_to_trash)
                         } else {
-                            if (isEn) "${antes.size} notes moved to trash" else "${antes.size} notas movidas a la papelera"
+                            Textos.get(R.string.notes_notas_movidas_a_la_papelera, antes.size)
                         }
-                        val undoTxt = if (isEn) "Undo" else "Deshacer"
+                        val undoTxt = Textos.get(R.string.tasks_snackbar_undo)
                         val respuesta = snackbar.showSnackbar(
                             message = multiMsg,
                             actionLabel = undoTxt,

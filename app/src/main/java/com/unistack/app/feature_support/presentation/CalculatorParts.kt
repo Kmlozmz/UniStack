@@ -45,6 +45,7 @@ import com.unistack.app.R
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 /** El alto de una tecla, y de ahí sale el de las dos altas: dos teclas y el hueco. */
 private val KeyHeight = 52.dp
@@ -130,7 +131,7 @@ internal fun CalculatorKeypad(
                 }
             )
             Key(
-                label = if (java.util.Locale.getDefault().language == "en") "Clear" else "Limpiar",
+                label = Textos.get(R.string.tasks_filter_clear),
                 modifier = Modifier.fillMaxWidth(),
                 height = TallKeyHeight,
                 small = true,

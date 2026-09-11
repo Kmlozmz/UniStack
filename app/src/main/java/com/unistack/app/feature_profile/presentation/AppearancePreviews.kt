@@ -239,8 +239,7 @@ fun VistaPreviaDeChips(modifier: Modifier = Modifier) {
     VentanaDeMuestra(titulo = "TAREAS", modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             run {
-            val isEn = java.util.Locale.getDefault().language == "en"
-            listOf((if (isEn) "Overdue" else "Vencidas") to true, (if (isEn) "Today" else "Hoy") to false, (if (isEn) "No course" else "Sin materia") to false)
+            listOf((stringResource(R.string.tasks_tab_overdue)) to true, (stringResource(R.string.notif_time_today)) to false, (stringResource(R.string.appearance_sin_materia)) to false)
         }.forEach { (texto, activo) ->
                 Row(
                     modifier = Modifier

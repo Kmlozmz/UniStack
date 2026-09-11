@@ -13,9 +13,10 @@ import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.UserProfile
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 object DailyPriorityEngine {
-    private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
     /**
      * Lo mas urgente de todo, o nulo si no hay nada que reclame.
      *
@@ -61,11 +62,11 @@ object DailyPriorityEngine {
         if (subjectsCount == 0) {
             return listOf(
                 DailyFocusItem(
-                    slotLabel = if (isEnglish) "Now" else "Ahora",
-                    title = if (isEnglish) "Create first subject" else "Crear primera materia",
-                    detail = if (isEnglish) "Enables grades, tasks, and real priorities." else "Activa notas, tareas y prioridades reales.",
+                    slotLabel = Textos.get(R.string.settings_backup_now),
+                    title = Textos.get(R.string.home_crear_primera_materia),
+                    detail = Textos.get(R.string.home_activa_notas_tareas_y_prioridades_reales),
                     minutesText = "3 min",
-                    actionLabel = if (isEnglish) "Subjects" else "Materias",
+                    actionLabel = Textos.get(R.string.settings_backup_subjects),
                     action = HomePriorityAction.SUBJECTS
                 )
             )
@@ -88,19 +89,19 @@ object DailyPriorityEngine {
         return focused.ifEmpty {
             listOf(
                 DailyFocusItem(
-                    slotLabel = if (isEnglish) "Now" else "Ahora",
-                    title = if (isEnglish) "Quick review" else "Repaso breve",
-                    detail = if (isEnglish) "Keep a subject fresh before an emergency comes up." else "Mantén una materia caliente antes de que aparezca una urgencia.",
+                    slotLabel = Textos.get(R.string.settings_backup_now),
+                    title = Textos.get(R.string.home_repaso_breve),
+                    detail = Textos.get(R.string.home_manten_una_materia_caliente_antes_de),
                     minutesText = "15 min",
-                    actionLabel = if (isEnglish) "Subjects" else "Materias",
+                    actionLabel = Textos.get(R.string.settings_backup_subjects),
                     action = HomePriorityAction.SUBJECTS
                 ),
                 DailyFocusItem(
-                    slotLabel = if (isEnglish) "Later" else "Luego",
-                    title = if (isEnglish) "Sort out pending tasks" else "Ordenar pendientes",
-                    detail = if (isEnglish) "Check if there's a small task you can finish today." else "Revisa si hay una tarea pequeña que puedas cerrar hoy.",
+                    slotLabel = Textos.get(R.string.home_luego),
+                    title = Textos.get(R.string.home_ordenar_pendientes),
+                    detail = Textos.get(R.string.home_revisa_si_hay_una_tarea_pequena),
                     minutesText = "10 min",
-                    actionLabel = if (isEnglish) "Tasks" else "Tareas",
+                    actionLabel = Textos.get(R.string.setup_mod_tasks_title),
                     action = HomePriorityAction.TASKS
                 )
             )
@@ -211,14 +212,14 @@ object DailyPriorityEngine {
             minutes = if (critical) 25 else 15,
             summary = HomePrioritySummary(
                 title = if (critical) {
-                    if (isEnglish) "${risk.subjectName} needs attention" else "${risk.subjectName} necesita atención"
+                    Textos.get(R.string.home_necesita_atencion, risk.subjectName)
                 } else {
-                    if (isEnglish) "${risk.subjectName} is close to target" else "${risk.subjectName} está cerca de la meta"
+                    Textos.get(R.string.home_esta_cerca_de_la_meta, risk.subjectName)
                 },
                 shortDescription = if (critical) {
-                    if (isEnglish) "Review this subject before opening more fronts." else "Repasa esta materia antes de abrir más frentes."
+                    Textos.get(R.string.home_repasa_esta_materia_antes_de_abrir)
                 } else {
-                    if (isEnglish) "Keep an eye on this subject with a short review today." else "Vigila esta materia con un repaso corto hoy."
+                    Textos.get(R.string.home_vigila_esta_materia_con_un_repaso)
                 },
                 action = HomePriorityAction.SUBJECT,
                 subjectId = risk.subjectId
@@ -244,18 +245,18 @@ object DailyPriorityEngine {
         return PriorityCandidate(
             score = if (overBudget) 820 else 570,
             title = if (overBudget) {
-                if (isEnglish) "Expenses over limit" else "Gastos sobre el límite"
+                Textos.get(R.string.home_gastos_sobre_el_limite)
             } else {
-                if (isEnglish) "Expenses near limit" else "Gastos cerca del límite"
+                Textos.get(R.string.home_gastos_cerca_del_limite)
             },
             minutes = 8,
             summary = HomePrioritySummary(
                 title = if (overBudget) {
-                    if (isEnglish) "Expenses over limit" else "Gastos sobre el límite"
+                    Textos.get(R.string.home_gastos_sobre_el_limite)
                 } else {
-                    if (isEnglish) "Expenses near limit" else "Gastos cerca del límite"
+                    Textos.get(R.string.home_gastos_cerca_del_limite)
                 },
-                shortDescription = if (isEnglish) "Review your week before logging more expenses." else "Revisa tu semana antes de registrar más gastos.",
+                shortDescription = Textos.get(R.string.home_revisa_tu_semana_antes_de_registrar),
                 action = HomePriorityAction.EXPENSES
             )
         )
@@ -266,36 +267,36 @@ object DailyPriorityEngine {
         val timeText = TaskDateUtils.estimatedTimeText(estimatedMinutes)
         val isExamLike = type == TaskType.EXAM || type == TaskType.TEST
         val titleText = when {
-            days < 0 -> if (isEnglish) "$title is overdue" else "$title está vencida"
-            days == 0L && isExamLike -> if (isEnglish) "$title is today" else "$title es hoy"
-            days == 0L -> if (isEnglish) "$title is due today" else "$title vence hoy"
-            days == 1L -> if (isEnglish) "$title is tomorrow" else "$title es mañana"
-            else -> if (isEnglish) "$title is next" else "$title es lo siguiente"
+            days < 0 -> Textos.get(R.string.home_esta_vencida, title)
+            days == 0L && isExamLike -> Textos.get(R.string.home_es_hoy, title)
+            days == 0L -> Textos.get(R.string.home_vence_hoy, title)
+            days == 1L -> Textos.get(R.string.home_es_manana, title)
+            else -> Textos.get(R.string.home_es_lo_siguiente, title)
         }
-        val actionVerb = if (isExamLike) (if (isEnglish) "review" else "repasar") else (if (isEnglish) "make progress" else "avanzar")
+        val actionVerb = if (isExamLike) (Textos.get(R.string.home_repasar)) else (Textos.get(R.string.home_avanzar))
         return HomePrioritySummary(
             title = titleText,
             shortDescription = when {
-                days < 0 -> if (isEnglish) "Close this pending task before opening more fronts." else "Cierra esta pendiente antes de abrir más frentes."
-                days == 0L -> if (isEnglish) "Handle it today to keep the day under control." else "Atiéndela hoy para mantener el día bajo control."
-                else -> if (isEnglish) "Reserve a short block before it gets closer." else "Reserva un bloque corto antes de que se acerque."
+                days < 0 -> Textos.get(R.string.home_cierra_esta_pendiente_antes_de_abrir)
+                days == 0L -> Textos.get(R.string.home_atiendela_hoy_para_mantener_el_dia)
+                else -> Textos.get(R.string.home_reserva_un_bloque_corto_antes_de)
             },
             action = HomePriorityAction.TASKS
         )
     }
 
     private fun AcademicWork.prioritySummary(days: Long): HomePrioritySummary {
-        val dueText = dueDateMillis?.let(TaskDateUtils::dueText) ?: if (isEnglish) "no due date" else "sin fecha"
+        val dueText = dueDateMillis?.let(TaskDateUtils::dueText) ?: Textos.get(R.string.home_sin_fecha)
         return HomePrioritySummary(
             title = when {
-                days < 0 -> if (isEnglish) "$title is overdue" else "$title está vencido"
-                days == 0L -> if (isEnglish) "$title is due today" else "$title vence hoy"
-                days == 1L -> if (isEnglish) "$title is tomorrow" else "$title es mañana"
-                else -> if (isEnglish) "$title is next" else "$title es lo siguiente"
+                days < 0 -> Textos.get(R.string.home_esta_vencido, title)
+                days == 0L -> Textos.get(R.string.home_vence_hoy, title)
+                days == 1L -> Textos.get(R.string.home_es_manana, title)
+                else -> Textos.get(R.string.home_es_lo_siguiente, title)
             },
             shortDescription = when {
-                days <= 0 -> if (isEnglish) "Give it priority before adding new tasks." else "Dale prioridad antes de sumar nuevas tareas."
-                else -> if (isEnglish) "Make some progress before it piles up." else "Avanza un poco antes de que se acumule."
+                days <= 0 -> Textos.get(R.string.home_dale_prioridad_antes_de_sumar_nuevas)
+                else -> Textos.get(R.string.home_avanza_un_poco_antes_de_que)
             },
             action = HomePriorityAction.TEMPLATES,
             subjectId = subjectId
@@ -316,28 +317,28 @@ object DailyPriorityEngine {
 
     private fun HomePriorityAction.focusActionLabel(): String {
         return when (this) {
-            HomePriorityAction.SUBJECT -> if (isEnglish) "Open" else "Abrir"
-            HomePriorityAction.SUBJECTS -> if (isEnglish) "Subjects" else "Materias"
-            HomePriorityAction.TASKS -> if (isEnglish) "Tasks" else "Tareas"
-            HomePriorityAction.EXPENSES -> if (isEnglish) "Expenses" else "Gastos"
-            HomePriorityAction.TEMPLATES -> if (isEnglish) "Assignments" else "Trabajos"
-            HomePriorityAction.SCHEDULE -> if (isEnglish) "Schedule" else "Horario"
+            HomePriorityAction.SUBJECT -> Textos.get(R.string.notif_btn_open)
+            HomePriorityAction.SUBJECTS -> Textos.get(R.string.settings_backup_subjects)
+            HomePriorityAction.TASKS -> Textos.get(R.string.setup_mod_tasks_title)
+            HomePriorityAction.EXPENSES -> Textos.get(R.string.setup_mod_expenses_title)
+            HomePriorityAction.TEMPLATES -> Textos.get(R.string.home_nav_assignments)
+            HomePriorityAction.SCHEDULE -> Textos.get(R.string.home_action_schedule_short)
         }
     }
 
     private fun slotLabel(index: Int): String {
         return when (index) {
-            0 -> if (isEnglish) "Now" else "Ahora"
-            1 -> if (isEnglish) "Later" else "Luego"
-            else -> if (isEnglish) "If you have 30 min" else "Si tienes 30 min"
+            0 -> Textos.get(R.string.settings_backup_now)
+            1 -> Textos.get(R.string.home_luego)
+            else -> Textos.get(R.string.home_si_tienes_30_min)
         }
     }
 
     private fun heroActionPrefix(): String {
         return when (LocalTime.now().hour) {
-            in 5..11 -> if (isEnglish) "Start with" else "Arranca con"
-            in 18..23 -> if (isEnglish) "Wrap up" else "Deja listo"
-            else -> if (isEnglish) "Next step" else "Siguiente paso"
+            in 5..11 -> Textos.get(R.string.home_arranca_con)
+            in 18..23 -> Textos.get(R.string.home_deja_listo)
+            else -> Textos.get(R.string.notif_next_step)
         }
     }
 

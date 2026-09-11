@@ -378,7 +378,7 @@ private fun PermissionLockPreview(kind: PermissionExampleKind) {
                         fontWeight = FontWeight.Light
                     )
                     Text(
-                        text = if (java.util.Locale.getDefault().language == "en") "Thursday, August 20" else "jueves, 20 de agosto",
+                        text = stringResource(R.string.setup_perm_ex_date),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )

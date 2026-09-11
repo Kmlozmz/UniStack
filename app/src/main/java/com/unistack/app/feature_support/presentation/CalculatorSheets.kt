@@ -138,7 +138,7 @@ internal fun SubjectPickerSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         title = {
             Text(
-                text = if (java.util.Locale.getDefault().language == "en") "Import my courses" else "Traer mis materias",
+                text = stringResource(R.string.calc_traer_mis_materias),
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 fontWeight = FontWeight.Bold
             )
@@ -270,9 +270,9 @@ internal fun SubjectPickerSheet(
                                         )
                                         Text(
                                             text = when {
-                                                subject.average == null -> (if (java.util.Locale.getDefault().language == "en") "No grades recorded" else "Sin notas registradas")
+                                                subject.average == null -> (stringResource(R.string.calc_sin_notas_registradas))
                                                 withGrades -> stringResource(R.string.calculator_picker_enters_with) + GradingScaleUtils.formatGrade(subject.average, scale)
-                                                else -> (if (java.util.Locale.getDefault().language == "en") "Current: " else "Llevas ") + GradingScaleUtils.formatGrade(subject.average, scale)
+                                                else -> (stringResource(R.string.calc_llevas)) + GradingScaleUtils.formatGrade(subject.average, scale)
                                             },
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -292,7 +292,7 @@ internal fun SubjectPickerSheet(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(if (java.util.Locale.getDefault().language == "en") "Cancel" else "Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         },
         confirmButton = {
             TextButton(
@@ -301,9 +301,9 @@ internal fun SubjectPickerSheet(
             ) {
                 Text(
                     text = when (picked.size) {
-                        0 -> (if (java.util.Locale.getDefault().language == "en") "Import" else "Traer")
-                        1 -> (if (java.util.Locale.getDefault().language == "en") "Import 1" else "Traer 1")
-                        else -> (if (java.util.Locale.getDefault().language == "en") "Import " else "Traer ") + picked.size
+                        0 -> (stringResource(R.string.calc_traer))
+                        1 -> (stringResource(R.string.calc_traer_1))
+                        else -> (stringResource(R.string.calc_traer_2)) + picked.size
                     },
                     fontWeight = FontWeight.Bold
                 )

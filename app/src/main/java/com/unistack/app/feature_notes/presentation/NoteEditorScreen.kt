@@ -142,6 +142,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import com.unistack.app.core.utils.Textos
 
 /**
  * Escribir una nota.
@@ -315,7 +316,7 @@ fun NoteEditorScreen(
         val id = currentId
         if (uri != null && id != null && !viewModel.attach(id, uri)) {
             val maxLimit = Attachments.formatSize(Attachments.MAX_BYTES)
-            attachError = if (java.util.Locale.getDefault().language == "en") "Could not save photo. It may exceed $maxLimit." else "No se pudo guardar la foto. Puede que pase de $maxLimit."
+            attachError = Textos.get(R.string.notes_no_se_pudo_guardar_la_foto, maxLimit)
         }
     }
 
@@ -325,7 +326,7 @@ fun NoteEditorScreen(
         val id = currentId
         if (uri != null && id != null && !viewModel.attach(id, uri)) {
             val maxLimit = Attachments.formatSize(Attachments.MAX_BYTES)
-            attachError = if (java.util.Locale.getDefault().language == "en") "Could not save file. It may exceed $maxLimit." else "No se pudo guardar el archivo. Puede que pase de $maxLimit."
+            attachError = Textos.get(R.string.notes_no_se_pudo_guardar_el_archivo, maxLimit)
         }
     }
 
@@ -340,9 +341,9 @@ fun NoteEditorScreen(
             viewModel.discardStoredFile(guardado)
             return@rememberLauncherForActivityResult
         }
-        val photoName = if (java.util.Locale.getDefault().language == "en") "Photo" else "Foto"
+        val photoName = Textos.get(R.string.notes_new_photo)
         if (!viewModel.attachStoredFile(id, guardado, photoName, "image/jpeg", AttachmentKind.IMAGE)) {
-            attachError = if (java.util.Locale.getDefault().language == "en") "Could not save photo." else "No se pudo guardar la foto."
+            attachError = Textos.get(R.string.notes_error_photo_save)
         }
     }
 
@@ -359,7 +360,7 @@ fun NoteEditorScreen(
         }.getOrNull()
         if (uri == null) {
             viewModel.discardStoredFile(nombre)
-            attachError = if (java.util.Locale.getDefault().language == "en") "Could not initialize camera." else "No se pudo preparar la cámara."
+            attachError = Textos.get(R.string.notes_error_camera_prep)
         } else {
             pendingPhoto = nombre
             hacerFoto.launch(uri)
@@ -393,7 +394,7 @@ fun NoteEditorScreen(
                 title.text.trim().takeIf { it.isNotBlank() }
                     ?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
             }
-            runCatching { context.startActivity(Intent.createChooser(intent, if (java.util.Locale.getDefault().language == "en") "Share note" else "Compartir la nota")) }
+            runCatching { context.startActivity(Intent.createChooser(intent, Textos.get(R.string.notes_share_title))) }
         }
     }
 
@@ -405,7 +406,7 @@ fun NoteEditorScreen(
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             runCatching { context.startActivity(intent) }
-                .onFailure { attachError = if (java.util.Locale.getDefault().language == "en") "No app available on phone to open this." else "No hay ninguna app en el teléfono que abra esto." }
+                .onFailure { attachError = Textos.get(R.string.notes_error_no_app_to_open) }
         }
     }
 
@@ -623,8 +624,8 @@ fun NoteEditorScreen(
                                             subjectId,
                                             reminderAt
                                         )
-                                        val taskCreatedMsg = if (java.util.Locale.getDefault().language == "en") "Task created in Academic" else "Tarea creada en Académico"
-                                        val taskEmptyMsg = if (java.util.Locale.getDefault().language == "en") "Write something before creating the task" else "Escribe algo antes de crear la tarea"
+                                        val taskCreatedMsg = Textos.get(R.string.notes_task_created_toast)
+                                        val taskEmptyMsg = Textos.get(R.string.notes_task_empty_body_toast)
                                         alcance.launch {
                                             avisos.showSnackbar(if (hecha) taskCreatedMsg else taskEmptyMsg)
                                         }
@@ -645,7 +646,7 @@ fun NoteEditorScreen(
                                         menuOpen = false
                                         portapapeles.setText(AnnotatedString(NoteMarkdown.strip(body)))
                                         alcance.launch {
-                                            avisos.showSnackbar(if (java.util.Locale.getDefault().language == "en") "Copied" else "Copiado")
+                                            avisos.showSnackbar(Textos.get(R.string.notes_copied_toast))
                                         }
                                     }
                                 )
@@ -981,14 +982,14 @@ fun NoteEditorScreen(
                 val puesta = id != null && viewModel.attachStoredFile(
                     noteId = id,
                     storedName = nombre,
-                    displayName = if (java.util.Locale.getDefault().language == "en") "Recording" else "Grabación",
+                    displayName = Textos.get(R.string.notes_action_recording),
                     mimeType = "audio/mp4",
                     kind = AttachmentKind.AUDIO,
                     durationMillis = duracion
                 )
                 if (!puesta) {
                     viewModel.discardStoredFile(nombre)
-                    attachError = if (java.util.Locale.getDefault().language == "en") "Could not save recording." else "No se pudo guardar la grabación."
+                    attachError = Textos.get(R.string.notes_error_recording_save)
                 }
             },
             onDismiss = { recording = false }

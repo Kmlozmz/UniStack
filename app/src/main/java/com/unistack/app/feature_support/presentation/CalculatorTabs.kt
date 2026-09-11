@@ -64,6 +64,7 @@ import com.unistack.app.feature_support.domain.CalculatorMath.SemesterSubject
 import com.unistack.app.feature_user.domain.GradingScale
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 /** Qué casilla recibe lo que se teclea. */
 private enum class Slot { FIRST, SECOND }
@@ -148,7 +149,7 @@ internal fun SubjectCalculator(
                     }
                 )
                 NumberSlot(
-                    label = if (complete) (if (java.util.Locale.getDefault().language == "en") "NO SPACE" else "SIN SITIO") else (if (java.util.Locale.getDefault().language == "en") "WORTH · ${percentText(free)}% left" else "VALE · queda ${percentText(free)} %"),
+                    label = if (complete) (Textos.get(R.string.calc_sin_sitio)) else (Textos.get(R.string.calc_vale_queda, percentText(free))),
                     value = if (slot == Slot.SECOND) "$draft %" else "—",
                     active = slot == Slot.SECOND,
                     enabled = !complete && pending != null,
@@ -344,7 +345,7 @@ internal fun SemesterCalculator(
                                 grades = grades.mapIndexed { i, old -> if (i == editing) (pending ?: old) else old }
                                 credits = credits.mapIndexed { i, old -> if (i == editing) value else old }
                             } else {
-                                names = names + (if (java.util.Locale.getDefault().language == "en") "Course ${rows.count { !it.fromApp } + 1}" else "Materia ${rows.count { !it.fromApp } + 1}") 
+                                names = names + (Textos.get(R.string.calc_materia, rows.count { !it.fromApp } + 1)) 
                                 grades = grades + (pending ?: 0.0)
                                 credits = credits + value
                                 fromApp = fromApp + false
@@ -357,7 +358,7 @@ internal fun SemesterCalculator(
                 }
             ) {
                 NumberSlot(
-                    label = if (editing >= 0) (if (java.util.Locale.getDefault().language == "en") "EDITING" else "CORRIGIENDO") else stringResource(R.string.calculator_label_final_grade),
+                    label = if (editing >= 0) (Textos.get(R.string.calc_corrigiendo)) else stringResource(R.string.calculator_label_final_grade),
                     value = if (slot == Slot.FIRST) draft else pending?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
                     active = slot == Slot.FIRST,
                     onClick = {
@@ -459,15 +460,14 @@ internal fun SemesterCalculator(
             }
         }
         item("acciones") {
-            val isEn = java.util.Locale.getDefault().language == "en"
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlineChip(
-                    text = if (isEn) "Import my courses" else "Traer mis materias",
+                    text = Textos.get(R.string.calc_traer_mis_materias),
                     icon = Icons.Rounded.Add,
                     onClick = { pickerOpen = true }
                 )
                 if (rows.isNotEmpty()) {
-                    OutlineChip(text = if (isEn) "Clear all" else "Vaciar", icon = null, onClick = {
+                    OutlineChip(text = Textos.get(R.string.calc_vaciar), icon = null, onClick = {
                         names = emptyList()
                         grades = emptyList()
                         credits = emptyList()
@@ -618,7 +618,7 @@ internal fun NeededCalculator(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 HalfBox(
-                    label = if (java.util.Locale.getDefault().language == "en") "DONE" else "HECHO",
+                    label = stringResource(R.string.calc_hecho),
                     value = have.ifBlank { "—" },
                     // El mínimo sube a un tercio: con el 18 % la caja medía 60 dp y el
                     // rótulo salía cortado como «HEC».
@@ -626,7 +626,7 @@ internal fun NeededCalculator(
                     container = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
                 HalfBox(
-                    label = if (java.util.Locale.getDefault().language == "en") "SCORE NEEDED" else "TE FALTA SACAR",
+                    label = stringResource(R.string.calc_te_falta_sacar),
                     value = when {
                         needed == null -> "—"
                         already -> GradingScaleUtils.formatGrade(0.0, scale)
@@ -643,10 +643,10 @@ internal fun NeededCalculator(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 CalculatorFootnote(
-                    if (doneValue == null) (if (java.util.Locale.getDefault().language == "en") "not evaluated" else "sin evaluar") else (if (java.util.Locale.getDefault().language == "en") "${percentText(doneValue)}% evaluated" else "${percentText(doneValue)} % evaluado")
+                    if (doneValue == null) (stringResource(R.string.calc_sin_evaluar)) else (stringResource(R.string.calc_evaluado, percentText(doneValue)))
                 )
                 CalculatorFootnote(
-                    if (doneValue == null) (if (java.util.Locale.getDefault().language == "en") "unfilled" else "sin rellenar") else stringResource(R.string.calculator_remaining_to_eval, percentText(remaining))
+                    if (doneValue == null) (stringResource(R.string.calc_sin_rellenar)) else stringResource(R.string.calculator_remaining_to_eval, percentText(remaining))
                 )
             }
         }
@@ -839,7 +839,7 @@ private fun GradeRow(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = if (java.util.Locale.getDefault().language == "en") "Remove" else "Quitar",
+                        contentDescription = stringResource(R.string.terms_btn_remove),
                         modifier = Modifier.size(15.dp)
                     )
                 }
@@ -920,7 +920,7 @@ private fun SemesterRow(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = if (subject.credits > 0.0) "${percentText(subject.credits)} cr" else (if (java.util.Locale.getDefault().language == "en") "no cr" else "sin cr"),
+                    text = if (subject.credits > 0.0) "${percentText(subject.credits)} cr" else (stringResource(R.string.calc_sin_cr)),
                     modifier = Modifier.width(46.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (subject.credits > 0.0) {
@@ -940,7 +940,7 @@ private fun SemesterRow(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = (if (java.util.Locale.getDefault().language == "en") "Remove " else "Quitar ") + subject.name,
+                        contentDescription = (stringResource(R.string.calc_quitar)) + subject.name,
                         modifier = Modifier.size(15.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )

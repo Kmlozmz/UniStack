@@ -76,6 +76,7 @@ import com.unistack.app.feature_user.domain.MotionGesture
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.MotionToggle
+import com.unistack.app.core.utils.Textos
 
 /**
  * Movimiento, con la forma exacta del diseño aprobado.
@@ -123,7 +124,7 @@ fun MotionSettingsScreen(
         item { InterruptorMaestro(appearance.motionPreference, activo, viewModel) }
 
         val isEn = java.util.Locale.getDefault().language == "en"
-        val baseCountStr = if (isEn) "${base.size} settings" else "${base.size} ajustes"
+        val baseCountStr = Textos.get(R.string.motion_ajustes, base.size)
         item { RotuloDeGrupo("BASE", baseCountStr) }
         items(base.size, key = { base[it].id }) { indice ->
             val gesto = base[indice]
@@ -164,7 +165,7 @@ fun MotionSettingsScreen(
         porGrupo.forEach { (grupo, gestos) ->
             item(key = "rotulo-$grupo") {
                 val groupTitle = motionGroupDisplay(grupo)
-                val countStr = if (isEn) "${gestos.size} gestures · ${gestos.sumOf { it.options.size }} variants" else "${gestos.size} gestos · ${gestos.sumOf { it.options.size }} variantes"
+                val countStr = stringResource(R.string.motion_gestos_variantes, gestos.size, gestos.sumOf { it.options.size })
                 RotuloDeGrupo(
                     groupTitle,
                     countStr
@@ -614,9 +615,9 @@ private fun duracionDe(gestoId: String): Int = when (gestoId) {
 private fun MotionPreference.etiqueta(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        MotionPreference.FULL -> if (isEn) "Full" else "Completo"
-        MotionPreference.REDUCED -> if (isEn) "Reduced" else "Reducido"
-        MotionPreference.NONE -> if (isEn) "None" else "Nada"
+        MotionPreference.FULL -> Textos.get(R.string.motion_completo)
+        MotionPreference.REDUCED -> Textos.get(R.string.a11y_motion_reduced)
+        MotionPreference.NONE -> Textos.get(R.string.a11y_motion_none)
     }
 }
 

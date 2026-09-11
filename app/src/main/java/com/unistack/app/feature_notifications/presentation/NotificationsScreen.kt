@@ -84,6 +84,7 @@ import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 private enum class NotificationFilter(val labelRes: Int) {
     ALL(R.string.notif_tab_all),
     ACTIONS(R.string.notif_tab_actions),
@@ -642,7 +643,7 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
 private fun NotificationMetaCard(item: NotificationHistoryItem) {
     val zoned = Instant.ofEpochMilli(item.timestampMillis).atZone(ZoneId.systemDefault())
     val isEn = Locale.getDefault().language == "en"
-    val datePattern = if (isEn) "MMMM d, yyyy" else "d 'de' MMMM, yyyy"
+    val datePattern = stringResource(R.string.notif_d_de_mmmm_yyyy)
     val date = zoned.format(DateTimeFormatter.ofPattern(datePattern, Locale.getDefault()))
     val time = zoned.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
     Surface(
@@ -1003,8 +1004,8 @@ private val NotificationCategory.color: Color
 private fun NotificationHistoryItem.visual(): NotificationVisual {
     val isEn = Locale.getDefault().language == "en"
     return when {
-        read -> NotificationVisual(if (isEn) "Seen" else "Vista", LocalSectionColors.current.onTrack, Icons.Rounded.CheckCircle)
-        else -> NotificationVisual(if (isEn) "New" else "Nueva", LocalSectionColors.current.schedule, Icons.Rounded.Campaign)
+        read -> NotificationVisual(stringResource(R.string.notif_seen_badge), LocalSectionColors.current.onTrack, Icons.Rounded.CheckCircle)
+        else -> NotificationVisual(stringResource(R.string.notif_new_badge_short), LocalSectionColors.current.schedule, Icons.Rounded.Campaign)
     }
 }
 
@@ -1013,38 +1014,38 @@ private fun NotificationHistoryItem.category(): NotificationCategory {
     val isEn = Locale.getDefault().language == "en"
     return when {
         "resumen" in text || "summary" in text || "dia despejado" in text || "clear day" in text || "día despejado" in text -> NotificationCategory(
-            label = if (isEn) "Summary" else "Resumen",
+            label = Textos.get(R.string.notif_cat_summary),
             kind = NotificationKind.SUMMARY,
             icon = Icons.Rounded.Event,
-            hint = if (isEn) "Check your schedule and decide the next move of the day." else "Revisa tu agenda y decide el siguiente movimiento del dia.",
+            hint = Textos.get(R.string.notif_revisa_tu_agenda_y_decide_el),
             requiresAction = false
         )
         "clase" in text || "class" in text || "asististe" in text || "attend" in text -> NotificationCategory(
-            label = if (isEn) "Class" else "Clase",
+            label = Textos.get(R.string.notif_cat_class),
             kind = NotificationKind.CLASS,
             icon = Icons.Rounded.School,
-            hint = if (isEn) "Record attendance, location, or changes to keep your schedule up to date." else "Registra asistencia, modalidad o cambios para mantener tu horario al dia.",
+            hint = Textos.get(R.string.notif_registra_asistencia_modalidad_o_cambios_para),
             requiresAction = "asististe" in text || "asistencia" in text || "attendance" in text
         )
         "tarea" in text || "task" in text || "trabajo" in text || "assignment" in text || "entrega" in text || "due" in text -> NotificationCategory(
-            label = if (isEn) "Assignment" else "Entrega",
+            label = Textos.get(R.string.notif_cat_delivery),
             kind = NotificationKind.TASK,
             icon = Icons.Rounded.TaskAlt,
-            hint = if (isEn) "Open the activity to update status, deadline, or grade received." else "Abre la actividad para actualizar estado, hora limite o nota obtenida.",
+            hint = Textos.get(R.string.notif_abre_la_actividad_para_actualizar_estado),
             requiresAction = true
         )
         "nota" in text || "grade" in text || "promedio" in text || "gpa" in text || "corte" in text || "materia" in text || "subject" in text -> NotificationCategory(
-            label = if (isEn) "Academic" else "Academico",
+            label = Textos.get(R.string.notif_academico),
             kind = NotificationKind.ACADEMIC,
             icon = Icons.Rounded.School,
-            hint = if (isEn) "Complete grades, weights, or past periods to improve projections." else "Completa notas, pesos o cortes anteriores para mejorar la proyeccion.",
+            hint = Textos.get(R.string.notif_completa_notas_pesos_o_cortes_anteriores),
             requiresAction = true
         )
         else -> NotificationCategory(
-            label = if (isEn) "Notice" else "Aviso",
+            label = Textos.get(R.string.notif_cat_notice),
             kind = NotificationKind.SYSTEM,
             icon = Icons.Rounded.NotificationsNone,
-            hint = if (isEn) "Keeping your data up to date helps UniStack prioritize better." else "Mantener tus datos al dia ayuda a UniStack a priorizar mejor.",
+            hint = Textos.get(R.string.notif_mantener_tus_datos_al_dia_ayuda),
             requiresAction = false
         )
     }
@@ -1061,8 +1062,8 @@ private fun NotificationHistoryItem.dateSectionLabel(): String {
     val today = LocalDate.now()
     val isEn = Locale.getDefault().language == "en"
     return when (date) {
-        today -> if (isEn) "Today" else "Hoy"
-        today.minusDays(1) -> if (isEn) "Yesterday" else "Ayer"
+        today -> Textos.get(R.string.notif_time_today)
+        today.minusDays(1) -> Textos.get(R.string.notif_time_yesterday)
         else -> date.format(
             if (isEn) DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH)
             else DateTimeFormatter.ofPattern("d 'de' MMMM", Locale.forLanguageTag("es-CO"))

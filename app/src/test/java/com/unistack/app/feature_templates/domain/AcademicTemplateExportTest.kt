@@ -1,9 +1,16 @@
 package com.unistack.app.feature_templates.domain
 
+import com.unistack.app.TextosDePrueba
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class AcademicTemplateExportTest {
+
+    @Before
+    fun instalarTextos() {
+        TextosDePrueba.instalar()
+    }
     @Test
     fun exportTextIncludesTemplateChecklistAndApaSections() {
         val template = AcademicTemplateLibrary.essayTemplates.first()

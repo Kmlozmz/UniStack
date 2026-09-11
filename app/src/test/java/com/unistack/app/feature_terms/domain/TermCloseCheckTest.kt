@@ -1,5 +1,6 @@
 package com.unistack.app.feature_terms.domain
 
+import com.unistack.app.TextosDePrueba
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.StudentTask
@@ -12,6 +13,7 @@ import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -22,6 +24,11 @@ import org.junit.Test
  * puede afirmar que una materia se perdió.
  */
 class TermCloseCheckTest {
+
+    @Before
+    fun instalarTextos() {
+        TextosDePrueba.instalar()
+    }
     private val zona: ZoneId = ZoneId.of("UTC")
     private val hoy: LocalDate = LocalDate.of(2026, 12, 12)
 

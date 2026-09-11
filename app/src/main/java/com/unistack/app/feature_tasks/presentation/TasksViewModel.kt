@@ -20,6 +20,8 @@ import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 @HiltViewModel
 class TasksViewModel @Inject constructor(
@@ -208,7 +210,7 @@ class TasksViewModel @Inject constructor(
         tasksRepository.addTask(
             source.copy(
                 id = "task-${UUID.randomUUID()}",
-                title = if (java.util.Locale.getDefault().language == "en") "${source.title} (copy)" else "${source.title} (copia)",
+                title = Textos.get(R.string.tasks_copia, source.title),
                 completed = false,
                 completedAt = null,
                 gradingStatus = if (source.gradingStatus == TaskGradingStatus.NOT_GRADED) {

@@ -34,6 +34,8 @@ import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.UserProfile
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /*
  * Lo que queda del antiguo ProfileScreen.
@@ -101,15 +103,15 @@ internal fun UserProfile.educationSummary(): String {
         programa != null && centro != null -> "$programa · $centro"
         programa != null -> programa
         centro != null -> centro
-        else -> if (isEn) "Student" else "Estudiante"
+        else -> Textos.get(R.string.settings_profile_student)
     }
 }
 
 internal fun AppUser.accountLabel(): String {
     val isEn = java.util.Locale.getDefault().language == "en"
     return when (authProvider) {
-        AuthProvider.LOCAL -> if (isEn) "Local account" else "Cuenta local"
-        AuthProvider.GOOGLE -> if (isEn) "Google connected" else "Google conectado"
+        AuthProvider.LOCAL -> Textos.get(R.string.settings_profile_local_account)
+        AuthProvider.GOOGLE -> Textos.get(R.string.settings_profile_google_connected)
     }
 }
 

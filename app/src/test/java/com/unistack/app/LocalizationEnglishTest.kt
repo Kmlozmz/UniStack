@@ -21,6 +21,7 @@ class LocalizationEnglishTest {
 
     @Before
     fun setUp() {
+        TextosDePrueba.instalar()
         originalLocale = Locale.getDefault()
         Locale.setDefault(Locale.ENGLISH)
     }

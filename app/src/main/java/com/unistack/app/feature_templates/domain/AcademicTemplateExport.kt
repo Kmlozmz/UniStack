@@ -1,5 +1,8 @@
 package com.unistack.app.feature_templates.domain
 
+import com.unistack.app.R
+import com.unistack.app.core.utils.Textos
+
 fun EssayTemplate.exportText(completedChecklistIds: List<String>): String {
     val checklist = AcademicTemplateLibrary.checklist.joinToString(separator = "\n") { item ->
         val mark = if (item.id in completedChecklistIds) "[x]" else "[ ]"
@@ -56,9 +59,9 @@ fun buildApaReferenceDraft(sourcesText: String): String {
         }
     }
 
-    val pendingMedium = if (isEn) "Medium or publisher pending." else "Medio o editorial pendiente."
-    val pendingTitle = if (isEn) "Title pending." else "Título pendiente."
-    val nd = if (isEn) "n.d." else "s. f."
+    val pendingMedium = Textos.get(R.string.works_medio_o_editorial_pendiente)
+    val pendingTitle = Textos.get(R.string.works_titulo_pendiente)
+    val nd = Textos.get(R.string.works_s_f)
 
     return sources.joinToString(separator = "\n") { source ->
         val parts = source.split("|").map { it.trim() }.filter { it.isNotBlank() }

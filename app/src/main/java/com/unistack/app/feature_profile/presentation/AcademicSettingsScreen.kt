@@ -47,6 +47,7 @@ import com.unistack.app.feature_user.domain.GradingScale
 import androidx.compose.runtime.saveable.listSaver
 import java.time.LocalDate
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 /**
  * Tu semestre, en puertas: el periodo, la escala, los cortes, las faltas y los días sin clase.
@@ -186,13 +187,13 @@ internal fun CutDatesProblemNote(problem: CutDateProblem) {
     Text(
         text = when (problem) {
             CutDateProblem.INCOMPLETAS ->
-                if (isEn) "Missing dates. All dates must be set, or none." else "Faltan fechas. O están todas, o ninguna: a medias no se puede repartir."
+                stringResource(R.string.academic_faltan_fechas_o_estan_todas_o)
             CutDateProblem.DESORDENADAS ->
-                if (isEn) "Each $corte must end after the previous one." else "Cada $corte tiene que acabar después del anterior."
+                stringResource(R.string.academic_cada_tiene_que_acabar_despues_del, corte)
             CutDateProblem.ANTES_DEL_INICIO ->
-                if (isEn) "The first $corte cannot end before the term begins." else "El primer $corte no puede acabar antes de que empiece el periodo."
+                stringResource(R.string.academic_el_primer_no_puede_acabar_antes, corte)
             CutDateProblem.DESPUES_DEL_FINAL ->
-                if (isEn) "The last $corte must end with the term." else "El último $corte se queda sin días: acaba con el periodo."
+                stringResource(R.string.academic_el_ultimo_se_queda_sin_dias, corte)
         },
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
         color = MaterialTheme.colorScheme.error,
@@ -266,7 +267,7 @@ internal fun GradingScale.shortLabel(): String {
     return when (this) {
         GradingScale.ZERO_TO_FIVE -> "0 - 5"
         GradingScale.ZERO_TO_HUNDRED -> "0 - 100"
-        GradingScale.CUSTOM -> if (isEn) "Other" else "Otra"
+        GradingScale.CUSTOM -> Textos.get(R.string.setup_scale_range_other)
     }
 }
 

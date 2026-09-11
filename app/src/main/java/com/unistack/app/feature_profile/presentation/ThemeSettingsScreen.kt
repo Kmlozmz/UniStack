@@ -56,6 +56,7 @@ import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.ThemePalette
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_user.domain.AccentIntensity
+import com.unistack.app.core.utils.Textos
 
 /**
  * El tema, entero: fondo, tarjetas, tinta y acento a la vez.
@@ -420,10 +421,9 @@ private fun ThemeCard(
 }
 
 internal fun AccentIntensity.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        AccentIntensity.SOFT -> if (isEn) "Soft" else "Suave"
-        AccentIntensity.BALANCED -> if (isEn) "Medium" else "Medio"
-        AccentIntensity.VIBRANT -> if (isEn) "Vibrant" else "Vivo"
+        AccentIntensity.SOFT -> Textos.get(R.string.settings_accent_soft)
+        AccentIntensity.BALANCED -> Textos.get(R.string.settings_accent_balanced)
+        AccentIntensity.VIBRANT -> Textos.get(R.string.settings_accent_vibrant)
     }
 }

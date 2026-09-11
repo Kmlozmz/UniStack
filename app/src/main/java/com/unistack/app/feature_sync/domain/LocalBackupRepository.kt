@@ -1,6 +1,8 @@
 package com.unistack.app.feature_sync.domain
 
 import android.content.Context
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 interface LocalBackupRepository {
     fun exportBackupJson(): String
@@ -35,18 +37,17 @@ data class LocalBackupPreview(
      * hay ninguna se dice una vez.
      */
     fun summary(): String {
-        val isEn = java.util.Locale.getDefault().language == "en"
         val partes = listOfNotNull(
-            cuenta(subjects, if (isEn) "subject" else "materia", if (isEn) "subjects" else "materias"),
-            cuenta(grades, if (isEn) "grade" else "nota", if (isEn) "grades" else "notas"),
-            cuenta(tasks, if (isEn) "task" else "tarea", if (isEn) "tasks" else "tareas"),
-            cuenta(expenses, if (isEn) "expense" else "gasto", if (isEn) "expenses" else "gastos"),
-            cuenta(academicWorks, if (isEn) "work" else "trabajo", if (isEn) "works" else "trabajos"),
-            cuenta(agendaEvents, if (isEn) "event" else "evento", if (isEn) "events" else "eventos"),
-            cuenta(notes, if (isEn) "note" else "apunte", if (isEn) "notes" else "apuntes")
+            cuenta(subjects, Textos.get(R.string.backup_materia), Textos.get(R.string.backup_materias)),
+            cuenta(grades, Textos.get(R.string.backup_nota), Textos.get(R.string.backup_notas)),
+            cuenta(tasks, Textos.get(R.string.backup_tarea), Textos.get(R.string.backup_tareas)),
+            cuenta(expenses, Textos.get(R.string.backup_gasto), Textos.get(R.string.backup_gastos)),
+            cuenta(academicWorks, Textos.get(R.string.backup_trabajo), Textos.get(R.string.backup_trabajos)),
+            cuenta(agendaEvents, Textos.get(R.string.backup_evento), Textos.get(R.string.backup_eventos)),
+            cuenta(notes, Textos.get(R.string.backup_apunte), Textos.get(R.string.backup_apuntes))
         )
         return if (partes.isEmpty()) {
-            if (isEn) "You haven't recorded anything yet" else "Todavía no has registrado nada"
+            Textos.get(R.string.backup_todavia_no_has_registrado_nada)
         } else partes.joinToString(" · ")
     }
 

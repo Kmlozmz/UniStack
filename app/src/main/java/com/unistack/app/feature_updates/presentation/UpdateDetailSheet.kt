@@ -132,13 +132,12 @@ fun UpdateDetailSheet(
                     ),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
-                    val isEn = java.util.Locale.getDefault().language == "en"
                     Text(
                         when (state) {
                             is UpdateState.ReadyToInstall ->
-                                if (canInstall) (if (isEn) "Install" else "Instalar") else (if (isEn) "Authorize" else "Autorizar")
-                            is UpdateState.Downloading -> if (isEn) "Downloading..." else "Descargando..."
-                            else -> if (isEn) "Download" else "Descargar"
+                                if (canInstall) (stringResource(R.string.updates_btn_install)) else (stringResource(R.string.updates_sheet_authorize))
+                            is UpdateState.Downloading -> stringResource(R.string.updates_sheet_downloading)
+                            else -> stringResource(R.string.updates_btn_download)
                         },
                         // El botón mide la mitad del ancho y tiene alto fijo: «Permitir
                         // instalación» partía en dos líneas y la segunda se salía por abajo.

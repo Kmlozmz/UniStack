@@ -2,6 +2,8 @@ package com.unistack.app.feature_setup.presentation
 
 import com.unistack.app.feature_user.domain.StudyArea
 import java.util.Locale
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 const val OTHER_OPTION = "Otra"
 const val OTHER_OPTION_EN = "Other"
@@ -15,14 +17,14 @@ fun otherOptionLabel(): String =
 fun labelFor(area: StudyArea): String {
     val isEn = Locale.getDefault().language == "en"
     return when (area) {
-        StudyArea.ENGINEERING_TECHNOLOGY -> if (isEn) "Engineering & Technology" else "Ingeniería y tecnología"
-        StudyArea.ECONOMICS_BUSINESS -> if (isEn) "Economics & Business Sciences" else "Ciencias económicas y administrativas"
-        StudyArea.LAW_POLITICS -> if (isEn) "Legal & Political Sciences" else "Ciencias jurídicas"
-        StudyArea.HEALTH_SCIENCES -> if (isEn) "Health Sciences" else "Ciencias de la salud"
-        StudyArea.EDUCATION -> if (isEn) "Education" else "Educación"
-        StudyArea.ARTS_DESIGN -> if (isEn) "Arts & Design" else "Artes y diseño"
-        StudyArea.SOCIAL_SCIENCES -> if (isEn) "Social Sciences" else "Ciencias sociales"
-        StudyArea.BASIC_SCIENCES -> if (isEn) "Basic Sciences" else "Ciencias básicas"
+        StudyArea.ENGINEERING_TECHNOLOGY -> Textos.get(R.string.setup_ingenieria_y_tecnologia)
+        StudyArea.ECONOMICS_BUSINESS -> Textos.get(R.string.setup_ciencias_economicas_y_administrativas)
+        StudyArea.LAW_POLITICS -> Textos.get(R.string.setup_ciencias_juridicas)
+        StudyArea.HEALTH_SCIENCES -> Textos.get(R.string.setup_ciencias_de_la_salud)
+        StudyArea.EDUCATION -> Textos.get(R.string.setup_educacion)
+        StudyArea.ARTS_DESIGN -> Textos.get(R.string.setup_artes_y_diseno)
+        StudyArea.SOCIAL_SCIENCES -> Textos.get(R.string.setup_ciencias_sociales)
+        StudyArea.BASIC_SCIENCES -> Textos.get(R.string.setup_ciencias_basicas)
         StudyArea.OTHER -> otherOptionLabel()
     }
 }

@@ -1,5 +1,6 @@
 package com.unistack.app.feature_home.presentation
 
+import com.unistack.app.TextosDePrueba
 import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_grades.domain.GradeItem
@@ -23,9 +24,15 @@ import com.unistack.app.feature_user.domain.VisualPreference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class HomeSummaryFactoryTest {
+
+    @Before
+    fun instalarTextos() {
+        TextosDePrueba.instalar()
+    }
 
     @Test
     fun createUsesLinkedUserNameWhenProfileHasNoPreferredName() {

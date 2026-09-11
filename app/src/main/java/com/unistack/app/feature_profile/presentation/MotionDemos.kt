@@ -50,6 +50,8 @@ import com.unistack.app.core.utils.formatCurrency
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.PressEffect
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * Los demos de Movimiento, **hechos de verdad** y no de miniaturas ampliadas.
@@ -173,7 +175,7 @@ fun DemoDePulsacion(motion: MotionPreferences) {
             ) {
                 val isEn = java.util.Locale.getDefault().language == "en"
                 Text(
-                    if (isEn) "Tap me" else "Púlsame",
+                    stringResource(R.string.settings_motion_press_me),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onPrimary
@@ -184,8 +186,8 @@ fun DemoDePulsacion(motion: MotionPreferences) {
             texto = run {
                 val isEn = java.util.Locale.getDefault().language == "en"
                 when (motion.press) {
-                    PressEffect.NINGUNA -> if (isEn) "none · button does not respond to touch" else "nada · el botón no responde al tacto"
-                    else -> "${motion.press.displayLabel.lowercase()} · ${if (isEn) "tap several times" else "toca varias veces"}"
+                    PressEffect.NINGUNA -> stringResource(R.string.settings_motion_press_none)
+                    else -> "${motion.press.displayLabel.lowercase()} · ${stringResource(R.string.motion_toca_varias_veces)}"
                 }
             },
             centrado = true
@@ -209,10 +211,10 @@ fun DemoDeCarga(motion: MotionPreferences) {
             texto = run {
                 val isEn = java.util.Locale.getDefault().language == "en"
                 when (motion.loading.id) {
-                    "formas" -> if (isEn) "morphs while spinning" else "gira y cambia de forma"
-                    "onda" -> if (isEn) "M3E wave, spinning" else "la onda de M3E, girando"
-                    "puntos" -> if (isEn) "three rotating dots" else "tres puntos por turnos"
-                    else -> if (isEn) "standard circular indicator" else "el círculo de siempre"
+                    "formas" -> stringResource(R.string.motion_gira_y_cambia_de_forma)
+                    "onda" -> stringResource(R.string.motion_la_onda_de_m3e_girando)
+                    "puntos" -> stringResource(R.string.motion_tres_puntos_por_turnos)
+                    else -> stringResource(R.string.motion_el_circulo_de_siempre)
                 }
             },
             centrado = true

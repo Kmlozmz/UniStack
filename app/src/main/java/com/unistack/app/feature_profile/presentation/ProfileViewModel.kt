@@ -43,6 +43,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 data class ProfileActionState(
     val isAccountBusy: Boolean = false,
@@ -70,7 +72,7 @@ data class GradingScaleChangeImpact(
         } else {
             if (subjectCount == 1) "1 materia" else "$subjectCount materias"
         }
-        return if (isEn) "$notas in $materias" else "$notas en $materias"
+        return Textos.get(R.string.profile_en, notas, materias)
     }
 }
 
@@ -534,7 +536,7 @@ class ProfileViewModel @Inject constructor(
                     _actionState.update {
                         it.copy(
                             isAccountBusy = false,
-                            message = if (isEn) "Google account connected." else "Cuenta de Google conectada.",
+                            message = Textos.get(R.string.profile_cuenta_de_google_conectada),
                             errorMessage = null
                         )
                     }
@@ -545,7 +547,7 @@ class ProfileViewModel @Inject constructor(
                         it.copy(
                             isAccountBusy = false,
                             message = null,
-                            errorMessage = throwable.message ?: if (isEn) "Could not connect with Google." else "No se pudo conectar con Google."
+                            errorMessage = throwable.message ?: Textos.get(R.string.profile_no_se_pudo_conectar_con_google)
                         )
                     }
                 }
@@ -563,7 +565,7 @@ class ProfileViewModel @Inject constructor(
                 _actionState.update {
                     it.copy(
                         isAccountBusy = false,
-                        message = if (isEn) "Account unlinked." else "Cuenta desvinculada.",
+                        message = Textos.get(R.string.profile_cuenta_desvinculada),
                         errorMessage = null
                     )
                 }
@@ -573,7 +575,7 @@ class ProfileViewModel @Inject constructor(
                     it.copy(
                         isAccountBusy = false,
                         message = null,
-                        errorMessage = if (isEn) "No linked account." else "No hay cuenta vinculada."
+                        errorMessage = Textos.get(R.string.profile_no_hay_cuenta_vinculada)
                     )
                 }
             }
@@ -617,7 +619,7 @@ class ProfileViewModel @Inject constructor(
                 _actionState.update {
                     it.copy(
                         message = null,
-                        errorMessage = throwable.message ?: if (isEn) "Could not create PDF." else "No se pudo crear el PDF."
+                        errorMessage = throwable.message ?: Textos.get(R.string.profile_no_se_pudo_crear_el_pdf)
                     )
                 }
             }
@@ -631,7 +633,7 @@ class ProfileViewModel @Inject constructor(
                 val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
-                        message = if (isEn) "Academic PDF created: $path" else "PDF académico creado: $path",
+                        message = Textos.get(R.string.profile_pdf_academico_creado, path),
                         errorMessage = null
                     )
                 }
@@ -641,7 +643,7 @@ class ProfileViewModel @Inject constructor(
                 _actionState.update {
                     it.copy(
                         message = null,
-                        errorMessage = throwable.message ?: (if (isEn) "Could not create PDF." else "No se pudo crear el PDF.")
+                        errorMessage = throwable.message ?: (Textos.get(R.string.profile_no_se_pudo_crear_el_pdf))
                     )
                 }
             }
@@ -667,7 +669,7 @@ class ProfileViewModel @Inject constructor(
                 onSuccess = { it.summary() },
                 onFailure = {
                     val isEn = java.util.Locale.getDefault().language == "en"
-                    it.message ?: if (isEn) "Invalid backup." else "Backup inválido."
+                    it.message ?: Textos.get(R.string.profile_backup_invalido)
                 }
             )
     }
@@ -678,7 +680,7 @@ class ProfileViewModel @Inject constructor(
                 val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
-                        message = if (isEn) "Local backup restored: ${preview.summary()}" else "Backup local restaurado: ${preview.summary()}",
+                        message = Textos.get(R.string.profile_backup_local_restaurado, preview.summary()),
                         errorMessage = null
                     )
                 }
@@ -688,7 +690,7 @@ class ProfileViewModel @Inject constructor(
                 _actionState.update {
                     it.copy(
                         message = null,
-                        errorMessage = throwable.message ?: (if (isEn) "Could not restore backup." else "No se pudo restaurar el backup.")
+                        errorMessage = throwable.message ?: (Textos.get(R.string.profile_no_se_pudo_restaurar_el_backup))
                     )
                 }
             }

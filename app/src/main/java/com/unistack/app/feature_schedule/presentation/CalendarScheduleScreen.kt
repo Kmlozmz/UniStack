@@ -116,6 +116,7 @@ import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 /* Estos nombres describían un color («Green», «Purple») pero devolvían un rol del tema,
    así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
    nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
@@ -773,18 +774,18 @@ private fun durationLabel(minutes: Int): String {
 private fun repeatLabel(everyWeeks: Int): String {
     val isEn = Locale.getDefault().language == "en"
     return if (everyWeeks <= 1) {
-        if (isEn) "Every week" else "Cada semana"
+        Textos.get(R.string.schedule_repeat_every_week)
     } else {
-        if (isEn) "Every $everyWeeks weeks" else "Cada $everyWeeks semanas"
+        Textos.get(R.string.schedule_cada_semanas, everyWeeks)
     }
 }
 
 private fun reminderLabel(minutes: Int): String {
     val isEn = Locale.getDefault().language == "en"
     return when {
-        minutes <= 0 -> if (isEn) "No reminder" else "Sin recordatorio"
-        minutes % 60 == 0 -> if (isEn) "${minutes / 60} h before" else "${minutes / 60} h antes"
-        else -> if (isEn) "$minutes min before" else "$minutes min antes"
+        minutes <= 0 -> Textos.get(R.string.schedule_reminder_none)
+        minutes % 60 == 0 -> Textos.get(R.string.schedule_h_antes, minutes / 60)
+        else -> Textos.get(R.string.schedule_min_antes, minutes)
     }
 }
 
@@ -816,17 +817,17 @@ private fun formatMinute(value: Int, use24Hour: Boolean): String {
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
     val isEn = Locale.getDefault().language == "en"
-    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (if (isEn) "AM" else "a. m.") else (if (isEn) "PM" else "p. m."))
+    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (Textos.get(R.string.schedule_a_m)) else (Textos.get(R.string.schedule_p_m)))
 }
 
 private fun ClassAttendanceStatus.label(): String {
     val isEn = Locale.getDefault().language == "en"
     return when (this) {
-        ClassAttendanceStatus.PENDING -> if (isEn) "Pending" else "Pendiente"
-        ClassAttendanceStatus.ATTENDED -> if (isEn) "Attended" else "Asist\u00ed"
-        ClassAttendanceStatus.ABSENT -> if (isEn) "Absent" else "Falta"
-        ClassAttendanceStatus.CANCELLED -> if (isEn) "Canceled" else "Cancelada"
-        ClassAttendanceStatus.RESCHEDULED -> if (isEn) "Rescheduled" else "Reprogramada"
+        ClassAttendanceStatus.PENDING -> Textos.get(R.string.subject_status_pending)
+        ClassAttendanceStatus.ATTENDED -> Textos.get(R.string.schedule_asist_u00ed)
+        ClassAttendanceStatus.ABSENT -> Textos.get(R.string.schedule_status_absent)
+        ClassAttendanceStatus.CANCELLED -> Textos.get(R.string.schedule_status_canceled)
+        ClassAttendanceStatus.RESCHEDULED -> Textos.get(R.string.schedule_status_rescheduled)
     }
 }
 
