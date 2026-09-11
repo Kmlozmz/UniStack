@@ -2612,4 +2612,34 @@ your course catalog.</string>
     <string name="cut_dates_with_period">with the period</string>
     <string name="cut_dates_weight_of_grade">%1$s%% of the grade</string>
     <string name="cut_dates_weeks">%1$s weeks</string>
+
+    <!-- Bloque G: gastos, datos, apariencia, accesibilidad, inicio, movimiento y periodos -->
+    <string name="preview_sample_class_at_ten">Calculus III at 10:00</string>
+    <string name="appearance_home_preview_caption">This is how your home looks with what you choose.</string>
+    <string name="preview_sample_subject_calculus">Multivariable Calculus</string>
+    <string name="preview_sample_room_math">MAT-201 · Room 302B</string>
+    <string name="preview_sample_subject_physics">Mechanical Physics</string>
+    <string name="preview_sample_room_physics">PHY-102 · Lab 3</string>
+    <string name="preview_sample_hero_expense">You are at $412,000 of $400,000</string>
+    <string name="preview_sample_slot_physics">14:00 · Physics II</string>
+    <string name="preview_sample_stat_spent">Spent</string>
+    <string name="motion_window_app">IN THE APP</string>
+    <string name="motion_group_general">GENERAL</string>
+    <string name="preview_sample_hero_grade">Physics II is at 2.8: at risk</string>
+    <string name="preview_sample_slot_calculus">10:00 · Calculus III</string>
+    <string name="preview_sample_stat_pending">Pending</string>
+    <string name="motion_window_numbers">HOME FIGURES</string>
+    <string name="motion_group_alerts">EXPENSES &amp; ALERTS</string>
+    <string name="preview_sample_hero_task">Calculus III delivery is due today</string>
+    <string name="preview_sample_stat_average">Average</string>
+    <string name="motion_window_tasks">IN TASKS</string>
+    <string name="motion_group_tasks">TASKS &amp; NOTES</string>
+    <string name="motion_window_bar">BOTTOM BAR</string>
+    <string name="motion_group_academic">ACADEMIC</string>
+    <string name="motion_window_loading">WHILE WAITING</string>
+    <string name="motion_group_transitions">TRANSITIONS</string>
+    <string name="motion_window_card">ON ANY CARD</string>
+    <string name="motion_group_base">BASE</string>
+    <string name="motion_window_anything">WHEN ANYTHING ENTERS</string>
+    <string name="motion_window_list">WHEN OPENING A LIST</string>
 </resources>

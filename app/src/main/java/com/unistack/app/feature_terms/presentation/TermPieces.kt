@@ -34,22 +34,13 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import java.time.LocalDate
 import com.unistack.app.core.utils.Textos
 
-private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
+/** El mes en tres letras, del idioma que toque y sin el punto que algunos traen. */
+private fun LocalDate.mesCorto(): String =
+    month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()).trimEnd('.')
 
-private val MesesCortosEs =
-    listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
-private val MesesCortosEn =
-    listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+internal fun LocalDate.diaMes(): String = Textos.get(R.string.term_texto, dayOfMonth, mesCorto())
 
-internal fun LocalDate.diaMes(): String {
-    val m = if (isEnglish) MesesCortosEn[monthValue - 1] else MesesCortosEs[monthValue - 1]
-    return Textos.get(R.string.term_texto, dayOfMonth, m)
-}
-
-internal fun LocalDate.diaMesAno(): String {
-    val m = if (isEnglish) MesesCortosEn[monthValue - 1] else MesesCortosEs[monthValue - 1]
-    return Textos.get(R.string.term_texto_2, dayOfMonth, m, year)
-}
+internal fun LocalDate.diaMesAno(): String = Textos.get(R.string.term_texto_2, dayOfMonth, mesCorto(), year)
 
 /** El rótulo pequeño en versales que separa bloques, igual que en el historial de asistencia. */
 @Composable

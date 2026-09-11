@@ -1270,7 +1270,7 @@ private fun ExpenseCategorySheet(
             feedback?.let { message ->
                 Text(
                     text = message,
-                    color = if (message.startsWith("Debe")) ExpenseCoral else ExpenseMuted,
+                    color = ExpenseMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -2217,11 +2217,11 @@ private fun ExpensesPreviewBottomNav(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            PreviewBottomNavItem("Inicio", Icons.Rounded.Home, selected = false, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Materias", Icons.AutoMirrored.Rounded.MenuBook, selected = false, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Tareas", Icons.AutoMirrored.Rounded.Assignment, selected = false, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Gastos", Icons.Rounded.AccountBalanceWallet, selected = true, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Perfil", Icons.Rounded.Person, selected = false, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem(stringResource(R.string.nav_home), Icons.Rounded.Home, selected = false, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem(stringResource(R.string.grades_subjects), Icons.AutoMirrored.Rounded.MenuBook, selected = false, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem(stringResource(R.string.nav_tasks), Icons.AutoMirrored.Rounded.Assignment, selected = false, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem(stringResource(R.string.nav_expenses), Icons.Rounded.AccountBalanceWallet, selected = true, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem(stringResource(R.string.nav_profile), Icons.Rounded.Person, selected = false, modifier = Modifier.weight(1f))
         }
     }
 }

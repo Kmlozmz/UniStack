@@ -236,7 +236,7 @@ internal fun HomePreviewCard(
     photoUrl: String?,
     appearance: AppearancePreferences
 ) {
-    val shown = name.takeIf { it.isNotBlank() } ?: "Estudiante"
+    val shown = name.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_profile_student)
 
     Column {
         Surface(
@@ -303,9 +303,9 @@ internal fun HomePreviewCard(
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ) {
                             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-                                Text("LO SIGUIENTE", style = SectionLabelStyle)
+                                Text(stringResource(R.string.home_hero_later), style = SectionLabelStyle)
                                 Text(
-                                    "Cálculo III a las 10:00",
+                                    stringResource(R.string.preview_sample_class_at_ten),
                                     modifier = Modifier.padding(top = 2.dp),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold
@@ -317,7 +317,7 @@ internal fun HomePreviewCard(
             }
         }
         Text(
-            text = "Así queda tu inicio con lo que elijas.",
+            text = stringResource(R.string.appearance_home_preview_caption),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp),

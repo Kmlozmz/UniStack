@@ -53,6 +53,7 @@ fun DataSettingsScreen(
     val spacing = LocalInterfaceSpacing.current
 
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var feedbackEsError by rememberSaveable { mutableStateOf(false) }
     var showRestartDialog by rememberSaveable { mutableStateOf(false) }
 
     LargeTitleScaffold(
@@ -73,7 +74,7 @@ fun DataSettingsScreen(
                 cloudBusy = cloudBackupState.inProgress,
                 cloudStatus = cloudBackupState.message ?: cloudBackupState.errorMessage,
                 dataSummary = viewModel.localDataSummary(),
-                onFeedback = { feedback = it }
+                onFeedback = { mensaje, esError -> feedback = mensaje; feedbackEsError = esError }
             )
         }
         item {
@@ -92,7 +93,7 @@ fun DataSettingsScreen(
                 Text(
                     message,
                     modifier = Modifier.padding(horizontal = 4.dp),
-                    color = if (message.startsWith("No se pudo") || message.startsWith("Could not") || message.startsWith("Failed")) {
+                    color = if (feedbackEsError) {
                         MaterialTheme.colorScheme.error
                     } else {
                         LocalSectionColors.current.onTrack

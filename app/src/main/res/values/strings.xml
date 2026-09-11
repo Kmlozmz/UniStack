@@ -2611,4 +2611,34 @@ a tu medida</string>
     <string name="cut_dates_with_period">con el periodo</string>
     <string name="cut_dates_weight_of_grade">%1$s%% de la nota</string>
     <string name="cut_dates_weeks">%1$s semanas</string>
+
+    <!-- Bloque G: gastos, datos, apariencia, accesibilidad, inicio, movimiento y periodos -->
+    <string name="preview_sample_class_at_ten">Cálculo III a las 10:00</string>
+    <string name="appearance_home_preview_caption">Así queda tu inicio con lo que elijas.</string>
+    <string name="preview_sample_subject_calculus">Cálculo Multivariable</string>
+    <string name="preview_sample_room_math">MAT-201 · Aula 302B</string>
+    <string name="preview_sample_subject_physics">Física Mecánica</string>
+    <string name="preview_sample_room_physics">FIS-102 · Laboratorio 3</string>
+    <string name="preview_sample_hero_expense">Llevas $412.000 de $400.000</string>
+    <string name="preview_sample_slot_physics">14:00 · Física II</string>
+    <string name="preview_sample_stat_spent">Gastado</string>
+    <string name="motion_window_app">EN LA APP</string>
+    <string name="motion_group_general">GENERALES</string>
+    <string name="preview_sample_hero_grade">Física II va en 2,8: en riesgo</string>
+    <string name="preview_sample_slot_calculus">10:00 · Cálculo III</string>
+    <string name="preview_sample_stat_pending">Pendientes</string>
+    <string name="motion_window_numbers">CIFRAS DE INICIO</string>
+    <string name="motion_group_alerts">GASTOS Y AVISOS</string>
+    <string name="preview_sample_hero_task">Entrega de Cálculo III vence hoy</string>
+    <string name="preview_sample_stat_average">Promedio</string>
+    <string name="motion_window_tasks">EN TAREAS</string>
+    <string name="motion_group_tasks">TAREAS Y NOTAS</string>
+    <string name="motion_window_bar">BARRA DE ABAJO</string>
+    <string name="motion_group_academic">ACADÉMICO</string>
+    <string name="motion_window_loading">MIENTRAS ESPERA</string>
+    <string name="motion_group_transitions">TRANSICIONES</string>
+    <string name="motion_window_card">EN CUALQUIER TARJETA</string>
+    <string name="motion_group_base">BASE</string>
+    <string name="motion_window_anything">AL ENTRAR CUALQUIER COSA</string>
+    <string name="motion_window_list">AL ABRIR UNA LISTA</string>
 </resources>

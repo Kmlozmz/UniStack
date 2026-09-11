@@ -91,7 +91,8 @@ internal fun BackupSection(
     cloudBusy: Boolean,
     cloudStatus: String?,
     dataSummary: String,
-    onFeedback: (String) -> Unit
+    /** El mensaje y si es un error: el color lo decide quien lo pinta, sin leer el texto. */
+    onFeedback: (String, Boolean) -> Unit
 ) {
     val context = LocalContext.current
     var lastBackup by remember { mutableStateOf(BackupFiles.lastBackupAt(context)) }
@@ -105,9 +106,9 @@ internal fun BackupSection(
             .onSuccess {
                 BackupFiles.rememberBackupDone(context)
                 lastBackup = BackupFiles.lastBackupAt(context)
-                onFeedback(Textos.get(R.string.backup_saved))
+                onFeedback(Textos.get(R.string.backup_saved), false)
             }
-            .onFailure { onFeedback(Textos.get(R.string.backup_save_failed)) }
+            .onFailure { onFeedback(Textos.get(R.string.backup_save_failed), true) }
     }
 
     val openBackup = rememberLauncherForActivityResult(
@@ -125,7 +126,7 @@ internal fun BackupSection(
                     current = viewModel.currentContents()
                 )
             }
-            .onFailure { onFeedback(Textos.get(R.string.backup_read_failed)) }
+            .onFailure { onFeedback(Textos.get(R.string.backup_read_failed), true) }
     }
 
     val saveTasksCsv = rememberLauncherForActivityResult(
@@ -133,8 +134,8 @@ internal fun BackupSection(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         BackupFiles.writeText(context, uri, viewModel.exportTasksCsv())
-            .onSuccess { onFeedback(Textos.get(R.string.backup_csv_tasks_saved)) }
-            .onFailure { onFeedback(Textos.get(R.string.backup_csv_failed)) }
+            .onSuccess { onFeedback(Textos.get(R.string.backup_csv_tasks_saved), false) }
+            .onFailure { onFeedback(Textos.get(R.string.backup_csv_failed), true) }
     }
 
     val saveExpensesCsv = rememberLauncherForActivityResult(
@@ -142,8 +143,8 @@ internal fun BackupSection(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         BackupFiles.writeText(context, uri, viewModel.exportExpensesCsv())
-            .onSuccess { onFeedback(Textos.get(R.string.backup_csv_expenses_saved)) }
-            .onFailure { onFeedback(Textos.get(R.string.backup_csv_failed)) }
+            .onSuccess { onFeedback(Textos.get(R.string.backup_csv_expenses_saved), false) }
+            .onFailure { onFeedback(Textos.get(R.string.backup_csv_failed), true) }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -210,7 +211,7 @@ internal fun BackupSection(
                                     BackupFiles.rememberBackupDone(context)
                                     lastBackup = BackupFiles.lastBackupAt(context)
                                 }
-                                .onFailure { onFeedback(Textos.get(R.string.backup_share_failed)) }
+                                .onFailure { onFeedback(Textos.get(R.string.backup_share_failed), true) }
                         },
                         shape = CircleShape,
                         color = Color.Transparent
@@ -343,10 +344,10 @@ internal fun BackupSection(
                     onClick = {
                         val file = viewModel.academicPdfFile(context)
                         if (file == null) {
-                            onFeedback(Textos.get(R.string.backup_pdf_failed))
+                            onFeedback(Textos.get(R.string.backup_pdf_failed), true)
                         } else {
                             BackupFiles.shareFile(context, file, "application/pdf")
-                                .onFailure { onFeedback(Textos.get(R.string.backup_pdf_open_failed)) }
+                                .onFailure { onFeedback(Textos.get(R.string.backup_pdf_open_failed), true) }
                         }
                     }
                 )
@@ -428,7 +429,7 @@ internal fun BackupSection(
                         onClick = {
                             val restored = viewModel.restoreLocalBackup(pending.json)
                             pendingRestore = null
-                            onFeedback(if (restored) Textos.get(R.string.backup_restored) else Textos.get(R.string.backup_restore_failed))
+                            onFeedback(if (restored) Textos.get(R.string.backup_restored) else Textos.get(R.string.backup_restore_failed), !restored)
                         }
                     ) {
                         Text(stringResource(R.string.settings_backup_btn_restore), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)

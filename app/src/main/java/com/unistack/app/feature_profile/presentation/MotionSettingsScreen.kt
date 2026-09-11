@@ -591,16 +591,18 @@ private fun colorDe(id: String): Color = when (id) {
  * El titulo de la ventana no es decorativo: dice en que parte de la app se va a ver eso. Un
  * «Pulsame» bajo el rotulo «EN CUALQUIER TARJETA» se entiende sin leer la descripcion.
  */
-private fun ventanaDe(id: String): String = when (id) {
-    "velocidad" -> "AL ABRIR UNA LISTA"
-    "rebote" -> "AL ENTRAR CUALQUIER COSA"
-    "pulsacion" -> "EN CUALQUIER TARJETA"
-    "carga" -> "MIENTRAS ESPERA"
-    "barraAnim" -> "BARRA DE ABAJO"
-    "gestos" -> "EN TAREAS"
-    "numeros" -> "CIFRAS DE INICIO"
-    else -> "EN LA APP"
-}
+private fun ventanaDe(id: String): String = Textos.get(
+    when (id) {
+        "velocidad" -> R.string.motion_window_list
+        "rebote" -> R.string.motion_window_anything
+        "pulsacion" -> R.string.motion_window_card
+        "carga" -> R.string.motion_window_loading
+        "barraAnim" -> R.string.motion_window_bar
+        "gestos" -> R.string.motion_window_tasks
+        "numeros" -> R.string.motion_window_numbers
+        else -> R.string.motion_window_app
+    }
+)
 
 /** Cuánto dura una vuelta del bucle, por gesto. */
 private fun duracionDe(gestoId: String): Int = when (gestoId) {
@@ -621,18 +623,14 @@ private fun MotionPreference.etiqueta(): String {
     }
 }
 
-private fun motionGroupDisplay(group: String): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
-    if (!isEn) return group
-    return when (group) {
-        MotionCatalog.GROUP_BASE -> "BASE"
-        MotionCatalog.GROUP_TRANSITIONS -> "TRANSITIONS"
-        MotionCatalog.GROUP_ACADEMIC -> "ACADEMIC"
-        MotionCatalog.GROUP_TASKS -> "TASKS & NOTES"
-        MotionCatalog.GROUP_ALERTS -> "EXPENSES & ALERTS"
-        MotionCatalog.GROUP_GENERAL -> "GENERAL"
-        else -> group
-    }
+private fun motionGroupDisplay(group: String): String = when (group) {
+    MotionCatalog.GROUP_BASE -> Textos.get(R.string.motion_group_base)
+    MotionCatalog.GROUP_TRANSITIONS -> Textos.get(R.string.motion_group_transitions)
+    MotionCatalog.GROUP_ACADEMIC -> Textos.get(R.string.motion_group_academic)
+    MotionCatalog.GROUP_TASKS -> Textos.get(R.string.motion_group_tasks)
+    MotionCatalog.GROUP_ALERTS -> Textos.get(R.string.motion_group_alerts)
+    MotionCatalog.GROUP_GENERAL -> Textos.get(R.string.motion_group_general)
+    else -> group
 }
 
 

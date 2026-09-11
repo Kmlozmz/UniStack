@@ -420,10 +420,10 @@ private fun BloqueHero(appearance: AppearancePreferences) {
     // El texto sale de lo que esté encendido: es la forma de ver que los tres interruptores
     // de abajo mandan de verdad en lo que cuenta la tarjeta.
     val linea = when {
-        appearance.heroShowsTasks -> "Entrega de Cálculo III vence hoy"
-        appearance.heroShowsGrades -> "Física II va en 2,8: en riesgo"
-        appearance.heroShowsExpenses -> "Llevas $412.000 de $400.000"
-        else -> "Cálculo III a las 10:00"
+        appearance.heroShowsTasks -> stringResource(R.string.preview_sample_hero_task)
+        appearance.heroShowsGrades -> stringResource(R.string.preview_sample_hero_grade)
+        appearance.heroShowsExpenses -> stringResource(R.string.preview_sample_hero_expense)
+        else -> stringResource(R.string.preview_sample_class_at_ten)
     }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -432,7 +432,7 @@ private fun BloqueHero(appearance: AppearancePreferences) {
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     ) {
         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-            Text("LO SIGUIENTE", style = SectionLabelStyle)
+            Text(stringResource(R.string.home_hero_later), style = SectionLabelStyle)
             Text(
                 linea,
                 modifier = Modifier.padding(top = 2.dp),
@@ -453,8 +453,8 @@ private fun BloqueAgenda() {
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(modifier = Modifier.padding(11.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text("HOY", style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
-            listOf("10:00 · Cálculo III", "14:00 · Física II").forEach {
+            Text(stringResource(R.string.date_today).uppercase(java.util.Locale.getDefault()), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
+            listOf(stringResource(R.string.preview_sample_slot_calculus), stringResource(R.string.preview_sample_slot_physics)).forEach {
                 Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 1)
             }
         }
@@ -464,7 +464,7 @@ private fun BloqueAgenda() {
 @Composable
 private fun ColumnScope.BloqueCifras(rojo: androidx.compose.ui.graphics.Color) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        listOf("4,25" to "Promedio", "3" to "Pendientes", "$412k" to "Gastado").forEachIndexed { indice, (cifra, rotulo) ->
+        listOf("4,25" to stringResource(R.string.preview_sample_stat_average), "3" to stringResource(R.string.preview_sample_stat_pending), "$412k" to stringResource(R.string.preview_sample_stat_spent)).forEachIndexed { indice, (cifra, rotulo) ->
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = MaterialTheme.shapes.medium,

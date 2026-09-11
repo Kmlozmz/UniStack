@@ -565,11 +565,11 @@ private fun LiveAccessibilityPreview(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Cálculo Multivariable",
+                                    text = stringResource(R.string.preview_sample_subject_calculus),
                                     style = MaterialTheme.typography.titleSmallEmphasized
                                 )
                                 Text(
-                                    text = "MAT-201 · Aula 302B",
+                                    text = stringResource(R.string.preview_sample_room_math),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -615,11 +615,11 @@ private fun LiveAccessibilityPreview(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Física Mecánica",
+                                    text = stringResource(R.string.preview_sample_subject_physics),
                                     style = MaterialTheme.typography.titleSmallEmphasized
                                 )
                                 Text(
-                                    text = "FIS-102 · Laboratorio 3",
+                                    text = stringResource(R.string.preview_sample_room_physics),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
