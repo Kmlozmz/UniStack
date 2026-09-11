@@ -506,6 +506,8 @@
     <string name="subject_close_verdict_pass_body">You passed with %2$s, below your goal of %3$s. Whatever is missing can be made up in the remaining cuts.</string>
     <string name="subject_close_verdict_fail_title">Cut closed below passing</string>
     <string name="subject_close_verdict_fail_body">You closed with %2$s and passing is %3$s. The remaining cuts will have to lift the average.</string>
+    <string name="celebration_all_done">All done!</string>
+    <string name="celebration_cut_closed">Cut closed!</string>
     <string name="subject_close_cut_title">Close the cut?</string>
     <string name="subject_close_cut_message">The grades are locked in and the cut stops taking new ones. You can reopen it whenever you want.</string>
     <string name="subject_reopen_cut_title">Reopen the cut?</string>

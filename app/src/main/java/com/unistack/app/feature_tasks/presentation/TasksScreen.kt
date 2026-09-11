@@ -256,7 +256,11 @@ fun TasksScreen(
             .background(MaterialTheme.colorScheme.background)
             // La celebracion se pinta sobre la pantalla entera y sin ocupar sitio: si la lista
             // diera un salto al aparecer, la celebracion seria una molestia.
-            .celebracionDelDia(disparada = celebrando, onTerminada = { celebrando = false })
+            .celebracionDelDia(
+                disparada = celebrando,
+                onTerminada = { celebrando = false },
+                mensaje = stringResource(R.string.celebration_all_done)
+            )
     ) {
         LazyColumn(
             modifier = Modifier

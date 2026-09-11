@@ -739,7 +739,11 @@ fun SubjectCutDetailScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .celebracionDelDia(disparada = celebrar, onTerminada = { celebrar = false })
+            .celebracionDelDia(
+                disparada = celebrar,
+                onTerminada = { celebrar = false },
+                mensaje = stringResource(R.string.celebration_cut_closed)
+            )
     ) {
         LazyColumn(
             modifier = Modifier

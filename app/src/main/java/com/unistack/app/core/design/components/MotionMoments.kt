@@ -448,9 +448,17 @@ private val manchaDeTinta = listOf(
  * velocidad ni se veian. Un confeti asi no transmite nada. Ahora todo se mide en dp, hay cien
  * particulas con peso —suben, giran y caen—, dura 2200 ms y ocupa la pantalla entera; y las
  * otras tres variantes crecen hasta las esquinas en vez de quedarse en un circulo del centro.
+ *
+ * [mensaje] es lo que se celebra, en palabras —«¡Todo hecho!», «¡Corte cerrado!»—. Lo pinta
+ * la onda en el centro: unos circulos creciendo solos no decian nada; las otras tres llevan
+ * su figura y no lo necesitan.
  */
 @Composable
-fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Modifier {
+fun Modifier.celebracionDelDia(
+    disparada: Boolean,
+    onTerminada: () -> Unit,
+    mensaje: String? = null
+): Modifier {
     val estilo = motionActual().celebration
     if (estilo == CelebrationMotion.NINGUNA || !hayMovimiento()) {
         // Sin celebración, el aviso se cierra al momento: si no, quien la apagó se queda con
@@ -485,6 +493,13 @@ fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Mod
     val acento = MaterialTheme.colorScheme.primary
     val verde = Color(0xFF11C045)
     val ambar = Color(0xFFE0A400)
+    val medidor = rememberTextMeasurer()
+    val tipoDelMensaje = TextStyle(
+        color = acento,
+        fontSize = 34.sp,
+        fontWeight = FontWeight.Black,
+        letterSpacing = (-0.02).em
+    )
 
     return this.drawWithContent {
         drawContent()
@@ -571,6 +586,22 @@ fun Modifier.celebracionDelDia(disparada: Boolean, onTerminada: () -> Unit): Mod
                             radius = 30.dp.toPx() + (alcance - 30.dp.toPx()) * e,
                             center = centro,
                             style = Stroke(width = 12.dp.toPx() * (1f - 0.7f * e) + 2.dp.toPx())
+                        )
+                    }
+                }
+                // El mensaje, en el centro de las ondas: entra con un pequeno rebote, se
+                // queda mientras salen, y se va con la ultima.
+                if (mensaje != null) {
+                    val entra = EaseOutBack.transform((t / 0.22f).coerceAtMost(1f))
+                    val vida = 1f - EaseInOutCubic.transform(((t - 0.7f) / 0.3f).coerceIn(0f, 1f))
+                    val medida = medidor.measure(
+                        mensaje,
+                        tipoDelMensaje.copy(color = acento.copy(alpha = vida * entra.coerceIn(0f, 1f)))
+                    )
+                    scale(scale = 0.8f + 0.2f * entra, pivot = centro) {
+                        drawText(
+                            textLayoutResult = medida,
+                            topLeft = Offset(centro.x - medida.size.width / 2f, centro.y - medida.size.height / 2f)
                         )
                     }
                 }

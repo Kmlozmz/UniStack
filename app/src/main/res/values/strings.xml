@@ -506,6 +506,8 @@
     <string name="subject_close_verdict_pass_body">Aprobaste con %2$s, por debajo de tu meta de %3$s. Lo que falte se compensa en los cortes que quedan.</string>
     <string name="subject_close_verdict_fail_title">Corte cerrado por debajo del aprobado</string>
     <string name="subject_close_verdict_fail_body">Cerraste con %2$s y se aprueba con %3$s. Los cortes que quedan tendrán que subir el promedio.</string>
+    <string name="celebration_all_done">¡Todo hecho!</string>
+    <string name="celebration_cut_closed">¡Corte cerrado!</string>
     <string name="subject_close_cut_title">¿Cerrar el corte?</string>
     <string name="subject_close_cut_message">Las notas quedan fijadas y el corte deja de aceptar nuevas. Puedes reabrirlo cuando quieras.</string>
     <string name="subject_reopen_cut_title">¿Reabrir el corte?</string>
