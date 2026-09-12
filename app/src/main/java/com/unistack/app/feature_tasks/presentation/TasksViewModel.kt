@@ -17,8 +17,11 @@ import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
+import com.unistack.app.feature_tasks.domain.TaskSubtask
+import com.unistack.app.feature_tasks.domain.isGradable
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.flow.StateFlow
+import java.time.LocalDate
 import java.util.UUID
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
@@ -52,7 +55,8 @@ class TasksViewModel @Inject constructor(
         estimatedMinutesInput: String,
         difficulty: TaskDifficulty,
         cutId: String? = null,
-        gradingStatus: TaskGradingStatus = TaskGradingStatus.UNDECIDED
+        gradingStatus: TaskGradingStatus = TaskGradingStatus.UNDECIDED,
+        subtasks: List<TaskSubtask> = emptyList()
     ): Boolean {
         val parsed = validatedTaskInput(
             title = title,
@@ -62,9 +66,17 @@ class TasksViewModel @Inject constructor(
         ) ?: return false
 
         val now = System.currentTimeMillis()
+        val taskId = "task-${UUID.randomUUID()}"
+        val normalizedSubtasks = subtasks.mapIndexed { index, sub ->
+            sub.copy(
+                id = if (sub.id.isBlank()) "sub-${UUID.randomUUID()}" else sub.id,
+                taskId = taskId,
+                position = index
+            )
+        }
         tasksRepository.addTask(
             StudentTask(
-                id = "task-${UUID.randomUUID()}",
+                id = taskId,
                 title = TextValidators.normalizeText(title),
                 description = description.trim(),
                 subjectId = subjectId.takeIf { id -> subjects.value.any { it.id == id } },
@@ -76,7 +88,8 @@ class TasksViewModel @Inject constructor(
                 createdAt = now,
                 updatedAt = now,
                 cutId = resolvedCutId(subjectId, cutId),
-                gradingStatus = gradingStatus
+                gradingStatus = gradingStatus,
+                subtasks = normalizedSubtasks
             )
         )
         return true
@@ -93,7 +106,8 @@ class TasksViewModel @Inject constructor(
         estimatedMinutesInput: String,
         difficulty: TaskDifficulty,
         cutId: String? = null,
-        gradingStatus: TaskGradingStatus = existingGradingStatus(taskId)
+        gradingStatus: TaskGradingStatus = existingGradingStatus(taskId),
+        subtasks: List<TaskSubtask>? = null
     ): Boolean {
         val existing = taskById(taskId) ?: return false
         val parsed = validatedTaskInput(
@@ -173,6 +187,14 @@ class TasksViewModel @Inject constructor(
             }
         }
 
+        val updatedSubtasks = subtasks?.mapIndexed { index, sub ->
+            sub.copy(
+                id = if (sub.id.isBlank()) "sub-${UUID.randomUUID()}" else sub.id,
+                taskId = taskId,
+                position = index
+            )
+        } ?: existing.subtasks
+
         tasksRepository.updateTask(
             existing.copy(
                 title = TextValidators.normalizeText(title),
@@ -185,7 +207,8 @@ class TasksViewModel @Inject constructor(
                 updatedAt = System.currentTimeMillis(),
                 cutId = resolvedCutId,
                 gradingStatus = resolvedGradingStatus,
-                linkedGradeId = linkedGradeId
+                linkedGradeId = linkedGradeId,
+                subtasks = updatedSubtasks
             )
         )
         return true
@@ -204,26 +227,34 @@ class TasksViewModel @Inject constructor(
         return true
     }
 
-    fun duplicateTask(taskId: String): Boolean {
-        val source = taskById(taskId) ?: return false
+    fun duplicateTask(taskId: String): StudentTask? {
+        val source = taskById(taskId) ?: return null
         val now = System.currentTimeMillis()
-        tasksRepository.addTask(
-            source.copy(
-                id = "task-${UUID.randomUUID()}",
-                title = Textos.get(R.string.tasks_copia, source.title),
-                completed = false,
-                completedAt = null,
-                gradingStatus = if (source.gradingStatus == TaskGradingStatus.NOT_GRADED) {
-                    TaskGradingStatus.NOT_GRADED
-                } else {
-                    TaskGradingStatus.UNDECIDED
-                },
-                linkedGradeId = null,
-                createdAt = now,
-                updatedAt = now
+        val newTaskId = "task-${UUID.randomUUID()}"
+        val duplicatedSubtasks = source.subtasks.map { sub ->
+            sub.copy(
+                id = "sub-${UUID.randomUUID()}",
+                taskId = newTaskId,
+                isCompleted = false
             )
+        }
+        val copy = source.copy(
+            id = newTaskId,
+            title = Textos.get(R.string.tasks_copia, source.title),
+            completed = false,
+            completedAt = null,
+            gradingStatus = if (source.gradingStatus == TaskGradingStatus.NOT_GRADED) {
+                TaskGradingStatus.NOT_GRADED
+            } else {
+                TaskGradingStatus.UNDECIDED
+            },
+            subtasks = duplicatedSubtasks,
+            linkedGradeId = null,
+            createdAt = now,
+            updatedAt = now
         )
-        return true
+        tasksRepository.addTask(copy)
+        return copy
     }
 
     fun completeTaskFromEditor(taskId: String): Boolean {
@@ -293,6 +324,126 @@ class TasksViewModel @Inject constructor(
                 updatedAt = System.currentTimeMillis()
             )
         )
+        return true
+    }
+
+    fun markTaskAsDone(taskId: String, willBeGraded: Boolean) {
+        val task = taskById(taskId) ?: return
+        val nextStatus = when {
+            task.gradingStatus == TaskGradingStatus.NOT_GRADED -> TaskGradingStatus.NOT_GRADED
+            willBeGraded -> TaskGradingStatus.AWAITING_GRADE
+            else -> TaskGradingStatus.NOT_GRADED
+        }
+        tasksRepository.setTaskCompleted(taskId, true)
+        tasksRepository.setGradingStatus(taskId, nextStatus)
+    }
+
+    fun toggleSubtask(taskId: String, subtaskId: String, completed: Boolean? = null) {
+        val task = taskById(taskId)
+        val targetSub = task?.subtasks?.firstOrNull { it.id == subtaskId }
+        val newCompleted = completed ?: (!(targetSub?.isCompleted ?: false))
+        tasksRepository.toggleSubtask(taskId, subtaskId, newCompleted)
+    }
+
+    fun addSubtask(taskId: String, title: String): Boolean {
+        val clean = title.trim()
+        if (clean.isEmpty()) return false
+        val task = taskById(taskId) ?: return false
+        val newSubtask = TaskSubtask(
+            id = "sub-${UUID.randomUUID()}",
+            taskId = taskId,
+            title = clean,
+            isCompleted = false,
+            position = task.subtasks.size
+        )
+        tasksRepository.updateTask(task.copy(subtasks = task.subtasks + newSubtask))
+        return true
+    }
+
+    fun deleteSubtask(taskId: String, subtaskId: String): Boolean {
+        val task = taskById(taskId) ?: return false
+        val updated = task.subtasks.filterNot { it.id == subtaskId }
+            .mapIndexed { index, sub -> sub.copy(position = index) }
+        tasksRepository.updateTask(task.copy(subtasks = updated))
+        return true
+    }
+
+    fun postponeTaskToTomorrow(taskId: String): Long? {
+        val task = taskById(taskId) ?: return null
+        val today = TaskDateUtils.today()
+        val dueLocalDate = TaskDateUtils.fromMillis(task.dueDateMillis)
+        val targetDate = if (dueLocalDate <= today) today.plusDays(1) else dueLocalDate.plusDays(1)
+        val dueTime = TaskDateUtils.timeFromMillis(task.dueDateMillis)
+        val newMillis = TaskDateUtils.toMillis(targetDate, dueTime)
+        tasksRepository.postponeTask(taskId, newMillis)
+        return newMillis
+    }
+
+    fun postponeTaskToNextMonday(taskId: String): Long? {
+        val task = taskById(taskId) ?: return null
+        val today = TaskDateUtils.today()
+        val dayOfWeek = today.dayOfWeek.value
+        val daysUntilMonday = ((8 - dayOfWeek) % 7).let { if (it == 0) 7 else it }
+        val targetDate = today.plusDays(daysUntilMonday.toLong())
+        val dueTime = TaskDateUtils.timeFromMillis(task.dueDateMillis)
+        val newMillis = TaskDateUtils.toMillis(targetDate, dueTime)
+        tasksRepository.postponeTask(taskId, newMillis)
+        return newMillis
+    }
+
+    fun postponeTaskToDate(taskId: String, targetDate: LocalDate): Long? {
+        val task = taskById(taskId) ?: return null
+        val dueTime = TaskDateUtils.timeFromMillis(task.dueDateMillis)
+        val newMillis = TaskDateUtils.toMillis(targetDate, dueTime)
+        tasksRepository.postponeTask(taskId, newMillis)
+        return newMillis
+    }
+
+    fun revertTaskToPending(taskId: String): Boolean {
+        val task = taskById(taskId) ?: return false
+        val nextStatus = if (task.gradingStatus == TaskGradingStatus.NOT_GRADED) {
+            TaskGradingStatus.NOT_GRADED
+        } else {
+            TaskGradingStatus.UNDECIDED
+        }
+        tasksRepository.updateTask(
+            task.copy(
+                completed = false,
+                completedAt = null,
+                gradingStatus = nextStatus,
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+        return true
+    }
+
+    fun markTaskCompletedWithEvaluation(task: StudentTask, onlyDone: Boolean = false): TaskGradingStatus {
+        val now = System.currentTimeMillis()
+        val shouldAwaitGrade = !onlyDone && task.type.isGradable() && task.subjectId != null && task.gradingStatus != TaskGradingStatus.NOT_GRADED
+        val nextStatus = if (shouldAwaitGrade) {
+            TaskGradingStatus.AWAITING_GRADE
+        } else {
+            TaskGradingStatus.NOT_GRADED
+        }
+        tasksRepository.updateTask(
+            task.copy(
+                completed = true,
+                completedAt = now,
+                gradingStatus = nextStatus,
+                updatedAt = now
+            )
+        )
+        return nextStatus
+    }
+
+    fun setTaskGradingDecision(taskId: String, onlyDone: Boolean): Boolean {
+        val task = taskById(taskId) ?: return false
+        val nextStatus = if (onlyDone) {
+            TaskGradingStatus.NOT_GRADED
+        } else {
+            TaskGradingStatus.UNDECIDED
+        }
+        tasksRepository.setGradingStatus(taskId, nextStatus)
         return true
     }
 

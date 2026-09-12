@@ -18,6 +18,7 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
+import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
@@ -40,6 +41,7 @@ class GradesViewModel @Inject constructor(
     val userProfile: StateFlow<UserProfile?> = userRepository.userProfile
     val academicWorks: StateFlow<List<AcademicWork>> = academicWorksRepository.works
     val classSessions: StateFlow<List<ClassSession>> = scheduleRepository.sessions
+    val tasks: StateFlow<List<StudentTask>> = tasksRepository.tasks
 
     private fun getMaxGrade(): Double {
         val profile = userProfile.value ?: return 5.0

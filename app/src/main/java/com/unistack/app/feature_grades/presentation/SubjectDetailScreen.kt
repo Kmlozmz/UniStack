@@ -32,8 +32,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextDecoration
+import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
+import com.unistack.app.feature_tasks.domain.formatTaskDueText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Assignment
@@ -189,10 +194,12 @@ fun SubjectDetailScreen(
     onNewNoteClick: (String) -> Unit,
     onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
+    onTaskClick: ((String) -> Unit)? = null,
     viewModel: GradesViewModel = hiltViewModel()
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
+    val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
     val classSession = classSessions.firstOrNull { it.subjectId == subjectId }
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -296,6 +303,10 @@ fun SubjectDetailScreen(
     }
     val evaluatedSubjectPercentage = calculation.evaluatedSemesterFraction * 100.0
     val remainingSubjectPercentage = calculation.remainingSemesterFraction * 100.0
+
+    val subjectTasks = remember(allTasks, subject.id) {
+        allTasks.filter { it.subjectId == subject.id }
+    }
 
     Box(
         modifier = modifier
@@ -487,6 +498,24 @@ fun SubjectDetailScreen(
                             }
                         }
                     }
+                }
+            }
+
+            if (subjectTasks.isNotEmpty()) {
+                item {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        stringResource(R.string.subject_tasks_section_title),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                items(subjectTasks, key = { it.id }) { task ->
+                    SubjectTaskItem(
+                        task = task,
+                        onClick = { onTaskClick?.invoke(task.id) }
+                    )
                 }
             }
         }
@@ -3017,5 +3046,100 @@ internal fun GradeType.colorLocal(): Color {
         GradeType.PROJECT,
         GradeType.RESEARCH -> LocalSectionColors.current.schedule
         GradeType.OTHER -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+}
+
+@Composable
+private fun SubjectTaskItem(
+    task: StudentTask,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .background(
+                        color = if (task.completed) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        else Color.Transparent,
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .border(
+                        width = 1.5.dp,
+                        color = if (task.completed) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outlineVariant,
+                        shape = RoundedCornerShape(6.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (task.completed) {
+                    Icon(
+                        imageVector = Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        textDecoration = if (task.completed) TextDecoration.LineThrough else TextDecoration.None
+                    ),
+                    color = if (task.completed) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                val subtaskProgress = if (task.subtasks.isNotEmpty()) {
+                    " · ${task.subtasks.count { it.isCompleted }}/${task.subtasks.size}"
+                } else ""
+                Text(
+                    text = "${task.type.name.lowercase().replaceFirstChar { it.uppercase() }} · ${task.estimatedMinutes} min$subtaskProgress",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            val dueText = formatTaskDueText(task.dueDateMillis)
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = if (!task.completed && task.dueDateMillis < System.currentTimeMillis()) {
+                    MaterialTheme.colorScheme.errorContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                }
+            ) {
+                Text(
+                    text = if (task.gradingStatus == TaskGradingStatus.AWAITING_GRADE) {
+                        stringResource(R.string.tasks_pill_awaiting_grade)
+                    } else if (task.completed) {
+                        stringResource(R.string.tasks_pill_done)
+                    } else {
+                        dueText
+                    },
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                    color = if (!task.completed && task.dueDateMillis < System.currentTimeMillis()) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+        }
     }
 }

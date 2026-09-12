@@ -37,12 +37,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -107,8 +110,11 @@ import com.unistack.app.feature_tasks.domain.formatTaskDueText
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
+import com.unistack.app.feature_tasks.domain.TaskSubtask
+import com.unistack.app.feature_tasks.domain.isGradable
 import java.time.LocalTime
 import java.util.Locale
+import java.util.UUID
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.foundation.shape.CircleShape
@@ -140,6 +146,7 @@ fun AddTaskScreen(
     var selectedCutId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var selectedType by rememberSaveable(taskId) { mutableStateOf(TaskType.WORKSHOP) }
     var difficulty by rememberSaveable(taskId) { mutableStateOf(TaskDifficulty.MEDIUM) }
+    var subtasks by remember(task?.id) { mutableStateOf(task?.subtasks ?: emptyList()) }
     var gradingChoice by rememberSaveable(taskId) { mutableStateOf<TaskGradingChoice?>(null) }
     var initialized by rememberSaveable(taskId) { mutableStateOf(false) }
     var error by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
@@ -213,6 +220,7 @@ fun AddTaskScreen(
             selectedCutId = task.cutId
             selectedType = task.type
             difficulty = task.difficulty
+            subtasks = task.subtasks
             gradingChoice = when (task.gradingStatus) {
                 TaskGradingStatus.NOT_GRADED -> TaskGradingChoice.NO
                 TaskGradingStatus.UNDECIDED -> TaskGradingChoice.UNSURE
@@ -221,6 +229,7 @@ fun AddTaskScreen(
             }
             initialized = true
         } else if (!isEditing) {
+            gradingChoice = if (selectedType.isGradable()) TaskGradingChoice.YES else TaskGradingChoice.NO
             initialized = true
         }
     }
@@ -267,7 +276,7 @@ fun AddTaskScreen(
         },
         onDuplicateClick = if (isEditing && task != null) {
             {
-                if (viewModel.duplicateTask(task.id)) onBackClick()
+                if (viewModel.duplicateTask(task.id) != null) onBackClick()
             }
         } else {
             null
@@ -311,6 +320,11 @@ fun AddTaskScreen(
         },
         onTypeSelected = {
             selectedType = it
+            if (!it.isGradable()) {
+                gradingChoice = TaskGradingChoice.NO
+            } else if (gradingChoice == TaskGradingChoice.NO) {
+                gradingChoice = TaskGradingChoice.YES
+            }
             error = null
         },
         onSubjectSelected = {
@@ -331,6 +345,25 @@ fun AddTaskScreen(
             gradingChoice = it
             error = null
         },
+        subtasks = subtasks,
+        onAddSubtask = { stepTitle ->
+            subtasks = subtasks + TaskSubtask(
+                id = "sub-${UUID.randomUUID()}",
+                taskId = taskId ?: "",
+                title = stepTitle,
+                isCompleted = false,
+                position = subtasks.size
+            )
+        },
+        onToggleSubtask = { index ->
+            subtasks = subtasks.mapIndexed { i, s ->
+                if (i == index) s.copy(isCompleted = !s.isCompleted) else s
+            }
+        },
+        onDeleteSubtask = { index ->
+            subtasks = subtasks.filterIndexed { i, _ -> i != index }
+                .mapIndexed { i, s -> s.copy(position = i) }
+        },
         onSaveClick = {
             val editingTaskId = taskId
             val saved = if (editingTaskId != null) {
@@ -345,7 +378,8 @@ fun AddTaskScreen(
                     estimatedMinutesInput = estimatedMinutes,
                     difficulty = difficulty,
                     cutId = selectedCutId,
-                    gradingStatus = gradingChoice.toInitialGradingStatus()
+                    gradingStatus = gradingChoice.toInitialGradingStatus(),
+                    subtasks = subtasks
                 )
             } else {
                 viewModel.addTask(
@@ -358,7 +392,8 @@ fun AddTaskScreen(
                     estimatedMinutesInput = estimatedMinutes,
                     difficulty = difficulty,
                     cutId = selectedCutId,
-                    gradingStatus = gradingChoice.toInitialGradingStatus()
+                    gradingStatus = gradingChoice.toInitialGradingStatus(),
+                    subtasks = subtasks
                 )
             }
 
@@ -485,6 +520,10 @@ private fun AddTaskContent(
     onCreateSubjectClick: () -> Unit,
     onPrioritySelected: (TaskDifficulty) -> Unit,
     onGradingChoiceSelected: (TaskGradingChoice) -> Unit,
+    subtasks: List<TaskSubtask>,
+    onAddSubtask: (String) -> Unit,
+    onToggleSubtask: (Int) -> Unit,
+    onDeleteSubtask: (Int) -> Unit,
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -555,9 +594,18 @@ private fun AddTaskContent(
                     GradingIntentSelector(
                         selected = gradingChoice,
                         hasSubject = selectedSubjectId != null,
+                        taskType = selectedType,
                         onSelected = onGradingChoiceSelected
                     )
                 }
+            }
+            FormSection(title = stringResource(R.string.tasks_subtasks_title)) {
+                SubtasksCard(
+                    subtasks = subtasks,
+                    onAddSubtask = onAddSubtask,
+                    onToggleSubtask = onToggleSubtask,
+                    onDeleteSubtask = onDeleteSubtask
+                )
             }
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -1081,58 +1129,243 @@ private fun LinkedGradeCard(
 private fun GradingIntentSelector(
     selected: TaskGradingChoice?,
     hasSubject: Boolean,
+    taskType: TaskType,
     onSelected: (TaskGradingChoice) -> Unit
 ) {
     FormSectionCard {
         Text(
-            stringResource(R.string.tasks_will_have_grade),
+            stringResource(R.string.tasks_eval_title),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            stringResource(R.string.tasks_will_have_grade_hint),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall
-        )
-        Spacer(modifier = Modifier.height(14.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            TaskGradingChoice.entries.forEach { choice ->
-                val isSelected = selected == choice
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .bounceClick { onSelected(choice) },
-                    shape = MaterialTheme.shapes.medium,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
+        if (!taskType.isGradable()) {
+            Text(
+                stringResource(R.string.tasks_eval_not_gradable_desc, taskType.label()),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else {
+            Text(
+                stringResource(R.string.tasks_will_have_grade_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(TaskGradingChoice.YES, TaskGradingChoice.NO).forEach { choice ->
+                    val isSelected = selected == choice
+                    val label = if (choice == TaskGradingChoice.YES) {
+                        stringResource(R.string.tasks_eval_awaiting_grade)
                     } else {
-                        MaterialTheme.colorScheme.surfaceContainer
+                        stringResource(R.string.tasks_eval_only_done)
                     }
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .bounceClick { onSelected(choice) },
+                        shape = MaterialTheme.shapes.medium,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        }
+                    ) {
+                        Text(
+                            text = label,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 14.dp),
+                            textAlign = TextAlign.Center,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+            if (selected == TaskGradingChoice.YES && !hasSubject) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    stringResource(R.string.tasks_select_subject_for_grade_hint),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubtasksCard(
+    subtasks: List<TaskSubtask>,
+    onAddSubtask: (String) -> Unit,
+    onToggleSubtask: (Int) -> Unit,
+    onDeleteSubtask: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isAdding by remember { mutableStateOf(false) }
+    var newStepText by remember { mutableStateOf("") }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            subtasks.forEachIndexed { index, subtask ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .background(
+                                color = if (subtask.isCompleted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                else Color.Transparent,
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .border(
+                                width = 1.5.dp,
+                                color = if (subtask.isCompleted) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outlineVariant,
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .clickable { onToggleSubtask(index) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (subtask.isCompleted) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = choice.label,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 14.dp),
-                        textAlign = TextAlign.Center,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        text = subtask.title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                        ),
+                        color = if (subtask.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.onSurface
+                    )
+                    IconButton(
+                        onClick = { onDeleteSubtask(index) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            if (isAdding) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BasicTextField(
+                        value = newStepText,
+                        onValueChange = { newStepText = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        decorationBox = { inner ->
+                            if (newStepText.isBlank()) {
+                                Text(
+                                    stringResource(R.string.tasks_subtasks_add_step),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            inner()
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            if (newStepText.isNotBlank()) {
+                                onAddSubtask(newStepText.trim())
+                                newStepText = ""
+                                isAdding = false
+                            }
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            newStepText = ""
+                            isAdding = false
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { isAdding = true }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .border(
+                                width = 1.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                shape = RoundedCornerShape(6.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        stringResource(R.string.tasks_subtasks_add_step),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
-        }
-        if (selected == TaskGradingChoice.YES && !hasSubject) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                stringResource(R.string.tasks_select_subject_for_grade_hint),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
         }
     }
 }

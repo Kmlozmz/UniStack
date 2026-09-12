@@ -916,6 +916,9 @@ fun MainNavGraph(
                                 launchSingleTop = true
                             }
                         }
+                    },
+                    onTaskClick = { taskId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules)
                     }
                 )
             }

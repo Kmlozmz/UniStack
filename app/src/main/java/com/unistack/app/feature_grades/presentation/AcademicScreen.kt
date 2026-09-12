@@ -178,6 +178,7 @@ fun AcademicScreen(
                         onNewTaskClick = onNewTaskClick,
                         onEditTaskClick = onEditTaskClick,
                         onCompleteHistoryClick = onCompleteHistoryClick,
+                        onSubjectClick = onSubjectClick,
                         embedded = true
                     )
                 }

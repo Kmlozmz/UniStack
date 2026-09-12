@@ -205,11 +205,83 @@ class TasksViewModelTest {
 
         val duplicated = viewModel.duplicateTask(taskId)
 
-        assertTrue(duplicated)
+        assertNotNull(duplicated)
         assertEquals(2, viewModel.tasks.value.size)
         val copy = viewModel.tasks.value.first { it.id != taskId }
         assertTrue(copy.title.contains("copia"))
         assertFalse(copy.completed)
+    }
+
+    @Test
+    fun `subtasks operations work correctly`() {
+        viewModel.addTask(
+            title = "Ensayo final",
+            description = "",
+            subjectId = null,
+            type = TaskType.ESSAY,
+            dueDateInput = tomorrowInput,
+            dueTimeInput = "",
+            estimatedMinutesInput = "120",
+            difficulty = TaskDifficulty.HARD
+        )
+        val taskId = viewModel.tasks.value.first().id
+
+        // Añadir subtareas
+        assertTrue(viewModel.addSubtask(taskId, "Escribir introducción"))
+        assertTrue(viewModel.addSubtask(taskId, "Desarrollar argumentos"))
+        assertEquals(2, viewModel.tasks.value.first().subtasks.size)
+
+        val firstSubId = viewModel.tasks.value.first().subtasks[0].id
+        assertFalse(viewModel.tasks.value.first().subtasks[0].isCompleted)
+
+        // Alternar subtarea
+        viewModel.toggleSubtask(taskId, firstSubId)
+        assertTrue(viewModel.tasks.value.first().subtasks[0].isCompleted)
+
+        // Borrar subtarea
+        assertTrue(viewModel.deleteSubtask(taskId, firstSubId))
+        assertEquals(1, viewModel.tasks.value.first().subtasks.size)
+        assertEquals("Desarrollar argumentos", viewModel.tasks.value.first().subtasks[0].title)
+    }
+
+    @Test
+    fun `postponeTaskToTomorrow updates due date`() {
+        viewModel.addTask(
+            title = "Taller",
+            description = "",
+            subjectId = null,
+            type = TaskType.WORKSHOP,
+            dueDateInput = tomorrowInput,
+            dueTimeInput = "14:00",
+            estimatedMinutesInput = "60",
+            difficulty = TaskDifficulty.MEDIUM
+        )
+        val taskId = viewModel.tasks.value.first().id
+        val originalDue = viewModel.tasks.value.first().dueDateMillis
+
+        val newDue = viewModel.postponeTaskToTomorrow(taskId)
+        assertNotNull(newDue)
+        assertTrue(newDue!! > originalDue)
+    }
+
+    @Test
+    fun `markTaskAsDone sets completion and grading status`() {
+        viewModel.addTask(
+            title = "Examen",
+            description = "",
+            subjectId = null,
+            type = TaskType.EXAM,
+            dueDateInput = tomorrowInput,
+            dueTimeInput = "",
+            estimatedMinutesInput = "90",
+            difficulty = TaskDifficulty.HARD
+        )
+        val taskId = viewModel.tasks.value.first().id
+
+        viewModel.markTaskAsDone(taskId, willBeGraded = true)
+        val task = viewModel.tasks.value.first()
+        assertTrue(task.completed)
+        assertEquals(TaskGradingStatus.AWAITING_GRADE, task.gradingStatus)
     }
 
     @Test
