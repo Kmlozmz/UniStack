@@ -9,6 +9,15 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
+import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskDateUtils
+import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
+import com.unistack.app.feature_tasks.domain.TaskSubtask
+import com.unistack.app.feature_tasks.domain.TaskType
+import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.MotionChoice
 import com.unistack.app.feature_user.domain.MotionGesture
 import com.unistack.app.feature_user.domain.MotionPreferences
@@ -40,6 +49,7 @@ class BancoDePruebasViewModel @Inject constructor(
     private val scheduleRepository: ScheduleRepository,
     private val gradesRepository: GradesRepository,
     private val expensesRepository: ExpensesRepository,
+    private val tasksRepository: TasksRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -235,14 +245,232 @@ class BancoDePruebasViewModel @Inject constructor(
         }
     }
 
-    // ------------------------------------------------------------------ recoger
+    // ------------------------------------------------------------------ tareas
 
     /**
-     * Se lleva todo lo fabricado y no toca nada más.
-     *
-     * Es lo que hace que esto pueda vivir dentro de la app: el prefijo `prueba-` separa lo de
-     * mentira de lo de verdad sin depender de acordarse de qué se pulsó.
+     * Siembra las 7 tareas exactas del artifact aprobado con subtareas y estados variados,
+     * más las 4 materias asociadas (Sociología, Cálculo III, Programación, Física II).
      */
+    fun sembrarTareasDelArtifact() {
+        val matSocId = "${MARCA}mat-soc"
+        val matCalcId = "${MARCA}mat-calc"
+        val matProId = "${MARCA}mat-pro"
+        val matFisId = "${MARCA}mat-fis"
+
+        val existingSubjectIds = gradesRepository.subjects.value.map { it.id }.toSet()
+        if (matSocId !in existingSubjectIds) {
+            gradesRepository.addSubject(
+                Subject(
+                    id = matSocId,
+                    name = "Sociología",
+                    targetAverage = 3.8,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.YELLOW
+                )
+            )
+        }
+        if (matCalcId !in existingSubjectIds) {
+            gradesRepository.addSubject(
+                Subject(
+                    id = matCalcId,
+                    name = "Cálculo III",
+                    targetAverage = 3.5,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.BLUE
+                )
+            )
+        }
+        if (matProId !in existingSubjectIds) {
+            gradesRepository.addSubject(
+                Subject(
+                    id = matProId,
+                    name = "Programación",
+                    targetAverage = 4.0,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.GREEN
+                )
+            )
+        }
+        if (matFisId !in existingSubjectIds) {
+            gradesRepository.addSubject(
+                Subject(
+                    id = matFisId,
+                    name = "Física II",
+                    targetAverage = 3.5,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.PURPLE
+                )
+            )
+        }
+
+        // Limpiar tareas de prueba anteriores para idempotencia
+        tasksRepository.tasks.value
+            .filter { it.id.startsWith(MARCA) }
+            .forEach { tasksRepository.deleteTask(it.id) }
+
+        val today = LocalDate.now()
+        val nowMillis = System.currentTimeMillis()
+
+        // 1. Ayer 23:59 - Ensayo: la ciudad como texto
+        val t1Id = "${MARCA}task-1"
+        tasksRepository.addTask(
+            StudentTask(
+                id = t1Id,
+                title = "Ensayo: la ciudad como texto",
+                description = "3 páginas. Formato APA 7. Analizar espacio público y segregación en Medellín.",
+                subjectId = matSocId,
+                type = TaskType.ESSAY,
+                dueDateMillis = TaskDateUtils.toMillis(today.minusDays(1), LocalTime.of(23, 59)),
+                difficulty = TaskDifficulty.MEDIUM,
+                estimatedMinutes = 120,
+                completed = false,
+                createdAt = nowMillis - 3 * 86400000L,
+                updatedAt = nowMillis - 86400000L,
+                subtasks = listOf(
+                    TaskSubtask(id = "${t1Id}-sub-1", taskId = t1Id, title = "Elegir caso de estudio (Comuna 13 vs El Poblado)", isCompleted = true, position = 0),
+                    TaskSubtask(id = "${t1Id}-sub-2", taskId = t1Id, title = "Fichar 3 lecturas teóricas (Harvey, Lefebvre)", isCompleted = true, position = 1),
+                    TaskSubtask(id = "${t1Id}-sub-3", taskId = t1Id, title = "Borrador de introducción y tesis", isCompleted = false, position = 2),
+                    TaskSubtask(id = "${t1Id}-sub-4", taskId = t1Id, title = "Conclusiones y referencias APA", isCompleted = false, position = 3)
+                )
+            )
+        )
+
+        // 2. Hoy 23:59 - Taller 3
+        val t2Id = "${MARCA}task-2"
+        tasksRepository.addTask(
+            StudentTask(
+                id = t2Id,
+                title = "Taller 3",
+                description = "Ejercicios 12 al 28 de la guía de integrales dobles sobre regiones generales.",
+                subjectId = matCalcId,
+                type = TaskType.WORKSHOP,
+                dueDateMillis = TaskDateUtils.toMillis(today, LocalTime.of(23, 59)),
+                difficulty = TaskDifficulty.MEDIUM,
+                estimatedMinutes = 45,
+                completed = false,
+                createdAt = nowMillis - 2 * 86400000L,
+                updatedAt = nowMillis,
+                subtasks = listOf(
+                    TaskSubtask(id = "${t2Id}-sub-1", taskId = t2Id, title = "Ejercicios 12-18 (regiones tipo I y II)", isCompleted = true, position = 0),
+                    TaskSubtask(id = "${t2Id}-sub-2", taskId = t2Id, title = "Ejercicios 19-28 (cambio de orden de integración)", isCompleted = false, position = 1)
+                )
+            )
+        )
+
+        // 3. Hoy 18:00 - Lectura cap. 4
+        val t3Id = "${MARCA}task-3"
+        tasksRepository.addTask(
+            StudentTask(
+                id = t3Id,
+                title = "Lectura cap. 4",
+                description = "Lectura preparatoria para la clase de mañana: árboles binarios y recorridos DFS/BFS.",
+                subjectId = matProId,
+                type = TaskType.READING,
+                dueDateMillis = TaskDateUtils.toMillis(today, LocalTime.of(18, 0)),
+                difficulty = TaskDifficulty.EASY,
+                estimatedMinutes = 30,
+                completed = false,
+                createdAt = nowMillis - 86400000L,
+                updatedAt = nowMillis,
+                gradingStatus = TaskGradingStatus.NOT_GRADED,
+                subtasks = emptyList()
+            )
+        )
+
+        // 4. En 5 días 10:00 - Parcial 2
+        val t4Id = "${MARCA}task-4"
+        tasksRepository.addTask(
+            StudentTask(
+                id = t4Id,
+                title = "Parcial 2",
+                description = "Temas: Ley de Gauss, potencial eléctrico y capacitancia. Traer calculadora no programable.",
+                subjectId = matFisId,
+                type = TaskType.EXAM,
+                dueDateMillis = TaskDateUtils.toMillis(today.plusDays(5), LocalTime.of(10, 0)),
+                difficulty = TaskDifficulty.HARD,
+                estimatedMinutes = 180,
+                completed = false,
+                createdAt = nowMillis - 4 * 86400000L,
+                updatedAt = nowMillis,
+                subtasks = listOf(
+                    TaskSubtask(id = "${t4Id}-sub-1", taskId = t4Id, title = "Repasar teoría Ley de Gauss y flujo", isCompleted = true, position = 0),
+                    TaskSubtask(id = "${t4Id}-sub-2", taskId = t4Id, title = "Taller preparatorio ejercicios 1 a 15", isCompleted = false, position = 1),
+                    TaskSubtask(id = "${t4Id}-sub-3", taskId = t4Id, title = "Formulario resumen (una ficha)", isCompleted = false, position = 2),
+                    TaskSubtask(id = "${t4Id}-sub-4", taskId = t4Id, title = "Simulacro con parcial del semestre pasado", isCompleted = false, position = 3),
+                    TaskSubtask(id = "${t4Id}-sub-5", taskId = t4Id, title = "Dormir bien la noche anterior", isCompleted = false, position = 4)
+                )
+            )
+        )
+
+        // 5. En 10 días 23:59 - Avance 2 del proyecto
+        val t5Id = "${MARCA}task-5"
+        tasksRepository.addTask(
+            StudentTask(
+                id = t5Id,
+                title = "Avance 2 del proyecto",
+                description = "Entrega del backend funcional con endpoints REST, migraciones de base de datos y tests unitarios.",
+                subjectId = matProId,
+                type = TaskType.PROJECT,
+                dueDateMillis = TaskDateUtils.toMillis(today.plusDays(10), LocalTime.of(23, 59)),
+                difficulty = TaskDifficulty.HARD,
+                estimatedMinutes = 240,
+                completed = false,
+                createdAt = nowMillis - 5 * 86400000L,
+                updatedAt = nowMillis,
+                subtasks = listOf(
+                    TaskSubtask(id = "${t5Id}-sub-1", taskId = t5Id, title = "Diseño de la base de datos y migraciones", isCompleted = true, position = 0),
+                    TaskSubtask(id = "${t5Id}-sub-2", taskId = t5Id, title = "Endpoints CRUD principales", isCompleted = false, position = 1),
+                    TaskSubtask(id = "${t5Id}-sub-3", taskId = t5Id, title = "Tests unitarios y documentación OpenAPI", isCompleted = false, position = 2)
+                )
+            )
+        )
+
+        // 6. Hace 2 días 15:00 - Quiz 3 (Completada, espera nota)
+        val t6Id = "${MARCA}task-6"
+        tasksRepository.addTask(
+            StudentTask(
+                id = t6Id,
+                title = "Quiz 3",
+                description = "Quiz corto sobre derivadas direccionales y vector gradiente.",
+                subjectId = matCalcId,
+                type = TaskType.TEST,
+                dueDateMillis = TaskDateUtils.toMillis(today.minusDays(2), LocalTime.of(15, 0)),
+                difficulty = TaskDifficulty.EASY,
+                estimatedMinutes = 20,
+                completed = true,
+                completedAt = nowMillis - 86400000L,
+                createdAt = nowMillis - 6 * 86400000L,
+                updatedAt = nowMillis - 86400000L,
+                gradingStatus = TaskGradingStatus.AWAITING_GRADE,
+                subtasks = emptyList()
+            )
+        )
+
+        // 7. Hace 8 días 23:59 - Avance 1 del proyecto (Completada, calificada)
+        val t7Id = "${MARCA}task-7"
+        tasksRepository.addTask(
+            StudentTask(
+                id = t7Id,
+                title = "Avance 1 del proyecto",
+                description = "Propuesta de arquitectura y mockup de interfaz.",
+                subjectId = matProId,
+                type = TaskType.PROJECT,
+                dueDateMillis = TaskDateUtils.toMillis(today.minusDays(8), LocalTime.of(23, 59)),
+                difficulty = TaskDifficulty.HARD,
+                estimatedMinutes = 200,
+                completed = true,
+                completedAt = nowMillis - 7 * 86400000L,
+                createdAt = nowMillis - 14 * 86400000L,
+                updatedAt = nowMillis - 7 * 86400000L,
+                gradingStatus = TaskGradingStatus.GRADED,
+                subtasks = listOf(
+                    TaskSubtask(id = "${t7Id}-sub-1", taskId = t7Id, title = "Documento de arquitectura", isCompleted = true, position = 0),
+                    TaskSubtask(id = "${t7Id}-sub-2", taskId = t7Id, title = "Mockup interactivo en Figma", isCompleted = true, position = 1)
+                )
+            )
+        )
+    }
+
     // ------------------------------------------------------------------ preferencias
 
     /** El perfil vivo: el panel lee de aqui para pintar que variante esta puesta. */
@@ -283,16 +511,24 @@ class BancoDePruebasViewModel @Inject constructor(
 
     // ------------------------------------------------------------------ deshacer
 
+    data class ResumenDePruebas(
+        val horario: Int,
+        val academico: Int,
+        val gastos: Int,
+        val tareas: Int
+    )
+
     /**
      * Cuantas cosas de mentira hay ahora mismo, por sitio.
      *
      * El panel lo enseña para que no haya que fiarse de la memoria: si dice «Horario 2», es
      * que quedan dos clases fabricadas ahi.
      */
-    fun cuantasDePrueba(): Triple<Int, Int, Int> = Triple(
-        scheduleRepository.sessions.value.count { it.id.startsWith(MARCA) },
-        gradesRepository.subjects.value.sumOf { m -> m.grades.count { it.id.startsWith(MARCA) } },
-        expensesRepository.expenses.value.count { it.id.startsWith(MARCA) }
+    fun cuantasDePrueba(): ResumenDePruebas = ResumenDePruebas(
+        horario = scheduleRepository.sessions.value.count { it.id.startsWith(MARCA) },
+        academico = gradesRepository.subjects.value.sumOf { m -> m.grades.count { it.id.startsWith(MARCA) } },
+        gastos = expensesRepository.expenses.value.count { it.id.startsWith(MARCA) },
+        tareas = tasksRepository.tasks.value.count { it.id.startsWith(MARCA) }
     )
 
     /** Deshace solo lo de Horario. */
@@ -319,9 +555,20 @@ class BancoDePruebasViewModel @Inject constructor(
         sinPresupuesto()
     }
 
+    /** Deshace solo lo de Tareas y sus materias fabricadas. */
+    fun recogerTareas() {
+        tasksRepository.tasks.value
+            .filter { it.id.startsWith(MARCA) }
+            .forEach { tasksRepository.deleteTask(it.id) }
+        gradesRepository.subjects.value
+            .filter { it.id.startsWith(MARCA) }
+            .forEach { gradesRepository.deleteSubject(it.id) }
+    }
+
     fun recogerlo() {
         recogerHorario()
         recogerAcademico()
         recogerGastos()
+        recogerTareas()
     }
 }

@@ -245,6 +245,10 @@ private fun LazyListScope.caraSimular(
     palanca("Corte listo para cerrar", "Repartido al 100 %") { vm.corteListoParaCerrar() }
     palanca("Deshacer lo académico", "Solo las notas fabricadas", suave = true) { vm.recogerAcademico() }
 
+    seccion("Tareas")
+    palanca("Sembrar tareas del artifact", "7 tareas con subtareas y estados del diseño") { vm.sembrarTareasDelArtifact() }
+    palanca("Deshacer lo de Tareas", "Elimina tareas y materias de prueba", suave = true) { vm.recogerTareas() }
+
     seccion("Ir a")
     palanca("Ajustes de Movimiento", "La pantalla entera, si hace falta") { onAbrirMovimiento() }
 }
@@ -322,15 +326,16 @@ private fun LazyListScope.caraMovimiento(vm: BancoDePruebasViewModel) {
 
 private fun LazyListScope.caraEstado(vm: BancoDePruebasViewModel) {
     item {
-        val (horario, academico, gastos) = vm.cuantasDePrueba()
+        val resumen = vm.cuantasDePrueba()
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Nota(
                 "Lo que hay fabricado ahora mismo. Todo lleva el prefijo «prueba-», " +
                     "así que se retira sin tocar nada tuyo."
             )
-            Cuenta("Horario", horario, "clases")
-            Cuenta("Académico", academico, "notas")
-            Cuenta("Gastos", gastos, "gastos")
+            Cuenta("Horario", resumen.horario, "clases")
+            Cuenta("Académico", resumen.academico, "notas")
+            Cuenta("Gastos", resumen.gastos, "gastos")
+            Cuenta("Tareas", resumen.tareas, "tareas")
         }
     }
     seccion("Deshacer")

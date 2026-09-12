@@ -126,6 +126,7 @@ import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.core.utils.Textos
+import androidx.compose.foundation.border
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -133,11 +134,15 @@ import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.isGradable
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.formatTaskDueText
+import com.unistack.app.feature_tasks.domain.formatTaskDate
+import com.unistack.app.feature_tasks.domain.formatTaskTime
 import com.unistack.app.feature_user.domain.GradingScale
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.cos
@@ -289,6 +294,7 @@ fun TasksScreen(
     val weekPending = weekTasks.filterNot { it.completed }
     val weekDone = weekTasks.filter { it.completed }
     val weekOverdue = weekPending.filter { TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today) }
+    val weekEstimatedMinutes = weekPending.sumOf { it.estimatedMinutes }
 
     val awaitingGradeTasks = filteredTasks.filter {
         it.completed && it.gradingStatus == TaskGradingStatus.AWAITING_GRADE
@@ -376,7 +382,7 @@ fun TasksScreen(
                         doneCount = weekDone.size,
                         totalCount = weekTasks.size,
                         awaitingGradeCount = pendingGradeCount,
-                        totalPendingCount = tasks.count { !it.completed }
+                        estimatedMinutes = weekEstimatedMinutes
                     )
                 }
 
@@ -994,7 +1000,7 @@ private fun TasksWeekHero(
     doneCount: Int,
     totalCount: Int,
     awaitingGradeCount: Int,
-    totalPendingCount: Int,
+    estimatedMinutes: Int,
     modifier: Modifier = Modifier
 ) {
     val hasOverdue = overdueCount > 0
@@ -1071,34 +1077,41 @@ private fun TasksWeekHero(
                 )
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+            if (awaitingGradeCount > 0 || estimatedMinutes > 0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "$totalPendingCount " + stringResource(R.string.tasks_filter_pending).lowercase(),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = contentColor
-                    )
-                }
-                if (awaitingGradeCount > 0) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.tasks_hero_awaiting_grade, awaitingGradeCount),
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = contentColor
-                        )
+                    if (awaitingGradeCount > 0) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.tasks_hero_awaiting_grade, awaitingGradeCount),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = contentColor
+                            )
+                        }
+                    }
+                    if (estimatedMinutes > 0) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    R.string.tasks_hero_estimated_time,
+                                    TaskDateUtils.estimatedTimeText(estimatedMinutes)
+                                ),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = contentColor
+                            )
+                        }
                     }
                 }
             }
@@ -1222,7 +1235,7 @@ private fun SemanaTira(
                     .cleanClickable { onSelectDate(date) },
                 shape = RoundedCornerShape(14.dp),
                 color = when {
-                    isSelected -> MaterialTheme.colorScheme.primary
+                    isSelected -> MaterialTheme.colorScheme.onSurface
                     isToday -> MaterialTheme.colorScheme.surfaceContainerHigh
                     else -> MaterialTheme.colorScheme.surfaceContainer
                 }
@@ -1240,7 +1253,7 @@ private fun SemanaTira(
                         fontSize = 9.5.sp,
                         letterSpacing = 0.8.sp,
                         color = when {
-                            isSelected -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            isSelected -> MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )
@@ -1250,7 +1263,7 @@ private fun SemanaTira(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 14.sp,
                         color = when {
-                            isSelected -> MaterialTheme.colorScheme.onPrimary
+                            isSelected -> MaterialTheme.colorScheme.surface
                             isToday -> MaterialTheme.colorScheme.primary
                             else -> MaterialTheme.colorScheme.onSurface
                         }
@@ -1263,7 +1276,7 @@ private fun SemanaTira(
                         val dotsToShow = dayTasks.take(3)
                         dotsToShow.forEach { task ->
                             val dotColor = when {
-                                isSelected -> MaterialTheme.colorScheme.onPrimary
+                                isSelected -> MaterialTheme.colorScheme.surface
                                 !task.completed && date.isBefore(today) -> MaterialTheme.colorScheme.error
                                 !task.completed -> MaterialTheme.colorScheme.primary
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
@@ -1479,60 +1492,42 @@ private fun FilaTarea(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     if (subject != null) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(7.dp)
                                 .clip(CircleShape)
                                 .background(subjectAccent(subject))
                         )
-                        Text(
-                            text = subject.name,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = "·",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.tasks_no_subject),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "·",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
-
+                    val subtitleText = buildString {
+                        if (subject != null) {
+                            append(subject.name)
+                            append(" · ")
+                        } else {
+                            append(stringResource(R.string.tasks_no_subject))
+                            append(" · ")
+                        }
+                        append(task.type.label())
+                        if (task.estimatedMinutes > 0) {
+                            append(" · ")
+                            append(TaskDateUtils.estimatedTimeText(task.estimatedMinutes))
+                        }
+                        if (task.subtasks.isNotEmpty()) {
+                            val doneCount = task.subtasks.count { it.isCompleted }
+                            append(" · $doneCount/${task.subtasks.size}")
+                        }
+                    }
                     Text(
-                        text = task.type.label(),
+                        text = subtitleText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-
-                    if (task.subtasks.isNotEmpty()) {
-                        Text(
-                            text = "·",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        val doneCount = task.subtasks.count { it.isCompleted }
-                        Text(
-                            text = "$doneCount/${task.subtasks.size}",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
             }
 
@@ -1587,12 +1582,17 @@ private fun FilaTarea(
                         }
                     }
                     isOverdue -> {
+                        val diffDays = ChronoUnit.DAYS.between(dueDate, today)
+                        val text = when (diffDays) {
+                            1L -> stringResource(R.string.due_overdue_yesterday)
+                            else -> stringResource(R.string.due_overdue_days_ago, diffDays)
+                        }
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.errorContainer
                         ) {
                             Text(
-                                text = formatTaskDueText(task.dueDateMillis),
+                                text = text,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
@@ -1601,12 +1601,15 @@ private fun FilaTarea(
                         }
                     }
                     isToday -> {
+                        val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
+                            " " + formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
+                        } else ""
                         Surface(
                             shape = CircleShape,
                             color = LocalSectionColors.current.atRisk.copy(alpha = 0.18f)
                         ) {
                             Text(
-                                text = stringResource(R.string.tasks_due_today),
+                                text = stringResource(R.string.tasks_due_today) + timeStr,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
@@ -1615,8 +1618,20 @@ private fun FilaTarea(
                         }
                     }
                     else -> {
+                        val diffDays = ChronoUnit.DAYS.between(today, dueDate)
+                        val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
+                            formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
+                        } else ""
+                        val text = when {
+                            diffDays == 1L -> "Mañana" + if (timeStr.isNotEmpty()) " $timeStr" else ""
+                            diffDays in 2L..6L -> {
+                                val dayName = dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.uppercase() }
+                                "$dayName" + if (timeStr.isNotEmpty()) " $timeStr" else ""
+                            }
+                            else -> formatTaskDueText(task.dueDateMillis)
+                        }
                         Text(
-                            text = formatTaskDueText(task.dueDateMillis),
+                            text = text,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold
@@ -1816,6 +1831,10 @@ private fun HojaTarea(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
                     )
 
+                    val diff = remember(dueDate, today) { ChronoUnit.DAYS.between(today, dueDate) }
+                    val hasTime = remember(task.dueDateMillis) { TaskDateUtils.hasExplicitTime(task.dueDateMillis) }
+                    val time = remember(task.dueDateMillis) { TaskDateUtils.timeFromMillis(task.dueDateMillis) }
+
                     val grande = when {
                         task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> stringResource(R.string.tasks_pill_awaiting_grade)
                         task.gradingStatus == TaskGradingStatus.GRADED -> {
@@ -1827,9 +1846,14 @@ private fun HojaTarea(
                             }
                         }
                         task.completed -> stringResource(R.string.tasks_pill_done)
-                        isToday -> stringResource(R.string.tasks_due_today)
-                        isOverdue -> formatTaskDueText(task.dueDateMillis)
-                        else -> formatTaskDueText(task.dueDateMillis)
+                        diff < 0 -> if (diff == -1L) "Ayer" else "Hace ${-diff} días"
+                        diff == 0L -> "Hoy" + (if (hasTime) " ${formatTaskTime(time)}" else "")
+                        diff == 1L -> "Mañana" + (if (hasTime) " ${formatTaskTime(time)}" else "")
+                        diff in 2L..6L -> {
+                            val dayName = dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.uppercase() }
+                            "$dayName" + (if (hasTime) " ${formatTaskTime(time)}" else "")
+                        }
+                        else -> formatTaskDate(dueDate) + (if (hasTime) " ${formatTaskTime(time)}" else "")
                     }
                     Text(
                         text = grande,
@@ -1842,9 +1866,19 @@ private fun HojaTarea(
                         task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> stringResource(R.string.tasks_detail_awaiting_desc, "hoy")
                         task.gradingStatus == TaskGradingStatus.GRADED -> stringResource(R.string.tasks_detail_graded_desc, "hoy")
                         task.completed -> stringResource(R.string.tasks_detail_done_desc, task.type.label().lowercase())
-                        isToday -> stringResource(R.string.tasks_detail_anytime_today)
-                        isOverdue -> stringResource(R.string.tasks_detail_overdue_desc, formatTaskDueText(task.dueDateMillis))
-                        else -> "Vence ${formatTaskDueText(task.dueDateMillis).lowercase()}"
+                        diff < 0 -> stringResource(R.string.tasks_detail_overdue_desc, formatTaskDate(dueDate) + if (hasTime) " ${formatTaskTime(time)}" else "")
+                        diff == 0L -> {
+                            if (hasTime) {
+                                val now = LocalTime.now()
+                                val remainingHours = (time.hour - now.hour).coerceAtLeast(0)
+                                val remainingMins = ((time.minute - now.minute) + 60) % 60
+                                stringResource(R.string.tasks_detail_time_left, remainingHours, remainingMins)
+                            } else {
+                                stringResource(R.string.tasks_detail_anytime_today)
+                            }
+                        }
+                        diff == 1L -> stringResource(R.string.due_tomorrow) + " · " + formatTaskDate(dueDate)
+                        else -> stringResource(R.string.tasks_detail_in_days, diff, formatTaskDate(dueDate))
                     }
                     Text(
                         text = peq,
@@ -1853,24 +1887,25 @@ private fun HojaTarea(
                     )
 
                     if (!task.completed) {
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
                                     .cleanClickable { onPostponeTomorrow(task.id) },
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                shape = RoundedCornerShape(topStart = 999.dp, bottomStart = 999.dp, topEnd = 10.dp, bottomEnd = 10.dp),
+                                color = Color.White.copy(alpha = 0.14f)
                             ) {
                                 Text(
                                     text = stringResource(R.string.tasks_postpone_tomorrow),
-                                    modifier = Modifier.padding(vertical = 9.dp),
-                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     maxLines = 1
                                 )
                             }
@@ -1878,15 +1913,16 @@ private fun HojaTarea(
                                 modifier = Modifier
                                     .weight(1f)
                                     .cleanClickable { onPostponeNextMonday(task.id) },
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White.copy(alpha = 0.14f)
                             ) {
                                 Text(
                                     text = stringResource(R.string.tasks_postpone_next_monday),
-                                    modifier = Modifier.padding(vertical = 9.dp),
-                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     maxLines = 1
                                 )
                             }
@@ -1894,15 +1930,16 @@ private fun HojaTarea(
                                 modifier = Modifier
                                     .weight(1f)
                                     .cleanClickable { onOpenDatePicker(task.id) },
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 999.dp, bottomEnd = 999.dp),
+                                color = Color.White.copy(alpha = 0.14f)
                             ) {
                                 Text(
                                     text = stringResource(R.string.tasks_postpone_pick_day),
-                                    modifier = Modifier.padding(vertical = 9.dp),
-                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     maxLines = 1
                                 )
                             }
@@ -1940,7 +1977,7 @@ private fun HojaTarea(
                             text = subject?.name?.firstOrNull()?.uppercase() ?: "?",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.surface
+                            color = Color(0xFF0A0C11)
                         )
                     }
 
@@ -1953,12 +1990,15 @@ private fun HojaTarea(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                        val subjectSubtitle = if (subject != null) {
+                            val cutName = subject.cutScheme.cutName(subject.defaultCutId)
+                            val targetStr = GradingScaleUtils.formatGrade(subject.targetAverage, gradingScale)
+                            "$cutName · Meta $targetStr · ${subject.grades.size} notas"
+                        } else {
+                            stringResource(R.string.tasks_detail_no_subject_hint)
+                        }
                         Text(
-                            text = if (subject != null) {
-                                "Meta: ${GradingScaleUtils.formatGrade(subject.targetAverage, gradingScale)} · ${subject.grades.size} notas"
-                            } else {
-                                stringResource(R.string.tasks_detail_no_subject_hint)
-                            },
+                            text = subjectSubtitle,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -2107,13 +2147,27 @@ private fun HojaTarea(
                         modifier = Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = stringResource(R.string.tasks_eval_title).uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.2.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (task.type.isGradable() && task.gradingStatus == TaskGradingStatus.UNDECIDED) "AL MARCARLA" else stringResource(R.string.tasks_eval_title).uppercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.2.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (task.type.isGradable() && !task.completed) {
+                                Text(
+                                    text = "${task.type.label().lowercase()} · se califica",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                )
+                            }
+                        }
 
                         when {
                             task.gradingStatus == TaskGradingStatus.GRADED -> {
@@ -2132,7 +2186,11 @@ private fun HojaTarea(
                                 Button(
                                     shapes = UniStackButtonDefaults.shapes,
                                     onClick = { onOpenGradeSheet(task) },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Grade,
@@ -2140,7 +2198,7 @@ private fun HojaTarea(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.tasks_record_grade_button))
+                                    Text(stringResource(R.string.tasks_record_grade_button), fontWeight = FontWeight.Bold)
                                 }
                                 TextButton(
                                     onClick = { onNoGradeClick(task.id) },
@@ -2153,36 +2211,38 @@ private fun HojaTarea(
                                 val isWaiting = task.gradingStatus != TaskGradingStatus.NOT_GRADED
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
                                     Surface(
                                         modifier = Modifier
                                             .weight(1f)
                                             .cleanClickable { onSetGradingDecision(task.id, true) },
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (isWaiting) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                                        shape = RoundedCornerShape(topStart = 22.dp, bottomStart = 22.dp, topEnd = 10.dp, bottomEnd = 10.dp),
+                                        color = if (isWaiting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
                                     ) {
                                         Text(
                                             text = stringResource(R.string.tasks_eval_awaiting_grade),
-                                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
+                                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp),
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isWaiting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = if (isWaiting) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                         )
                                     }
                                     Surface(
                                         modifier = Modifier
                                             .weight(1f)
                                             .cleanClickable { onSetGradingDecision(task.id, false) },
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (!isWaiting) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                                        shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 22.dp, bottomEnd = 22.dp),
+                                        color = if (!isWaiting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
                                     ) {
                                         Text(
                                             text = stringResource(R.string.tasks_eval_only_done),
-                                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
+                                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp),
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (!isWaiting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = if (!isWaiting) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                         )
                                     }
                                 }
@@ -2226,6 +2286,110 @@ private fun HojaTarea(
                 }
             }
 
+            // Línea de vida
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "LÍNEA DE VIDA",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.2.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    val createdDate = remember(task.createdAt) { TaskDateUtils.fromMillis(task.createdAt) }
+                    val dueDateShort = remember(dueDate) {
+                        "${dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} ${dueDate.dayOfMonth}"
+                    }
+                    val deliveredDate = remember(task.completedAt) {
+                        task.completedAt?.let {
+                            val d = TaskDateUtils.fromMillis(it)
+                            "${d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} ${d.dayOfMonth}"
+                        } ?: "—"
+                    }
+                    val gradeText = remember(task.linkedGradeId, subject) {
+                        val g = subject?.grades?.firstOrNull { it.id == task.linkedGradeId }
+                        g?.let { GradingScaleUtils.formatGrade(it.value, gradingScale) } ?: "—"
+                    }
+
+                    data class PasoVida(
+                        val titulo: String,
+                        val sub: String,
+                        val completado: Boolean,
+                        val actual: Boolean
+                    )
+
+                    val isWaiting = task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
+                    val isGraded = task.gradingStatus == TaskGradingStatus.GRADED
+                    val isHecha = task.completed && !isWaiting && !isGraded
+
+                    val pasos = if (isHecha || !task.type.isGradable()) {
+                        listOf(
+                            PasoVida("Creada", "${createdDate.dayOfMonth} ${createdDate.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())}", completado = true, actual = false),
+                            PasoVida("Vence", dueDateShort, completado = task.completed, actual = !task.completed),
+                            PasoVida("Hecha", if (task.completed) "Lista" else "—", completado = task.completed, actual = task.completed)
+                        )
+                    } else {
+                        listOf(
+                            PasoVida("Creada", "${createdDate.dayOfMonth} ${createdDate.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())}", completado = true, actual = false),
+                            PasoVida("Vence", dueDateShort, completado = task.completed, actual = !task.completed),
+                            PasoVida("Entregada", deliveredDate, completado = isWaiting || isGraded, actual = isWaiting),
+                            PasoVida("Con nota", gradeText, completado = isGraded, actual = false)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        pasos.forEach { paso ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(14.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            when {
+                                                paso.completado -> LocalSectionColors.current.onTrack
+                                                paso.actual -> MaterialTheme.colorScheme.primary
+                                                else -> MaterialTheme.colorScheme.surfaceContainerHighest
+                                            }
+                                        )
+                                        .then(
+                                            if (paso.actual) Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape)
+                                            else Modifier
+                                        )
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = paso.titulo,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (paso.completado || paso.actual) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = paso.sub,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Acciones al pie: botón principal + editar + duplicar + borrar
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2242,8 +2406,8 @@ private fun HojaTarea(
                         .weight(1f)
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (task.completed) MaterialTheme.colorScheme.surfaceContainerHighest else LocalSectionColors.current.onTrack,
-                        contentColor = if (task.completed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface
+                        containerColor = if (task.completed) MaterialTheme.colorScheme.surfaceContainerHighest else Color(0xFF00E676),
+                        contentColor = if (task.completed) MaterialTheme.colorScheme.onSurface else Color(0xFF00320F)
                     )
                 ) {
                     Text(
@@ -2254,7 +2418,7 @@ private fun HojaTarea(
                         } else {
                             stringResource(R.string.tasks_action_mark_done)
                         },
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold
                     )
                 }
@@ -2262,7 +2426,7 @@ private fun HojaTarea(
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     IconButton(
                         onClick = {
@@ -2273,7 +2437,8 @@ private fun HojaTarea(
                         Icon(
                             imageVector = Icons.Rounded.Edit,
                             contentDescription = stringResource(R.string.action_edit),
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -2281,7 +2446,7 @@ private fun HojaTarea(
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     IconButton(
                         onClick = {
@@ -2292,7 +2457,8 @@ private fun HojaTarea(
                         Icon(
                             imageVector = Icons.Rounded.ContentCopy,
                             contentDescription = stringResource(R.string.tasks_action_duplicate),
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -2300,7 +2466,7 @@ private fun HojaTarea(
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     IconButton(
                         onClick = {
@@ -2311,7 +2477,8 @@ private fun HojaTarea(
                         Icon(
                             imageVector = Icons.Rounded.Delete,
                             contentDescription = stringResource(R.string.action_delete),
-                            tint = MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
