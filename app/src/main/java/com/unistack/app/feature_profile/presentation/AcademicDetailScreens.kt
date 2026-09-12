@@ -727,7 +727,6 @@ fun AcademicTermScreen(
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
-                    val isEn = java.util.Locale.getDefault().language == "en"
                     feedback = if (viewModel.updateActiveTerm(nombre, tipo, inicio, fin)) {
                         Textos.get(R.string.settings_term_updated)
                     } else {

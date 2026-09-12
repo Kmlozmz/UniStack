@@ -35,13 +35,13 @@ object BackupFiles {
         // del anterior pegada al final y el JSON queda ilegible.
         context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
             output.write(text.toByteArray())
-        } ?: error("No se pudo escribir en el archivo elegido.")
+        } ?: error(Textos.get(R.string.backup_write_failed))
     }
 
     fun readText(context: Context, uri: Uri): Result<String> = runCatching {
         context.contentResolver.openInputStream(uri)?.use { input ->
             input.bufferedReader().readText()
-        } ?: error("No se pudo leer el archivo elegido.")
+        } ?: error(Textos.get(R.string.backup_read_failed))
     }
 
     /** Deja el texto en un archivo de la caché y abre el selector para compartirlo. */
@@ -59,7 +59,6 @@ object BackupFiles {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        val isEn = java.util.Locale.getDefault().language == "en"
         context.startActivity(Intent.createChooser(intent, Textos.get(R.string.settings_backup_btn_share)))
     }
 
@@ -71,7 +70,6 @@ object BackupFiles {
                 if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null
             }
         }.getOrNull()
-        val isEn = java.util.Locale.getDefault().language == "en"
         return fromProvider ?: uri.lastPathSegment?.substringAfterLast('/') ?: (Textos.get(R.string.backup_archivo_elegido))
     }
 

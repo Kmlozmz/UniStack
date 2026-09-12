@@ -24,6 +24,8 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /** Cuánto pesa visualmente un botón de icono, en la jerarquía de Material. */
 enum class UniIconButtonVariant {
@@ -154,7 +156,7 @@ fun UniBackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-    contentDescription: String = "Volver"
+    contentDescription: String = stringResource(R.string.common_back)
 ) {
     UniIconButton(
         icon = icon,

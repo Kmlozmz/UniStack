@@ -123,7 +123,6 @@ fun MotionSettingsScreen(
     ) {
         item { InterruptorMaestro(appearance.motionPreference, activo, viewModel) }
 
-        val isEn = java.util.Locale.getDefault().language == "en"
         val baseCountStr = Textos.get(R.string.motion_ajustes, base.size)
         item { RotuloDeGrupo("BASE", baseCountStr) }
         items(base.size, key = { base[it].id }) { indice ->
@@ -599,7 +598,6 @@ private fun duracionDe(gestoId: String): Int = when (gestoId) {
 }
 
 private fun MotionPreference.etiqueta(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         MotionPreference.FULL -> Textos.get(R.string.motion_completo)
         MotionPreference.REDUCED -> Textos.get(R.string.a11y_motion_reduced)

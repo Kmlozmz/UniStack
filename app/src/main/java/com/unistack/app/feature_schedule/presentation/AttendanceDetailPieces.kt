@@ -37,7 +37,6 @@ import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.core.utils.Textos
 
 internal fun ClassAbsenceReason.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         ClassAbsenceReason.HEALTH -> Textos.get(R.string.attendance_reason_health)
         ClassAbsenceReason.TRANSPORT -> Textos.get(R.string.attendance_reason_transport)
@@ -48,7 +47,6 @@ internal fun ClassAbsenceReason.label(): String {
 }
 
 internal fun ClassModality.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         ClassModality.IN_PERSON -> Textos.get(R.string.attendance_modality_presential)
         ClassModality.VIRTUAL -> Textos.get(R.string.attendance_modality_virtual)

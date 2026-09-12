@@ -171,12 +171,7 @@ fun NoteChecklistEditor(
                     modifier = Modifier.size(23.dp)
                 )
                 Spacer(Modifier.width(25.dp))
-                val isEn = Locale.getDefault().language == "en"
-                val marcadasLabel = if (isEn) {
-                    "${marcadas.size} " + (if (marcadas.size == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural))
-                } else {
-                    "${marcadas.size} " + (if (marcadas.size == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural))
-                }
+                val marcadasLabel = "${marcadas.size} " + (if (marcadas.size == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural))
                 Text(
                     marcadasLabel,
                     color = suave,

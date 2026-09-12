@@ -164,7 +164,7 @@ class LocalJsonBackupRepository(
                     subject.grades,
                     subject.cutScheme.cuts
                 )
-                appendLine("${subject.name} · Promedio ${GradingScaleUtils.formatGrade(average, scale ?: profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)}")
+                appendLine("${subject.name} · ${Textos.get(R.string.backup_summary_average)} ${GradingScaleUtils.formatGrade(average, scale ?: profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)}")
                 subject.grades.forEach { grade ->
                     appendLine("- ${grade.name}: ${grade.value} · ${(grade.percentage * 100).toInt()}%")
                 }

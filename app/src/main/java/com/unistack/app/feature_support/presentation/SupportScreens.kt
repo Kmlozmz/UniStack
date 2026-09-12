@@ -81,6 +81,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 /**
  * Las pantallas que el panel lateral prometía y no existían.
@@ -316,46 +317,14 @@ private data class ResourceGroup(
  * cada uno puede contar para qué sirve el grupo y qué aporta cada sitio dentro de él.
  */
 private fun getResourceGroups(): List<ResourceGroup> {
-    val isEn = java.util.Locale.getDefault().language == "en"
-    return if (isEn) {
-        listOf(
+    return listOf(
             ResourceGroup(
-                label = "SEARCH",
-                help = "Find reliable sources for your writing. Google Scholar searches peer-reviewed articles and theses — citations you can rely on — and gives you formatted citations. Wolfram Alpha solves equations step-by-step: great for checking your homework.",
-                links = listOf(
-                    SupportLink("GS", "Google Scholar", "scholar.google.com", "https://scholar.google.com", ResourceTone.SEARCH),
-                    SupportLink("W", "Wolfram Alpha", "wolframalpha.com", "https://www.wolframalpha.com", ResourceTone.SEARCH)
-                )
-            ),
-            ResourceGroup(
-                label = "STUDY",
-                help = "Understand concepts that were tricky in class. Khan Academy offers short video lessons with practice exercises, especially in math, physics, and chemistry. OpenStax provides complete, free, peer-reviewed textbooks used in universities.",
-                links = listOf(
-                    SupportLink("K", "Khan Academy", "khanacademy.org", "https://www.khanacademy.org", ResourceTone.STUDY),
-                    SupportLink("OS", "OpenStax", "openstax.org", "https://openstax.org", ResourceTone.STUDY)
-                )
-            ),
-            ResourceGroup(
-                label = "CITE",
-                help = "Keep bibliography citations accurate. APA Guidelines explains in-text citations and reference list formatting with examples. Zotero saves sources as you research and generates your bibliography in any required format.",
-                links = listOf(
-                    SupportLink("A", "APA Guidelines", "apastyle.apa.org", "https://apastyle.apa.org", ResourceTone.CITE),
-                    SupportLink("Z", "Zotero", "zotero.org", "https://www.zotero.org", ResourceTone.CITE)
-                )
-            )
-        )
-    } else {
-        listOf(
-            ResourceGroup(
-                label = "BUSCAR",
-                help = "Para encontrar de dónde sacar lo que vas a escribir. Google Académico busca " +
-                        "artículos y tesis revisados por otros investigadores —lo que puedes citar sin que " +
-                        "te lo tumben— y te da la cita ya formateada. Wolfram Alpha resuelve la operación y " +
-                        "enseña el procedimiento paso a paso: sirve para comprobar un ejercicio que ya hiciste.",
+                label = Textos.get(R.string.support_res_sec_search),
+                help = Textos.get(R.string.support_res_sec_search_desc),
                 links = listOf(
                     SupportLink(
-                        "GA",
-                        "Google Académico",
+                        Textos.get(R.string.support_res_scholar_abbr),
+                        Textos.get(R.string.support_res_scholar_name),
                         "scholar.google.com",
                         "https://scholar.google.com",
                         ResourceTone.SEARCH
@@ -364,29 +333,22 @@ private fun getResourceGroups(): List<ResourceGroup> {
                 )
             ),
             ResourceGroup(
-                label = "ESTUDIAR",
-                help = "Para entender un tema que no te entró en clase. Khan Academy son lecciones " +
-                        "cortas en vídeo con ejercicios para practicar, sobre todo de matemáticas, física y " +
-                        "química. OpenStax son libros de texto universitarios completos, gratuitos y legales " +
-                        "de descargar: los escriben profesores y se usan en universidades de verdad.",
+                label = Textos.get(R.string.support_res_sec_study),
+                help = Textos.get(R.string.support_res_sec_study_desc),
                 links = listOf(
-                    SupportLink("K", "Khan Academy", "es.khanacademy.org", "https://es.khanacademy.org", ResourceTone.STUDY),
+                    SupportLink("K", "Khan Academy", Textos.get(R.string.support_res_khan_host), Textos.get(R.string.support_res_khan_url), ResourceTone.STUDY),
                     SupportLink("OS", "OpenStax", "openstax.org", "https://openstax.org", ResourceTone.STUDY)
                 )
             ),
             ResourceGroup(
-                label = "CITAR",
-                help = "Para que la bibliografía no te reste puntos. Normas APA explica cómo se cita " +
-                        "dentro del texto y cómo se arma la lista del final, con ejemplos de cada tipo de " +
-                        "fuente. Zotero guarda cada fuente mientras investigas y luego te genera la " +
-                        "bibliografía entera en el formato que te pidan.",
+                label = Textos.get(R.string.support_res_sec_cite),
+                help = Textos.get(R.string.support_res_sec_cite_desc),
                 links = listOf(
-                    SupportLink("A", "Normas APA", "normas-apa.org", "https://normas-apa.org", ResourceTone.CITE),
+                    SupportLink("A", Textos.get(R.string.support_res_apa_name), Textos.get(R.string.support_res_apa_host), Textos.get(R.string.support_res_apa_url), ResourceTone.CITE),
                     SupportLink("Z", "Zotero", "zotero.org", "https://www.zotero.org", ResourceTone.CITE)
                 )
             )
         )
-    }
 }
 
 /** Recursos: enlaces que se abren en el navegador. Nada se descarga ni se envía. */
@@ -562,121 +524,55 @@ private data class FaqGroup(val label: String, val entries: List<FaqEntry>)
  * preguntas de dos personas distintas en dos momentos distintos.
  */
 private fun getFaqGroups(): List<FaqGroup> {
-    val isEn = java.util.Locale.getDefault().language == "en"
-    return if (isEn) {
-        listOf(
+    return listOf(
             FaqGroup(
-                "YOUR DATA",
+                Textos.get(R.string.support_faq_sec_data),
                 listOf(
                     FaqEntry(
-                        "Where is my data stored?",
-                        "On your phone. UniStack works offline and without an account; linking Google is only used to back up and restore your data."
+                        Textos.get(R.string.support_faq_q_data_storage),
+                        Textos.get(R.string.support_faq_a_data_storage)
                     ),
                     FaqEntry(
-                        "I lost my phone, can I recover everything?",
-                        "Only if you made a backup. In Settings → Data & backups you can export a backup file and import it on another device."
+                        Textos.get(R.string.support_faq_q_lost_phone),
+                        Textos.get(R.string.support_faq_a_lost_phone)
                     )
                 )
             ),
             FaqGroup(
-                "GRADES & SCHEDULE",
+                Textos.get(R.string.support_faq_sec_grades),
                 listOf(
                     FaqEntry(
-                        "How does the app calculate my GPA?",
-                        "Based strictly on evaluated coursework: sums confirmed points and divides by evaluated weight. It never invents future grades."
+                        Textos.get(R.string.support_faq_q_gpa),
+                        Textos.get(R.string.support_faq_a_gpa)
                     ),
                     FaqEntry(
-                        "What are the floor and ceiling of a course?",
-                        "The floor is your final grade if you score 0 on remaining coursework, and the ceiling is your grade if you score 100% on everything left. Your target is plotted between these two bounds."
+                        Textos.get(R.string.support_faq_q_floor_ceiling),
+                        Textos.get(R.string.support_faq_a_floor_ceiling)
                     ),
                     FaqEntry(
-                        "I changed the grading scale and lost my grades",
-                        "Changing the scale clears registered grades because 4.5 out of 5 doesn't equate directly to a 100 scale. The app warns twice and shows how many grades will be affected."
+                        Textos.get(R.string.support_faq_q_scale_reset),
+                        Textos.get(R.string.support_faq_a_scale_reset)
                     ),
                     FaqEntry(
-                        "Why does my course not appear on the schedule?",
-                        "The schedule renders classes that have days and times configured. Open the course to add its class hours."
+                        Textos.get(R.string.support_faq_q_missing_schedule),
+                        Textos.get(R.string.support_faq_a_missing_schedule)
                     )
                 )
             ),
             FaqGroup(
-                "UPDATES",
+                Textos.get(R.string.support_faq_sec_updates),
                 listOf(
                     FaqEntry(
-                        "How do I get updates?",
-                        "In Settings → Updates. The app automatically checks for the latest release; you can also tap refresh anytime."
+                        Textos.get(R.string.support_faq_q_updates),
+                        Textos.get(R.string.support_faq_a_updates)
                     ),
                     FaqEntry(
-                        "Why does it ask for install permission?",
-                        "Because the app updates directly from its release package. Android asks you to authorize UniStack as an install source once."
+                        Textos.get(R.string.support_faq_q_permissions),
+                        Textos.get(R.string.support_faq_a_permissions)
                     )
                 )
             )
         )
-    } else {
-        listOf(
-            FaqGroup(
-                "TUS DATOS",
-                listOf(
-                    FaqEntry(
-                        "¿Dónde se guardan mis datos?",
-                        "En tu teléfono. UniStack funciona sin cuenta y sin conexión; vincular Google solo " +
-                                "sirve para respaldar y recuperar lo que ya tienes."
-                    ),
-                    FaqEntry(
-                        "Perdí mi teléfono, ¿puedo recuperar todo?",
-                        "Solo si hiciste una copia. En Configuración → Datos y respaldos puedes exportar " +
-                                "un archivo y volver a importarlo en otro teléfono."
-                    )
-                )
-            ),
-            FaqGroup(
-                "NOTAS Y HORARIO",
-                listOf(
-                    FaqEntry(
-                        "¿Cómo calcula la app mi promedio?",
-                        "Con lo que ya está evaluado: suma los puntos confirmados de cada corte y los " +
-                                "divide entre el peso evaluado. No proyecta notas que todavía no existen."
-                    ),
-                    FaqEntry(
-                        "¿Qué son el suelo y el techo de una materia?",
-                        "El suelo es con cuánto terminarías sacando 0 en todo lo que falta, y el techo con " +
-                                "cuánto terminarías sacándolo todo. Tu nota final va a caer entre esos dos, y la " +
-                                "meta se dibuja como una marca dentro de esa franja: si queda fuera, ya no se alcanza."
-                    ),
-                    FaqEntry(
-                        "Cambié la escala de notas y perdí mis notas",
-                        "Cambiar de escala borra las notas registradas, porque un 4,5 sobre 5 no significa " +
-                                "lo mismo sobre 100. Convertirlas inventaría un número que ningún profesor puso. " +
-                                "La app avisa dos veces y te dice cuántas notas vas a perder."
-                    ),
-                    FaqEntry(
-                        "¿Por qué mi materia no aparece en el horario?",
-                        "El horario dibuja las clases que tengan días y hora. Si creaste la materia sin " +
-                                "marcar días, abre la materia y añádele su horario."
-                    )
-                )
-            ),
-            FaqGroup(
-                "ACTUALIZACIONES",
-                listOf(
-                    FaqEntry(
-                        "¿Cómo recibo las actualizaciones?",
-                        "En Configuración → Actualizaciones. La app mira lo último publicado y te lo " +
-                                "ofrece; no hay canales ni códigos que pedir. Comprueba sola cada par de horas, " +
-                                "así que puede tardar un rato en enterarse: si tienes prisa, entra y pulsa el " +
-                                "botón de recargar."
-                    ),
-                    FaqEntry(
-                        "¿Por qué me pide permiso para instalar?",
-                        "Porque la app no viene de Play Store y se actualiza sola desde su archivo. " +
-                                "Android pide autorizar a UniStack como origen una vez; luego ya no vuelve a " +
-                                "preguntar."
-                    )
-                )
-            )
-        )
-    }
 }
 
 /**

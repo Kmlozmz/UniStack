@@ -1,5 +1,8 @@
 package com.unistack.app.feature_notes.domain
 
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
+
 /**
  * Con qué reglas se lee el texto de una nota.
  *
@@ -126,5 +129,5 @@ object NoteText {
     fun isEmpty(body: String): Boolean = body.isBlank()
 
     /** Cómo se nombra una nota cuando hay que preguntar por ella («¿Borrar…?»). */
-    fun label(body: String): String = title(body).ifBlank { "esta nota" }
+    fun label(body: String): String = title(body).ifBlank { Textos.get(R.string.notes_this_note) }
 }

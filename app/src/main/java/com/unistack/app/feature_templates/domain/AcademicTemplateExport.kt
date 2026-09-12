@@ -20,22 +20,21 @@ fun EssayTemplate.exportText(completedChecklistIds: List<String>): String {
         $title
         $description
 
-        Checklist
+        ${Textos.get(R.string.tpl_export_checklist)}
         $checklist
 
-        Estructura
+        ${Textos.get(R.string.tpl_export_structure)}
         $sections
 
-        APA básico
+        ${Textos.get(R.string.tpl_export_apa)}
         $apa
 
-        Referencias APA
+        ${Textos.get(R.string.tpl_export_references)}
         $apaReferences
     """.trimIndent()
 }
 
 fun buildApaReferenceDraft(sourcesText: String): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     val sources = sourcesText
         .lineSequence()
         .map { line -> line.trim().trimStart('-', '*', ' ') }
@@ -44,19 +43,11 @@ fun buildApaReferenceDraft(sourcesText: String): String {
         .toList()
 
     if (sources.isEmpty()) {
-        return if (isEn) {
-            listOf(
-                "Author, A. (Year). Book title. Publisher.",
-                "Author, A. (Year). Article title. Journal, volume(issue), pages.",
-                "Institution. (Year). Resource title. URL"
-            ).joinToString(separator = "\n")
-        } else {
-            listOf(
-                "Apellido, N. (Año). Título del libro. Editorial.",
-                "Apellido, N. (Año). Título del artículo. Revista, volumen(número), páginas.",
-                "Institución. (Año). Título del recurso. URL"
-            ).joinToString(separator = "\n")
-        }
+        return listOf(
+            Textos.get(R.string.tpl_apa_sample_book),
+            Textos.get(R.string.tpl_apa_sample_article),
+            Textos.get(R.string.tpl_apa_sample_web)
+        ).joinToString(separator = "\n")
     }
 
     val pendingMedium = Textos.get(R.string.works_medio_o_editorial_pendiente)

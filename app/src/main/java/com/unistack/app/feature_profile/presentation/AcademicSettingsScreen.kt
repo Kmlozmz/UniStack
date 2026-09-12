@@ -183,7 +183,6 @@ internal fun CutDatesExplainer(hasDates: Boolean) {
 @Composable
 internal fun CutDatesProblemNote(problem: CutDateProblem) {
     val corte = Corte.Singular.lowercase()
-    val isEn = java.util.Locale.getDefault().language == "en"
     Text(
         text = when (problem) {
             CutDateProblem.INCOMPLETAS ->
@@ -263,7 +262,6 @@ private fun buildScaleWarning() = androidx.compose.ui.text.buildAnnotatedString 
 }
 
 internal fun GradingScale.shortLabel(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         GradingScale.ZERO_TO_FIVE -> "0 - 5"
         GradingScale.ZERO_TO_HUNDRED -> "0 - 100"

@@ -5,6 +5,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /** Un día del cuaderno: su fecha, cómo se llama en la cabecera y lo que se escribió ese día. */
 data class NoteDay(
@@ -21,8 +23,6 @@ data class NoteDay(
  * teléfono.
  */
 object NoteGrouping {
-
-    private val spanish = Locale.forLanguageTag("es-ES")
 
     /**
      * Las fijadas, que se salen del orden del tiempo.
@@ -73,12 +73,13 @@ object NoteGrouping {
      * para saber si eso es lo de hoy.
      */
     fun dayLabel(date: LocalDate, today: LocalDate): String = when {
-        date == today -> "Hoy"
-        date == today.minusDays(1) -> "Ayer"
+        date == today -> Textos.get(R.string.date_today)
+        date == today.minusDays(1) -> Textos.get(R.string.date_yesterday)
         else -> {
-            val pattern = if (date.year == today.year) "EEEE, d 'de' MMMM" else "d 'de' MMMM 'de' yyyy"
-            date.format(DateTimeFormatter.ofPattern(pattern, spanish))
-                .replaceFirstChar { it.uppercase(spanish) }
+            val locale = Locale.getDefault()
+            val pattern = Textos.get(if (date.year == today.year) R.string.notes_day_pattern_same_year else R.string.notes_day_pattern_other_year)
+            date.format(DateTimeFormatter.ofPattern(pattern, locale))
+                .replaceFirstChar { it.uppercase(locale) }
         }
     }
 
@@ -86,6 +87,6 @@ object NoteGrouping {
     fun timeLabel(note: QuickNote, use24Hour: Boolean, zone: ZoneId = ZoneId.systemDefault()): String {
         val time = Instant.ofEpochMilli(note.updatedAt).atZone(zone).toLocalTime()
         val pattern = if (use24Hour) "HH:mm" else "h:mm a"
-        return time.format(DateTimeFormatter.ofPattern(pattern, spanish))
+        return time.format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
     }
 }

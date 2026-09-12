@@ -6,6 +6,8 @@ import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.unistack.app.TextosDePrueba
+import org.junit.Before
 
 /**
  * El reparto de las notas en la lista.
@@ -15,6 +17,11 @@ import org.junit.Test
  * exactamente lo que hay que dejar clavado.
  */
 class NoteGroupingTest {
+
+    @Before
+    fun instalarTextos() {
+        TextosDePrueba.instalar()
+    }
 
     private val zone: ZoneId = ZoneId.of("America/Bogota")
     private val hoy: LocalDate = LocalDate.of(2026, 8, 28)

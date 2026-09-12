@@ -523,7 +523,6 @@ class ProfileViewModel @Inject constructor(
             accountAuthService.signInWithGoogle(context)
                 .onSuccess { account ->
                     userRepository.linkAccount(account)
-                    val isEn = java.util.Locale.getDefault().language == "en"
                     _actionState.update {
                         it.copy(
                             isAccountBusy = false,
@@ -533,7 +532,6 @@ class ProfileViewModel @Inject constructor(
                     }
                 }
                 .onFailure { throwable ->
-                    val isEn = java.util.Locale.getDefault().language == "en"
                     _actionState.update {
                         it.copy(
                             isAccountBusy = false,
@@ -552,7 +550,6 @@ class ProfileViewModel @Inject constructor(
             accountAuthService.signOut()
             if (currentUser.value.isLinked) {
                 userRepository.unlinkAccount()
-                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         isAccountBusy = false,
@@ -561,7 +558,6 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
             } else {
-                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         isAccountBusy = false,
@@ -606,7 +602,6 @@ class ProfileViewModel @Inject constructor(
         localBackupRepository.exportAcademicPdf(context)
             .map { path -> File(path) }
             .onFailure { throwable ->
-                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         message = null,
@@ -621,7 +616,6 @@ class ProfileViewModel @Inject constructor(
     fun exportAcademicPdf(context: Context): Boolean {
         return localBackupRepository.exportAcademicPdf(context)
             .onSuccess { path ->
-                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         message = Textos.get(R.string.profile_pdf_academico_creado, path),
@@ -630,7 +624,6 @@ class ProfileViewModel @Inject constructor(
                 }
             }
             .onFailure { throwable ->
-                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         message = null,
@@ -659,7 +652,6 @@ class ProfileViewModel @Inject constructor(
             .fold(
                 onSuccess = { it.summary() },
                 onFailure = {
-                    val isEn = java.util.Locale.getDefault().language == "en"
                     it.message ?: Textos.get(R.string.profile_backup_invalido)
                 }
             )
@@ -668,7 +660,6 @@ class ProfileViewModel @Inject constructor(
     fun restoreLocalBackup(json: String): Boolean {
         return localBackupRepository.restoreBackupJson(json)
             .onSuccess { preview ->
-                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         message = Textos.get(R.string.profile_backup_local_restaurado, preview.summary()),
@@ -677,7 +668,6 @@ class ProfileViewModel @Inject constructor(
                 }
             }
             .onFailure { throwable ->
-                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         message = null,

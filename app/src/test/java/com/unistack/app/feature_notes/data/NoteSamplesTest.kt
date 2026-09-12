@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.unistack.app.TextosDePrueba
 
 /**
  * Las notas de ejemplo tienen que ejemplificar algo.
@@ -30,6 +31,7 @@ class NoteSamplesTest {
 
     @Before
     fun setUp() {
+        TextosDePrueba.instalar()
         store = NoteAttachmentStore(ApplicationProvider.getApplicationContext<Context>())
     }
 

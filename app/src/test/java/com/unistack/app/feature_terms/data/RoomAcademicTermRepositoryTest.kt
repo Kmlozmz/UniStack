@@ -27,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.unistack.app.TextosDePrueba
 
 /**
  * Lo que el repositorio de periodos no puede dejar pasar.
@@ -45,6 +46,7 @@ class RoomAcademicTermRepositoryTest {
 
     @Before
     fun setUp() {
+        TextosDePrueba.instalar()
         val context = ApplicationProvider.getApplicationContext<Context>()
         database = Room.inMemoryDatabaseBuilder(context, UniStackDatabase::class.java)
             .allowMainThreadQueries()

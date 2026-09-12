@@ -35,6 +35,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /**
  * Un periodo con lo que se puede decir de él sin abrirlo.
@@ -310,11 +312,11 @@ class TermsViewModel @Inject constructor(
             gradesRepository.stampTerm(activo.id)
             termRepository.close(activo.id, closedOn)
                 .onSuccess {
-                    _message.value = "Cerraste ${activo.name}."
+                    _message.value = Textos.get(R.string.terms_closed_named, activo.name)
                     onDone()
                 }
                 .onFailure { error ->
-                    _message.value = error.message ?: "No se pudo cerrar el periodo."
+                    _message.value = error.message ?: Textos.get(R.string.terms_close_failed)
                 }
         }
     }
@@ -339,11 +341,11 @@ class TermsViewModel @Inject constructor(
             termRepository.create(name, type, start, plannedEnd)
                 .onSuccess { periodo ->
                     repetirMaterias(repeatSubjectIds, periodo.id)
-                    _message.value = "Empezaste ${periodo.name}."
+                    _message.value = Textos.get(R.string.terms_started_named, periodo.name)
                     onDone()
                 }
                 .onFailure { error ->
-                    _message.value = error.message ?: "No se pudo crear el periodo."
+                    _message.value = error.message ?: Textos.get(R.string.terms_create_failed)
                 }
         }
     }

@@ -26,10 +26,10 @@ class UpdateNotificationManager(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Actualizaciones de UniStack",
+                Textos.get(R.string.update_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notificaciones sobre nuevas versiones disponibles"
+                description = Textos.get(R.string.update_channel_desc)
                 enableLights(true)
                 enableVibration(true)
             }

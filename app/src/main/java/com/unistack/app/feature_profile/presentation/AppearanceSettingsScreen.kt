@@ -193,7 +193,6 @@ fun AppearanceSettingsScreen(
 
 /** «3 de 4 bloques» y no la lista entera: en una fila no caben cuatro nombres. */
 private fun AppearancePreferences.resumenDeInicio(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     val encendidos = listOf(showHomeGreeting, showHomeHero, showHomeAgenda, showHomeSnapshot).count { it }
     return when (encendidos) {
         4 -> Textos.get(R.string.settings_appearance_home_4_on)
@@ -203,7 +202,6 @@ private fun AppearancePreferences.resumenDeInicio(): String {
 }
 
 private fun Int.ejemploDeNota(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         0 -> Textos.get(R.string.settings_appearance_grade_sample_0)
         1 -> Textos.get(R.string.settings_appearance_grade_sample_1)
@@ -335,7 +333,6 @@ internal fun AppearancePreferences.showsSection(section: HomeSection): Boolean =
 }
 
 internal fun VisualPreference.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         VisualPreference.SYSTEM -> Textos.get(R.string.appearance_sistema)
         VisualPreference.LIGHT -> Textos.get(R.string.appearance_claro)
@@ -346,7 +343,6 @@ internal fun VisualPreference.label(): String {
 }
 
 internal fun VisualPreference.themeDescription(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         VisualPreference.SYSTEM -> Textos.get(R.string.appearance_sigue_el_tema_de_android)
         VisualPreference.LIGHT -> Textos.get(R.string.appearance_siempre_claro_aunque_android_este_oscuro)
@@ -357,7 +353,6 @@ internal fun VisualPreference.themeDescription(): String {
 }
 
 internal fun InterfaceDensity.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         InterfaceDensity.COMPACT -> Textos.get(R.string.appearance_compacta)
         InterfaceDensity.BALANCED -> Textos.get(R.string.appearance_equilibrada)
@@ -366,7 +361,6 @@ internal fun InterfaceDensity.label(): String {
 }
 
 internal fun TypographyStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         TypographyStyle.SANS -> "Sans"
         TypographyStyle.SYSTEM -> Textos.get(R.string.appearance_sistema)
@@ -378,7 +372,6 @@ internal fun TypographyStyle.label(): String {
 }
 
 internal fun TypographyStyle.explicacion(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         TypographyStyle.SANS -> Textos.get(R.string.appearance_la_sans_serif_del_sistema_es)
         TypographyStyle.SYSTEM -> Textos.get(R.string.appearance_la_que_traiga_tu_telefono_como)
@@ -390,7 +383,6 @@ internal fun TypographyStyle.explicacion(): String {
 }
 
 internal fun HomeSection.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         HomeSection.HERO -> Textos.get(R.string.appearance_lo_siguiente)
         HomeSection.AGENDA -> Textos.get(R.string.notif_time_today)
@@ -399,7 +391,6 @@ internal fun HomeSection.label(): String {
 }
 
 internal fun HomeSection.detail(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         HomeSection.HERO -> Textos.get(R.string.appearance_la_tarjeta_con_lo_mas_urgente)
         HomeSection.AGENDA -> Textos.get(R.string.appearance_clases_y_entregas_del_dia)
@@ -408,7 +399,6 @@ internal fun HomeSection.detail(): String {
 }
 
 internal fun BottomBarStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         BottomBarStyle.LABELED -> Textos.get(R.string.appearance_con_texto)
         BottomBarStyle.ICONS_ONLY -> Textos.get(R.string.appearance_solo_iconos)
@@ -416,7 +406,6 @@ internal fun BottomBarStyle.label(): String {
 }
 
 internal fun ProgressShape.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         ProgressShape.FLAT -> Textos.get(R.string.appearance_rectas)
         ProgressShape.WAVY -> Textos.get(R.string.appearance_onduladas)
@@ -424,7 +413,6 @@ internal fun ProgressShape.label(): String {
 }
 
 internal fun SwitchIconStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         SwitchIconStyle.BOTH -> Textos.get(R.string.appearance_siempre)
         SwitchIconStyle.CHECKED_ONLY -> Textos.get(R.string.appearance_al_encender)
@@ -433,7 +421,6 @@ internal fun SwitchIconStyle.label(): String {
 }
 
 internal fun SurfaceStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         SurfaceStyle.FLAT -> Textos.get(R.string.appearance_plana)
         SurfaceStyle.OUTLINED -> Textos.get(R.string.appearance_filete)
@@ -443,7 +430,6 @@ internal fun SurfaceStyle.label(): String {
 }
 
 internal fun SurfaceStyle.explicacion(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         SurfaceStyle.FLAT -> Textos.get(R.string.appearance_sin_bordes_ni_sombra_la_tarjeta)
         SurfaceStyle.OUTLINED -> Textos.get(R.string.appearance_un_filete_fino_marca_donde_acaba)
@@ -453,7 +439,6 @@ internal fun SurfaceStyle.explicacion(): String {
 }
 
 internal fun CornerStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         CornerStyle.COMPACT -> Textos.get(R.string.appearance_rectas_2)
         CornerStyle.BALANCED -> Textos.get(R.string.appearance_medias)

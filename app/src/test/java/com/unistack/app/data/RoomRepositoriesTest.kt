@@ -39,6 +39,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.unistack.app.TextosDePrueba
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [34])
@@ -48,6 +49,7 @@ class RoomRepositoriesTest {
 
     @Before
     fun setUp() {
+        TextosDePrueba.instalar()
         val context = ApplicationProvider.getApplicationContext<Context>()
         database = Room.inMemoryDatabaseBuilder(context, UniStackDatabase::class.java)
             .allowMainThreadQueries()

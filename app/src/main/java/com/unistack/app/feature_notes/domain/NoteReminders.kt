@@ -42,13 +42,7 @@ object NoteReminders {
             dia == hoy.plusDays(1) -> Textos.get(R.string.reminder_tomorrow_at, hora)
             dia == hoy.minusDays(1) -> Textos.get(R.string.reminder_yesterday_at, hora)
             else -> {
-                val en = Locale.getDefault().language == "en"
-                val patron = when {
-                    en && dia.year == hoy.year -> "MMMM d"
-                    en -> "MMMM d, yyyy"
-                    dia.year == hoy.year -> "d 'de' MMMM"
-                    else -> "d 'de' MMMM 'de' yyyy"
-                }
+                val patron = Textos.get(if (dia.year == hoy.year) R.string.reminder_day_pattern_same_year else R.string.notes_day_pattern_other_year)
                 dia.format(DateTimeFormatter.ofPattern(patron, Locale.getDefault())) + ", " + hora
             }
         }

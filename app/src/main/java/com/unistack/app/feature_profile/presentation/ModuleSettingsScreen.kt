@@ -158,7 +158,6 @@ private fun AppModule.icon(): ImageVector = when (this) {
 }
 
 private fun AppModule.moduleLabel(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         AppModule.GRADES -> Textos.get(R.string.settings_module_grades_title)
         AppModule.TASKS -> Textos.get(R.string.setup_mod_tasks_title)
@@ -168,7 +167,6 @@ private fun AppModule.moduleLabel(): String {
 }
 
 private fun AppModule.moduleDetail(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         AppModule.GRADES -> Textos.get(R.string.settings_module_grades_desc)
         AppModule.TASKS -> Textos.get(R.string.settings_module_tasks_desc)

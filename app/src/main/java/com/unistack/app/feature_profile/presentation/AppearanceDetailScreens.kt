@@ -374,7 +374,7 @@ private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
             steps = pasos,
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Al ${arrastre.toInt()}%. Vale para toda la app, no solo para esta pantalla.")
+        Explicacion(stringResource(R.string.appearance_text_scale_note, arrastre.toInt()))
     }
 }
 
@@ -488,7 +488,6 @@ private fun FilaDeInterruptor(
 // ------------------------------------------------------------------ rótulos
 
 internal fun ShadowIntensity.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         ShadowIntensity.SUAVE -> Textos.get(R.string.settings_accent_soft)
         ShadowIntensity.MEDIA -> Textos.get(R.string.templates_priority_medium)
@@ -497,7 +496,6 @@ internal fun ShadowIntensity.label(): String {
 }
 
 internal fun OutlineWeight.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         OutlineWeight.FINO -> Textos.get(R.string.appearance_fino)
         OutlineWeight.MEDIO -> Textos.get(R.string.settings_accent_balanced)
@@ -506,7 +504,6 @@ internal fun OutlineWeight.label(): String {
 }
 
 internal fun LineHeightStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         LineHeightStyle.COMPACTO -> Textos.get(R.string.appearance_compacto)
         LineHeightStyle.NORMAL -> Textos.get(R.string.a11y_motion_normal)
@@ -515,7 +512,6 @@ internal fun LineHeightStyle.label(): String {
 }
 
 internal fun ButtonShapeStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         ButtonShapeStyle.RECTO -> Textos.get(R.string.appearance_rectos)
         ButtonShapeStyle.MEDIO -> Textos.get(R.string.appearance_medios)
@@ -524,7 +520,6 @@ internal fun ButtonShapeStyle.label(): String {
 }
 
 internal fun ButtonSizeStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         ButtonSizeStyle.PEQUENO -> Textos.get(R.string.appearance_pequeno)
         ButtonSizeStyle.MEDIO -> Textos.get(R.string.settings_accent_balanced)
@@ -533,7 +528,6 @@ internal fun ButtonSizeStyle.label(): String {
 }
 
 internal fun TextFieldStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         TextFieldStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
         TextFieldStyle.FILETE -> Textos.get(R.string.appearance_filete)
@@ -542,7 +536,6 @@ internal fun TextFieldStyle.label(): String {
 }
 
 internal fun ChipStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         ChipStyle.FILETE -> Textos.get(R.string.appearance_filete)
         ChipStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
@@ -551,7 +544,6 @@ internal fun ChipStyle.label(): String {
 }
 
 internal fun IconStyle.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         IconStyle.REDONDEADO -> Textos.get(R.string.appearance_redondeado)
         IconStyle.LINEAL -> Textos.get(R.string.appearance_lineal)
@@ -560,7 +552,6 @@ internal fun IconStyle.label(): String {
 }
 
 internal fun BadgeShape.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         BadgeShape.CIRCULO -> Textos.get(R.string.appearance_circulo)
         BadgeShape.GALLETA -> Textos.get(R.string.appearance_galleta)
@@ -572,7 +563,6 @@ internal fun BadgeShape.label(): String {
 }
 
 internal fun FirstDayOfWeek.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         FirstDayOfWeek.LUNES -> Textos.get(R.string.appearance_lunes)
         FirstDayOfWeek.DOMINGO -> Textos.get(R.string.appearance_domingo)

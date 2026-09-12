@@ -134,7 +134,7 @@ internal fun VentanaDeMuestra(
 fun VistaPreviaDeTarjeta(modifier: Modifier = Modifier) {
     val secciones = LocalSectionColors.current
     val apariencia = LocalAppearancePreferences.current
-    VentanaDeMuestra(titulo = "MATERIAS", modifier = modifier) {
+    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_subjects), modifier = modifier) {
         UniCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -153,13 +153,13 @@ fun VistaPreviaDeTarjeta(modifier: Modifier = Modifier) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Cálculo III",
+                            stringResource(R.string.preview_calculus),
                             style = MaterialTheme.typography.titleMediumEmphasized,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            "Vas 4,25 · te falta 3,1 en el tercer corte",
+                            stringResource(R.string.preview_grade_line),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -209,7 +209,7 @@ fun BarraDeProgresoReal(progreso: Float = 0.68f, modifier: Modifier = Modifier) 
  */
 @Composable
 fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
-    VentanaDeMuestra(titulo = "AL PIE DE UN FORMULARIO", modifier = modifier) {
+    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_form_footer), modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             UniStackButton(
                 text = stringResource(R.string.common_save),
@@ -236,7 +236,7 @@ fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
 fun VistaPreviaDeChips(modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme
     val estilo = LocalAppearancePreferences.current.chipStyle
-    VentanaDeMuestra(titulo = "TAREAS", modifier = modifier) {
+    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_tasks), modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             run {
             listOf((stringResource(R.string.tasks_tab_overdue)) to true, (stringResource(R.string.notif_time_today)) to false, (stringResource(R.string.appearance_sin_materia)) to false)
@@ -291,7 +291,7 @@ fun VistaPreviaDeChips(modifier: Modifier = Modifier) {
 fun VistaPreviaDeCampo(modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme
     val estilo = LocalAppearancePreferences.current.textFieldStyle
-    VentanaDeMuestra(titulo = "CREAR UNA MATERIA", modifier = modifier) {
+    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_new_subject), modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -308,10 +308,8 @@ fun VistaPreviaDeCampo(modifier: Modifier = Modifier) {
                 )
                 .padding(horizontal = 14.dp, vertical = 9.dp)
         ) {
-            val isEnMat = java.util.Locale.getDefault().language == "en"
-            Text(if (isEnMat) "Subject name" else "Nombre de la materia", style = MaterialTheme.typography.labelSmall, color = esquema.primary)
-            val isEnCal = java.util.Locale.getDefault().language == "en"
-            Text(if (isEnCal) "Calculus III" else "Cálculo III", style = MaterialTheme.typography.bodyLarge, color = esquema.onSurface)
+            Text(stringResource(R.string.preview_subject_name), style = MaterialTheme.typography.labelSmall, color = esquema.primary)
+            Text(stringResource(R.string.preview_calculus), style = MaterialTheme.typography.bodyLarge, color = esquema.onSurface)
         }
         if (estilo == TextFieldStyle.SUBRAYADO) {
             Box(
@@ -336,13 +334,13 @@ fun VistaPreviaDeDistintivos(modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme
     val secciones = LocalSectionColors.current
     val materias = listOf(
-        Triple("calculo", "Cálculo III", esquema.primary),
-        Triple("fisica", "Física II", secciones.schedule),
-        Triple("progra", "Programación", secciones.onTrack),
-        Triple("estad", "Estadística", secciones.expenses),
-        Triple("ingles", "Inglés IV", esquema.tertiary)
+        Triple("calculo", stringResource(R.string.preview_calculus), esquema.primary),
+        Triple("fisica", stringResource(R.string.preview_physics), secciones.schedule),
+        Triple("progra", stringResource(R.string.preview_programming), secciones.onTrack),
+        Triple("estad", stringResource(R.string.preview_statistics), secciones.expenses),
+        Triple("ingles", stringResource(R.string.preview_english), esquema.tertiary)
     )
-    VentanaDeMuestra(titulo = "MATERIAS", modifier = modifier) {
+    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_subjects), modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             materias.take(3).forEach { (id, nombre, color) ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
@@ -375,7 +373,7 @@ fun VistaPreviaDeDistintivos(modifier: Modifier = Modifier) {
                 }
                 if (apariencia.badgeShape != BadgeShape.ALEATORIO) {
                     Text(
-                        "todas iguales",
+                        stringResource(R.string.preview_all_same),
                         style = MaterialTheme.typography.labelSmall,
                         color = esquema.outline,
                         modifier = Modifier.align(Alignment.CenterVertically)
@@ -389,17 +387,16 @@ fun VistaPreviaDeDistintivos(modifier: Modifier = Modifier) {
 /** Dos filas de ajustes con sus interruptores, encendida y apagada, como en cualquier pantalla. */
 @Composable
 fun VistaPreviaDeInterruptores(modifier: Modifier = Modifier) {
-    VentanaDeMuestra(titulo = "AJUSTES", modifier = modifier) {
+    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_settings), modifier = modifier) {
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column {
-                val isEnSwitch = java.util.Locale.getDefault().language == "en"
                 listOf(
-                    Triple(if (isEnSwitch) "Class reminders" else "Recordar mis clases", if (isEnSwitch) "15 minutes before" else "15 minutos antes", true),
-                    Triple(if (isEnSwitch) "Assignment alerts" else "Avisar de entregas", if (isEnSwitch) "The day before" else "El día anterior", false)
+                    Triple(stringResource(R.string.preview_switch_classes), stringResource(R.string.preview_switch_classes_detail), true),
+                    Triple(stringResource(R.string.preview_switch_tasks), stringResource(R.string.preview_switch_tasks_detail), false)
                 ).forEach { (titulo, detalle, marcado) ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 11.dp),
@@ -431,7 +428,7 @@ fun VistaPreviaDeInterruptores(modifier: Modifier = Modifier) {
 @Composable
 fun VistaPreviaDeSemana(letras: List<String>, indiceDeHoy: Int, modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme
-    VentanaDeMuestra(titulo = "HORARIO", modifier = modifier) {
+    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_schedule), modifier = modifier) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             letras.forEachIndexed { indice, dia ->
                 val hoy = indice == indiceDeHoy
@@ -459,7 +456,7 @@ fun VistaPreviaDeSemana(letras: List<String>, indiceDeHoy: Int, modifier: Modifi
                 tint = esquema.primary,
                 modifier = Modifier.size(18.dp)
             )
-            Text("Cálculo III · 10:00", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.preview_calculus) + " · 10:00", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.weight(1f))
             Text("103F", style = MaterialTheme.typography.labelMedium, color = esquema.onSurfaceVariant)
         }

@@ -345,12 +345,7 @@ private fun NoteCardBody(
         )
     }
     if (hechas > 0 && showDoneCount) {
-        val isEn = Locale.getDefault().language == "en"
-        val hechasSuffix = if (isEn) {
-            if (hechas == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural)
-        } else {
-            if (hechas == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural)
-        }
+        val hechasSuffix = if (hechas == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural)
         Text(
             text = "+ $hechas $hechasSuffix",
             color = suave.copy(alpha = 0.7f),
@@ -499,11 +494,12 @@ private fun AudioWaveform(tint: Color) {
     }
 }
 
-private val MesesAbrev get() = if (Locale.getDefault().language == "en") {
-    listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
-} else {
-    listOf("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC")
-}
+// Los meses salen del calendario del idioma en uso, en mayusculas y sin el punto que el
+// espanol les pone («ene.»): en la ficha van como rotulo, no como abreviatura.
+private val MesesAbrev: List<String>
+    get() = java.time.Month.values().map {
+        it.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).trimEnd('.').uppercase(Locale.getDefault())
+    }
 
 /** El recordatorio, como una fecha de calendario: el día grande, el mes debajo. */
 @Composable

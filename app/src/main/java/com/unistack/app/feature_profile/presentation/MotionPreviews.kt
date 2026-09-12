@@ -41,6 +41,9 @@ import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
+import com.unistack.app.feature_user.domain.Corte
 
 /**
  * Las ciento once variantes, animadas y a la vez.
@@ -607,8 +610,8 @@ private fun DrawScope.transicion(v: String, t: Float, c: TintaDemo) {
     val avance = suave(tramo(t, 0.15f, 0.7f))
     // La que sale es «Materias» y la que entra «Cálculo III»: con los nombres puestos se sabe
     // cual es cual sin tener que deducirlo del color.
-    val sale = "Materias"
-    val entra = "Cálculo III"
+    val sale = Textos.get(R.string.academic_tab_subjects)
+    val entra = Textos.get(R.string.preview_calculus)
     when (v) {
         "ninguna" -> if (avance < 0.5f) {
             panel(13f, c.pieza, sale, c)
@@ -667,7 +670,7 @@ private fun DrawScope.listas(v: String, t: Float, c: TintaDemo) {
      * escalonada trae la de arriba antes, la cascada tambien pero cayendo, y el abanico las
      * abre desde el borde como cartas.
      */
-    val nombres = listOf("Taller 2", "Parcial", "Quiz 3")
+    val nombres = listOf(Textos.get(R.string.settings_motion_demo_task), Textos.get(R.string.tasks_type_midterm), Textos.get(R.string.preview_quiz_3))
     repeat(3) { indice ->
         val y = 12f + indice * 16f
         val retardo = when (v) {
@@ -839,7 +842,7 @@ private fun DrawScope.sello(v: String, t: Float, c: TintaDemo) {
         size = Size(80f, 40f),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
     )
-    texto("Corte 2", 17f, 22f, c, c.tinta.copy(alpha = 0.55f), tamano = 8f, negrita = false)
+    texto("${Corte.Singular} 2", 17f, 22f, c, c.tinta.copy(alpha = 0.55f), tamano = 8f, negrita = false)
     texto("4,25", 17f, 38f, c, c.tinta.copy(alpha = 0.5f), tamano = 14f)
 
     val centro = Offset(56f, 36f)
@@ -1004,12 +1007,12 @@ private fun DrawScope.cierreSemestre(v: String, t: Float, c: TintaDemo) {
         )
         // 7,5 y no 8,5: quince letras a ocho y medio miden setenta y cuatro unidades y la
         // pildora setenta y seis, asi que el titulo salia tocando los dos bordes.
-        texto("Semestre 2026-1", 50f, 16f, c, c.fondo, tamano = 7.5f, centrado = true, alfa = alfa)
+        texto(Textos.get(R.string.preview_semester_name), 50f, 16f, c, c.fondo, tamano = 7.5f, centrado = true, alfa = alfa)
     }
 
     fun cifra(indice: Int, alfa: Float, desvio: Float = 0f) {
         if (alfa <= 0.02f) return
-        val datos = listOf("4,25" to "PROM", "6" to "MAT", "18" to "CRÉD")
+        val datos = listOf("4,25" to Textos.get(R.string.preview_stat_avg), "6" to Textos.get(R.string.preview_stat_subjects), "18" to Textos.get(R.string.preview_stat_credits))
         // Veintiseis de ancho y no veinticuatro: la cifra a nueve mide veintiuna unidades, y
         // en una caja de veinticuatro quedaba pegada a los dos lados.
         val x = 10f + indice * 27f
@@ -1072,7 +1075,7 @@ private fun DrawScope.celebracion(v: String, t: Float, c: TintaDemo) {
     val centro = Offset(50f, 32f)
 
     when (v) {
-        "ninguna" -> texto("¡Todo hecho!", 50f, 32f, c, c.tinta, tamano = 11f, centrado = true)
+        "ninguna" -> texto(Textos.get(R.string.celebration_all_done), 50f, 32f, c, c.tinta, tamano = 11f, centrado = true)
 
         // Dos canones en las esquinas de abajo, como en la pantalla: cada papel sube frenando,
         // cae y voltea. Es la misma fisica de la pieza, a escala.
@@ -1102,7 +1105,7 @@ private fun DrawScope.celebracion(v: String, t: Float, c: TintaDemo) {
                 }
             }
             scale(0.7f + 0.3f * entrada, pivot = centro) {
-                texto("¡Todo hecho!", 50f, 32f, c, c.acento, tamano = 11f, centrado = true, alfa = entrada)
+                texto(Textos.get(R.string.celebration_all_done), 50f, 32f, c, c.acento, tamano = 11f, centrado = true, alfa = entrada)
             }
         }
 
@@ -1132,7 +1135,7 @@ private fun DrawScope.celebracion(v: String, t: Float, c: TintaDemo) {
                     )
                 }
             }
-            texto("¡Todo hecho!", 50f, 32f, c, c.acento, tamano = 11f, centrado = true)
+            texto(Textos.get(R.string.celebration_all_done), 50f, 32f, c, c.acento, tamano = 11f, centrado = true)
         }
 
         // El aro cae de fuera hacia dentro, pega con su onda, y dentro se dibuja el visto.
@@ -1194,7 +1197,7 @@ private fun DrawScope.celebracion(v: String, t: Float, c: TintaDemo) {
                 }
                 drawPath(estrella, color = (if (azar.nextFloat() < 0.7f) c.ambar else c.tinta).copy(alpha = vivo))
             }
-            texto("¡Todo hecho!", 50f, 32f, c, c.ambar, tamano = 11f, centrado = true)
+            texto(Textos.get(R.string.celebration_all_done), 50f, 32f, c, c.ambar, tamano = 11f, centrado = true)
         }
     }
 }
@@ -1240,7 +1243,7 @@ private fun DrawScope.deshacer(v: String, t: Float, c: TintaDemo) {
                 size = Size(76f, alto),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
             )
-            if (alto > 6f) texto("Taller 2", x + 5f, y + 6f, c, c.fondo, tamano = 7f, alfa = alfa)
+            if (alto > 6f) texto(Textos.get(R.string.settings_motion_demo_task), x + 5f, y + 6f, c, c.fondo, tamano = 7f, alfa = alfa)
         }
     }
 
@@ -1274,7 +1277,7 @@ private fun DrawScope.deshacer(v: String, t: Float, c: TintaDemo) {
         size = Size(76f, 0.1f),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(0f, 0f)
     )
-    texto("Deshacer", 12f, 58f, c, c.acento.copy(alpha = 0.9f), tamano = 7.5f)
+    texto(Textos.get(R.string.action_undo), 12f, 58f, c, c.acento.copy(alpha = 0.9f), tamano = 7.5f)
 }
 
 private fun DrawScope.triangulo(centro: Offset, radio: Float, color: Color) {
@@ -1324,7 +1327,7 @@ private fun DrawScope.claseAhora(v: String, t: Float, c: TintaDemo) {
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
     )
     texto("AHORA", 77f, 17f, c, c.fondo, tamano = 6f, centrado = true)
-    texto("Cálculo III", 28f, 32f, c, c.tinta, tamano = 8.5f)
+    texto(Textos.get(R.string.preview_calculus), 28f, 32f, c, c.tinta, tamano = 8.5f)
     texto("10:00 · 103F", 28f, 43f, c, c.tinta.copy(alpha = 0.6f), tamano = 7f, negrita = false)
 
     when (v) {
@@ -1430,7 +1433,7 @@ private fun DrawScope.botonDeCrear(y: Float, extension: Float, alfa: Float, c: T
     texto("+", izq + 11f, y, c, c.fondo, tamano = 12f, centrado = true, alfa = alfa)
     // El rotulo se va antes que el ancho: es lo que hace que «encoge» se lea como que pierde
     // el texto y no como que se estruja.
-    texto("Registrar", izq + 20f, y, c, c.fondo, tamano = 7f, alfa = alfa * tramo(extension, 0.45f, 0.9f))
+    texto(Textos.get(R.string.tasks_action_record), izq + 20f, y, c, c.fondo, tamano = 7f, alfa = alfa * tramo(extension, 0.45f, 0.9f))
 }
 
 private fun DrawScope.haptica(v: String, t: Float, c: TintaDemo) {
@@ -1497,7 +1500,7 @@ private fun DrawScope.haptica(v: String, t: Float, c: TintaDemo) {
     }
 
     if (fuerza == 0f) {
-        texto("sin aviso", 50f, 58f, c, c.tinta.copy(alpha = 0.4f), tamano = 7f, centrado = true, negrita = false)
+        texto(Textos.get(R.string.schedule_no_reminder_short).lowercase(), 50f, 58f, c, c.tinta.copy(alpha = 0.4f), tamano = 7f, centrado = true, negrita = false)
     }
 }
 

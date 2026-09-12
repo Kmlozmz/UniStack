@@ -6,6 +6,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.unistack.app.TextosDePrueba
+import org.junit.Before
 
 /**
  * Las reglas del periodo académico.
@@ -14,6 +16,11 @@ import org.junit.Test
  * antes de que nada se apoye en él.
  */
 class AcademicTermTest {
+
+    @Before
+    fun instalarTextos() {
+        TextosDePrueba.instalar()
+    }
 
     private fun dia(texto: String) = LocalDate.parse(texto)
 

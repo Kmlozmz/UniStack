@@ -6,6 +6,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.unistack.app.TextosDePrueba
+import org.junit.Before
 
 /**
  * Como se lee un recordatorio.
@@ -14,6 +16,11 @@ import org.junit.Test
  * de septiembre» obliga a comprobar que dia es hoy antes de saber si eso es manana.
  */
 class NoteRemindersTest {
+
+    @Before
+    fun instalarTextos() {
+        TextosDePrueba.instalar()
+    }
 
     private val zona: ZoneId = ZoneId.of("America/Bogota")
     private val ahora: LocalDateTime = LocalDateTime.of(2026, 8, 29, 10, 30)

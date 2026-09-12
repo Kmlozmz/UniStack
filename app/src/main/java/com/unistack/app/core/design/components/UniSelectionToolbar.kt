@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * La barra que aparece cuando hay cosas marcadas.
@@ -59,7 +61,7 @@ fun UniSelectionToolbar(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = if (selectedCount == 1) "1 marcada" else "$selectedCount marcadas",
+                    text = if (selectedCount == 1) stringResource(R.string.selection_marked_one) else stringResource(R.string.selection_marked_many, selectedCount),
                     style = MaterialTheme.typography.labelLargeEmphasized
                 )
                 actions()

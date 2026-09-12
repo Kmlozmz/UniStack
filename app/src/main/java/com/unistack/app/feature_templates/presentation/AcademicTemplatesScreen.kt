@@ -397,7 +397,7 @@ private fun WorkCard(
                     // dicen con el color de la etiqueta y de la barra, sin repetirlos en texto.
                     Text(
                         listOfNotNull(
-                            subjectName ?: "General",
+                            subjectName ?: stringResource(R.string.templates_general_subject),
                             work.dueDateMillis?.let(TaskDateUtils::dueText)
                         ).joinToString(" · "),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -421,7 +421,7 @@ private fun WorkCard(
                 IconButton(onClick = onDelete, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
                     Icon(
                         Icons.Rounded.Delete,
-                        contentDescription = "Eliminar trabajo",
+                        contentDescription = stringResource(R.string.templates_delete_work),
                         tint = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(18.dp)
                     )
@@ -735,7 +735,6 @@ internal fun AcademicWork.exportText(subjects: List<Subject>): String {
 }
 
 internal fun AcademicWorkStatus.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         AcademicWorkStatus.IDEA -> Textos.get(R.string.templates_status_idea)
         AcademicWorkStatus.DRAFT -> Textos.get(R.string.templates_status_draft)
@@ -758,7 +757,6 @@ internal fun AcademicWorkStatus.color(): Color {
 }
 
 internal fun AcademicWorkPriority.label(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
         AcademicWorkPriority.LOW -> Textos.get(R.string.templates_priority_low)
         AcademicWorkPriority.MEDIUM -> Textos.get(R.string.templates_priority_medium)

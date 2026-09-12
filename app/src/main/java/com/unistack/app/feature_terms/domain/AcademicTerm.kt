@@ -1,6 +1,8 @@
 package com.unistack.app.feature_terms.domain
 
 import java.time.LocalDate
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /**
  * Cada cuánto empieza un ciclo en tu universidad.
@@ -10,25 +12,14 @@ import java.time.LocalDate
  * usan de verdad; no hay una opción «otro» porque cualquier calendario cabe en alguna de ellas
  * en cuanto se le ponen fechas propias.
  */
-enum class AcademicTermType(private val spanishLabel: String, val perYear: Int, val weeks: Int) {
-    SEMESTER("Semestral", 2, 16),
-    TRIMESTER("Trimestral", 4, 11),
-    QUARTER("Cuatrimestral", 3, 14),
-    ANNUAL("Anual", 1, 36),
-    BLOCKS("Por bloques", 6, 8);
+enum class AcademicTermType(private val labelRes: Int, val perYear: Int, val weeks: Int) {
+    SEMESTER(R.string.term_type_semester, 2, 16),
+    TRIMESTER(R.string.term_type_trimester, 4, 11),
+    QUARTER(R.string.term_type_quarter, 3, 14),
+    ANNUAL(R.string.term_type_annual, 1, 36),
+    BLOCKS(R.string.term_type_blocks, 6, 8);
 
-    val label: String
-        get() = if (java.util.Locale.getDefault().language == "en") {
-            when (this) {
-                SEMESTER -> "Semester"
-                TRIMESTER -> "Trimester"
-                QUARTER -> "Quarter"
-                ANNUAL -> "Annual"
-                BLOCKS -> "Blocks"
-            }
-        } else {
-            spanishLabel
-        }
+    val label: String get() = Textos.get(labelRes)
 
     /**
      * En cual de los tramos del año cae [date], contando desde 1.

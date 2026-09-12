@@ -55,9 +55,9 @@ class RoomAcademicTermRepository(
         start: LocalDate,
         plannedEnd: LocalDate?
     ): Result<AcademicTerm> = runCatching {
-        require(name.isNotBlank()) { "El periodo necesita un nombre." }
+        require(name.isNotBlank()) { Textos.get(R.string.terms_needs_name) }
         require(plannedEnd == null || plannedEnd.isAfter(start)) {
-            "El periodo no puede acabar antes de empezar."
+            Textos.get(R.string.terms_ends_before_start)
         }
         // Se pregunta a la base, no al flujo en cache: ver `activeFor`.
         check(dao.activeFor(userIds) == null) {

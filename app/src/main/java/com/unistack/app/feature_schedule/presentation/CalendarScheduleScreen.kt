@@ -779,7 +779,6 @@ private fun durationLabel(minutes: Int): String {
 }
 
 private fun repeatLabel(everyWeeks: Int): String {
-    val isEn = Locale.getDefault().language == "en"
     return if (everyWeeks <= 1) {
         Textos.get(R.string.schedule_repeat_every_week)
     } else {
@@ -788,7 +787,6 @@ private fun repeatLabel(everyWeeks: Int): String {
 }
 
 private fun reminderLabel(minutes: Int): String {
-    val isEn = Locale.getDefault().language == "en"
     return when {
         minutes <= 0 -> Textos.get(R.string.schedule_reminder_none)
         minutes % 60 == 0 -> Textos.get(R.string.schedule_h_antes, minutes / 60)
@@ -823,12 +821,10 @@ private fun formatMinute(value: Int, use24Hour: Boolean): String {
     val minute = value % 60
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
-    val isEn = Locale.getDefault().language == "en"
     return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (Textos.get(R.string.schedule_a_m)) else (Textos.get(R.string.schedule_p_m)))
 }
 
 private fun ClassAttendanceStatus.label(): String {
-    val isEn = Locale.getDefault().language == "en"
     return when (this) {
         ClassAttendanceStatus.PENDING -> Textos.get(R.string.subject_status_pending)
         ClassAttendanceStatus.ATTENDED -> Textos.get(R.string.schedule_asist_u00ed)

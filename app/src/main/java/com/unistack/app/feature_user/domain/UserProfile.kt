@@ -236,9 +236,9 @@ data class GradingCutScheme(
         fun default(): GradingCutScheme = GradingCutScheme(cuts = defaultCuts())
 
         fun defaultCuts(): List<GradingCut> = listOf(
-            GradingCut(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
-            GradingCut(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
-            GradingCut(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+            GradingCut(id = "period-1", name = "${Corte.Singular} 1", weight = 0.30, order = 1),
+            GradingCut(id = "period-2", name = "${Corte.Singular} 2", weight = 0.40, order = 2),
+            GradingCut(id = "period-3", name = "${Corte.Singular} 3", weight = 0.30, order = 3)
         )
     }
 }

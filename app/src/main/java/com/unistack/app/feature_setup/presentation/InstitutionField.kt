@@ -37,6 +37,8 @@ import com.unistack.app.core.design.components.revealIntoView
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 /**
  * Campo opcional para el nombre de la institución, con sugerencias de [InstitutionCatalog].
  *
@@ -79,7 +81,7 @@ fun InstitutionField(
                 fontSize = 14.sp
             )
             Text(
-                text = "Opcional",
+                text = stringResource(R.string.setup_optional),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,

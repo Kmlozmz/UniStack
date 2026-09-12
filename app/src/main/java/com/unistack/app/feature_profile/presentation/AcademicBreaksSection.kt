@@ -238,7 +238,7 @@ private fun CampoDeFecha(
     fecha: LocalDate?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    vacio: String = "Elegir"
+    vacio: String = stringResource(R.string.terms_field_choose)
 ) {
     Column(
         modifier = modifier

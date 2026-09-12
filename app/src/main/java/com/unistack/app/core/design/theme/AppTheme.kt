@@ -2,6 +2,9 @@ package com.unistack.app.core.design.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.annotation.StringRes
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 /**
  * Los cinco colores de una cara del tema.
@@ -36,12 +39,17 @@ data class ThemePalette(
  */
 data class AppTheme(
     val id: String,
-    val name: String,
+    /** El nombre fijo: las paletas publicadas se llaman igual en todos los idiomas. */
+    private val fixedName: String,
     /** De dónde viene, para leerlo en la tarjeta. Vacío en los propios de la app. */
     val family: String = "",
     val dark: ThemePalette,
-    val light: ThemePalette
+    val light: ThemePalette,
+    /** El nombre traducible de los temas propios; cero en las paletas publicadas. */
+    @StringRes private val nameRes: Int = 0
 ) {
+    val name: String get() = if (nameRes != 0) Textos.get(nameRes) else fixedName
+
     fun palette(oscuro: Boolean): ThemePalette = if (oscuro) dark else light
 
     /** Con qué cara nació el tema, que es la que se enseña en el carrusel. */
@@ -66,69 +74,82 @@ object AppThemes {
         AppTheme(
             "medianoche", "Medianoche", "",
             dark = paleta(0xFF3F8FE0, 0xFF05070D, 0xFF111827, 0xFFEAF0FA, 0xFF04203F),
-            light = paleta(0xFF1565C0, 0xFFEFF3FA, 0xFFFFFFFF, 0xFF0B1220, 0xFFFFFFFF)
+            light = paleta(0xFF1565C0, 0xFFEFF3FA, 0xFFFFFFFF, 0xFF0B1220, 0xFFFFFFFF),
+            nameRes = R.string.theme_medianoche
         ),
         AppTheme(
             "bosque", "Bosque", "",
             dark = paleta(0xFF4FBFA6, 0xFF070F0D, 0xFF122019, 0xFFE9F5F0, 0xFF052620),
-            light = paleta(0xFF10796A, 0xFFEEF6F3, 0xFFFFFFFF, 0xFF0B1A16, 0xFFFFFFFF)
+            light = paleta(0xFF10796A, 0xFFEEF6F3, 0xFFFFFFFF, 0xFF0B1A16, 0xFFFFFFFF),
+            nameRes = R.string.theme_bosque
         ),
         AppTheme(
             "atardecer", "Atardecer", "",
             dark = paleta(0xFFE8693A, 0xFF120A08, 0xFF221410, 0xFFF8EDE7, 0xFF2A0F04),
-            light = paleta(0xFFC24A1C, 0xFFFBF2ED, 0xFFFFFFFF, 0xFF23130D, 0xFFFFFFFF)
+            light = paleta(0xFFC24A1C, 0xFFFBF2ED, 0xFFFFFFFF, 0xFF23130D, 0xFFFFFFFF),
+            nameRes = R.string.theme_atardecer
         ),
         AppTheme(
             "carbon", "Carbón", "",
             dark = paleta(0xFF8C93A8, 0xFF0B0D11, 0xFF171A21, 0xFFEDEEF2, 0xFF0B0D11),
-            light = paleta(0xFF515869, 0xFFF2F3F6, 0xFFFFFFFF, 0xFF14161C, 0xFFFFFFFF)
+            light = paleta(0xFF515869, 0xFFF2F3F6, 0xFFFFFFFF, 0xFF14161C, 0xFFFFFFFF),
+            nameRes = R.string.theme_carbon
         ),
         AppTheme(
             "cereza", "Cereza", "",
             dark = paleta(0xFFE062A8, 0xFF120810, 0xFF241320, 0xFFFAECF4, 0xFF2E0A1E),
-            light = paleta(0xFFBE3C82, 0xFFFBEFF5, 0xFFFFFFFF, 0xFF23101B, 0xFFFFFFFF)
+            light = paleta(0xFFBE3C82, 0xFFFBEFF5, 0xFFFFFFFF, 0xFF23101B, 0xFFFFFFFF),
+            nameRes = R.string.theme_cereza
         ),
         AppTheme(
             "oceano", "Océano", "",
             dark = paleta(0xFF2FB4C9, 0xFF04101A, 0xFF0F2231, 0xFFE6F4FA, 0xFF032430),
-            light = paleta(0xFF0B7A8C, 0xFFEDF5F9, 0xFFFFFFFF, 0xFF07171F, 0xFFFFFFFF)
+            light = paleta(0xFF0B7A8C, 0xFFEDF5F9, 0xFFFFFFFF, 0xFF07171F, 0xFFFFFFFF),
+            nameRes = R.string.theme_oceano
         ),
         AppTheme(
             "ambar", "Ámbar", "",
             dark = paleta(0xFFE0A63C, 0xFF100D05, 0xFF1F1A0D, 0xFFF9F2E2, 0xFF241A03),
-            light = paleta(0xFF9A6C00, 0xFFFAF5EA, 0xFFFFFFFF, 0xFF1F1A0C, 0xFFFFFFFF)
+            light = paleta(0xFF9A6C00, 0xFFFAF5EA, 0xFFFFFFFF, 0xFF1F1A0C, 0xFFFFFFFF),
+            nameRes = R.string.theme_ambar
         ),
         AppTheme(
             "lavanda", "Lavanda", "",
             dark = paleta(0xFF9B8CF0, 0xFF0C0A14, 0xFF191428, 0xFFF0EDFC, 0xFF1B1240),
-            light = paleta(0xFF6A57D4, 0xFFF3F1FD, 0xFFFFFFFF, 0xFF16122A, 0xFFFFFFFF)
+            light = paleta(0xFF6A57D4, 0xFFF3F1FD, 0xFFFFFFFF, 0xFF16122A, 0xFFFFFFFF),
+            nameRes = R.string.theme_lavanda
         ),
         AppTheme(
             "vino", "Vino", "",
             dark = paleta(0xFFC8506A, 0xFF100608, 0xFF231015, 0xFFF9E9ED, 0xFF2C070F),
-            light = paleta(0xFFA02A46, 0xFFFAEDF0, 0xFFFFFFFF, 0xFF200E13, 0xFFFFFFFF)
+            light = paleta(0xFFA02A46, 0xFFFAEDF0, 0xFFFFFFFF, 0xFF200E13, 0xFFFFFFFF),
+            nameRes = R.string.theme_vino
         ),
 
         // ---------------------------------------------------------------- propios, de nacer claros
         AppTheme(
             "papel", "Papel", "",
             dark = paleta(0xFF9A92F0, 0xFF14131A, 0xFF201F2A, 0xFFF0EEF6, 0xFF14122E),
-            light = paleta(0xFF5F56C9, 0xFFF4F2ED, 0xFFFFFFFF, 0xFF1B1A22, 0xFFFFFFFF)
+            light = paleta(0xFF5F56C9, 0xFFF4F2ED, 0xFFFFFFFF, 0xFF1B1A22, 0xFFFFFFFF),
+            nameRes = R.string.theme_papel
         ),
         AppTheme(
             "nieve", "Nieve", "",
             dark = paleta(0xFF6FB2F5, 0xFF0D131C, 0xFF17202D, 0xFFEDF2F8, 0xFF06213C),
-            light = paleta(0xFF1F6FC4, 0xFFEEF2F7, 0xFFFFFFFF, 0xFF101725, 0xFFFFFFFF)
+            light = paleta(0xFF1F6FC4, 0xFFEEF2F7, 0xFFFFFFFF, 0xFF101725, 0xFFFFFFFF),
+            nameRes = R.string.theme_nieve
         ),
         AppTheme(
             "menta", "Menta", "",
             dark = paleta(0xFF5FC98F, 0xFF0A140F, 0xFF14231B, 0xFFE9F6EE, 0xFF06301D),
-            light = paleta(0xFF1F8B58, 0xFFF1F7F3, 0xFFFFFFFF, 0xFF10231A, 0xFFFFFFFF)
+            light = paleta(0xFF1F8B58, 0xFFF1F7F3, 0xFFFFFFFF, 0xFF10231A, 0xFFFFFFFF),
+            nameRes = R.string.theme_menta
         ),
         AppTheme(
             "arena", "Arena", "",
             dark = paleta(0xFFD8A464, 0xFF14110C, 0xFF231E16, 0xFFF6F0E6, 0xFF261A08),
-            light = paleta(0xFF8F5F1E, 0xFFF7F3EC, 0xFFFFFFFF, 0xFF24201A, 0xFFFFFFFF)
+            light = paleta(0xFF8F5F1E, 0xFFF7F3EC, 0xFFFFFFFF, 0xFF24201A, 0xFFFFFFFF),
+            nameRes = R.string.theme_arena
         ),
 
         // ---------------------------------------------------------------- catppuccin

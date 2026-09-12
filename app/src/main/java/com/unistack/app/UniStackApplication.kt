@@ -46,9 +46,11 @@ class UniStackApplication : Application(), Configuration.Provider {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
-        super.onCreate()
-        // Antes que nada: lo primero que arranca son los avisos, y ya piden textos.
+        // Antes incluso de que Hilt inyecte: `super.onCreate()` construye los repositorios, y el
+        // de actualizaciones crea su canal de avisos en el constructor, con nombre traducido.
+        // Con esto despues, el primer `Textos.get` reventaba antes de tener proveedor.
         Textos.desde(this)
+        super.onCreate()
         ReminderCoordinator.start(
             context = this,
             userRepository = userRepository,

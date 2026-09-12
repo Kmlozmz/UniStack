@@ -115,7 +115,7 @@ fun AcademicWorkScreen(
         item(key = "chips") {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 template?.let { WorkChip(it.title, LocalSectionColors.current.schedule) }
-                WorkChip(subjectName ?: "General", MaterialTheme.colorScheme.onSurfaceVariant)
+                WorkChip(subjectName ?: stringResource(R.string.templates_general_subject), MaterialTheme.colorScheme.onSurfaceVariant)
                 work.dueDateMillis?.let {
                     WorkChip(TaskDateUtils.dueText(it), LocalSectionColors.current.atRisk)
                 }
@@ -166,7 +166,6 @@ fun AcademicWorkScreen(
                     viewModel = viewModel,
                     onSaved = {
                         editing = false
-                        val isEn = java.util.Locale.getDefault().language == "en"
                         feedback = Textos.get(R.string.templates_work_updated)
                     }
                 )
@@ -184,7 +183,6 @@ fun AcademicWorkScreen(
                 referenceDraft = draft,
                 onCopyClick = {
                     copyToClipboard(draft)
-                    val isEn = java.util.Locale.getDefault().language == "en"
                     feedback = Textos.get(R.string.templates_work_apa_copied)
                 }
             )
@@ -211,7 +209,6 @@ fun AcademicWorkScreen(
                         shapes = UniStackButtonDefaults.shapes,
                         onClick = {
                             copyToClipboard(work.exportText(subjects))
-                            val isEn = java.util.Locale.getDefault().language == "en"
                             feedback = Textos.get(R.string.templates_work_copied)
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -352,7 +349,6 @@ private fun WorkEditorSection(
                 sources = sources,
                 notes = notes
             )
-            val isEn = java.util.Locale.getDefault().language == "en"
             if (saved) onSaved() else error = Textos.get(R.string.templates_work_validation_error)
         }
     )

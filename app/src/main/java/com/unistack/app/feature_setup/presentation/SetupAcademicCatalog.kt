@@ -5,11 +5,12 @@ import java.util.Locale
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
 
-const val OTHER_OPTION = "Otra"
-const val OTHER_OPTION_EN = "Other"
+/** La opcion «Otra» tal como se muestra ahora mismo; lo guardado puede venir del otro idioma, por eso [isOtherOption] mira los dos. */
+val OTHER_OPTION: String get() = Textos.get(R.string.setup_other_option)
+private val OTHER_OPTION_ALL = setOf("Otra", "Other")
 
 fun isOtherOption(value: String?): Boolean =
-    value == OTHER_OPTION || value == OTHER_OPTION_EN
+    value == OTHER_OPTION || value in OTHER_OPTION_ALL
 
 fun otherOptionLabel(): String = Textos.get(R.string.setup_other_option)
 

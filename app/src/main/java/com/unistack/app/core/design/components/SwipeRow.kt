@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.utils.performSafely
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * Una fila que se arrastra hacia la izquierda para borrar.
@@ -93,7 +95,7 @@ fun FilaDeslizable(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.DeleteOutline,
-                        contentDescription = "Borrar",
+                        contentDescription = stringResource(R.string.common_delete),
                         tint = rojo.copy(alpha = progreso)
                     )
                 }

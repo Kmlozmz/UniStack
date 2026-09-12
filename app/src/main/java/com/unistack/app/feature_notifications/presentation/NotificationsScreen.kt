@@ -642,7 +642,6 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
 @Composable
 private fun NotificationMetaCard(item: NotificationHistoryItem) {
     val zoned = Instant.ofEpochMilli(item.timestampMillis).atZone(ZoneId.systemDefault())
-    val isEn = Locale.getDefault().language == "en"
     val datePattern = stringResource(R.string.notif_d_de_mmmm_yyyy)
     val date = zoned.format(DateTimeFormatter.ofPattern(datePattern, Locale.getDefault()))
     val time = zoned.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
@@ -1002,7 +1001,6 @@ private val NotificationCategory.color: Color
 @Composable
 @ReadOnlyComposable
 private fun NotificationHistoryItem.visual(): NotificationVisual {
-    val isEn = Locale.getDefault().language == "en"
     return when {
         read -> NotificationVisual(stringResource(R.string.notif_seen_badge), LocalSectionColors.current.onTrack, Icons.Rounded.CheckCircle)
         else -> NotificationVisual(stringResource(R.string.notif_new_badge_short), LocalSectionColors.current.schedule, Icons.Rounded.Campaign)
@@ -1011,7 +1009,6 @@ private fun NotificationHistoryItem.visual(): NotificationVisual {
 
 private fun NotificationHistoryItem.category(): NotificationCategory {
     val text = "$title $body".lowercase(Locale.ROOT)
-    val isEn = Locale.getDefault().language == "en"
     return when {
         "resumen" in text || "summary" in text || "dia despejado" in text || "clear day" in text || "día despejado" in text -> NotificationCategory(
             label = Textos.get(R.string.notif_cat_summary),

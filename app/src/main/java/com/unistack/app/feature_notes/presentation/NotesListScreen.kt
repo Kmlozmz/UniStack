@@ -902,7 +902,7 @@ private fun FilterBanner(subject: Subject, count: Int, onClear: () -> Unit) {
     ) {
         NoteSubjectChip(subject, modifier = Modifier.weight(1f, fill = false))
         Text(
-            count.toString() + if (Locale.getDefault().language == "en") (if (count == 1) " note" else " notes") else (if (count == 1) " nota" else " notas"),
+            if (count == 1) stringResource(R.string.notes_count_one, count) else stringResource(R.string.notes_count_many, count),
             color = MaterialTheme.colorScheme.outline,
             style = MaterialTheme.typography.labelSmall
         )

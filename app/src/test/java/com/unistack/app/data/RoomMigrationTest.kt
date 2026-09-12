@@ -15,6 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.unistack.app.TextosDePrueba
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [34])
@@ -24,6 +25,7 @@ class RoomMigrationTest {
 
     @Before
     fun setUp() {
+        TextosDePrueba.instalar()
         context = ApplicationProvider.getApplicationContext()
         databaseFile = File(context.filesDir, "unistack-migration-test.db")
         context.deleteDatabase(databaseFile.name)

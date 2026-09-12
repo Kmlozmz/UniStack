@@ -96,7 +96,6 @@ internal fun AccountAvatar(
  * queda no informa de nada. Ahora manda la carrera, y la institucion la acompana cuando esta.
  */
 internal fun UserProfile.educationSummary(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     val programa = careerOrProgram?.takeIf { it.isNotBlank() }
     val centro = institutionName?.takeIf { it.isNotBlank() }
     return when {
@@ -108,7 +107,6 @@ internal fun UserProfile.educationSummary(): String {
 }
 
 internal fun AppUser.accountLabel(): String {
-    val isEn = java.util.Locale.getDefault().language == "en"
     return when (authProvider) {
         AuthProvider.LOCAL -> Textos.get(R.string.settings_profile_local_account)
         AuthProvider.GOOGLE -> Textos.get(R.string.settings_profile_google_connected)

@@ -51,10 +51,10 @@ class FirebaseGoogleAuthService : AccountAuthService {
                 try {
                     GoogleIdTokenCredential.createFrom(credential.data)
                 } catch (exception: GoogleIdTokenParsingException) {
-                    throw IllegalStateException("No se pudo leer la credencial de Google.", exception)
+                    throw IllegalStateException(Textos.get(R.string.auth_google_credential_unreadable), exception)
                 }
             }
-            else -> throw IllegalStateException("La credencial recibida no es de Google.")
+            else -> throw IllegalStateException(Textos.get(R.string.auth_google_credential_foreign))
         }
 
         val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)

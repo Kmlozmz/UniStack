@@ -92,7 +92,7 @@ class GitHubReleaseUpdateRepository(
             // WorkManager recibe el fallo y puede reintentar antes del siguiente ciclo.
             prefs.edit { putLong(KEY_LAST_CHECKED_AT, now) }
         } else {
-            throw IOException("No se pudo verificar actualizaciones.")
+            throw IOException(Textos.get(R.string.update_check_failed))
         }
     }
 
@@ -111,7 +111,7 @@ class GitHubReleaseUpdateRepository(
                 }
             }
             .onFailure { error ->
-                _state.value = UpdateState.Error(error.message ?: "No se pudo verificar actualizaciones.")
+                _state.value = UpdateState.Error(error.message ?: Textos.get(R.string.update_check_failed))
             }
             .isSuccess
     }
