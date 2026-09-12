@@ -27,11 +27,14 @@ import com.unistack.app.feature_terms.data.local.AcademicTermDao
 import com.unistack.app.feature_terms.data.local.AcademicTermEntity
 import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
 
+import com.unistack.app.feature_tasks.data.local.TaskSubtaskEntity
+
 @Database(
     entities = [
         SubjectEntity::class,
         GradeEntity::class,
         TaskEntity::class,
+        TaskSubtaskEntity::class,
         ExpenseEntity::class,
         AcademicWorkEntity::class,
         ClassSessionEntity::class,
@@ -42,7 +45,7 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         NoteEntity::class,
         NoteAttachmentEntity::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -481,6 +484,31 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Subtareas de una tarea.
+         *
+         * Permite desglosar una tarea en pasos interactivos con orden explícito y estado de completitud.
+         */
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS task_subtasks (
+                        id TEXT NOT NULL,
+                        taskId TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        isCompleted INTEGER NOT NULL DEFAULT 0,
+                        position INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY(id),
+                        FOREIGN KEY(taskId) REFERENCES tasks(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_task_subtasks_taskId ON task_subtasks(taskId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_task_subtasks_position ON task_subtasks(position)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -514,7 +542,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_17_18,
             MIGRATION_18_19,
             MIGRATION_19_20,
-            MIGRATION_20_21
+            MIGRATION_20_21,
+            MIGRATION_21_22
         )
     }
 }

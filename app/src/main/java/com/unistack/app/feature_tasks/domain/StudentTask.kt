@@ -15,7 +15,16 @@ data class StudentTask(
     val cutId: String? = null,
     val gradingStatus: TaskGradingStatus = TaskGradingStatus.UNDECIDED,
     val linkedGradeId: String? = null,
-    val completedAt: Long? = null
+    val completedAt: Long? = null,
+    val subtasks: List<TaskSubtask> = emptyList()
+)
+
+data class TaskSubtask(
+    val id: String,
+    val taskId: String,
+    val title: String,
+    val isCompleted: Boolean,
+    val position: Int
 )
 
 enum class TaskGradingStatus {
@@ -42,4 +51,22 @@ enum class TaskType {
     PROJECT,
     READING,
     OTHER
+}
+
+/**
+ * Determina si el tipo de tarea habitualmente se evalúa / califica en la universidad.
+ * Taller, examen, ensayo, exposición, investigación, quiz y proyecto se califican.
+ * Lectura, práctica y otros no preguntan por nota.
+ */
+fun TaskType.isGradable(): Boolean = when (this) {
+    TaskType.WORKSHOP,
+    TaskType.EXAM,
+    TaskType.ESSAY,
+    TaskType.PRESENTATION,
+    TaskType.RESEARCH,
+    TaskType.TEST,
+    TaskType.PROJECT -> true
+    TaskType.PRACTICE,
+    TaskType.READING,
+    TaskType.OTHER -> false
 }

@@ -311,6 +311,19 @@ private class FakeTasksRepository : TasksRepository {
     override fun setTaskCompleted(taskId: String, completed: Boolean) {
         state.value = state.value.map { if (it.id == taskId) it.copy(completed = completed) else it }
     }
+    override fun toggleSubtask(taskId: String, subtaskId: String, completed: Boolean) {
+        state.value = state.value.map { task ->
+            if (task.id == taskId) {
+                task.copy(subtasks = task.subtasks.map { if (it.id == subtaskId) it.copy(isCompleted = completed) else it })
+            } else task
+        }
+    }
+    override fun postponeTask(taskId: String, newDueDateMillis: Long) {
+        state.value = state.value.map { if (it.id == taskId) it.copy(dueDateMillis = newDueDateMillis) else it }
+    }
+    override fun setGradingStatus(taskId: String, status: com.unistack.app.feature_tasks.domain.TaskGradingStatus, linkedGradeId: String?) {
+        state.value = state.value.map { if (it.id == taskId) it.copy(gradingStatus = status, linkedGradeId = linkedGradeId) else it }
+    }
 }
 
 private class FakeExpensesRepository : ExpensesRepository {

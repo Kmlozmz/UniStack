@@ -374,6 +374,33 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationTwentyToTwentyOneAddsClosedPeriodIdsJsonColumn() {
+        val database = createDatabaseWithSchema(version = 20)
+
+        UniStackDatabase.MIGRATION_20_21.migrate(database)
+
+        assertTrue(database.hasColumn("subjects", "closedPeriodIdsJson"))
+        database.close()
+    }
+
+    @Test
+    fun migrationTwentyOneToTwentyTwoCreatesTaskSubtasksTableAndIndexes() {
+        val database = createDatabaseWithSchema(version = 21)
+
+        UniStackDatabase.MIGRATION_21_22.migrate(database)
+
+        assertTrue(database.hasTable("task_subtasks"))
+        assertTrue(database.hasColumn("task_subtasks", "id"))
+        assertTrue(database.hasColumn("task_subtasks", "taskId"))
+        assertTrue(database.hasColumn("task_subtasks", "title"))
+        assertTrue(database.hasColumn("task_subtasks", "isCompleted"))
+        assertTrue(database.hasColumn("task_subtasks", "position"))
+        assertTrue(database.hasIndex("index_task_subtasks_taskId"))
+        assertTrue(database.hasIndex("index_task_subtasks_position"))
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -426,6 +453,8 @@ class RoomMigrationTest {
         if (targetVersion >= 18) UniStackDatabase.MIGRATION_17_18.migrate(db)
         if (targetVersion >= 19) UniStackDatabase.MIGRATION_18_19.migrate(db)
         if (targetVersion >= 20) UniStackDatabase.MIGRATION_19_20.migrate(db)
+        if (targetVersion >= 21) UniStackDatabase.MIGRATION_20_21.migrate(db)
+        if (targetVersion >= 22) UniStackDatabase.MIGRATION_21_22.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

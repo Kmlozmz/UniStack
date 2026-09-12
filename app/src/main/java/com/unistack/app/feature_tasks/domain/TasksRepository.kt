@@ -9,4 +9,7 @@ interface TasksRepository {
     fun updateTask(task: StudentTask)
     fun deleteTask(taskId: String)
     fun setTaskCompleted(taskId: String, completed: Boolean)
+    fun toggleSubtask(taskId: String, subtaskId: String, completed: Boolean)
+    fun postponeTask(taskId: String, newDueDateMillis: Long)
+    fun setGradingStatus(taskId: String, status: TaskGradingStatus, linkedGradeId: String? = null)
 }

@@ -36,7 +36,7 @@ class RoomTasksRepository(
     override val tasks: StateFlow<List<StudentTask>> = userRepository.currentUser
         .map { UserIds.storageIdsFor(it.userId) }
         .flatMapLatest { ids ->
-            taskDao.observeTasksForUsers(ids).map { entities ->
+            taskDao.observeTasksWithSubtasks(ids).map { entities ->
                 entities.map { it.toDomain() }
             }
         }
@@ -48,7 +48,8 @@ class RoomTasksRepository(
 
     override fun addTask(task: StudentTask) {
         scope.launch {
-            taskDao.insertTask(task.toEntity(userId))
+            val subtaskEntities = task.subtasks.map { it.toEntity() }
+            taskDao.insertTaskWithSubtasks(task.toEntity(userId), subtaskEntities)
         }
     }
 
@@ -71,6 +72,11 @@ class RoomTasksRepository(
                 completedAt = task.completedAt,
                 updatedAt = System.currentTimeMillis()
             )
+            val subtaskEntities = task.subtasks.map { it.toEntity() }
+            taskDao.deleteSubtasksByTaskId(task.id)
+            if (subtaskEntities.isNotEmpty()) {
+                taskDao.insertSubtasks(subtaskEntities)
+            }
         }
     }
 
@@ -89,6 +95,24 @@ class RoomTasksRepository(
                 completedAt = if (completed) System.currentTimeMillis() else null,
                 updatedAt = System.currentTimeMillis()
             )
+        }
+    }
+
+    override fun toggleSubtask(taskId: String, subtaskId: String, completed: Boolean) {
+        scope.launch {
+            taskDao.updateSubtaskCompleted(subtaskId, completed)
+        }
+    }
+
+    override fun postponeTask(taskId: String, newDueDateMillis: Long) {
+        scope.launch {
+            taskDao.updateDueDate(taskId, userIds, newDueDateMillis, System.currentTimeMillis())
+        }
+    }
+
+    override fun setGradingStatus(taskId: String, status: com.unistack.app.feature_tasks.domain.TaskGradingStatus, linkedGradeId: String?) {
+        scope.launch {
+            taskDao.updateGradingStatus(taskId, userIds, status.name, linkedGradeId, System.currentTimeMillis())
         }
     }
 }

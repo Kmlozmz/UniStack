@@ -30,7 +30,42 @@ class InMemoryTasksRepository : TasksRepository {
     override fun setTaskCompleted(taskId: String, completed: Boolean) {
         _tasks.update { current ->
             current.map { task ->
-                if (task.id == taskId) task.copy(completed = completed) else task
+                if (task.id == taskId) {
+                    task.copy(
+                        completed = completed,
+                        completedAt = if (completed) System.currentTimeMillis() else null
+                    )
+                } else task
+            }
+        }
+    }
+
+    override fun toggleSubtask(taskId: String, subtaskId: String, completed: Boolean) {
+        _tasks.update { current ->
+            current.map { task ->
+                if (task.id == taskId) {
+                    task.copy(
+                        subtasks = task.subtasks.map { sub ->
+                            if (sub.id == subtaskId) sub.copy(isCompleted = completed) else sub
+                        }
+                    )
+                } else task
+            }
+        }
+    }
+
+    override fun postponeTask(taskId: String, newDueDateMillis: Long) {
+        _tasks.update { current ->
+            current.map { task ->
+                if (task.id == taskId) task.copy(dueDateMillis = newDueDateMillis) else task
+            }
+        }
+    }
+
+    override fun setGradingStatus(taskId: String, status: com.unistack.app.feature_tasks.domain.TaskGradingStatus, linkedGradeId: String?) {
+        _tasks.update { current ->
+            current.map { task ->
+                if (task.id == taskId) task.copy(gradingStatus = status, linkedGradeId = linkedGradeId) else task
             }
         }
     }

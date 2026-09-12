@@ -3,7 +3,34 @@ package com.unistack.app.feature_tasks.data.local
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
+import com.unistack.app.feature_tasks.domain.TaskSubtask
 import com.unistack.app.feature_tasks.domain.TaskType
+
+fun TaskWithSubtasks.toDomain(): StudentTask {
+    return task.toDomain().copy(
+        subtasks = subtasks.sortedBy { it.position }.map { it.toDomain() }
+    )
+}
+
+fun TaskSubtaskEntity.toDomain(): TaskSubtask {
+    return TaskSubtask(
+        id = id,
+        taskId = taskId,
+        title = title,
+        isCompleted = isCompleted,
+        position = position
+    )
+}
+
+fun TaskSubtask.toEntity(): TaskSubtaskEntity {
+    return TaskSubtaskEntity(
+        id = id,
+        taskId = taskId,
+        title = title,
+        isCompleted = isCompleted,
+        position = position
+    )
+}
 
 fun TaskEntity.toDomain(): StudentTask {
     val parsedDifficulty = runCatching { TaskDifficulty.valueOf(difficulty) }
@@ -27,7 +54,8 @@ fun TaskEntity.toDomain(): StudentTask {
         gradingStatus = runCatching { TaskGradingStatus.valueOf(gradingStatus) }
             .getOrDefault(TaskGradingStatus.UNDECIDED),
         linkedGradeId = linkedGradeId,
-        completedAt = completedAt
+        completedAt = completedAt,
+        subtasks = emptyList()
     )
 }
 
