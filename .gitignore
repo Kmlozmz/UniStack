@@ -17,3 +17,6 @@ design-system/
 CONTEXTO.md
 PUBLICAR.md
 COMPILAR.md
+
+# Configuracion local del agente (launch.json apunta a rutas de esta maquina)
+.claude/
