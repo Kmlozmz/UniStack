@@ -18,7 +18,11 @@ import com.unistack.app.core.design.theme.hayMovimiento
  * para garantizar que la indicación respete fielmente el contorno del componente.
  */
 @Composable
-fun Modifier.cleanClickable(shape: Shape = RectangleShape, onClick: () -> Unit): Modifier {
+fun Modifier.cleanClickable(
+    shape: Shape = RectangleShape,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+): Modifier {
     val fuente = remember { MutableInteractionSource() }
     val enMovimiento = hayMovimiento()
 
@@ -27,6 +31,7 @@ fun Modifier.cleanClickable(shape: Shape = RectangleShape, onClick: () -> Unit):
         .clickable(
             interactionSource = fuente,
             indication = if (enMovimiento) LocalIndication.current else null,
+            enabled = enabled,
             onClick = onClick
         )
 }

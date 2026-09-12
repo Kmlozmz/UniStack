@@ -47,11 +47,13 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -183,7 +185,6 @@ fun TasksScreen(
     var taskIdPendingDelete by remember { mutableStateOf<String?>(null) }
     var selectedFilter by remember { mutableStateOf(TaskListFilter.ALL) }
     var selectedSubjectId by remember { mutableStateOf<String?>(null) }
-    var selectedDateOffset by remember { mutableStateOf<LocalDate?>(null) }
     var selectedPriority by remember { mutableStateOf<TaskDifficulty?>(null) }
     var sortOrder by remember { mutableStateOf(TaskSortOrder.DUE_DATE) }
     var showFiltersSheet by remember { mutableStateOf(false) }
@@ -273,18 +274,13 @@ fun TasksScreen(
 
     val today = remember { TaskDateUtils.today() }
     val monday = remember(today) { today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)) }
-    val weekDays = remember(monday) { (0..6).map { monday.plusDays(it.toLong()) } }
     val sunday = remember(monday) { monday.plusDays(6) }
 
-    val filteredTasks = remember(tasks, subjects, selectedFilter, selectedSubjectId, selectedDateOffset, selectedPriority, sortOrder, searchQuery) {
+    val filteredTasks = remember(tasks, subjects, selectedFilter, selectedSubjectId, selectedPriority, sortOrder, searchQuery) {
         val query = searchQuery.trim().lowercase(Locale.ROOT)
         tasks
             .filter { task -> selectedFilter.matches(task) }
             .filter { task -> selectedSubjectId == null || task.subjectId == selectedSubjectId }
-            .filter { task ->
-                if (selectedDateOffset == null) true
-                else TaskDateUtils.fromMillis(task.dueDateMillis) == selectedDateOffset
-            }
             .filter { task -> selectedPriority == null || task.difficulty == selectedPriority }
             .filter { task ->
                 if (query.isEmpty()) {
@@ -404,20 +400,6 @@ fun TasksScreen(
                 }
 
                 item {
-                    SemanaTira(
-                        weekDays = weekDays,
-                        today = today,
-                        selectedDate = selectedDateOffset,
-                        tasks = tasks,
-                        onSelectDate = { date ->
-                            clearSearchFocus()
-                            selectedDateOffset = if (selectedDateOffset == date) null else date
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
                     RielMaterias(
                         subjects = subjects,
                         tasks = tasks,
@@ -427,7 +409,7 @@ fun TasksScreen(
                             selectedSubjectId = subjectId
                         }
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
                 item {
@@ -436,13 +418,12 @@ fun TasksScreen(
                         selectedSubjectName = selectedSubjectName,
                         selectedPriority = selectedPriority,
                         sortOrder = sortOrder,
-                        selectedDate = selectedDateOffset,
                         onClick = {
                             clearSearchFocus()
                             showFiltersSheet = true
                         }
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
 
@@ -452,44 +433,6 @@ fun TasksScreen(
                 }
                 filteredTasks.isEmpty() -> item {
                     FilteredEmptyState(onOpenFilters = { showFiltersSheet = true })
-                }
-                selectedDateOffset != null -> {
-                    val dayActive = activeTasks
-                    val dayDone = completedTasks
-                    if (dayActive.isNotEmpty()) {
-                        item { SectionTitle(formatDueDayTitle(selectedDateOffset!!, today), dayActive.size) }
-                        itemsIndexed(dayActive, key = { _, it -> it.id }) { indice, task ->
-                            TaskRowItem(
-                                indice = indice,
-                                task = task,
-                                subjects = subjects,
-                                today = today,
-                                onCheckedChange = { onTaskChecked(task, it) },
-                                onClick = {
-                                    clearSearchFocus()
-                                    selectedTaskIdForSheet = task.id
-                                },
-                                onDelete = { taskIdPendingDelete = task.id }
-                            )
-                        }
-                    }
-                    if (dayDone.isNotEmpty()) {
-                        item { SectionTitle(stringResource(R.string.tasks_group_done), dayDone.size) }
-                        itemsIndexed(dayDone, key = { _, it -> it.id }) { indice, task ->
-                            TaskRowItem(
-                                indice = indice,
-                                task = task,
-                                subjects = subjects,
-                                today = today,
-                                onCheckedChange = { onTaskChecked(task, it) },
-                                onClick = {
-                                    clearSearchFocus()
-                                    selectedTaskIdForSheet = task.id
-                                },
-                                onDelete = { taskIdPendingDelete = task.id }
-                            )
-                        }
-                    }
                 }
                 else -> {
                     // Pinned Entregadas sin nota
@@ -850,6 +793,7 @@ fun TasksScreen(
     if (showFiltersSheet) {
         TasksFilterBottomSheet(
             subjects = subjects,
+            tasks = tasks,
             selectedStatus = selectedFilter,
             selectedSubjectId = selectedSubjectId,
             selectedPriority = selectedPriority,
@@ -862,7 +806,6 @@ fun TasksScreen(
                 selectedFilter = TaskListFilter.ALL
                 selectedSubjectId = null
                 selectedPriority = null
-                selectedDateOffset = null
                 sortOrder = TaskSortOrder.DUE_DATE
             },
             onDismiss = { showFiltersSheet = false }
@@ -1242,88 +1185,8 @@ fun OutcomeWaveRing(
 }
 
 /**
- * Tira de los 7 días de la semana (Lunes a Domingo) con puntos de actividad.
- * Propuesta D: contenedor base #171C24, seleccionado #E8EBF3 con texto #0A0C11,
- * hoy sin seleccionar resalta el número en acento #7F77DD.
- */
-@Composable
-private fun SemanaTira(
-    weekDays: List<LocalDate>,
-    today: LocalDate,
-    selectedDate: LocalDate?,
-    tasks: List<StudentTask>,
-    onSelectDate: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        weekDays.forEach { date ->
-            val isToday = date == today
-            val isSelected = selectedDate == date
-            val dayTasks = tasks.filter { TaskDateUtils.fromMillis(it.dueDateMillis) == date }
-
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .cleanClickable { onSelectDate(date) },
-                shape = RoundedCornerShape(14.dp),
-                color = if (isSelected) Color(0xFFE8EBF3) else Color(0xFF171C24)
-            ) {
-                Column(
-                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val dayInitial = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()).uppercase()
-                    Text(
-                        text = dayInitial,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 0.8.sp,
-                        color = if (isSelected) Color(0xFF0A0C11).copy(alpha = 0.75f) else Color(0xFF98A2B7)
-                    )
-                    Text(
-                        text = "${date.dayOfMonth}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = when {
-                            isSelected -> Color(0xFF0A0C11)
-                            isToday -> Color(0xFF7F77DD)
-                            else -> Color(0xFFE8EBF3)
-                        }
-                    )
-                    Row(
-                        modifier = Modifier.height(5.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val dotsToShow = dayTasks.take(3)
-                        dotsToShow.forEach { task ->
-                            val dotColor = when {
-                                isSelected -> Color(0xFF0A0C11)
-                                !task.completed && date.isBefore(today) -> Color(0xFFFF5340)
-                                !task.completed -> Color(0xFF7F77DD)
-                                else -> Color(0xFF98A2B7).copy(alpha = 0.35f)
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(5.dp)
-                                    .clip(CircleShape)
-                                    .background(dotColor)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
  * Riel horizontal deslizable de materias con chip «Todas» y contadores por materia.
- * Propuesta D: píldoras #1C222D con texto #98A2B7; seleccionada en #E8EBF3 con texto #0A0C11.
+ * Píldoras CircleShape con recorte exacto contra sangrado de ripple.
  */
 @Composable
 private fun RielMaterias(
@@ -1345,9 +1208,11 @@ private fun RielMaterias(
         val isAllSelected = selectedSubjectId == null
 
         Surface(
-            modifier = Modifier.cleanClickable { onSelectSubject(null) },
+            modifier = Modifier.cleanClickable(shape = CircleShape) { onSelectSubject(null) },
             shape = CircleShape,
-            color = if (isAllSelected) Color(0xFFE8EBF3) else Color(0xFF1C222D)
+            color = if (isAllSelected) Color(0xFFE8EBF3) else Color(0xFF1C222D),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp),
@@ -1376,11 +1241,13 @@ private fun RielMaterias(
             val shortName = subject.name.split(" ").firstOrNull() ?: subject.name
 
             Surface(
-                modifier = Modifier.cleanClickable {
+                modifier = Modifier.cleanClickable(shape = CircleShape) {
                     onSelectSubject(if (isSelected) null else subject.id)
                 },
                 shape = CircleShape,
-                color = if (isSelected) Color(0xFFE8EBF3) else Color(0xFF1C222D)
+                color = if (isSelected) Color(0xFFE8EBF3) else Color(0xFF1C222D),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp),
@@ -1411,6 +1278,7 @@ private fun RielMaterias(
     }
 }
 
+
 /**
  * Fila de tarea de la Propuesta D envuelta en [FilaDeslizable] para borrar.
  * Si es «Entregadas sin nota» renderiza [TarjetaAwaitingGrade] (tarjetaA con acento-c y píldora blanca).
@@ -1439,7 +1307,7 @@ private fun LazyItemScope.TaskRowItem(
             modifier = modifier
                 .then(reacomodoDeLista())
                 .entradaDeLista(indice)
-                .padding(bottom = 7.dp)
+                .padding(bottom = 8.dp)
         ) {
             TarjetaAwaitingGrade(
                 task = task,
@@ -1451,33 +1319,26 @@ private fun LazyItemScope.TaskRowItem(
     } else {
         FilaDeslizable(
             onBorrar = onDelete,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
             modifier = modifier
                 .then(reacomodoDeLista())
                 .entradaDeLista(indice)
                 .latidoDeVencido(activo = isOverdue)
+                .padding(bottom = 8.dp)
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                if (indice > 0) {
-                    HorizontalDivider(
-                        thickness = 1.dp,
-                        color = Color(0xFF262E3B)
-                    )
-                }
-                FilaTarea(
-                    task = task,
-                    subject = subject,
-                    today = today,
-                    onCheckedChange = onCheckedChange,
-                    onClick = onClick
-                )
-            }
+            FilaTarea(
+                task = task,
+                subject = subject,
+                today = today,
+                onCheckedChange = onCheckedChange,
+                onClick = onClick
+            )
         }
     }
 }
 
 /**
- * Tarjeta destacada de la Propuesta D exclusivamente para «Entregadas sin nota» (tarjetaA).
+ * Tarjeta destacada exclusivamente para «Entregadas sin nota» (tarjetaA).
  * Contenedor tonal acento-c (#2E2A6B), esquinas 20dp, píldora blanca semitransparente (#FFFFFF al 14%)
  * y punto de prioridad.
  */
@@ -1492,22 +1353,25 @@ private fun TarjetaAwaitingGrade(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .cleanClickable(onClick = onClick),
+            .cleanClickable(shape = RoundedCornerShape(20.dp), onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        color = Color(0xFF2E2A6B)
+        color = Color(0xFF2E2A6B),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier.padding(start = 12.dp, top = 13.dp, end = 14.dp, bottom = 13.dp),
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = RoundedCornerShape(6.dp),
                 color = Color(0xFF7F77DD),
                 border = BorderStroke(2.dp, Color(0xFF7F77DD)),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
                 modifier = Modifier
-                    .padding(top = 2.dp)
                     .size(22.dp)
-                    .cleanClickable { onCheckedChange(false) }
+                    .cleanClickable(shape = RoundedCornerShape(6.dp)) { onCheckedChange(false) }
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Check,
@@ -1533,51 +1397,96 @@ private fun TarjetaAwaitingGrade(
 
                 Spacer(modifier = Modifier.height(3.dp))
 
-                val subtitleText = buildString {
-                    append(subject?.name ?: stringResource(R.string.tasks_no_subject))
-                    append(" · ")
-                    append(task.type.label())
-                    if (task.estimatedMinutes > 0) {
-                        append(" · ")
-                        append(TaskDateUtils.estimatedTimeText(task.estimatedMinutes))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (subject != null) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(subjectAccent(subject))
+                        )
+                        Spacer(modifier = Modifier.width(1.dp))
                     }
+                    val subtitleText = buildString {
+                        append(subject?.name ?: stringResource(R.string.tasks_no_subject))
+                        append(" · ")
+                        append(task.type.label())
+                        if (task.estimatedMinutes > 0) {
+                            append(" · ")
+                            append(TaskDateUtils.estimatedTimeText(task.estimatedMinutes))
+                        }
+                    }
+                    Text(
+                        text = subtitleText,
+                        fontSize = 11.5.sp,
+                        color = Color(0xFFE2DFFF).copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
                     if (task.subtasks.isNotEmpty()) {
                         val doneCount = task.subtasks.count { it.isCompleted }
-                        append(" · $doneCount/${task.subtasks.size}")
+                        val fraction = (doneCount.toFloat() / task.subtasks.size).coerceIn(0f, 1f)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(28.dp)
+                                .height(4.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(fraction)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE2DFFF))
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "$doneCount/${task.subtasks.size}",
+                            fontSize = 10.5.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = Color(0xFFE2DFFF).copy(alpha = 0.9f),
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
-                Text(
-                    text = subtitleText,
-                    fontSize = 11.5.sp,
-                    color = Color(0xFFE2DFFF).copy(alpha = 0.8f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(top = 2.dp)
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.14f)
+                    color = Color.White.copy(alpha = 0.14f),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
                     Text(
                         text = stringResource(R.string.tasks_pill_awaiting_grade),
                         modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFE2DFFF)
+                        color = Color(0xFFE2DFFF),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
 
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(7.dp)
                         .clip(CircleShape)
                         .background(task.difficulty.color())
                 )
@@ -1587,8 +1496,8 @@ private fun TarjetaAwaitingGrade(
 }
 
 /**
- * Fila de lista de la Propuesta D (filaBC): fondo transparente, separador fino (1dp #262E3B),
- * casilla cuadrada suave, punto de la materia en el subtítulo, y píldora tonal de fecha / nota / hecha.
+ * Tarjeta individual para tareas (Propuesta D con separación y tarjeta individual).
+ * Fondo #171C24, esquinas 18dp, casilla cuadrada 6dp, subtítulo fluido y columna de estado y prioridad a la derecha.
  */
 @Composable
 private fun FilaTarea(
@@ -1607,12 +1516,14 @@ private fun FilaTarea(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .cleanClickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.Transparent
+            .cleanClickable(shape = RoundedCornerShape(18.dp), onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xFF171C24),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
+            modifier = Modifier.padding(start = 12.dp, top = 13.dp, end = 14.dp, bottom = 13.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Casilla de M3 cuadrada suave (6dp)
@@ -1623,9 +1534,11 @@ private fun FilaTarea(
                     width = 2.dp,
                     color = if (task.completed) Color(0xFF7F77DD) else Color(0xFF6C7689)
                 ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
                 modifier = Modifier
                     .size(22.dp)
-                    .cleanClickable { onCheckedChange(!task.completed) }
+                    .cleanClickable(shape = RoundedCornerShape(6.dp)) { onCheckedChange(!task.completed) }
             ) {
                 if (task.completed) {
                     Icon(
@@ -1690,16 +1603,17 @@ private fun FilaTarea(
                         fontSize = 11.5.sp,
                         color = subtitleColor,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
 
                     if (task.subtasks.isNotEmpty()) {
                         val doneCount = task.subtasks.count { it.isCompleted }
-                        val fraction = doneCount.toFloat() / task.subtasks.size
-                        Spacer(modifier = Modifier.width(3.dp))
+                        val fraction = (doneCount.toFloat() / task.subtasks.size).coerceIn(0f, 1f)
+                        Spacer(modifier = Modifier.width(4.dp))
                         Box(
                             modifier = Modifier
-                                .width(34.dp)
+                                .width(28.dp)
                                 .height(4.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFF232B37))
@@ -1717,7 +1631,9 @@ private fun FilaTarea(
                             text = "$doneCount/${task.subtasks.size}",
                             fontSize = 10.5.sp,
                             fontFamily = FontFamily.Monospace,
-                            color = subtitleColor
+                            color = subtitleColor,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -1725,90 +1641,131 @@ private fun FilaTarea(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Píldora o texto según estado
-            when {
-                isGraded -> {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFF0A5C23)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.tasks_detail_graded_label),
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFB4F2C4)
-                        )
+            // Trailing column: Pill on top, priority dot below
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                when {
+                    isGraded -> {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF0A5C23),
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {
+                            Text(
+                                text = stringResource(R.string.tasks_detail_graded_label),
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFB4F2C4),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
                     }
-                }
-                task.completed -> {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFF0A5C23)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.tasks_pill_done),
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFB4F2C4)
-                        )
+                    task.completed -> {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF0A5C23),
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {
+                            Text(
+                                text = stringResource(R.string.tasks_pill_done),
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFB4F2C4),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
                     }
-                }
-                isOverdue -> {
-                    val diffDays = ChronoUnit.DAYS.between(dueDate, today)
-                    val text = when (diffDays) {
-                        1L -> stringResource(R.string.due_overdue_yesterday)
-                        else -> stringResource(R.string.due_overdue_days_ago, diffDays)
+                    isOverdue -> {
+                        val diffDays = ChronoUnit.DAYS.between(dueDate, today)
+                        val text = when (diffDays) {
+                            1L -> stringResource(R.string.due_overdue_yesterday)
+                            else -> stringResource(R.string.due_overdue_days_ago, diffDays)
+                        }
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF8C1F0A),
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {
+                            Text(
+                                text = text,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFFFDCD5),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
                     }
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFF8C1F0A)
-                    ) {
+                    isToday -> {
+                        val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
+                            " " + formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
+                        } else ""
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF6B4E00),
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {
+                            Text(
+                                text = stringResource(R.string.tasks_due_today) + timeStr,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFFFE29E),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+                    else -> {
+                        val diffDays = ChronoUnit.DAYS.between(today, dueDate)
+                        val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
+                            " " + formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
+                        } else ""
+                        val text = when {
+                            diffDays == 1L -> "Mañana$timeStr"
+                            diffDays in 2L..6L -> {
+                                val dayName = dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.uppercase() }
+                                "$dayName$timeStr"
+                            }
+                            else -> {
+                                val monthName = dueDate.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())
+                                "${dueDate.dayOfMonth} $monthName$timeStr"
+                            }
+                        }
                         Text(
                             text = text,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFFFDCD5)
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF98A2B7),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
-                isToday -> {
-                    val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
-                        " " + formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
-                    } else ""
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFF6B4E00)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.tasks_due_today) + timeStr,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFFFE29E)
-                        )
-                    }
-                }
-                else -> {
-                    val diffDays = ChronoUnit.DAYS.between(today, dueDate)
-                    val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
-                        formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
-                    } else ""
-                    val text = when {
-                        diffDays == 1L -> "Mañana" + if (timeStr.isNotEmpty()) " $timeStr" else ""
-                        diffDays in 2L..6L -> {
-                            val dayName = dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.uppercase() }
-                            "$dayName" + if (timeStr.isNotEmpty()) " $timeStr" else ""
-                        }
-                        else -> formatTaskDueText(task.dueDateMillis)
-                    }
-                    Text(
-                        text = text,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF98A2B7)
+
+                if (!task.completed) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when (task.difficulty) {
+                                    TaskDifficulty.EASY -> Color(0xFF43A047)
+                                    TaskDifficulty.MEDIUM -> Color(0xFFFB8C00)
+                                    TaskDifficulty.HARD -> Color(0xFFE53935)
+                                }
+                            )
                     )
                 }
             }
@@ -3098,27 +3055,26 @@ private fun TaskFilterSummaryChip(
     selectedSubjectName: String?,
     selectedPriority: TaskDifficulty?,
     sortOrder: TaskSortOrder,
-    selectedDate: LocalDate?,
     onClick: () -> Unit
 ) {
     val isFilterActive = selectedStatus != TaskListFilter.ALL ||
         selectedSubjectName != null ||
         selectedPriority != null ||
-        sortOrder != TaskSortOrder.DUE_DATE ||
-        selectedDate != null
+        sortOrder != TaskSortOrder.DUE_DATE
 
     val label = filterSummaryLabel(
         selectedStatus = selectedStatus,
         selectedSubjectName = selectedSubjectName,
         selectedPriority = selectedPriority,
-        sortOrder = sortOrder,
-        selectedDate = selectedDate
+        sortOrder = sortOrder
     )
 
     Surface(
-        modifier = Modifier.cleanClickable(onClick = onClick),
+        modifier = Modifier.cleanClickable(shape = CircleShape, onClick = onClick),
         shape = CircleShape,
-        color = if (isFilterActive) Color(0xFF2E2A6B) else Color(0xFF1C222D)
+        color = if (isFilterActive) Color(0xFF2E2A6B) else Color(0xFF1C222D),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp),
@@ -3287,6 +3243,7 @@ private fun NewTaskFab(
 @Composable
 private fun TasksFilterBottomSheet(
     subjects: List<Subject>,
+    tasks: List<StudentTask>,
     selectedStatus: TaskListFilter,
     selectedSubjectId: String?,
     selectedPriority: TaskDifficulty?,
@@ -3298,6 +3255,17 @@ private fun TasksFilterBottomSheet(
     onClear: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val activeFiltersCount = (if (selectedStatus != TaskListFilter.ALL) 1 else 0) +
+        (if (selectedSubjectId != null) 1 else 0) +
+        (if (selectedPriority != null) 1 else 0) +
+        (if (sortOrder != TaskSortOrder.DUE_DATE) 1 else 0)
+
+    val filteredCount = tasks.count { task ->
+        selectedStatus.matches(task) &&
+            (selectedSubjectId == null || task.subjectId == selectedSubjectId) &&
+            (selectedPriority == null || task.difficulty == selectedPriority)
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
@@ -3321,7 +3289,10 @@ private fun TasksFilterBottomSheet(
                 .padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            FiltersSheetHeader(onClear = onClear)
+            FiltersSheetHeader(
+                activeFiltersCount = activeFiltersCount,
+                onClear = onClear
+            )
 
             Column(
                 modifier = Modifier
@@ -3331,54 +3302,85 @@ private fun TasksFilterBottomSheet(
             ) {
                 FilterSheetSection(title = stringResource(R.string.tasks_status_title)) {
                     StatusFilterGrid(
+                        tasks = tasks,
                         selectedStatus = selectedStatus,
                         onStatusSelected = onStatusSelected
                     )
                 }
 
-                SubjectDropdownSelector(
+                SubjectFilterSection(
                     subjects = subjects,
+                    tasks = tasks,
                     selectedSubjectId = selectedSubjectId,
                     onSubjectSelected = onSubjectSelected
                 )
 
-                FilterSheetSection(title = stringResource(R.string.tasks_priority_title)) {
-                    PrioritySegmentedControl(
-                        selectedPriority = selectedPriority,
-                        onPrioritySelected = onPrioritySelected
-                    )
-                }
+                PriorityFilterSection(
+                    selectedPriority = selectedPriority,
+                    onPrioritySelected = onPrioritySelected
+                )
 
-                FilterSheetSection(title = stringResource(R.string.tasks_sort_title)) {
-                    SortRadioGroup(
-                        selected = sortOrder,
-                        onSelected = onSortSelected
-                    )
-                }
+                SortFilterSection(
+                    sortOrder = sortOrder,
+                    onSortSelected = onSortSelected
+                )
             }
 
-            FiltersSheetFooter(onDismiss = onDismiss)
+            FiltersSheetFooter(
+                tasksCount = filteredCount,
+                onDismiss = onDismiss
+            )
         }
     }
 }
 
 @Composable
-private fun FiltersSheetHeader(onClear: () -> Unit) {
+private fun FiltersSheetHeader(
+    activeFiltersCount: Int,
+    onClear: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Icon(
+            imageVector = Icons.Rounded.Tune,
+            contentDescription = null,
+            tint = Color(0xFF7F77DD),
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = stringResource(R.string.tasks_filter_title),
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.headlineSmall,
+            color = Color(0xFFE8EBF3),
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold
         )
-        TextButton(onClick = onClear) {
+        if (activeFiltersCount > 0) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Surface(
+                shape = CircleShape,
+                color = Color(0xFF2E2A6B),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Text(
+                    text = "$activeFiltersCount",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    color = Color(0xFFE2DFFF),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        TextButton(
+            onClick = onClear,
+            shape = CircleShape
+        ) {
             Text(
                 text = stringResource(R.string.tasks_filter_clear),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.78f),
+                color = if (activeFiltersCount > 0) Color(0xFF7F77DD) else Color(0xFF98A2B7).copy(alpha = 0.5f),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -3393,10 +3395,11 @@ private fun FilterSheetSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.ExtraBold
+            text = title.uppercase(Locale.getDefault()),
+            color = Color(0xFF98A2B7),
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.2.sp
         )
         content()
     }
@@ -3404,23 +3407,85 @@ private fun FilterSheetSection(
 
 @Composable
 private fun StatusFilterGrid(
+    tasks: List<StudentTask>,
     selectedStatus: TaskListFilter,
     onStatusSelected: (TaskListFilter) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        visibleStatusFilters.chunked(2).forEach { rowItems ->
+    val today = remember { TaskDateUtils.today() }
+    val options = listOf(
+        Triple(TaskListFilter.ALL, stringResource(R.string.tasks_status_all), Color(0xFF7F77DD)),
+        Triple(TaskListFilter.PENDING, stringResource(R.string.tasks_tab_pending), Color(0xFFFFB800)),
+        Triple(TaskListFilter.COMPLETED, stringResource(R.string.tasks_tab_completed), Color(0xFF43A047)),
+        Triple(TaskListFilter.OVERDUE, stringResource(R.string.tasks_tab_overdue), Color(0xFFE53935))
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.chunked(2).forEach { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                rowItems.forEach { filter ->
-                    StatusFilterOption(
-                        label = filter.label,
-                        icon = filter.icon(),
-                        selected = selectedStatus == filter,
-                        onClick = { onStatusSelected(filter) },
-                        modifier = Modifier.weight(1f)
-                    )
+                rowItems.forEach { (filter, label, accentColor) ->
+                    val count = when (filter) {
+                        TaskListFilter.ALL -> tasks.size
+                        TaskListFilter.PENDING -> tasks.count { !it.completed }
+                        TaskListFilter.COMPLETED -> tasks.count { it.completed }
+                        TaskListFilter.OVERDUE -> tasks.count { !it.completed && TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today) }
+                    }
+                    val isSelected = selectedStatus == filter
+
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .cleanClickable(shape = RoundedCornerShape(16.dp)) { onStatusSelected(filter) },
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) accentColor.copy(alpha = 0.16f) else Color(0xFF171C24),
+                        border = BorderStroke(
+                            width = if (isSelected) 1.5.dp else 1.dp,
+                            color = if (isSelected) accentColor else Color(0xFF262E3B)
+                        ),
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = filter.icon(),
+                                contentDescription = null,
+                                tint = if (isSelected) accentColor else Color(0xFF98A2B7),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = label,
+                                color = if (isSelected) Color.White else Color(0xFFE8EBF3),
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = if (isSelected) accentColor.copy(alpha = 0.28f) else Color(0xFF232B37),
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
+                            ) {
+                                Text(
+                                    text = "$count",
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = if (isSelected) accentColor else Color(0xFF98A2B7)
+                                )
+                            }
+                        }
+                    }
                 }
                 if (rowItems.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
@@ -3431,126 +3496,117 @@ private fun StatusFilterGrid(
 }
 
 @Composable
-private fun StatusFilterOption(
-    label: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.cleanClickable(onClick = onClick),
-        shape = MaterialTheme.shapes.medium,
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = label,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.ExtraBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun SubjectDropdownSelector(
+private fun SubjectFilterSection(
     subjects: List<Subject>,
+    tasks: List<StudentTask>,
     selectedSubjectId: String?,
     onSubjectSelected: (String?) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val allSubjectsLabel = stringResource(R.string.tasks_all_subjects)
-    val selectedLabel = subjects.firstOrNull { it.id == selectedSubjectId }?.name ?: allSubjectsLabel
-
     FilterSheetSection(title = stringResource(R.string.tasks_field_subject)) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        val scrollState = rememberScrollState()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(scrollState),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val isAllSelected = selectedSubjectId == null
+            val allTasksCount = tasks.size
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .cleanClickable { expanded = !expanded },
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainer
+                modifier = Modifier.cleanClickable(shape = RoundedCornerShape(14.dp)) { onSubjectSelected(null) },
+                shape = RoundedCornerShape(14.dp),
+                color = if (isAllSelected) Color(0xFF2E2A6B) else Color(0xFF171C24),
+                border = BorderStroke(
+                    width = if (isAllSelected) 1.5.dp else 1.dp,
+                    color = if (isAllSelected) Color(0xFF7F77DD) else Color(0xFF262E3B)
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 14.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        tint = if (isAllSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                        modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = selectedLabel,
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = stringResource(R.string.tasks_all_subjects),
+                        fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = if (isAllSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7)
                     )
-                    Icon(
-                        imageVector = Icons.Rounded.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
-                        modifier = Modifier.size(19.dp)
-                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isAllSelected) Color(0xFF7F77DD).copy(alpha = 0.35f) else Color(0xFF232B37),
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp
+                    ) {
+                        Text(
+                            text = "$allTasksCount",
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (isAllSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7)
+                        )
+                    }
                 }
             }
 
-            if (expanded) {
+            subjects.forEach { subject ->
+                val isSelected = selectedSubjectId == subject.id
+                val subjectColor = subjectAccent(subject)
+                val subjectCount = tasks.count { it.subjectId == subject.id }
+
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.cleanClickable(shape = RoundedCornerShape(14.dp)) {
+                        onSubjectSelected(if (isSelected) null else subject.id)
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (isSelected) Color(0xFF2E2A6B) else Color(0xFF171C24),
+                    border = BorderStroke(
+                        width = if (isSelected) 1.5.dp else 1.dp,
+                        color = if (isSelected) Color(0xFF7F77DD) else Color(0xFF262E3B)
+                    ),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 240.dp)
-                            .verticalScroll(rememberScrollState())
-                            .padding(vertical = 6.dp)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        SubjectDropdownRow(
-                            label = allSubjectsLabel,
-                            selected = selectedSubjectId == null,
-                            onClick = {
-                                onSubjectSelected(null)
-                                expanded = false
-                            }
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(subjectColor)
                         )
-                        subjects.forEach { subject ->
-                            SubjectDropdownRow(
-                                label = subject.name,
-                                selected = selectedSubjectId == subject.id,
-                                onClick = {
-                                    onSubjectSelected(subject.id)
-                                    expanded = false
-                                }
+                        Text(
+                            text = subject.name,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) Color(0xFFE2DFFF) else Color(0xFFE8EBF3),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = if (isSelected) Color(0xFF7F77DD).copy(alpha = 0.35f) else Color(0xFF232B37),
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {
+                            Text(
+                                text = "$subjectCount",
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (isSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7)
                             )
                         }
                     }
@@ -3561,113 +3617,178 @@ private fun SubjectDropdownSelector(
 }
 
 @Composable
-private fun SubjectDropdownRow(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .cleanClickable(onClick = onClick)
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        if (selected) {
-            Icon(
-                imageVector = Icons.Rounded.Check,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun PrioritySegmentedControl(
+private fun PriorityFilterSection(
     selectedPriority: TaskDifficulty?,
     onPrioritySelected: (TaskDifficulty?) -> Unit
 ) {
-    UniSegmentedControl(
-        selected = selectedPriority,
-        options = listOf<Pair<TaskDifficulty?, String>>(
+    FilterSheetSection(title = stringResource(R.string.tasks_priority_title)) {
+        val options = listOf(
             null to stringResource(R.string.tasks_priority_all),
             TaskDifficulty.EASY to stringResource(R.string.tasks_priority_low),
             TaskDifficulty.MEDIUM to stringResource(R.string.tasks_priority_medium),
             TaskDifficulty.HARD to stringResource(R.string.tasks_priority_high)
-        ).map { (priority, label) ->
-            UniSegmentedOption(
-                value = priority,
-                label = label,
-                dotColor = priority?.color()
-            )
-        },
-        onSelected = onPrioritySelected,
-        modifier = Modifier.fillMaxWidth()
-    )
-}
+        )
 
-@Composable
-private fun SortRadioGroup(
-    selected: TaskSortOrder,
-    onSelected: (TaskSortOrder) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        TaskSortOrder.entries.forEach { option ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(42.dp)
-                    .cleanClickable { onSelected(option) },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = selected == option,
-                    onClick = { onSelected(option) },
-                    colors = RadioButtonDefaults.colors(
-                        selectedColor = MaterialTheme.colorScheme.primary,
-                        unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                )
-                Text(
-                    text = option.label,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            options.forEach { (priority, label) ->
+                val isSelected = selectedPriority == priority
+                val dotColor = when (priority) {
+                    TaskDifficulty.EASY -> Color(0xFF43A047)
+                    TaskDifficulty.MEDIUM -> Color(0xFFFB8C00)
+                    TaskDifficulty.HARD -> Color(0xFFE53935)
+                    null -> null
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .cleanClickable(shape = RoundedCornerShape(14.dp)) { onPrioritySelected(priority) },
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (isSelected) Color(0xFF2E2A6B) else Color(0xFF171C24),
+                    border = BorderStroke(
+                        width = if (isSelected) 1.5.dp else 1.dp,
+                        color = if (isSelected) Color(0xFF7F77DD) else Color(0xFF262E3B)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 11.dp, horizontal = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (dotColor != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(dotColor)
+                            )
+                        }
+                        Text(
+                            text = label,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun FiltersSheetFooter(onDismiss: () -> Unit) {
+private fun SortFilterSection(
+    sortOrder: TaskSortOrder,
+    onSortSelected: (TaskSortOrder) -> Unit
+) {
+    FilterSheetSection(title = stringResource(R.string.tasks_sort_title)) {
+        val options = listOf(
+            Pair(TaskSortOrder.DUE_DATE, Icons.Rounded.CalendarMonth),
+            Pair(TaskSortOrder.PRIORITY, Icons.Rounded.Flag),
+            Pair(TaskSortOrder.SUBJECT, Icons.AutoMirrored.Rounded.MenuBook),
+            Pair(TaskSortOrder.RECENT, Icons.Rounded.Schedule)
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            options.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowItems.forEach { (option, icon) ->
+                        val isSelected = sortOrder == option
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .cleanClickable(shape = RoundedCornerShape(14.dp)) { onSortSelected(option) },
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isSelected) Color(0xFF2E2A6B) else Color(0xFF171C24),
+                            border = BorderStroke(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) Color(0xFF7F77DD) else Color(0xFF262E3B)
+                            ),
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (isSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = option.label,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) Color.White else Color(0xFFE8EBF3),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = Color(0xFF7F77DD),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FiltersSheetFooter(
+    tasksCount: Int,
+    onDismiss: () -> Unit
+) {
     Button(
         shapes = UniStackButtonDefaults.shapes,
         onClick = onDismiss,
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(54.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+            containerColor = Color(0xFF7F77DD),
+            contentColor = Color(0xFF171040)
         )
     ) {
+        Icon(
+            imageVector = Icons.Rounded.Check,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
-            stringResource(R.string.tasks_filter_apply),
-            color = MaterialTheme.colorScheme.onPrimary,
-            fontWeight = FontWeight.ExtraBold
+            text = "${stringResource(R.string.tasks_filter_apply)} ($tasksCount)",
+            color = Color(0xFF171040),
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 15.sp
         )
     }
 }
@@ -3764,13 +3885,11 @@ private fun filterSummaryLabel(
     selectedStatus: TaskListFilter,
     selectedSubjectName: String?,
     selectedPriority: TaskDifficulty?,
-    sortOrder: TaskSortOrder,
-    selectedDate: LocalDate?
+    sortOrder: TaskSortOrder
 ): String {
     val activeFilters = buildList {
         if (selectedStatus != TaskListFilter.ALL) add(selectedStatus.label)
         selectedSubjectName?.let { add(it) }
-        selectedDate?.let { add(it.format(shortDateFormatter)) }
         selectedPriority?.let { add(it.shortLabel()) }
         if (sortOrder != TaskSortOrder.DUE_DATE) add(sortOrder.label)
     }

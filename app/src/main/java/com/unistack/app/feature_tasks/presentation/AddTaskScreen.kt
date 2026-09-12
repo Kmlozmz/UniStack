@@ -1227,6 +1227,7 @@ private fun SubtasksCard(
                     Box(
                         modifier = Modifier
                             .size(22.dp)
+                            .clip(RoundedCornerShape(6.dp))
                             .background(
                                 color = if (subtask.isCompleted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                                 else Color.Transparent,

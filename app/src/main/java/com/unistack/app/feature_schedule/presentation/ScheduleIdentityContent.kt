@@ -1560,7 +1560,7 @@ private fun SelectedDayPanel(
                 )
             }
         }
-        dayAgendaEvents.take(2).forEach { event ->
+        dayAgendaEvents.forEach { event ->
             IdentityAgendaRow(
                 kind = event.identityKindLabel(),
                 color = event.identityColor(),
@@ -1570,8 +1570,7 @@ private fun SelectedDayPanel(
                 onClick = { onAgendaEventClick(event) }
             )
         }
-        val remainingAfterEvents = (2 - dayAgendaEvents.size).coerceAtLeast(0)
-        daySessions.take(remainingAfterEvents).forEach { session ->
+        daySessions.forEach { session ->
             val subject = subjects.firstOrNull { it.id == session.subjectId }
             IdentityAgendaRow(
                 kind = "CLASE",
@@ -1583,26 +1582,16 @@ private fun SelectedDayPanel(
                 onClick = { onSessionClick(date, session) }
             )
         }
-        val remainingAfterClasses = (remainingAfterEvents - daySessions.size).coerceAtLeast(0)
-        dayTasks.take(remainingAfterClasses).forEach { task ->
+        dayTasks.forEach { task ->
             val subject = subjects.firstOrNull { it.id == task.subjectId }
             val isExam = task.type == TaskType.EXAM || task.type == TaskType.TEST
             IdentityAgendaRow(
                 kind = if (isExam) "EXAMEN" else "ENTREGA",
                 color = subject.identityColor(),
                 title = task.title,
-                detail = subject?.name ?: if (isExam) stringResource(R.string.schedule_identity_type_evaluation) else stringResource(R.string.schedule_identity_type_assignment),
+                detail = (subject?.name ?: if (isExam) stringResource(R.string.schedule_identity_type_evaluation) else stringResource(R.string.schedule_identity_type_assignment)) +
+                    "  •  " + task.identityTimeText(use24Hour),
                 onClick = { onTaskClick(task.id) }
-            )
-        }
-        val hidden = dayAgendaEvents.size + daySessions.size + dayTasks.size - 2
-        if (hidden > 0) {
-            Text(
-                stringResource(R.string.schedule_identity_more_events, hidden),
-                modifier = Modifier.padding(start = 6.dp),
-                color = IdentityAccent,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -1761,6 +1750,12 @@ private fun LocalDate.weekStartIdentity(): LocalDate = minusDays((dayOfWeek.valu
 private fun Long.dueLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
 
 private fun StudentTask.dueLocalDate(): LocalDate = dueDateMillis.dueLocalDate()
+
+private fun StudentTask.identityTimeText(use24Hour: Boolean): String {
+    val zone = ZoneId.systemDefault()
+    val localTime = Instant.ofEpochMilli(dueDateMillis).atZone(zone).toLocalTime()
+    return formatIdentityMinute(localTime.hour * 60 + localTime.minute, use24Hour)
+}
 
 private fun String.identityCapitalized(): String = replaceFirstChar {
     if (it.isLowerCase()) it.titlecase(IdentityLocale) else it.toString()
