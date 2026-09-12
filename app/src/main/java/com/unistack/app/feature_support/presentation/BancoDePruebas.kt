@@ -252,7 +252,7 @@ private fun LazyListScope.caraSimular(
 // ==================================================================== movimiento
 
 /**
- * Los doce gestos con sus variantes, cambiables sin salir de aquí.
+ * Los siete gestos con sus variantes, cambiables sin salir de aquí.
  *
  * Se recorre [MotionCatalog] en vez de escribirlos a mano: un gesto que se añada mañana
  * aparece solo, y uno que se retire desaparece. Es la misma lista que pinta Ajustes.
@@ -313,7 +313,7 @@ private fun LazyListScope.caraMovimiento(vm: BancoDePruebasViewModel) {
         }
     }
     seccion("Deshacer")
-    palanca("Movimiento de fábrica", "Los doce gestos a su valor original", suave = true) {
+    palanca("Movimiento de fábrica", "Los siete gestos a su valor original", suave = true) {
         vm.movimientoDeFabrica()
     }
 }

@@ -2429,37 +2429,25 @@ private fun NotasDelCorte(
 /**
  * Como entra una nota recien registrada, en **una sola** transicion.
  *
- * La variante sale de Movimiento, con los mismos nombres que ahi: la elegida por defecto es
- * «Desde el lado». Lo importante es que el desplazamiento y la apertura del hueco viajen en la
- * misma `EnterTransition`, para que empiecen y terminen juntos; encadenar dos animaciones
+ * Lo importante es que el desplazamiento y la apertura del hueco viajen en la misma
+ * `EnterTransition`, para que empiecen y terminen juntos; encadenar dos animaciones
  * distintas era lo que hacia que la fila apareciera ya puesta y **luego** se corriera.
  */
 @Composable
 private fun entradaDeNota(): androidx.compose.animation.EnterTransition {
-    val estilo = com.unistack.app.core.design.theme.motionActual().newGrade
     if (!hayMovimiento()) {
         return androidx.compose.animation.EnterTransition.None
     }
+    // Cae y empuja: el hueco se abre y la fila baja a ocuparlo, en la misma transicion para
+    // que empiecen y terminen juntos. Es la unica variante que quedo.
     val hueco = expandVertically(
         animationSpec = tween(durationMillis = 420),
         expandFrom = Alignment.Top
     )
     val aparece = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = 60))
-    return when (estilo) {
-        com.unistack.app.feature_user.domain.NewGradeMotion.NINGUNA ->
-            androidx.compose.animation.EnterTransition.None
-        com.unistack.app.feature_user.domain.NewGradeMotion.LATERAL ->
-            hueco + aparece + slideInHorizontally(
-                animationSpec = tween(durationMillis = 420)
-            ) { ancho -> ancho / 2 }
-        com.unistack.app.feature_user.domain.NewGradeMotion.CAE ->
-            hueco + aparece + slideInVertically(
-                animationSpec = tween(durationMillis = 420)
-            ) { alto -> -alto }
-        com.unistack.app.feature_user.domain.NewGradeMotion.ABRE -> hueco + aparece
-        // Destello y «promedio cuenta» no mueven la fila: el hueco se abre y ya.
-        else -> hueco + aparece
-    }
+    return hueco + aparece + slideInVertically(
+        animationSpec = tween(durationMillis = 420)
+    ) { alto -> -alto }
 }
 
 /**

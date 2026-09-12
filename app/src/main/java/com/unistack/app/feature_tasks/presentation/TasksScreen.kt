@@ -94,7 +94,6 @@ import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.latidoDeVencido
 import com.unistack.app.core.design.components.tachadoDe
 import com.unistack.app.core.design.theme.motionActual
-import com.unistack.app.feature_user.domain.StrikeMotion
 import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.entradaDeLista
 import androidx.compose.ui.draw.clip
@@ -1416,17 +1415,13 @@ private fun TarjetaDeTarea(
                  * Con un estilo puesto se quita la `textDecoration`, porque si no se pintan
                  * las dos: la raya del sistema **y** la del gesto, cruzadas.
                  */
-                val estiloTachado = motionActual().strikeThrough
                 Text(
                     text = task.title,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    textDecoration = if (estiloTachado == StrikeMotion.NINGUNA) {
-                        titleDecoration
-                    } else {
-                        TextDecoration.None
-                    },
+                    // La linea la pinta `tachadoDe`; la decoracion del texto se queda fuera.
+                    textDecoration = TextDecoration.None,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.tachadoDe(

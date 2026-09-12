@@ -15,6 +15,11 @@ import org.junit.Test
  */
 class MotionCatalogTest {
 
+    @org.junit.Before
+    fun instalarTextos() {
+        com.unistack.app.TextosDePrueba.instalar()
+    }
+
     @Test
     fun `cada gesto tiene un identificador propio`() {
         val ids = MotionCatalog.gestures.map { it.id }
@@ -102,24 +107,23 @@ class MotionCatalogTest {
      * al irse «Marcar asistencia» entero: la rueda rebota, y siempre.
      */
     @Test
-    fun `el catalogo cubre los doce gestos y las sesenta y ocho variantes`() {
-        assertEquals(12, MotionCatalog.gestures.size)
+    fun `el catalogo cubre los siete gestos y las treinta y nueve variantes`() {
+        assertEquals(7, MotionCatalog.gestures.size)
         assertEquals(0, MotionCatalog.toggles.size)
-        assertEquals(68, MotionCatalog.variantCount)
+        assertEquals(39, MotionCatalog.variantCount)
     }
 
     @Test
     fun `los grupos salen en el orden del catalogo`() {
         val grupos = MotionCatalog.grouped().map { it.first }
         assertEquals(
+            // Tres grupos: con siete gestos, «academico», «tareas» y «avisos» tenian uno cada
+            // uno y eran cabeceras para nada. Los momentos —sello, celebracion, clase en
+            // curso— van juntos.
             listOf(
                 MotionCatalog.GROUP_BASE,
                 MotionCatalog.GROUP_TRANSITIONS,
-                MotionCatalog.GROUP_ACADEMIC,
-                MotionCatalog.GROUP_TASKS,
-                // «Generales» salio de la lista al irse el saludo, que era su unico gesto:
-                // `grouped()` agrupa lo que hay, y un grupo sin nada dentro no existe.
-                MotionCatalog.GROUP_ALERTS
+                MotionCatalog.GROUP_MOMENTS
             ),
             grupos
         )

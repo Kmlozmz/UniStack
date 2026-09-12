@@ -1,22 +1,31 @@
 package com.unistack.app.feature_user.domain
 
+import com.unistack.app.R
+import com.unistack.app.core.utils.Textos
+
 /**
  * Cómo se mueve la app, gesto a gesto.
  *
  * Hasta ahora el movimiento era **un interruptor de tres posiciones** —[MotionPreference]:
  * completo, reducido o nada— y todo lo demás estaba decidido en el código. Aquí cada momento
- * de la app en el que algo se mueve es una elección propia: cómo entra una pantalla, cómo se
- * tacha una tarea, qué hace la app cuando te pasas del presupuesto.
+ * de la app en el que algo se mueve es una elección propia: cómo entra una pantalla, cómo
+ * llegan las filas, qué pasa al cerrar un corte.
  *
- * Son veinte gestos con ciento once variantes entre todos, y por eso **no hay un campo por
- * cada uno en el JSON ni una fila escrita a mano en la pantalla**: el catálogo de
- * [MotionCatalog] es el que dice qué gestos hay, qué variantes tiene cada uno y cómo se lee y
- * se escribe la elección. Guardar, cargar y pintar salen todos de ahí, así que añadir una
- * variante es añadir una entrada a un enum y nada más.
+ * **Quedan siete gestos, de veinticinco que hubo.** Cada uno se probó en su pantalla, variante
+ * a variante, y lo que no se distinguía o no aportaba se retiró dejando fija la variante que
+ * mejor quedaba: la nota que entra cae y empuja, lo completado se tacha con una línea, lo
+ * vencido late, el guardado es un punto, la nota fijada despega, la rueda de asistencia
+ * rebota y pasarse del presupuesto avisa arriba. Nada de eso se elige ya; simplemente ocurre.
+ *
+ * Por eso **no hay un campo por cada gesto en el JSON ni una fila escrita a mano en la
+ * pantalla**: el catálogo de [MotionCatalog] es el que dice qué gestos hay, qué variantes tiene
+ * cada uno y cómo se lee y se escribe la elección. Guardar, cargar y pintar salen todos de ahí.
+ *
+ * Los nombres y las variantes salen de `strings.xml`, como el resto de la app: ni el catálogo
+ * ni sus enums llevan texto en el código.
  *
  * [MotionPreference] sigue existiendo y sigue mandando: puesto en «reducido» o «nada», lo de
- * aquí queda en pausa. Es lo que hace que quien lo necesite apague todo de un toque sin tener
- * que recorrer veinte ajustes.
+ * aquí queda en pausa. Es lo que hace que quien lo necesite apague todo de un toque.
  */
 data class MotionPreferences(
     // ------------------------------------------------------------------ base
@@ -30,31 +39,11 @@ data class MotionPreferences(
     val listEntry: ListEntry = ListEntry.ESCALONADA,
     val refresh: RefreshStyle = RefreshStyle.ONDA_CIRCULAR,
 
-    // ------------------------------------------------------------------ académico
-    /*
-     * Marcar asistencia ya no tiene variantes: la rueda **rebota**, y siempre. Se miraron las
-     * cuatro en «Ponerse al dia» y el rebote era la unica que se sentia como marcar algo;
-     * las otras tres se quitaron con su apartado de Movimiento.
-     */
-    val newGrade: NewGradeMotion = NewGradeMotion.LATERAL,
+    // ------------------------------------------------------------------ momentos
     val cutSeal: CutSealMotion = CutSealMotion.TINTA,
     val termClose: TermCloseMotion = TermCloseMotion.APILADO,
-
-    // ------------------------------------------------------------------ tareas y notas
     val celebration: CelebrationMotion = CelebrationMotion.CONFETI,
-    val strikeThrough: StrikeMotion = StrikeMotion.LINEA,
-    val overdueBeat: OverdueBeat = OverdueBeat.RESPIRA,
     val undo: UndoMotion = UndoMotion.REBOTA,
-    val autosave: AutosaveMotion = AutosaveMotion.PILDORA,
-    val pinNote: PinMotion = PinMotion.SALTA,
-
-    // ------------------------------------------------------------------ gastos y avisos
-    /*
-     * Pasarse del presupuesto ya no es un gesto con variantes: es **el aviso arriba**, y
-     * siempre. Las otras cuatro —contorno, sacudida, parpadeo, seco— se miraron juntas en
-     * Gastos y todas se veian igual: una fila con un halo rojo que no decia nada que la
-     * franja de arriba no dijera mejor. Se quitaron a proposito, con su apartado.
-     */
     val classNow: ClassNowMotion = ClassNowMotion.RESPIRA,
 
     // ------------------------------------------------------------------ generales
@@ -76,228 +65,133 @@ data class MotionPreferences(
  *
  * El [id] es lo que viaja al disco y a la copia de seguridad, y no cambia aunque cambie el
  * nombre visible. Es lo que deja renombrar «Onda expansiva» sin que a nadie se le pierda la
- * elección que tenía hecha.
+ * elección que tenía hecha. El nombre visible es un recurso, en el idioma de la app.
  */
 interface MotionChoice {
     val id: String
-    val label: String
-    val displayLabel: String get() {
-        if (java.util.Locale.getDefault().language != "en") return label
-        return when (id) {
-            "instant" -> "None"
-            "rapida" -> "Fast"
-            "normal" -> "Normal"
-            "lenta" -> "Slow"
-            "suave" -> "Soft"
-            "medio" -> "Medium"
-            "vivo" -> "Vibrant"
-            "ninguna" -> "None"
-            "onda" -> "Wave"
-            "formas" -> "Shapes"
-            "puntos" -> "Dots"
-            "circular" -> "Circular"
-            "eje" -> "Axis"
-            "fundido" -> "Fade"
-            "desliza" -> "Slide"
-            "escalonada" -> "Staggered"
-            "cascada" -> "Waterfall"
-            "pulso" -> "Pulse"
-            "cae" -> "Drop"
-            "rebota" -> "Bounce"
-            "salto" -> "Jump"
-            "brillo" -> "Glow"
-            "viaje" -> "Shift"
-            "estampa" -> "Stamp"
-            "apilado" -> "Stacked"
-            "confeti" -> "Confetti"
-            "estrellas" -> "Stars"
-            "linea" -> "Line"
-            "desvanece" -> "Fade"
-            "pildora" -> "Pill"
-            "salta" -> "Jump"
-            "alerta" -> "Alert"
-            "respira" -> "Breathe"
-            "sacude" -> "Shake"
-            "escalonado" -> "Staggered"
-            "encoge" -> "Shrink"
-            else -> label
-        }
-    }
+    val labelRes: Int
+    val label: String get() = Textos.get(labelRes)
+    val displayLabel: String get() = label
 }
 
 // ---------------------------------------------------------------------- base
 
-enum class MotionSpeed(override val id: String, override val label: String, val factor: Float) : MotionChoice {
+enum class MotionSpeed(override val id: String, override val labelRes: Int, val factor: Float) : MotionChoice {
     /** Todo instantáneo. Es lo que pide quien se marea con el movimiento. */
-    INSTANTANEA("instant", "Nada", 0f),
-    RAPIDA("rapida", "Rápida", 0.6f),
-    NORMAL("normal", "Normal", 1f),
-    LENTA("lenta", "Lenta", 1.5f)
+    INSTANTANEA("instant", R.string.motion_v_none, 0f),
+    RAPIDA("rapida", R.string.motion_v_fast, 0.6f),
+    NORMAL("normal", R.string.motion_v_normal, 1f),
+    LENTA("lenta", R.string.motion_v_slow, 1.5f)
 }
 
-enum class SpringBounce(override val id: String, override val label: String, val damping: Float) : MotionChoice {
+enum class SpringBounce(override val id: String, override val labelRes: Int, val damping: Float) : MotionChoice {
     /** Sin rebote visible: llega y se para. */
-    SUAVE("suave", "Suave", 1f),
-    VIVO("vivo", "Vivo", 0.45f)
+    SUAVE("suave", R.string.motion_v_soft, 1f),
+    VIVO("vivo", R.string.motion_v_vivid, 0.45f)
 }
 
-enum class PressEffect(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    ONDA("onda", "Onda")
+enum class PressEffect(override val id: String, override val labelRes: Int) : MotionChoice {
+    NINGUNA("ninguna", R.string.motion_v_none),
+    ONDA("onda", R.string.motion_v_wave)
 }
 
-enum class LoadingStyle(override val id: String, override val label: String) : MotionChoice {
-    CIRCULO("circulo", "Círculo"),
+enum class LoadingStyle(override val id: String, override val labelRes: Int) : MotionChoice {
+    CIRCULO("circulo", R.string.motion_v_circle),
 
     /** El indicador de M3E que cambia de forma mientras gira. */
-    FORMAS("formas", "Formas"),
-    ONDA("onda", "Onda"),
-    PUNTOS("puntos", "Puntos")
+    FORMAS("formas", R.string.motion_v_shapes),
+    ONDA("onda", R.string.motion_v_wave),
+    PUNTOS("puntos", R.string.motion_v_dots)
 }
 
 // ---------------------------------------------------------------------- transiciones
 
-enum class ScreenTransition(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    FUNDIDO("fundido", "Fundido"),
+enum class ScreenTransition(override val id: String, override val labelRes: Int) : MotionChoice {
+    NINGUNA("ninguna", R.string.motion_v_none),
+    FUNDIDO("fundido", R.string.motion_v_fade),
 
     /** El empuje lateral de M3E: la que sale va a la izquierda, la que entra viene de la derecha. */
-    EJE("eje", "Eje"),
-    CONTENEDOR("contenedor", "Contenedor"),
-    ABAJO("abajo", "Desde abajo"),
-    ZOOM("zoom", "Zoom"),
+    EJE("eje", R.string.motion_v_axis),
+    CONTENEDOR("contenedor", R.string.motion_v_container),
+    ABAJO("abajo", R.string.motion_v_from_below),
+    ZOOM("zoom", R.string.motion_v_zoom),
 
     /** La de arriba: entra bajando, como un panel que se descuelga. */
-    ARRIBA("arriba", "Desde arriba"),
+    ARRIBA("arriba", R.string.motion_v_from_above),
 
     /** El empuje del eje, pero en vertical: la que sale sube un tercio y espera debajo. */
-    EJE_VERTICAL("ejeV", "Eje vertical"),
+    EJE_VERTICAL("ejeV", R.string.motion_v_vertical_axis),
 
     /** La nueva sube entera y la anterior se queda detrás, encogida y apagada. */
-    TARJETA("tarjeta", "Tarjeta"),
+    TARJETA("tarjeta", R.string.motion_v_card),
 
     /** Entra desde la esquina, moviéndose en los dos ejes a la vez. */
-    DIAGONAL("diagonal", "Diagonal")
+    DIAGONAL("diagonal", R.string.motion_v_diagonal)
 }
 
-enum class ListEntry(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    FUNDIDO("fundido", "Fundido"),
+enum class ListEntry(override val id: String, override val labelRes: Int) : MotionChoice {
+    NINGUNA("ninguna", R.string.motion_v_none),
+    FUNDIDO("fundido", R.string.motion_v_fade),
 
     /** Cada fila entra un poco después que la anterior, desde abajo. */
-    ESCALONADA("escalonada", "Escalonada"),
+    ESCALONADA("escalonada", R.string.motion_v_staggered),
 
     /** Como la escalonada, pero cayendo desde arriba y con más retardo entre filas. */
-    CASCADA("cascada", "Cascada"),
+    CASCADA("cascada", R.string.motion_v_waterfall),
 
     /** Crece desde el 92%, sin desplazarse. */
-    ESCALA("escala", "Escala"),
+    ESCALA("escala", R.string.motion_v_scale),
 
     /** Entra desde abajo con muelle: se pasa de largo y vuelve. */
-    RESORTE("resorte", "Resorte"),
+    RESORTE("resorte", R.string.motion_v_spring),
 
     /** Gira desde el borde izquierdo, como cartas que se abren. */
-    ABANICO("abanico", "Abanico")
+    ABANICO("abanico", R.string.motion_v_fan)
 }
 
-enum class RefreshStyle(override val id: String, override val label: String) : MotionChoice {
-    CIRCULO("circulo", "Círculo"),
+enum class RefreshStyle(override val id: String, override val labelRes: Int) : MotionChoice {
+    CIRCULO("circulo", R.string.motion_v_circle),
 
     /** El `CircularWavyProgressIndicator` de M3E: un arco cuyo radio ondula. */
-    ONDA_CIRCULAR("ondacirc", "Onda circular"),
+    ONDA_CIRCULAR("ondacirc", R.string.motion_v_circular_wave),
 
     /** El `LoadingIndicator` de M3E, que va cambiando de forma. */
-    FORMAS("formas", "Formas")
+    FORMAS("formas", R.string.motion_v_shapes)
 }
 
-// ---------------------------------------------------------------------- académico
+// ---------------------------------------------------------------------- momentos
 
-enum class NewGradeMotion(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-
-    /** La nota cae en la lista y empuja a las de abajo. */
-    CAE("cae", "Cae y empuja"),
-    LATERAL("lateral", "Desde el lado"),
-    DESTELLO("destello", "Destello"),
-
-    /** El promedio sube contando hasta el valor nuevo. */
-    CONTAR("contar", "Promedio cuenta"),
-    ABRE("abre", "Se abre hueco")
+enum class CutSealMotion(override val id: String, override val labelRes: Int) : MotionChoice {
+    NINGUNA("ninguna", R.string.motion_v_none),
+    ESTAMPA("estampa", R.string.motion_v_stamp),
+    TINTA("tinta", R.string.motion_v_ink),
+    CINTA("cinta", R.string.motion_v_tape)
 }
 
-enum class CutSealMotion(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    ESTAMPA("estampa", "Estampado"),
-    TINTA("tinta", "Tinta"),
-    CINTA("cinta", "Cinta")
+enum class TermCloseMotion(override val id: String, override val labelRes: Int) : MotionChoice {
+    ENTERO("entero", R.string.motion_v_whole),
+    PIEZA("pieza", R.string.motion_v_piece_by_piece),
+    CORTINA("cortina", R.string.motion_v_curtain),
+    APILADO("apilado", R.string.motion_v_stacked)
 }
 
-enum class TermCloseMotion(override val id: String, override val label: String) : MotionChoice {
-    ENTERO("entero", "Entero"),
-    PIEZA("pieza", "Pieza a pieza"),
-    CORTINA("cortina", "Cortina"),
-    APILADO("apilado", "Apilado")
+enum class CelebrationMotion(override val id: String, override val labelRes: Int) : MotionChoice {
+    NINGUNA("ninguna", R.string.motion_v_none),
+    CONFETI("confeti", R.string.motion_v_confetti),
+    ONDA("onda", R.string.motion_v_expanding_wave),
+    SELLO("sello", R.string.motion_v_seal),
+    DESTELLO("destello", R.string.motion_v_sparkle)
 }
 
-// ---------------------------------------------------------------------- tareas y notas
-
-enum class CelebrationMotion(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    CONFETI("confeti", "Confeti"),
-    ONDA("onda", "Onda expansiva"),
-    SELLO("sello", "Sello"),
-    DESTELLO("destello", "Destello")
+enum class UndoMotion(override val id: String, override val labelRes: Int) : MotionChoice {
+    APARECE("aparece", R.string.motion_v_appears),
+    VUELVE("vuelve", R.string.motion_v_slides_back),
+    CAE("cae", R.string.motion_v_drops),
+    DESPLIEGA("despliega", R.string.motion_v_unfolds),
+    REBOTA("rebota", R.string.motion_v_bounces),
+    GIRA("gira", R.string.motion_v_spins_back),
+    DESTELLO("destello", R.string.motion_v_with_sparkle)
 }
-
-enum class StrikeMotion(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    LINEA("linea", "Línea"),
-    MARCADOR("marcador", "Marcador"),
-    VISTO("visto", "Visto encima"),
-    TINTA("tinta", "Tinta que cala")
-}
-
-enum class OverdueBeat(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    PULSO("pulso", "Pulso"),
-    RESPIRA("respira", "Respira"),
-    /** Un cerco que late alrededor de la fila, sin moverla. */
-    HALO("halo", "Halo"),
-
-    /** Solo late la franja roja del borde: la fila entera se queda quieta. */
-    FRANJA("franja", "Solo la franja")
-}
-
-enum class UndoMotion(override val id: String, override val label: String) : MotionChoice {
-    APARECE("aparece", "Aparece"),
-    VUELVE("vuelve", "Vuelve deslizando"),
-    CAE("cae", "Cae"),
-    DESPLIEGA("despliega", "Se despliega"),
-    REBOTA("rebota", "Rebota"),
-    GIRA("gira", "Gira al volver"),
-    DESTELLO("destello", "Con destello")
-}
-
-enum class AutosaveMotion(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    PILDORA("pildora", "Píldora"),
-    PUNTO("punto", "Punto"),
-    VISTO("visto", "Visto"),
-    ANILLO("anillo", "Anillo"),
-    FILETE("filete", "Filete arriba"),
-    NUBE("nube", "Nube")
-}
-
-enum class PinMotion(override val id: String, override val label: String) : MotionChoice {
-    SECO("seco", "Seco"),
-    SALTA("salta", "Salta"),
-    VUELA("vuela", "Vuela en arco"),
-    IMAN("iman", "Imán"),
-    DESPEGA("despega", "Despega"),
-    DESTELLO("destello", "Destello")
-}
-
-// ---------------------------------------------------------------------- gastos y avisos
 
 /**
  * La clase que está pasando ahora mismo. **En verde**, que es lo que dice «activo».
@@ -305,87 +199,46 @@ enum class PinMotion(override val id: String, override val label: String) : Moti
  * Estuvo en el color de acento, y ahí competía con todo lo demás que va del color de acento:
  * un morado más entre morados no decía «esto está pasando ahora».
  */
-enum class ClassNowMotion(override val id: String, override val label: String) : MotionChoice {
-    QUIETA("quieta", "Quieta"),
-    RESPIRA("respira", "Respira"),
-    PUNTO("punto", "Punto que late"),
-    RECORRE("recorre", "Borde que recorre"),
-    BARRE("barre", "Brillo que barre")
+enum class ClassNowMotion(override val id: String, override val labelRes: Int) : MotionChoice {
+    QUIETA("quieta", R.string.motion_v_still),
+    RESPIRA("respira", R.string.motion_v_breathes),
+    PUNTO("punto", R.string.motion_v_beating_dot),
+    RECORRE("recorre", R.string.motion_v_running_border),
+    BARRE("barre", R.string.motion_v_sweeping_glow)
 }
 
-enum class FabScrollMotion(override val id: String, override val label: String) : MotionChoice {
-    FIJO("fijo", "Fijo"),
+enum class FabScrollMotion(override val id: String, override val labelRes: Int) : MotionChoice {
+    FIJO("fijo", R.string.motion_v_fixed),
 
     /** Pierde el texto y se queda redondo. */
-    ENCOGE("encoge", "Se encoge")
+    ENCOGE("encoge", R.string.motion_v_shrinks)
 }
 
-enum class HapticStrength(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    MEDIA("media", "Media")
+enum class HapticStrength(override val id: String, override val labelRes: Int) : MotionChoice {
+    NINGUNA("ninguna", R.string.motion_v_none),
+    MEDIA("media", R.string.motion_v_medium)
 }
 
 /**
  * Un gesto del catálogo: lo que hace falta para guardarlo, leerlo y pintarlo.
  *
  * Lleva las funciones de leer y escribir dentro porque es lo que permite que la pantalla de
- * Movimiento y el guardado en disco recorran la misma lista en vez de repetir veinte veces el
+ * Movimiento y el guardado en disco recorran la misma lista en vez de repetir siete veces el
  * mismo `when`. Sin esto, añadir un gesto serían cuatro sitios que tocar.
  */
 data class MotionGesture(
     val id: String,
     val group: String,
-    val name: String,
-    val detail: String,
+    val nameRes: Int,
+    val detailRes: Int,
     val options: List<MotionChoice>,
     val read: (MotionPreferences) -> MotionChoice,
     val write: (MotionPreferences, MotionChoice) -> MotionPreferences
 ) {
-    val displayName: String get() {
-        if (java.util.Locale.getDefault().language != "en") return name
-        return when (id) {
-            "velocidad" -> "Speed"
-            "carga" -> "Loading indicator"
-            "transicion" -> "Between screens"
-            "listas" -> "List entry"
-            "notaNueva" -> "Log a grade"
-            "subeNota" -> "Grade increase"
-            "recupera" -> "Subject recovery"
-            "sello" -> "Term close seal"
-            "celebracion" -> "Day completion celebration"
-            "tachar" -> "Cross off on complete"
-            "latido" -> "Overdue heartbeat"
-            "guardado" -> "Autosave"
-            "fijar" -> "Pin note"
-            "claseAhora" -> "Class in session"
-            "errorShake" -> "Error alert"
-            "saludo" -> "Greeting on open"
-            else -> name
-        }
-    }
-
-    val displayDetail: String get() {
-        if (java.util.Locale.getDefault().language != "en") return detail
-        return when (id) {
-            "velocidad" -> "Multiplies all animation durations."
-            "carga" -> "Material 3 Expressive morphs while spinning."
-            "transicion" -> "How a new screen enters."
-            "listas" -> "How rows appear when opening."
-            "notaNueva" -> "When a new grade is entered for the term."
-            "subeNota" -> "When your average improves."
-            "recupera" -> "When rising out of the red."
-            "sello" -> "When closing a term."
-            "celebracion" -> "When completing the last pending item."
-            "tachar" -> "Before disappearing from the list."
-            "latido" -> "For items open for multiple days."
-            "guardado" -> "Notice that changes were saved."
-            "fijar" -> "When moving note to pinned section."
-            "claseAhora" -> "Class currently ongoing. Green indicates «active»."
-            "errorShake" -> "When a field is filled incorrectly."
-            "saludo" -> "Greeting and your name on Home."
-            else -> detail
-        }
-    }
+    val name: String get() = Textos.get(nameRes)
+    val detail: String get() = Textos.get(detailRes)
+    val displayName: String get() = name
+    val displayDetail: String get() = detail
 }
 
 /** Un interruptor de movimiento, que no tiene variantes sino sí o no. */
@@ -400,23 +253,27 @@ data class MotionToggle(
 object MotionCatalog {
     const val GROUP_BASE = "BASE"
     const val GROUP_TRANSITIONS = "TRANSICIONES"
-    const val GROUP_ACADEMIC = "ACADÉMICO"
-    const val GROUP_TASKS = "TAREAS Y NOTAS"
-    const val GROUP_ALERTS = "GASTOS Y AVISOS"
-    const val GROUP_GENERAL = "GENERALES"
+    const val GROUP_MOMENTS = "MOMENTOS"
+
+    /** El nombre del grupo en el idioma de la app; la constante es solo la clave. */
+    fun groupNameRes(group: String): Int = when (group) {
+        GROUP_BASE -> R.string.motion_group_base
+        GROUP_TRANSITIONS -> R.string.motion_group_transitions
+        else -> R.string.motion_group_moments
+    }
 
     private inline fun <reified T> gesto(
         id: String,
         group: String,
-        name: String,
-        detail: String,
+        nameRes: Int,
+        detailRes: Int,
         noinline read: (MotionPreferences) -> T,
         noinline write: (MotionPreferences, T) -> MotionPreferences
     ): MotionGesture where T : Enum<T>, T : MotionChoice = MotionGesture(
         id = id,
         group = group,
-        name = name,
-        detail = detail,
+        nameRes = nameRes,
+        detailRes = detailRes,
         options = enumValues<T>().toList(),
         read = read,
         write = { prefs, choice -> write(prefs, choice as T) }
@@ -426,74 +283,40 @@ object MotionCatalog {
      * **«Tirar para refrescar» no esta en la lista, y es a proposito.**
      *
      * La app lee de una base local: no hay nada que recargar, asi que el gesto no existe en
-     * ninguna pantalla. Ofrecer seis variantes de una animacion que nunca se va a ver es
-     * enganar a quien elige. El ajuste sigue guardandose —[MotionPreferences.refresh] y sus
-     * variantes se quedan— para que el dia que haya sincronizacion con la nube baste con
-     * devolver esta entrada a la lista y no haya que rehacer nada.
+     * ninguna pantalla. Ofrecer variantes de una animacion que nunca se va a ver es enganar
+     * a quien elige. El ajuste sigue guardandose —[MotionPreferences.refresh] y sus variantes
+     * se quedan— para que el dia que haya sincronizacion con la nube baste con devolver esta
+     * entrada a la lista y no haya que rehacer nada.
      */
     val gestures: List<MotionGesture> = listOf(
         gesto<MotionSpeed>(
-            "velocidad", GROUP_BASE, "Velocidad",
-            "Multiplica todas las duraciones.",
+            "velocidad", GROUP_BASE, R.string.motion_g_speed_name, R.string.motion_g_speed_detail,
             { it.speed }, { p, v -> p.copy(speed = v) }
         ),
         gesto<LoadingStyle>(
-            "carga", GROUP_BASE, "Indicador de carga",
-            "El de M3E cambia de forma mientras gira.",
+            "carga", GROUP_BASE, R.string.motion_g_loading_name, R.string.motion_g_loading_detail,
             { it.loading }, { p, v -> p.copy(loading = v) }
         ),
 
         gesto<ScreenTransition>(
-            "transicion", GROUP_TRANSITIONS, "Entre pantallas",
-            "Cómo entra una pantalla nueva.",
+            "transicion", GROUP_TRANSITIONS, R.string.motion_g_transition_name, R.string.motion_g_transition_detail,
             { it.screenTransition }, { p, v -> p.copy(screenTransition = v) }
         ),
         gesto<ListEntry>(
-            "listas", GROUP_TRANSITIONS, "Entrada de las listas",
-            "Cómo aparecen las filas al abrir.",
+            "listas", GROUP_TRANSITIONS, R.string.motion_g_lists_name, R.string.motion_g_lists_detail,
             { it.listEntry }, { p, v -> p.copy(listEntry = v) }
         ),
 
-        gesto<NewGradeMotion>(
-            "notaNueva", GROUP_ACADEMIC, "Registrar una nota",
-            "Cuando entra una nota nueva al corte.",
-            { it.newGrade }, { p, v -> p.copy(newGrade = v) }
-        ),
         gesto<CutSealMotion>(
-            "sello", GROUP_ACADEMIC, "Sello al cerrar un corte",
-            "Al dar un corte por cerrado.",
+            "sello", GROUP_MOMENTS, R.string.motion_g_seal_name, R.string.motion_g_seal_detail,
             { it.cutSeal }, { p, v -> p.copy(cutSeal = v) }
         ),
-
         gesto<CelebrationMotion>(
-            "celebracion", GROUP_TASKS, "Celebrar al terminar el día",
-            "Al cerrar la última pendiente.",
+            "celebracion", GROUP_MOMENTS, R.string.motion_g_celebration_name, R.string.motion_g_celebration_detail,
             { it.celebration }, { p, v -> p.copy(celebration = v) }
         ),
-        gesto<StrikeMotion>(
-            "tachar", GROUP_TASKS, "Tachar al completar",
-            "Antes de irse de la lista.",
-            { it.strikeThrough }, { p, v -> p.copy(strikeThrough = v) }
-        ),
-        gesto<OverdueBeat>(
-            "latido", GROUP_TASKS, "Latido en lo vencido",
-            "Lo que lleva días abierto.",
-            { it.overdueBeat }, { p, v -> p.copy(overdueBeat = v) }
-        ),
-        gesto<AutosaveMotion>(
-            "guardado", GROUP_TASKS, "Guardado automático",
-            "El aviso de que quedó guardado.",
-            { it.autosave }, { p, v -> p.copy(autosave = v) }
-        ),
-        gesto<PinMotion>(
-            "fijar", GROUP_TASKS, "Fijar una nota",
-            "Al subirla a las fijadas.",
-            { it.pinNote }, { p, v -> p.copy(pinNote = v) }
-        ),
-
         gesto<ClassNowMotion>(
-            "claseAhora", GROUP_ALERTS, "Clase en curso",
-            "La clase que está pasando ahora. En verde: dice «activo».",
+            "claseAhora", GROUP_MOMENTS, R.string.motion_g_class_now_name, R.string.motion_g_class_now_detail,
             { it.classNow }, { p, v -> p.copy(classNow = v) }
         )
     )

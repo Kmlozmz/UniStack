@@ -50,8 +50,6 @@ import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.feature_user.domain.ListEntry
 import com.unistack.app.feature_user.domain.LoadingStyle
-import com.unistack.app.feature_user.domain.OverdueBeat
-import com.unistack.app.feature_user.domain.StrikeMotion
 import kotlin.math.abs
 import kotlin.math.sin
 
@@ -178,16 +176,11 @@ fun LazyStaggeredGridItemScope.reacomodoDeLista(): Modifier {
  */
 @Composable
 fun Modifier.latidoDeVencido(activo: Boolean): Modifier {
-    val estilo = motionActual().overdueBeat
-    if (!activo || estilo == OverdueBeat.NINGUNA || !hayMovimiento()) return this
+    if (!activo || !hayMovimiento()) return this
 
-    val periodo = when (estilo) {
-        OverdueBeat.PULSO -> 1900
-        OverdueBeat.RESPIRA -> 2400
-        OverdueBeat.HALO -> 1800
-        OverdueBeat.FRANJA -> 1700
-        OverdueBeat.NINGUNA -> 2000
-    }
+    // Solo queda el pulso: las otras tres —respira, halo, franja— se retiraron mirandolas
+    // juntas en Tareas. 1900 ms es el compas que se le decidio.
+    val periodo = 1900
     /*
      * **Un solo valor de ida y vuelta, no una rampa con senos encima.**
      *
@@ -206,61 +199,7 @@ fun Modifier.latidoDeVencido(activo: Boolean): Modifier {
         ),
         label = "vencido"
     )
-    // El rojo de la app, que cambia con el tema. Antes era el rojo puro del sistema: el mismo
-    // #FF0000 en claro y en oscuro, y en oscuro chillaba al lado de todo lo demás.
-    val rojo = LocalSectionColors.current.expenses
-
-    return when (estilo) {
-        OverdueBeat.PULSO -> this.scale(1f + 0.028f * onda)
-        OverdueBeat.RESPIRA -> this.alpha(1f - 0.38f * onda)
-        /*
-         * **Un cerco que sale de la fila, no un contorno pegado a ella.**
-         *
-         * Tenía dos aros: uno fuera y otro de 2 píxeles justo en el borde, que es exactamente
-         * el contorno que esta variante no quiere ser. Y medía en píxeles crudos, así que en un
-         * móvil de 3x el halo entero ocupaba dos décimas de milímetro y no se veía.
-         *
-         * Ahora es un solo anillo que crece de 0 a 3 dp hacia fuera mientras aparece: lo mismo
-         * que hacía la sombra del prototipo, medido en dp y con el rojo del tema.
-         */
-        OverdueBeat.HALO -> this.drawWithContent {
-            drawContent()
-            val grosor = 3.dp.toPx() * onda
-            if (grosor > 0.4f) {
-                val radio = minOf(12.dp.toPx(), size.minDimension * 0.2f)
-                drawRoundRect(
-                    color = rojo.copy(alpha = 0.35f * onda),
-                    topLeft = Offset(-grosor / 2f, -grosor / 2f),
-                    size = Size(size.width + grosor, size.height + grosor),
-                    cornerRadius = CornerRadius(radio + grosor / 2f),
-                    style = Stroke(width = grosor)
-                )
-            }
-        }
-        /*
-         * **La fila se queda quieta y late lo único que ya decía «esto está vencido».**
-         *
-         * La franja se dibuja entera y se apaga a la mitad, en vez de encogerse hasta poco más
-         * de la mitad de la fila: encogiendo tanto dejaba de parecer un borde y pasaba a
-         * parecer una barra de progreso a medias.
-         *
-         * Se recorta por arriba y por abajo lo que miden las esquinas redondeadas de la
-         * tarjeta, porque justo ahí el borde izquierdo ya no es recto y la franja se salía.
-         */
-        OverdueBeat.FRANJA -> this.drawWithContent {
-            drawContent()
-            val radio = minOf(12.dp.toPx(), size.minDimension * 0.2f)
-            val ancho = 3.dp.toPx()
-            val alto = (size.height - radio * 2f).coerceAtLeast(0f) * (1f - 0.18f * onda)
-            drawRoundRect(
-                color = rojo.copy(alpha = 1f - 0.65f * onda),
-                topLeft = Offset(0f, (size.height - alto) / 2f),
-                size = Size(ancho, alto),
-                cornerRadius = CornerRadius(ancho / 2f)
-            )
-        }
-        OverdueBeat.NINGUNA -> this
-    }
+    return this.scale(1f + 0.028f * onda)
 }
 
 /**
@@ -271,48 +210,20 @@ fun Modifier.latidoDeVencido(activo: Boolean): Modifier {
  */
 @Composable
 fun Modifier.tachadoDe(completado: Boolean, color: Color): Modifier {
-    val estilo = motionActual().strikeThrough
     val avance by animateFloatAsState(
         targetValue = if (completado) 1f else 0f,
         animationSpec = tweenDeMovimiento(baseMs = 340),
         label = "tachado"
     )
-    if (avance <= 0f || estilo == StrikeMotion.NINGUNA) return this
+    if (avance <= 0f) return this
 
     return this.drawWithContent {
         drawContent()
         val medio = size.height / 2f
         val fin = size.width * avance
-        when (estilo) {
-            StrikeMotion.LINEA -> drawLine(
-                color = color, start = Offset(0f, medio), end = Offset(fin, medio), strokeWidth = 2.5f
-            )
-            StrikeMotion.MARCADOR -> drawRoundRect(
-                color = color.copy(alpha = 0.30f),
-                topLeft = Offset(0f, medio - size.height * 0.34f),
-                size = Size(fin, size.height * 0.68f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f)
-            )
-            StrikeMotion.VISTO -> {
-                val r = size.height * 0.34f
-                val centro = Offset(size.width * 0.5f, medio)
-                val puntos = listOf(
-                    centro + Offset(-r, 0f),
-                    centro + Offset(-r * 0.25f, r * 0.7f),
-                    centro + Offset(r, -r * 0.8f)
-                )
-                drawLine(color, puntos[0], puntos[0] + (puntos[1] - puntos[0]) * minOf(avance * 2f, 1f), 3f, StrokeCap.Round)
-                if (avance > 0.5f) {
-                    drawLine(color, puntos[1], puntos[1] + (puntos[2] - puntos[1]) * ((avance - 0.5f) * 2f), 3f, StrokeCap.Round)
-                }
-            }
-            // La tinta cala: por donde ya pasó, la fila queda velada.
-            StrikeMotion.TINTA -> {
-                drawRect(color = color.copy(alpha = 0.22f), size = Size(fin, size.height))
-                drawLine(color, Offset(0f, medio), Offset(fin, medio), 3f)
-            }
-            StrikeMotion.NINGUNA -> Unit
-        }
+        // Una linea que se dibuja de izquierda a derecha. El marcador, el visto y la tinta
+        // se retiraron: sobre una fila de tarea, la linea es la unica que se lee como tachar.
+        drawLine(color = color, start = Offset(0f, medio), end = Offset(fin, medio), strokeWidth = 2.5f)
     }
 }
 

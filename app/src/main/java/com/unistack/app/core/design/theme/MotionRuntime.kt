@@ -17,12 +17,10 @@ import com.unistack.app.feature_user.domain.LoadingStyle
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.MotionSpeed
-import com.unistack.app.feature_user.domain.OverdueBeat
 import com.unistack.app.feature_user.domain.PressEffect
 import com.unistack.app.feature_user.domain.RefreshStyle
 import com.unistack.app.feature_user.domain.ScreenTransition
 import com.unistack.app.feature_user.domain.SpringBounce
-import com.unistack.app.feature_user.domain.StrikeMotion
 
 /**
  * El puente entre lo que se elige en Movimiento y lo que hace la app.
@@ -74,8 +72,6 @@ fun motionActual(): MotionPreferences {
             listEntry = ListEntry.NINGUNA,
             refresh = RefreshStyle.CIRCULO,
             celebration = CelebrationMotion.NINGUNA,
-            strikeThrough = StrikeMotion.LINEA,
-            overdueBeat = OverdueBeat.NINGUNA,
             classNow = ClassNowMotion.QUIETA,
             fabOnScroll = FabScrollMotion.FIJO,
             animatedBottomBar = false,

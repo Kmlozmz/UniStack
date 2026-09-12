@@ -554,34 +554,20 @@ private fun InterruptorMaestro(
  * dominio, y el dominio no tiene por qué saber qué es un `ImageVector`.
  */
 private fun iconoDe(id: String): ImageVector = when (id) {
-    "velocidad", "latido" -> Icons.Rounded.Bolt
-    "rebote", "transicion", "deshacer", "fijar", "saludo", "parallax" -> Icons.Rounded.Animation
-    "pulsacion" -> Icons.Rounded.TouchApp
-    "carga", "refresco" -> Icons.Rounded.Refresh
+    "velocidad" -> Icons.Rounded.Bolt
+    "carga" -> Icons.Rounded.Refresh
+    "transicion" -> Icons.Rounded.Animation
     "listas" -> Icons.Rounded.FormatLineSpacing
-    "notaNueva", "numeros" -> Icons.Rounded.Numbers
     "claseAhora" -> Icons.Rounded.Schedule
-    "errorShake" -> Icons.Rounded.ErrorOutline
-    "fabScroll" -> Icons.Rounded.AddCircleOutline
-    "haptica" -> Icons.Rounded.Vibration
-    "barraAnim" -> Icons.Rounded.Dashboard
-    "gestos" -> Icons.Rounded.SwipeLeft
     else -> Icons.Rounded.AutoAwesome
 }
 
 /** Los colores del diseño, uno por ajuste. Son los que hacen la lista legible de un vistazo. */
 private fun colorDe(id: String): Color = when (id) {
-    "velocidad", "fabScroll" -> Color(0xFFE8693A)
-    "rebote", "notaNueva", "numeros" -> Color(0xFF7F77DD)
-    "pulsacion", "recupera", "saludo" -> Color(0xFF4FBFA6)
-    "carga", "cierreSem", "celebracion" -> Color(0xFFE0A63C)
-    "transicion", "sello", "deshacer" -> Color(0xFF3F8FE0)
-    "listas", "tachar", "claseAhora", "gestos" -> Color(0xFF5FC96E)
-    "refresco" -> Color(0xFF3FC7B4)
-    "subeNota", "barraAnim" -> Color(0xFFE062A8)
-    "latido", "errorShake" -> Color(0xFFEA5A52)
-    "guardado" -> Color(0xFF8C93A8)
-    "fijar", "haptica" -> Color(0xFFC08BE0)
+    "velocidad" -> Color(0xFFE8693A)
+    "carga", "celebracion" -> Color(0xFFE0A63C)
+    "transicion", "sello" -> Color(0xFF3F8FE0)
+    "listas", "claseAhora" -> Color(0xFF5FC96E)
     else -> Color(0xFF7F77DD)
 }
 
@@ -593,24 +579,22 @@ private fun colorDe(id: String): Color = when (id) {
  */
 private fun ventanaDe(id: String): String = Textos.get(
     when (id) {
-        "velocidad" -> R.string.motion_window_list
-        "rebote" -> R.string.motion_window_anything
-        "pulsacion" -> R.string.motion_window_card
+        "velocidad", "listas" -> R.string.motion_window_list
         "carga" -> R.string.motion_window_loading
-        "barraAnim" -> R.string.motion_window_bar
-        "gestos" -> R.string.motion_window_tasks
-        "numeros" -> R.string.motion_window_numbers
+        "transicion" -> R.string.motion_window_anything
+        "sello" -> R.string.motion_window_cut
+        "celebracion" -> R.string.motion_window_tasks
+        "claseAhora" -> R.string.motion_window_schedule
         else -> R.string.motion_window_app
     }
 )
 
 /** Cuánto dura una vuelta del bucle, por gesto. */
 private fun duracionDe(gestoId: String): Int = when (gestoId) {
-    "latido", "claseAhora" -> 2200
-    "carga", "refresco" -> 1800
-    "haptica" -> 1600
-    "velocidad", "rebote", "pulsacion" -> 1700
-    "celebracion", "cierreSem", "saludo" -> 2600
+    "claseAhora" -> 2200
+    "carga" -> 1800
+    "velocidad" -> 1700
+    "celebracion" -> 2600
     else -> 2200
 }
 
@@ -623,14 +607,6 @@ private fun MotionPreference.etiqueta(): String {
     }
 }
 
-private fun motionGroupDisplay(group: String): String = when (group) {
-    MotionCatalog.GROUP_BASE -> Textos.get(R.string.motion_group_base)
-    MotionCatalog.GROUP_TRANSITIONS -> Textos.get(R.string.motion_group_transitions)
-    MotionCatalog.GROUP_ACADEMIC -> Textos.get(R.string.motion_group_academic)
-    MotionCatalog.GROUP_TASKS -> Textos.get(R.string.motion_group_tasks)
-    MotionCatalog.GROUP_ALERTS -> Textos.get(R.string.motion_group_alerts)
-    MotionCatalog.GROUP_GENERAL -> Textos.get(R.string.motion_group_general)
-    else -> group
-}
+private fun motionGroupDisplay(group: String): String = Textos.get(MotionCatalog.groupNameRes(group))
 
 

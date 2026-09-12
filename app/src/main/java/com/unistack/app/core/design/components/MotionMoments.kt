@@ -90,13 +90,10 @@ import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.design.theme.tweenDeMovimiento
-import com.unistack.app.feature_user.domain.AutosaveMotion
 import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.MotionSpeed
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
-import com.unistack.app.feature_user.domain.NewGradeMotion
-import com.unistack.app.feature_user.domain.PinMotion
 import com.unistack.app.feature_user.domain.TermCloseMotion
 import com.unistack.app.feature_user.domain.UndoMotion
 import kotlinx.coroutines.delay
@@ -1033,41 +1030,23 @@ fun PildoraEnCurso(modifier: Modifier = Modifier) {
 /** Cómo se mueve una nota al subir a las fijadas, o al bajar de ellas. */
 @Composable
 fun Modifier.notaFijada(fijada: Boolean): Modifier {
-    val estilo = motionActual().pinNote
-    if (estilo == PinMotion.SECO || !hayMovimiento()) return this
+    if (!hayMovimiento()) return this
 
     val avance by animateFloatAsState(
         targetValue = if (fijada) 1f else 0f,
-        animationSpec = when (estilo) {
-            PinMotion.SALTA, PinMotion.DESPEGA -> muelleDeMovimiento()
-            else -> tweenDeMovimiento(baseMs = 460)
-        },
+        animationSpec = muelleDeMovimiento(),
         label = "fijada"
     )
     // El gesto es de ida: pasado el pico, la fila vuelve a su sitio y no se queda torcida.
     val pico = abs(sin(avance * PI.toFloat()))
     if (pico <= 0.01f) return this
 
-    return when (estilo) {
-        PinMotion.SALTA -> this.graphicsLayer { translationY = -26f * pico }
-        PinMotion.VUELA -> this.graphicsLayer {
-            translationY = -26f * pico
-            translationX = 30f * pico
-        }
-        PinMotion.IMAN -> this.graphicsLayer { translationY = -18f * pico * pico }
-        PinMotion.DESPEGA -> this.graphicsLayer {
-            scaleX = 1f + 0.06f * pico
-            scaleY = 1f + 0.06f * pico
-            shadowElevation = 14f * pico
-        }
-        PinMotion.DESTELLO -> this.drawWithContent {
-            drawContent()
-            drawRoundRect(
-                color = Color.White.copy(alpha = 0.28f * pico),
-                cornerRadius = CornerRadius(size.height * 0.25f)
-            )
-        }
-        PinMotion.SECO -> this
+    // Despega: crece un 6 % y levanta sombra, como una tarjeta que se separa de la mesa. De
+    // las seis formas era la unica que decia «esto sube» sin mover la fila de sitio.
+    return this.graphicsLayer {
+        scaleX = 1f + 0.06f * pico
+        scaleY = 1f + 0.06f * pico
+        shadowElevation = 14f * pico
     }
 }
 
@@ -1082,8 +1061,7 @@ fun Modifier.notaFijada(fijada: Boolean): Modifier {
  */
 @Composable
 fun AvisoDeGuardado(marca: Int, modifier: Modifier = Modifier) {
-    val estilo = motionActual().autosave
-    if (estilo == AutosaveMotion.NINGUNA || !hayMovimiento() || marca == 0) return
+    if (!hayMovimiento() || marca == 0) return
 
     var visible by remember(marca) { mutableStateOf(true) }
     LaunchedEffect(marca) {
@@ -1098,43 +1076,15 @@ fun AvisoDeGuardado(marca: Int, modifier: Modifier = Modifier) {
     )
     if (alfa <= 0.01f) return
 
-    val esquema = MaterialTheme.colorScheme
-    when (estilo) {
-        AutosaveMotion.FILETE -> Box(
-            modifier = modifier
-                .fillMaxSize()
-                .drawWithContent {
-                    drawRect(
-                        color = esquema.primary.copy(alpha = alfa),
-                        size = Size(size.width, 3.dp.toPx())
-                    )
-                }
-        )
-        AutosaveMotion.PUNTO -> Box(
-            modifier = modifier
-                .alpha(alfa)
-                .padding(6.dp)
-                .background(esquema.primary, RoundedCornerShape(50))
-                .padding(4.dp)
-        )
-        else -> Box(
-            modifier = modifier.alpha(alfa),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .background(esquema.primary, RoundedCornerShape(50))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = if (estilo == AutosaveMotion.VISTO) "✓" else "Guardado",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = esquema.onPrimary
-                )
-            }
-        }
-    }
+    // Un punto del acento que se enciende y se apaga: lo mas callado de las siete formas que
+    // hubo, y lo unico que no roba la vista mientras se escribe.
+    Box(
+        modifier = modifier
+            .alpha(alfa)
+            .padding(6.dp)
+            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+            .padding(4.dp)
+    )
 }
 
 // ------------------------------------------------------------------ pasarse del presupuesto
@@ -1387,8 +1337,7 @@ fun Modifier.resumenDePeriodo(indice: Int): Modifier {
  */
 @Composable
 fun Modifier.notaRecienRegistrada(esNueva: Boolean): Modifier {
-    val estilo = motionActual().newGrade
-    if (!esNueva || estilo == NewGradeMotion.NINGUNA || !hayMovimiento()) return this
+    if (!esNueva || !hayMovimiento()) return this
 
     var dentro by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { dentro = true }
@@ -1398,28 +1347,11 @@ fun Modifier.notaRecienRegistrada(esNueva: Boolean): Modifier {
         label = "notaNueva"
     )
 
-    return when (estilo) {
-        // Cae desde arriba y empuja: las de abajo se apartan con ella.
-        NewGradeMotion.CAE -> this.graphicsLayer {
-            alpha = avance
-            translationY = -34f * (1f - avance)
-        }
-        NewGradeMotion.LATERAL -> this.graphicsLayer { translationX = 160f * (1f - avance) }
-        // Un destello que se apaga: la fila ya esta puesta y lo que pasa es que se enciende.
-        NewGradeMotion.DESTELLO -> this.drawWithContent {
-            drawContent()
-            drawRect(color = Color.White.copy(alpha = 0.35f * (1f - avance)))
-        }
-        // El hueco se abre primero y la fila llega despues a ocuparlo.
-        NewGradeMotion.ABRE -> this.graphicsLayer {
-            alpha = ((avance - 0.45f) / 0.55f).coerceIn(0f, 1f)
-            scaleY = avance
-            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
-        }
-        // Aqui lo que se mueve no es la fila: es el promedio, y de eso se encarga
-        // `numeroQueCuenta` en la cabecera.
-        NewGradeMotion.CONTAR -> this.alpha(avance)
-        NewGradeMotion.NINGUNA -> this
+    // Cae desde arriba y empuja: las de abajo se apartan con ella. Es la unica que quedo de
+    // las seis; las demas no decian «entro una nota» tan claro como esta.
+    return this.graphicsLayer {
+        alpha = avance
+        translationY = -34f * (1f - avance)
     }
 }
 

@@ -266,8 +266,10 @@ private fun FilaPendiente(
     onMark: (ClassAttendanceStatus) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val verde = ScheduleAccent
-    val rojo = MaterialTheme.colorScheme.error
+    // Los colores fijos de la asistencia, no el acento: con el tema lila, el visto salia lila
+    // y «asisti» y «falta» dejaban de distinguirse de un vistazo.
+    val verde = AttendanceAttended
+    val rojo = AttendanceAbsent
     val asistio = respuesta == ClassAttendanceStatus.ATTENDED
     val tono = if (asistio) verde else rojo
     val aula = entrada.session.location.split('•', limit = 2).first().trim()
