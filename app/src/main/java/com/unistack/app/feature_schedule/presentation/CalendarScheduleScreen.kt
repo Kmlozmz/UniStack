@@ -165,6 +165,8 @@ fun CalendarScheduleScreen(
     var selectedEpochDay by rememberSaveable { mutableStateOf(LocalDate.now().toEpochDay()) }
     var selectedSession by remember { mutableStateOf<ClassSession?>(null) }
     var historySubjectId by rememberSaveable { mutableStateOf<String?>(null) }
+    // La clase que el historial tiene que abrir al entrar: solo la pone el aviso.
+    var historyOpenClass by remember { mutableStateOf<Pair<String, Long>?>(null) }
     var showFullSchedule by rememberSaveable { mutableStateOf(false) }
     var showAgendaMenu by rememberSaveable { mutableStateOf(false) }
     var showAddClassSheet by rememberSaveable { mutableStateOf(false) }
@@ -183,9 +185,13 @@ fun CalendarScheduleScreen(
     LaunchedEffect(avisoDeClase, state.loaded) {
         val aviso = avisoDeClase ?: return@LaunchedEffect
         if (!state.loaded) return@LaunchedEffect
+        /*
+         * Al historial, no a la ficha de la clase: la ficha ya no marca asistencia, asi que
+         * llegar ahi era llegar a un sitio donde no se podia contestar lo preguntado.
+         */
         state.sessions.firstOrNull { it.id == aviso.sessionId }?.let { sesion ->
-            selectedEpochDay = aviso.epochDay
-            selectedSession = sesion
+            historyOpenClass = sesion.id to aviso.epochDay
+            historySubjectId = sesion.subjectId
         }
         AttendanceDeepLink.consume()
     }
@@ -391,8 +397,9 @@ fun CalendarScheduleScreen(
                 cutScheme = state.cutScheme,
                 absenceLimit = state.absenceLimit,
                 breaks = state.breaks,
-                onDismiss = { historySubjectId = null },
+                onDismiss = { historySubjectId = null; historyOpenClass = null },
                 onSetAbsenceLimit = { limite -> viewModel.setAbsenceLimit(limite) },
+                abrirClase = historyOpenClass,
                 onSave = { entrada, estado, modalidad, motivo, nota ->
                     viewModel.saveOccurrence(
                         sessionId = entrada.session.id,

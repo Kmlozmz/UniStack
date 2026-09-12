@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,7 +89,15 @@ internal fun AttendanceHistoryScreen(
     breaks: List<AcademicBreak>,
     onDismiss: () -> Unit,
     onSetAbsenceLimit: (Int?) -> Unit,
-    onSave: (AttendanceHistoryEntry, ClassAttendanceStatus, ClassModality, ClassAbsenceReason?, String) -> Unit
+    onSave: (AttendanceHistoryEntry, ClassAttendanceStatus, ClassModality, ClassAbsenceReason?, String) -> Unit,
+    /**
+     * Una clase concreta —sesion y dia— que abrir en su hoja nada mas entrar.
+     *
+     * Es lo que trae el aviso de «¿asististe?»: llegaba al calendario y ahi ya no se marca
+     * nada. Con esto aterriza en el historial de la materia con la hoja de esa clase abierta,
+     * que es la pregunta que el aviso acababa de hacer.
+     */
+    abrirClase: Pair<String, Long>? = null
 ) {
     val locale = Locale.getDefault()
     val en24 = LocalAccessibilityPreferences.current.use24HourTime
@@ -96,6 +105,7 @@ internal fun AttendanceHistoryScreen(
     var poniendoseAlDia by remember { mutableStateOf(false) }
     var ayudaVisible by remember { mutableStateOf(false) }
     var editando by remember { mutableStateOf<AttendanceHistoryEntry?>(null) }
+    var claseAbierta by remember { mutableStateOf(false) }
 
     val hoy = LocalDate.now()
     val entries = remember(sessions, occurrences, term, breaks) {
@@ -107,6 +117,14 @@ internal fun AttendanceHistoryScreen(
             termEnd = term?.plannedEnd,
             breaks = breaks.map { it.range }
         )
+    }
+    LaunchedEffect(entries, abrirClase) {
+        if (claseAbierta || abrirClase == null) return@LaunchedEffect
+        val (sessionId, epochDay) = abrirClase
+        entries.firstOrNull { it.session.id == sessionId && it.date.toEpochDay() == epochDay }?.let {
+            if (!it.date.isAfter(hoy)) editando = it
+            claseAbierta = true
+        }
     }
     val porClave = remember(occurrences) { occurrences.associateBy { it.sessionId to it.dateEpochDay } }
     fun ocurrenciaDe(e: AttendanceHistoryEntry) = porClave[e.session.id to e.date.toEpochDay()]
