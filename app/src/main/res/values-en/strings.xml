@@ -775,6 +775,7 @@
     <string name="tasks_filter_clear">Clear</string>
     <string name="tasks_filter_subject_all">Subject: All</string>
     <string name="tasks_filters_active">Filters: %1$s</string>
+    <string name="tasks_chip_all_by_date">All · by date</string>
     <string name="tasks_no_time">No time</string>
     <string name="tasks_weight_pending">Pending percentage</string>
     <string name="tasks_weight_of_cut">%1$d%% of cut</string>

@@ -493,9 +493,9 @@ fun Modifier.celebracionDelDia(
     val medidor = rememberTextMeasurer()
     val tipoDelMensaje = TextStyle(
         color = acento,
-        fontSize = 34.sp,
-        fontWeight = FontWeight.Black,
-        letterSpacing = (-0.02).em
+        fontSize = 24.sp,
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-0.01).em
     )
 
     return this.drawWithContent {
@@ -589,33 +589,34 @@ fun Modifier.celebracionDelDia(
             }
 
             /*
-             * Un sello grande en el centro: el aro cae de fuera hacia dentro, pega —con su
-             * onda—, y dentro se dibuja el visto de un trazo. Se queda un momento y se va.
+             * Un sello nítido en el centro: el aro cae de fuera hacia dentro, pega —con su
+             * onda—, y dentro se dibuja el visto de un trazo. Proporciones limpias de M3E.
              */
             CelebrationMotion.SELLO -> {
-                val lado = minOf(w, h)
                 val caida = EaseInCubic.transform((t / 0.28f).coerceAtMost(1f))
-                val radio = lado * (0.62f - 0.34f * caida)
+                val targetRadius = 56.dp.toPx()
+                val radio = 92.dp.toPx() - (92.dp.toPx() - targetRadius) * caida
                 val onda = ((t - 0.28f) / 0.32f).coerceIn(0f, 1f)
                 val trazo = EaseOutCubic.transform(((t - 0.30f) / 0.25f).coerceIn(0f, 1f))
                 val vida = 1f - EaseInOutCubic.transform(((t - 0.72f) / 0.28f).coerceIn(0f, 1f))
                 val alfa = (caida / 0.4f).coerceAtMost(1f) * vida
+                val strokeW = 6.5f.dp.toPx()
                 if (onda > 0f && onda < 1f) {
                     val e = EaseOutCubic.transform(onda)
                     drawCircle(
-                        color = verde.copy(alpha = 0.55f * (1f - e)),
-                        radius = lado * 0.28f + alcance * 0.9f * e,
+                        color = verde.copy(alpha = 0.45f * (1f - e)),
+                        radius = targetRadius + 60.dp.toPx() * e,
                         center = centro,
-                        style = Stroke(width = 10.dp.toPx() * (1f - e) + 1f)
+                        style = Stroke(width = 3.5f.dp.toPx() * (1f - e) + 1f)
                     )
                     drawCircle(
                         brush = Brush.radialGradient(
-                            0f to verde.copy(alpha = 0.28f * (1f - e)),
+                            0f to verde.copy(alpha = 0.22f * (1f - e)),
                             1f to verde.copy(alpha = 0f),
                             center = centro,
-                            radius = lado * 0.5f
+                            radius = targetRadius * 1.5f
                         ),
-                        radius = lado * 0.5f,
+                        radius = targetRadius * 1.5f,
                         center = centro
                     )
                 }
@@ -623,18 +624,18 @@ fun Modifier.celebracionDelDia(
                     color = verde.copy(alpha = alfa),
                     radius = radio,
                     center = centro,
-                    style = Stroke(width = 16.dp.toPx())
+                    style = Stroke(width = strokeW)
                 )
                 if (trazo > 0f) {
                     // El visto, de un trazo: primero el palo corto, luego el largo.
-                    val a = centro + Offset(-radio * 0.42f, radio * 0.02f)
-                    val b = centro + Offset(-radio * 0.12f, radio * 0.32f)
-                    val c = centro + Offset(radio * 0.46f, -radio * 0.30f)
+                    val a = centro + Offset(-radio * 0.44f, radio * 0.02f)
+                    val b = centro + Offset(-radio * 0.12f, radio * 0.34f)
+                    val c = centro + Offset(radio * 0.44f, -radio * 0.28f)
                     val primero = (trazo / 0.4f).coerceAtMost(1f)
                     val segundo = ((trazo - 0.4f) / 0.6f).coerceIn(0f, 1f)
-                    drawLine(verde.copy(alpha = alfa), a, a + (b - a) * primero, 16.dp.toPx(), StrokeCap.Round)
+                    drawLine(verde.copy(alpha = alfa), a, a + (b - a) * primero, strokeW, StrokeCap.Round)
                     if (segundo > 0f) {
-                        drawLine(verde.copy(alpha = alfa), b, b + (c - b) * segundo, 16.dp.toPx(), StrokeCap.Round)
+                        drawLine(verde.copy(alpha = alfa), b, b + (c - b) * segundo, strokeW, StrokeCap.Round)
                     }
                 }
             }
@@ -685,12 +686,11 @@ fun Modifier.celebracionDelDia(
         /*
          * **El mensaje, en las cuatro.** Entra con un pequeno rebote, se queda mientras dura
          * la figura y se va con ella. Cada variante lo pone donde no estorba a lo suyo: en el
-         * centro, o debajo del aro del sello, que ya lleva el visto dentro; y del color que
-         * lleva la figura. Sin palabras, un confeti o unos rayos no decian que se celebraba.
+         * centro, o debajo del aro del sello, que ya lleva el visto dentro; y con tipografía limpia.
          */
         if (mensaje != null && estilo != CelebrationMotion.NINGUNA) {
             val (desde, color, y) = when (estilo) {
-                CelebrationMotion.SELLO -> Triple(0.30f, verde, centro.y + minOf(w, h) * 0.28f + 46.dp.toPx())
+                CelebrationMotion.SELLO -> Triple(0.32f, Color(0xFFE8EBF3), centro.y + 56.dp.toPx() + 28.dp.toPx())
                 CelebrationMotion.DESTELLO -> Triple(0f, ambar, centro.y)
                 else -> Triple(0f, acento, centro.y)
             }
@@ -702,14 +702,14 @@ fun Modifier.celebracionDelDia(
                     tipoDelMensaje.copy(color = color.copy(alpha = vida * entra.coerceAtMost(1f)))
                 )
                 val punto = Offset(centro.x, y)
-                scale(scale = 0.8f + 0.2f * entra, pivot = punto) {
-                    // Un halo del fondo detras de la letra, para que se lea sobre el confeti
-                    // y los rayos sin taparlos.
+                scale(scale = 0.85f + 0.15f * entra, pivot = punto) {
+                    // Un halo del fondo detrás de la letra, para que se lea sobre el confeti
+                    // y los rayos sin taparlos y con contraste perfecto.
                     drawRoundRect(
-                        color = fondo.copy(alpha = 0.55f * vida * entra.coerceAtMost(1f)),
-                        topLeft = Offset(punto.x - medida.size.width / 2f - 18.dp.toPx(), punto.y - medida.size.height / 2f - 8.dp.toPx()),
-                        size = Size(medida.size.width + 36.dp.toPx(), medida.size.height + 16.dp.toPx()),
-                        cornerRadius = CornerRadius(22.dp.toPx(), 22.dp.toPx())
+                        color = Color(0xFF0A0C11).copy(alpha = 0.78f * vida * entra.coerceAtMost(1f)),
+                        topLeft = Offset(punto.x - medida.size.width / 2f - 16.dp.toPx(), punto.y - medida.size.height / 2f - 6.dp.toPx()),
+                        size = Size(medida.size.width + 32.dp.toPx(), medida.size.height + 12.dp.toPx()),
+                        cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
                     )
                     drawText(
                         textLayoutResult = medida,

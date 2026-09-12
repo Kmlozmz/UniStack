@@ -775,6 +775,7 @@
     <string name="tasks_filter_clear">Limpiar</string>
     <string name="tasks_filter_subject_all">Materia: Todas</string>
     <string name="tasks_filters_active">Filtros: %1$s</string>
+    <string name="tasks_chip_all_by_date">Todas · por fecha</string>
     <string name="tasks_no_time">Sin hora</string>
     <string name="tasks_weight_pending">Porcentaje pendiente</string>
     <string name="tasks_weight_of_cut">%1$d%% del corte</string>

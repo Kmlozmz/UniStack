@@ -51,11 +51,13 @@ import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,10 +95,12 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -206,6 +210,7 @@ fun TasksScreen(
     val clearSearchFocus = { focusManager.clearFocus() }
 
     var celebrando by remember { mutableStateOf(false) }
+    var pendingCelebration by remember { mutableStateOf(false) }
 
     val onTaskChecked: (StudentTask, Boolean) -> Unit = { task, checked ->
         clearSearchFocus()
@@ -214,8 +219,15 @@ fun TasksScreen(
                 !it.completed && it.id != task.id &&
                     TaskDateUtils.fromMillis(it.dueDateMillis) <= TaskDateUtils.today()
             }
-        completionPrompt = viewModel.setTaskCompleted(task.id, checked)
-        if (eraLaUltima) celebrando = true
+        val prompt = viewModel.setTaskCompleted(task.id, checked)
+        completionPrompt = prompt
+        if (eraLaUltima) {
+            if (prompt != null) {
+                pendingCelebration = true
+            } else {
+                celebrando = true
+            }
+        }
 
         coroutineScope.launch {
             val msg = if (checked) {
@@ -233,6 +245,8 @@ fun TasksScreen(
                 duration = duracionDeDeshacer
             )
             if (result == SnackbarResult.ActionPerformed) {
+                pendingCelebration = false
+                celebrando = false
                 if (checked) {
                     viewModel.revertTaskToPending(task.id)
                 } else {
@@ -347,12 +361,12 @@ fun TasksScreen(
                 .fillMaxSize()
                 .nestedScroll(clearFocusOnScroll),
             contentPadding = PaddingValues(
-                start = 20.dp,
+                start = 18.dp,
                 top = if (embedded) 10.dp else 58.dp,
-                end = 20.dp,
+                end = 18.dp,
                 bottom = scrollBottomRoom + anchoredButtonRoom
             ),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             if (!embedded) {
                 item {
@@ -361,6 +375,7 @@ fun TasksScreen(
                         sunday = sunday,
                         onToggleSearch = { isSearchExpanded = !isSearchExpanded }
                     )
+                    Spacer(modifier = Modifier.height(14.dp))
                 }
             }
 
@@ -371,6 +386,7 @@ fun TasksScreen(
                         onQueryChange = { searchQuery = it },
                         onSearchDone = clearSearchFocus
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
 
@@ -384,6 +400,7 @@ fun TasksScreen(
                         awaitingGradeCount = pendingGradeCount,
                         estimatedMinutes = weekEstimatedMinutes
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 item {
@@ -397,6 +414,7 @@ fun TasksScreen(
                             selectedDateOffset = if (selectedDateOffset == date) null else date
                         }
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
                 item {
@@ -409,6 +427,7 @@ fun TasksScreen(
                             selectedSubjectId = subjectId
                         }
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
                 }
 
                 item {
@@ -423,6 +442,7 @@ fun TasksScreen(
                             showFiltersSheet = true
                         }
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
                 }
             }
 
@@ -853,6 +873,10 @@ fun TasksScreen(
         val subject = subjects.firstOrNull { it.id == prompt.task.subjectId }
         if (subject == null) {
             completionPrompt = null
+            if (pendingCelebration) {
+                celebrando = true
+                pendingCelebration = false
+            }
         } else {
             TaskGradeResultSheet(
                 task = prompt.task,
@@ -860,10 +884,18 @@ fun TasksScreen(
                 onDismiss = {
                     viewModel.markTaskAwaitingGrade(prompt.task.id)
                     completionPrompt = null
+                    if (pendingCelebration) {
+                        celebrando = true
+                        pendingCelebration = false
+                    }
                 },
                 onNoGrade = {
                     viewModel.markTaskAsNotGraded(prompt.task.id)
                     completionPrompt = null
+                    if (pendingCelebration) {
+                        celebrando = true
+                        pendingCelebration = false
+                    }
                 },
                 onSaveGrade = { value, percentage, cutId ->
                     val outcome = viewModel.saveTaskGrade(
@@ -874,6 +906,10 @@ fun TasksScreen(
                     )
                     if (outcome.saved) {
                         completionPrompt = null
+                        if (pendingCelebration) {
+                            celebrando = true
+                            pendingCelebration = false
+                        }
                         val gradeId = outcome.gradeId
                         if (gradeId != null) {
                             coroutineScope.launch {
@@ -975,15 +1011,15 @@ private fun TasksHeader(
         Surface(
             onClick = onToggleSearch,
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = Color(0xFF1C222D),
             modifier = Modifier.size(40.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Rounded.Search,
                     contentDescription = stringResource(R.string.tasks_search_field_placeholder),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    tint = Color(0xFF98A2B7),
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -992,6 +1028,8 @@ private fun TasksHeader(
 
 /**
  * Hero tonal de «Esta semana» con cifra principal, aviso de vencidas y el anillo ondulado.
+ * Propuesta D: #6B4E00 / #FFE29E cuando hay vencidas, #2E2A6B / #E2DFFF cuando no.
+ * Forma de 30dp, píldoras con blanco al 14%, anillo y tipografía 1:1.
  */
 @Composable
 private fun TasksWeekHero(
@@ -1004,28 +1042,24 @@ private fun TasksWeekHero(
     modifier: Modifier = Modifier
 ) {
     val hasOverdue = overdueCount > 0
-    val containerColor = if (hasOverdue) {
-        LocalSectionColors.current.atRisk.copy(alpha = 0.16f)
-    } else {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-    }
-    val contentColor = MaterialTheme.colorScheme.onSurface
+    val containerColor = if (hasOverdue) Color(0xFF6B4E00) else Color(0xFF2E2A6B)
+    val contentColor = if (hasOverdue) Color(0xFFFFE29E) else Color(0xFFE2DFFF)
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(30.dp),
         color = containerColor
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                text = stringResource(R.string.tasks_hero_this_week),
-                style = MaterialTheme.typography.labelMedium,
+                text = stringResource(R.string.tasks_hero_this_week).uppercase(Locale.getDefault()),
+                fontSize = 10.5.sp,
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.5.sp,
-                color = if (hasOverdue) LocalSectionColors.current.atRisk else MaterialTheme.colorScheme.primary
+                letterSpacing = 1.4.sp,
+                color = contentColor.copy(alpha = 0.8f)
             )
 
             Row(
@@ -1039,21 +1073,22 @@ private fun TasksWeekHero(
                 ) {
                     Row(
                         verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = "$pendingCount",
-                            style = MaterialTheme.typography.displaySmall,
+                            fontSize = 46.sp,
                             fontWeight = FontWeight.Black,
-                            color = contentColor,
-                            fontSize = 44.sp,
-                            lineHeight = 44.sp
+                            letterSpacing = (-0.045).em,
+                            lineHeight = 46.sp,
+                            color = contentColor
                         )
                         Text(
                             text = stringResource(R.string.tasks_hero_to_do),
-                            style = MaterialTheme.typography.titleMedium,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = contentColor.copy(alpha = 0.85f)
+                            letterSpacing = (-0.01).em,
+                            color = contentColor
                         )
                     }
                     Text(
@@ -1063,9 +1098,9 @@ private fun TasksWeekHero(
                             pendingCount > 0 -> stringResource(R.string.tasks_hero_nothing_overdue)
                             else -> stringResource(R.string.tasks_hero_week_closed)
                         },
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (hasOverdue) MaterialTheme.colorScheme.error else contentColor.copy(alpha = 0.75f)
+                        color = contentColor.copy(alpha = 0.8f)
                     )
                 }
 
@@ -1073,7 +1108,7 @@ private fun TasksWeekHero(
                     progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f,
                     doneCount = doneCount,
                     totalCount = totalCount,
-                    color = if (hasOverdue) LocalSectionColors.current.atRisk else MaterialTheme.colorScheme.primary
+                    color = contentColor
                 )
             }
 
@@ -1085,12 +1120,12 @@ private fun TasksWeekHero(
                     if (awaitingGradeCount > 0) {
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                            color = Color.White.copy(alpha = 0.14f)
                         ) {
                             Text(
                                 text = stringResource(R.string.tasks_hero_awaiting_grade, awaitingGradeCount),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                                fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = contentColor
                             )
@@ -1099,15 +1134,15 @@ private fun TasksWeekHero(
                     if (estimatedMinutes > 0) {
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                            color = Color.White.copy(alpha = 0.14f)
                         ) {
                             Text(
                                 text = stringResource(
                                     R.string.tasks_hero_estimated_time,
                                     TaskDateUtils.estimatedTimeText(estimatedMinutes)
                                 ),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                                fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = contentColor
                             )
@@ -1129,7 +1164,7 @@ fun OutcomeWaveRing(
     doneCount: Int,
     totalCount: Int,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = Color(0xFFE2DFFF)
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
@@ -1144,11 +1179,11 @@ fun OutcomeWaveRing(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val cx = size.width / 2f
             val cy = size.height / 2f
-            val r = size.minDimension * 0.38f
+            val r = 34.dp.toPx()
             val amp = 1.2f.dp.toPx() + 2.4f.dp.toPx() * animatedProgress
             val ondas = 12
             val steps = 220
-            val strokeWidth = 5.5f.dp.toPx()
+            val strokeWidth = 6.dp.toPx()
 
             fun computePoint(t: Float): Offset {
                 val a = (t * 2.0 * Math.PI - Math.PI / 2.0).toFloat()
@@ -1190,19 +1225,17 @@ fun OutcomeWaveRing(
         ) {
             Text(
                 text = "$doneCount/$totalCount",
-                style = MaterialTheme.typography.titleMedium,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 15.sp,
-                lineHeight = 16.sp
+                color = color,
+                lineHeight = 15.sp
             )
             Text(
                 text = stringResource(R.string.tasks_hero_hechas),
-                style = MaterialTheme.typography.labelSmall,
+                fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp,
-                letterSpacing = 0.5.sp
+                color = color.copy(alpha = 0.75f),
+                letterSpacing = 0.1.sp
             )
         }
     }
@@ -1210,6 +1243,8 @@ fun OutcomeWaveRing(
 
 /**
  * Tira de los 7 días de la semana (Lunes a Domingo) con puntos de actividad.
+ * Propuesta D: contenedor base #171C24, seleccionado #E8EBF3 con texto #0A0C11,
+ * hoy sin seleccionar resalta el número en acento #7F77DD.
  */
 @Composable
 private fun SemanaTira(
@@ -1234,11 +1269,7 @@ private fun SemanaTira(
                     .weight(1f)
                     .cleanClickable { onSelectDate(date) },
                 shape = RoundedCornerShape(14.dp),
-                color = when {
-                    isSelected -> MaterialTheme.colorScheme.onSurface
-                    isToday -> MaterialTheme.colorScheme.surfaceContainerHigh
-                    else -> MaterialTheme.colorScheme.surfaceContainer
-                }
+                color = if (isSelected) Color(0xFFE8EBF3) else Color(0xFF171C24)
             ) {
                 Column(
                     modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp),
@@ -1248,24 +1279,19 @@ private fun SemanaTira(
                     val dayInitial = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()).uppercase()
                     Text(
                         text = dayInitial,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
                         fontSize = 9.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 0.8.sp,
-                        color = when {
-                            isSelected -> MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        color = if (isSelected) Color(0xFF0A0C11).copy(alpha = 0.75f) else Color(0xFF98A2B7)
                     )
                     Text(
                         text = "${date.dayOfMonth}",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.ExtraBold,
                         fontSize = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         color = when {
-                            isSelected -> MaterialTheme.colorScheme.surface
-                            isToday -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.onSurface
+                            isSelected -> Color(0xFF0A0C11)
+                            isToday -> Color(0xFF7F77DD)
+                            else -> Color(0xFFE8EBF3)
                         }
                     )
                     Row(
@@ -1276,10 +1302,10 @@ private fun SemanaTira(
                         val dotsToShow = dayTasks.take(3)
                         dotsToShow.forEach { task ->
                             val dotColor = when {
-                                isSelected -> MaterialTheme.colorScheme.surface
-                                !task.completed && date.isBefore(today) -> MaterialTheme.colorScheme.error
-                                !task.completed -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                                isSelected -> Color(0xFF0A0C11)
+                                !task.completed && date.isBefore(today) -> Color(0xFFFF5340)
+                                !task.completed -> Color(0xFF7F77DD)
+                                else -> Color(0xFF98A2B7).copy(alpha = 0.35f)
                             }
                             Box(
                                 modifier = Modifier
@@ -1297,6 +1323,7 @@ private fun SemanaTira(
 
 /**
  * Riel horizontal deslizable de materias con chip «Todas» y contadores por materia.
+ * Propuesta D: píldoras #1C222D con texto #98A2B7; seleccionada en #E8EBF3 con texto #0A0C11.
  */
 @Composable
 private fun RielMaterias(
@@ -1320,24 +1347,24 @@ private fun RielMaterias(
         Surface(
             modifier = Modifier.cleanClickable { onSelectSubject(null) },
             shape = CircleShape,
-            color = if (isAllSelected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surfaceContainerHigh
+            color = if (isAllSelected) Color(0xFFE8EBF3) else Color(0xFF1C222D)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 Text(
                     text = stringResource(R.string.tasks_rail_all),
-                    style = MaterialTheme.typography.labelMedium,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isAllSelected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isAllSelected) Color(0xFF0A0C11) else Color(0xFF98A2B7)
                 )
                 Text(
                     text = "$allCount",
-                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 10.5.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isAllSelected) MaterialTheme.colorScheme.background.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    color = if (isAllSelected) Color(0xFF0A0C11).copy(alpha = 0.8f) else Color(0xFF98A2B7).copy(alpha = 0.8f)
                 )
             }
         }
@@ -1353,10 +1380,10 @@ private fun RielMaterias(
                     onSelectSubject(if (isSelected) null else subject.id)
                 },
                 shape = CircleShape,
-                color = if (isSelected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surfaceContainerHigh
+                color = if (isSelected) Color(0xFFE8EBF3) else Color(0xFF1C222D)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
@@ -1368,15 +1395,15 @@ private fun RielMaterias(
                     )
                     Text(
                         text = shortName,
-                        style = MaterialTheme.typography.labelMedium,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isSelected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isSelected) Color(0xFF0A0C11) else Color(0xFF98A2B7)
                     )
                     Text(
                         text = "$count",
-                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isSelected) MaterialTheme.colorScheme.background.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = if (isSelected) Color(0xFF0A0C11).copy(alpha = 0.8f) else Color(0xFF98A2B7).copy(alpha = 0.8f)
                     )
                 }
             }
@@ -1386,6 +1413,8 @@ private fun RielMaterias(
 
 /**
  * Fila de tarea de la Propuesta D envuelta en [FilaDeslizable] para borrar.
+ * Si es «Entregadas sin nota» renderiza [TarjetaAwaitingGrade] (tarjetaA con acento-c y píldora blanca).
+ * Si es cualquier otra tarea renderiza [FilaTarea] (filaBC transparente sobre #0A0C11 con divisor fino).
  */
 @Composable
 private fun LazyItemScope.TaskRowItem(
@@ -1401,28 +1430,165 @@ private fun LazyItemScope.TaskRowItem(
     val subject = task.subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
     val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
     val isOverdue = !task.completed && dueDate.isBefore(today)
+    val awaitingGrade = task.completed && task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
 
-    FilaDeslizable(
-        onBorrar = onDelete,
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier
-            .then(reacomodoDeLista())
-            .entradaDeLista(indice)
-            .latidoDeVencido(activo = isOverdue)
-    ) {
-        FilaTarea(
-            task = task,
-            subject = subject,
-            today = today,
-            onCheckedChange = onCheckedChange,
-            onClick = onClick
-        )
+    if (awaitingGrade) {
+        FilaDeslizable(
+            onBorrar = onDelete,
+            shape = RoundedCornerShape(20.dp),
+            modifier = modifier
+                .then(reacomodoDeLista())
+                .entradaDeLista(indice)
+                .padding(bottom = 7.dp)
+        ) {
+            TarjetaAwaitingGrade(
+                task = task,
+                subject = subject,
+                onCheckedChange = onCheckedChange,
+                onClick = onClick
+            )
+        }
+    } else {
+        FilaDeslizable(
+            onBorrar = onDelete,
+            shape = RoundedCornerShape(16.dp),
+            modifier = modifier
+                .then(reacomodoDeLista())
+                .entradaDeLista(indice)
+                .latidoDeVencido(activo = isOverdue)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (indice > 0) {
+                    HorizontalDivider(
+                        thickness = 1.dp,
+                        color = Color(0xFF262E3B)
+                    )
+                }
+                FilaTarea(
+                    task = task,
+                    subject = subject,
+                    today = today,
+                    onCheckedChange = onCheckedChange,
+                    onClick = onClick
+                )
+            }
+        }
     }
 }
 
 /**
- * La fila de la lista de tareas: casilla cuadrada con esquinas suaves, texto tachado,
- * punto de la materia, tipo, progreso de subtareas y píldora de estado.
+ * Tarjeta destacada de la Propuesta D exclusivamente para «Entregadas sin nota» (tarjetaA).
+ * Contenedor tonal acento-c (#2E2A6B), esquinas 20dp, píldora blanca semitransparente (#FFFFFF al 14%)
+ * y punto de prioridad.
+ */
+@Composable
+private fun TarjetaAwaitingGrade(
+    task: StudentTask,
+    subject: Subject?,
+    onCheckedChange: (Boolean) -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .cleanClickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFF2E2A6B)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, top = 13.dp, end = 14.dp, bottom = 13.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = Color(0xFF7F77DD),
+                border = BorderStroke(2.dp, Color(0xFF7F77DD)),
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .size(22.dp)
+                    .cleanClickable { onCheckedChange(false) }
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = Color(0xFF171040),
+                    modifier = Modifier.padding(2.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.title,
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.01).em,
+                    color = Color(0xFFE8EBF3),
+                    lineHeight = 18.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                val subtitleText = buildString {
+                    append(subject?.name ?: stringResource(R.string.tasks_no_subject))
+                    append(" · ")
+                    append(task.type.label())
+                    if (task.estimatedMinutes > 0) {
+                        append(" · ")
+                        append(TaskDateUtils.estimatedTimeText(task.estimatedMinutes))
+                    }
+                    if (task.subtasks.isNotEmpty()) {
+                        val doneCount = task.subtasks.count { it.isCompleted }
+                        append(" · $doneCount/${task.subtasks.size}")
+                    }
+                }
+                Text(
+                    text = subtitleText,
+                    fontSize = 11.5.sp,
+                    color = Color(0xFFE2DFFF).copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(top = 2.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.14f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.tasks_pill_awaiting_grade),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFFE2DFFF)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(task.difficulty.color())
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Fila de lista de la Propuesta D (filaBC): fondo transparente, separador fino (1dp #262E3B),
+ * casilla cuadrada suave, punto de la materia en el subtítulo, y píldora tonal de fecha / nota / hecha.
  */
 @Composable
 private fun FilaTarea(
@@ -1436,27 +1602,26 @@ private fun FilaTarea(
     val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
     val isOverdue = !task.completed && dueDate.isBefore(today)
     val isToday = !task.completed && dueDate == today
-    val awaitingGrade = task.completed && task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
+    val isGraded = task.gradingStatus == TaskGradingStatus.GRADED
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .cleanClickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        color = if (awaitingGrade) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else MaterialTheme.colorScheme.surfaceContainerLow
+        color = Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Casilla de M3 con esquinas suaves (6.dp)
+            // Casilla de M3 cuadrada suave (6dp)
             Surface(
                 shape = RoundedCornerShape(6.dp),
-                color = if (task.completed) MaterialTheme.colorScheme.primary else Color.Transparent,
+                color = if (task.completed) Color(0xFF7F77DD) else Color.Transparent,
                 border = BorderStroke(
                     width = 2.dp,
-                    color = if (task.completed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    color = if (task.completed) Color(0xFF7F77DD) else Color(0xFF6C7689)
                 ),
                 modifier = Modifier
                     .size(22.dp)
@@ -1466,7 +1631,7 @@ private fun FilaTarea(
                     Icon(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                        tint = Color(0xFF171040),
                         modifier = Modifier.padding(2.dp)
                     )
                 }
@@ -1477,14 +1642,15 @@ private fun FilaTarea(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.title,
-                    style = MaterialTheme.typography.titleSmall,
+                    fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (task.completed) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f) else MaterialTheme.colorScheme.onSurface,
+                    letterSpacing = (-0.01).em,
+                    color = if (task.completed) Color(0xFFE8EBF3).copy(alpha = 0.5f) else Color(0xFFE8EBF3),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.tachadoDe(
                         completado = task.completed,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                        color = Color(0xFFE8EBF3).copy(alpha = 0.6f)
                     )
                 )
 
@@ -1492,17 +1658,19 @@ private fun FilaTarea(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (subject != null) {
                         Box(
                             modifier = Modifier
-                                .size(7.dp)
+                                .size(8.dp)
                                 .clip(CircleShape)
                                 .background(subjectAccent(subject))
                         )
+                        Spacer(modifier = Modifier.width(1.dp))
                     }
+                    val subtitleColor = if (task.completed) Color(0xFF98A2B7).copy(alpha = 0.55f) else Color(0xFF98A2B7)
                     val subtitleText = buildString {
                         if (subject != null) {
                             append(subject.name)
@@ -1516,135 +1684,133 @@ private fun FilaTarea(
                             append(" · ")
                             append(TaskDateUtils.estimatedTimeText(task.estimatedMinutes))
                         }
-                        if (task.subtasks.isNotEmpty()) {
-                            val doneCount = task.subtasks.count { it.isCompleted }
-                            append(" · $doneCount/${task.subtasks.size}")
-                        }
                     }
                     Text(
                         text = subtitleText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.5.sp,
+                        color = subtitleColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+
+                    if (task.subtasks.isNotEmpty()) {
+                        val doneCount = task.subtasks.count { it.isCompleted }
+                        val fraction = doneCount.toFloat() / task.subtasks.size
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(34.dp)
+                                .height(4.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF232B37))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(fraction)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF7F77DD))
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "$doneCount/${task.subtasks.size}",
+                            fontSize = 10.5.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = subtitleColor
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                // Píldora de estado
-                when {
-                    awaitingGrade -> {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.tasks_pill_awaiting_grade),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    task.gradingStatus == TaskGradingStatus.GRADED -> {
-                        Surface(
-                            shape = CircleShape,
-                            color = LocalSectionColors.current.onTrack.copy(alpha = 0.16f)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.tasks_detail_graded_label),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = LocalSectionColors.current.onTrack
-                            )
-                        }
-                    }
-                    task.completed -> {
-                        Surface(
-                            shape = CircleShape,
-                            color = LocalSectionColors.current.onTrack.copy(alpha = 0.16f)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.tasks_pill_done),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = LocalSectionColors.current.onTrack
-                            )
-                        }
-                    }
-                    isOverdue -> {
-                        val diffDays = ChronoUnit.DAYS.between(dueDate, today)
-                        val text = when (diffDays) {
-                            1L -> stringResource(R.string.due_overdue_yesterday)
-                            else -> stringResource(R.string.due_overdue_days_ago, diffDays)
-                        }
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.errorContainer
-                        ) {
-                            Text(
-                                text = text,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                    isToday -> {
-                        val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
-                            " " + formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
-                        } else ""
-                        Surface(
-                            shape = CircleShape,
-                            color = LocalSectionColors.current.atRisk.copy(alpha = 0.18f)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.tasks_due_today) + timeStr,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = LocalSectionColors.current.atRisk
-                            )
-                        }
-                    }
-                    else -> {
-                        val diffDays = ChronoUnit.DAYS.between(today, dueDate)
-                        val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
-                            formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
-                        } else ""
-                        val text = when {
-                            diffDays == 1L -> "Mañana" + if (timeStr.isNotEmpty()) " $timeStr" else ""
-                            diffDays in 2L..6L -> {
-                                val dayName = dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.uppercase() }
-                                "$dayName" + if (timeStr.isNotEmpty()) " $timeStr" else ""
-                            }
-                            else -> formatTaskDueText(task.dueDateMillis)
-                        }
+            // Píldora o texto según estado
+            when {
+                isGraded -> {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF0A5C23)
+                    ) {
                         Text(
-                            text = text,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold
+                            text = stringResource(R.string.tasks_detail_graded_label),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFB4F2C4)
                         )
                     }
                 }
-
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(task.difficulty.color())
-                )
+                task.completed -> {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF0A5C23)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.tasks_pill_done),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFB4F2C4)
+                        )
+                    }
+                }
+                isOverdue -> {
+                    val diffDays = ChronoUnit.DAYS.between(dueDate, today)
+                    val text = when (diffDays) {
+                        1L -> stringResource(R.string.due_overdue_yesterday)
+                        else -> stringResource(R.string.due_overdue_days_ago, diffDays)
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF8C1F0A)
+                    ) {
+                        Text(
+                            text = text,
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFFFDCD5)
+                        )
+                    }
+                }
+                isToday -> {
+                    val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
+                        " " + formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
+                    } else ""
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF6B4E00)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.tasks_due_today) + timeStr,
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFFFE29E)
+                        )
+                    }
+                }
+                else -> {
+                    val diffDays = ChronoUnit.DAYS.between(today, dueDate)
+                    val timeStr = if (TaskDateUtils.hasExplicitTime(task.dueDateMillis)) {
+                        formatTaskTime(TaskDateUtils.timeFromMillis(task.dueDateMillis))
+                    } else ""
+                    val text = when {
+                        diffDays == 1L -> "Mañana" + if (timeStr.isNotEmpty()) " $timeStr" else ""
+                        diffDays in 2L..6L -> {
+                            val dayName = dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.uppercase() }
+                            "$dayName" + if (timeStr.isNotEmpty()) " $timeStr" else ""
+                        }
+                        else -> formatTaskDueText(task.dueDateMillis)
+                    }
+                    Text(
+                        text = text,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF98A2B7)
+                    )
+                }
             }
         }
     }
@@ -2935,6 +3101,12 @@ private fun TaskFilterSummaryChip(
     selectedDate: LocalDate?,
     onClick: () -> Unit
 ) {
+    val isFilterActive = selectedStatus != TaskListFilter.ALL ||
+        selectedSubjectName != null ||
+        selectedPriority != null ||
+        sortOrder != TaskSortOrder.DUE_DATE ||
+        selectedDate != null
+
     val label = filterSummaryLabel(
         selectedStatus = selectedStatus,
         selectedSubjectName = selectedSubjectName,
@@ -2945,27 +3117,27 @@ private fun TaskFilterSummaryChip(
 
     Surface(
         modifier = Modifier.cleanClickable(onClick = onClick),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer
+        shape = CircleShape,
+        color = if (isFilterActive) Color(0xFF2E2A6B) else Color(0xFF1C222D)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
+            Icon(
+                imageVector = Icons.Rounded.Tune,
+                contentDescription = stringResource(R.string.tasks_open_filters),
+                tint = if (isFilterActive) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                modifier = Modifier.size(14.dp)
+            )
             Text(
                 text = label,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.ExtraBold,
+                color = if (isFilterActive) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
-            )
-            Icon(
-                imageVector = Icons.Rounded.KeyboardArrowDown,
-                contentDescription = stringResource(R.string.tasks_open_filters),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
             )
         }
     }
@@ -2978,21 +3150,25 @@ private fun SectionTitle(
     isOverdue: Boolean = false
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 18.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = text,
-            color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.ExtraBold
+            text = text.uppercase(Locale.getDefault()),
+            color = if (isOverdue) Color(0xFFFF5340) else Color(0xFF98A2B7),
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.4.sp
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = "$count",
-            color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold
+            color = if (isOverdue) Color(0xFFFF5340) else Color(0xFF98A2B7).copy(alpha = 0.85f),
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.sp
         )
     }
 }
@@ -3599,9 +3775,9 @@ private fun filterSummaryLabel(
         if (sortOrder != TaskSortOrder.DUE_DATE) add(sortOrder.label)
     }
     return if (activeFilters.isEmpty()) {
-        stringResource(R.string.tasks_filter_subject_all)
+        stringResource(R.string.tasks_chip_all_by_date)
     } else {
-        stringResource(R.string.tasks_filters_active, activeFilters.joinToString(" · "))
+        activeFilters.joinToString(" · ")
     }
 }
 
