@@ -884,6 +884,9 @@
     <string name="tasks_subtasks_count">%1$d of %2$d</string>
     <string name="tasks_subtasks_none">none</string>
     <string name="tasks_subtasks_add_step">Add a step</string>
+    <string name="tasks_subtasks_enable_desc">Break down into steps or checklist</string>
+    <string name="tasks_subtasks_disable_confirm_title">Disable subtasks?</string>
+    <string name="tasks_subtasks_disable_confirm_desc">Subtasks added to this task will be deleted.</string>
     <string name="tasks_grade_sheet_title">Grade for %1$s</string>
     <string name="tasks_grade_sheet_subtitle">Recorded in %1$s and linked to the task</string>
     <string name="tasks_grade_value_label">Value</string>

@@ -3,6 +3,7 @@
 package com.unistack.app.feature_tasks.presentation
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -32,6 +33,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -109,6 +111,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -121,6 +124,7 @@ import com.unistack.app.R
 import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
+import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniSearchField
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -1758,6 +1762,8 @@ private fun HojaTarea(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var newSubtaskText by remember { mutableStateOf("") }
+    var subtasksEnabled by remember(task.id) { mutableStateOf(task.subtasks.isNotEmpty()) }
+    var showConfirmDisableSubtasks by remember { mutableStateOf(false) }
     val today = remember { TaskDateUtils.today() }
     val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
     val isOverdue = !task.completed && dueDate.isBefore(today)
@@ -2363,6 +2369,45 @@ private fun HojaTarea(
             }
 
             // Subtareas
+            if (showConfirmDisableSubtasks) {
+                AlertDialog(
+                    onDismissRequest = { showConfirmDisableSubtasks = false },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.tasks_subtasks_disable_confirm_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = stringResource(R.string.tasks_subtasks_disable_confirm_desc),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                task.subtasks.forEach { onDeleteSubtask(task.id, it.id) }
+                                subtasksEnabled = false
+                                showConfirmDisableSubtasks = false
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        ) {
+                            Text(stringResource(R.string.action_delete))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showConfirmDisableSubtasks = false }) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
+                    }
+                )
+            }
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
@@ -2371,221 +2416,171 @@ private fun HojaTarea(
             ) {
                 Column(
                     modifier = Modifier.padding(15.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = stringResource(R.string.tasks_subtasks_title).uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.2.sp,
-                            color = textSubtle
-                        )
-                        val countText = if (task.subtasks.isNotEmpty()) {
-                            stringResource(
-                                R.string.tasks_subtasks_count,
-                                task.subtasks.count { it.isCompleted },
-                                task.subtasks.size
-                            )
-                        } else {
-                            stringResource(R.string.tasks_subtasks_none)
-                        }
-                        Text(
-                            text = countText,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = textSubtle
-                        )
-                    }
-
-                    task.subtasks.forEach { subtask ->
-                        Row(
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .cleanClickable { onToggleSubtask(task.id, subtask.id) }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .weight(1f)
+                                .padding(end = 12.dp)
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = if (subtask.isCompleted) Color(0xFF7F77DD) else Color.Transparent,
-                                border = BorderStroke(
-                                    width = 1.5.dp,
-                                    color = if (subtask.isCompleted) Color(0xFF7F77DD) else (if (isDark) Color(0xFF6C7689) else MaterialTheme.colorScheme.outline)
-                                ),
-                                modifier = Modifier.size(20.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                if (subtask.isCompleted) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        tint = Color(0xFF171040),
-                                        modifier = Modifier.padding(2.dp)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(10.dp))
-
-                            Text(
-                                text = subtask.title,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .tachadoDe(subtask.isCompleted, textSubtle),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (subtask.isCompleted) textSubtle else textPrimary
-                            )
-
-                            IconButton(
-                                onClick = { onDeleteSubtask(task.id, subtask.id) },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = null,
-                                    tint = textSubtle,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // Añadir subtarea
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = newSubtaskText,
-                            onValueChange = { newSubtaskText = it },
-                            placeholder = { Text(stringResource(R.string.tasks_subtasks_add_step)) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        IconButton(
-                            onClick = {
-                                if (newSubtaskText.isNotBlank()) {
-                                    onAddSubtask(task.id, newSubtaskText.trim())
-                                    newSubtaskText = ""
-                                }
-                            },
-                            enabled = newSubtaskText.isNotBlank()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Add,
-                                contentDescription = stringResource(R.string.tasks_subtasks_add_step),
-                                tint = if (newSubtaskText.isNotBlank()) Color(0xFF7F77DD) else textSubtle.copy(alpha = 0.4f)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Línea de vida
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                color = cardBg,
-                border = cardBorder
-            ) {
-                Column(
-                    modifier = Modifier.padding(15.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "LÍNEA DE VIDA",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.2.sp,
-                        color = textSubtle
-                    )
-
-                    val createdDate = remember(task.createdAt) { TaskDateUtils.fromMillis(task.createdAt) }
-                    val dueDateShort = remember(dueDate) {
-                        "${dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} ${dueDate.dayOfMonth}"
-                    }
-                    val deliveredDate = remember(task.completedAt) {
-                        task.completedAt?.let {
-                            val d = TaskDateUtils.fromMillis(it)
-                            "${d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} ${d.dayOfMonth}"
-                        } ?: "—"
-                    }
-                    val gradeText = remember(task.linkedGradeId, subject) {
-                        val g = subject?.grades?.firstOrNull { it.id == task.linkedGradeId }
-                        g?.let { GradingScaleUtils.formatGrade(it.value, gradingScale) } ?: "—"
-                    }
-
-                    data class PasoVida(
-                        val titulo: String,
-                        val sub: String,
-                        val completado: Boolean,
-                        val actual: Boolean
-                    )
-
-                    val isWaiting = task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
-                    val isGraded = task.gradingStatus == TaskGradingStatus.GRADED
-                    val isHecha = task.completed && !isWaiting && !isGraded
-
-                    val pasos = if (isHecha || !task.type.isGradable()) {
-                        listOf(
-                            PasoVida("Creada", "${createdDate.dayOfMonth} ${createdDate.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())}", completado = true, actual = false),
-                            PasoVida("Vence", dueDateShort, completado = task.completed, actual = !task.completed),
-                            PasoVida("Hecha", if (task.completed) "Lista" else "—", completado = task.completed, actual = task.completed)
-                        )
-                    } else {
-                        listOf(
-                            PasoVida("Creada", "${createdDate.dayOfMonth} ${createdDate.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())}", completado = true, actual = false),
-                            PasoVida("Vence", dueDateShort, completado = task.completed, actual = !task.completed),
-                            PasoVida("Entregada", deliveredDate, completado = isWaiting || isGraded, actual = isWaiting),
-                            PasoVida("Con nota", gradeText, completado = isGraded, actual = false)
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        pasos.forEach { paso ->
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(14.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            when {
-                                                paso.completado -> Color(0xFF11C045)
-                                                paso.actual -> Color(0xFF7F77DD)
-                                                else -> if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-                                            }
-                                        )
-                                        .then(
-                                            if (paso.actual) Modifier.border(2.dp, Color(0xFF7F77DD).copy(alpha = 0.5f), CircleShape)
-                                             else Modifier
-                                        )
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = paso.titulo,
+                                    text = stringResource(R.string.tasks_subtasks_title).uppercase(),
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (paso.completado || paso.actual) textPrimary else textSubtle
-                                )
-                                Text(
-                                    text = paso.sub,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 1.2.sp,
                                     color = textSubtle
                                 )
+                                if (subtasksEnabled && task.subtasks.isNotEmpty()) {
+                                    val doneCount = task.subtasks.count { it.isCompleted }
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = if (doneCount == task.subtasks.size) Color(0xFF11C045).copy(alpha = 0.18f) else metaPillBg,
+                                        border = metaPillBorder
+                                    ) {
+                                        Text(
+                                            text = "$doneCount/${task.subtasks.size}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (doneCount == task.subtasks.size) Color(0xFF11C045) else textPrimary,
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (!subtasksEnabled || task.subtasks.isEmpty()) {
+                                    stringResource(R.string.tasks_subtasks_enable_desc)
+                                } else {
+                                    stringResource(
+                                        R.string.tasks_subtasks_count,
+                                        task.subtasks.count { it.isCompleted },
+                                        task.subtasks.size
+                                    )
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = textSubtle
+                            )
+                        }
+
+                        UniSwitch(
+                            checked = subtasksEnabled,
+                            onCheckedChange = { checked ->
+                                if (!checked && task.subtasks.isNotEmpty()) {
+                                    showConfirmDisableSubtasks = true
+                                } else {
+                                    subtasksEnabled = checked
+                                }
+                            }
+                        )
+                    }
+
+                    AnimatedVisibility(visible = subtasksEnabled) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            task.subtasks.forEach { subtask ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .cleanClickable { onToggleSubtask(task.id, subtask.id) }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (subtask.isCompleted) Color(0xFF7F77DD) else Color.Transparent,
+                                        border = BorderStroke(
+                                            width = 1.5.dp,
+                                            color = if (subtask.isCompleted) Color(0xFF7F77DD) else (if (isDark) Color(0xFF6C7689) else MaterialTheme.colorScheme.outline)
+                                        ),
+                                        modifier = Modifier.size(20.dp)
+                                    ) {
+                                        if (subtask.isCompleted) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Check,
+                                                contentDescription = null,
+                                                tint = Color(0xFF171040),
+                                                modifier = Modifier.padding(2.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    Text(
+                                        text = subtask.title,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .tachadoDe(subtask.isCompleted, textSubtle),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (subtask.isCompleted) textSubtle else textPrimary
+                                    )
+
+                                    IconButton(
+                                        onClick = { onDeleteSubtask(task.id, subtask.id) },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = null,
+                                            tint = textSubtle,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Añadir subtarea
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = newSubtaskText,
+                                    onValueChange = { newSubtaskText = it },
+                                    placeholder = { Text(stringResource(R.string.tasks_subtasks_add_step)) },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(
+                                        onDone = {
+                                            if (newSubtaskText.isNotBlank()) {
+                                                onAddSubtask(task.id, newSubtaskText.trim())
+                                                newSubtaskText = ""
+                                            }
+                                        }
+                                    )
+                                )
+                                IconButton(
+                                    onClick = {
+                                        if (newSubtaskText.isNotBlank()) {
+                                            onAddSubtask(task.id, newSubtaskText.trim())
+                                            newSubtaskText = ""
+                                        }
+                                    },
+                                    enabled = newSubtaskText.isNotBlank()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Add,
+                                        contentDescription = stringResource(R.string.tasks_subtasks_add_step),
+                                        tint = if (newSubtaskText.isNotBlank()) Color(0xFF7F77DD) else textSubtle.copy(alpha = 0.4f)
+                                    )
+                                }
                             }
                         }
                     }

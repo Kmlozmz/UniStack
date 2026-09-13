@@ -884,6 +884,9 @@
     <string name="tasks_subtasks_count">%1$d de %2$d</string>
     <string name="tasks_subtasks_none">ninguna</string>
     <string name="tasks_subtasks_add_step">Añadir un paso</string>
+    <string name="tasks_subtasks_enable_desc">Dividir en pasos o lista de tareas</string>
+    <string name="tasks_subtasks_disable_confirm_title">¿Desactivar subtareas?</string>
+    <string name="tasks_subtasks_disable_confirm_desc">Se eliminarán las subtareas agregadas a esta tarea.</string>
     <string name="tasks_grade_sheet_title">Nota de %1$s</string>
     <string name="tasks_grade_sheet_subtitle">Se registra en %1$s y queda enlazada a la tarea</string>
     <string name="tasks_grade_value_label">Valor</string>
