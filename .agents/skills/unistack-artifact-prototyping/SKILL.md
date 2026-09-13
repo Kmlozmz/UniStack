@@ -1,80 +1,62 @@
 ---
 name: unistack-artifact-prototyping
 description: >-
-  Interactive HTML/CSS/JS prototyping methodology for UniStack UI and UX features.
-  Use before implementing non-trivial UI screens in Compose, when exploring multiple UX proposals (A/B/C/D),
-  or when building high-fidelity 390x844 mobile mockups with UniStack's dark design system (#0A0C11).
+  Artifact-first interactive HTML prototyping for UniStack screens.
+  Use before implementing any non-trivial UI screen or redesign in Compose, when comparing
+  UX proposals (A/B/C/D), or when building 390x844 dark-theme mockups (#0A0C11) with live
+  controls for the developer to pick or combine. Source: UniStack development/AI_WORKFLOW.md,
+  DECISION_MAKING.md, DESIGN_SYSTEM.md.
 ---
 
 # UniStack Artifact Prototyping Skill
 
-This skill provides the mandatory guidelines and templates for creating interactive HTML artifacts before writing Jetpack Compose code in UniStack.
+**No large redesign ships in Kotlin without prior approval via an interactive HTML artifact.**
+He approves by artifact, then compares the APK against it with screenshots —
+deviation is a bug, not an improvement ("no se parece mucho al artifact que aprobé" killed Notas).
+When a known pattern fits (Google Keep for notes — requested with screenshots), replicate it;
+it beats inventing, and it overrides the original artifact.
 
----
+## 1. Layout: phone + control panel
 
-## 1. The "Artifact-First" Directive
+- **Phone left**: centered `390×844` container, real Android chrome (status bar: time, battery,
+  wifi; bottom gesture bar), inner scrollable body with hidden/styled scrollbars, anchored
+  header and bottom bars. Dark UniStack tokens (CSS vars mirror the app):
+  bg `#0A0C11`, surfaces `#12161D / #171C24 / #1C222D / #232B37`, accent `#7F77DD`,
+  ink `#E8EBF3`, secondary `#98A2B7`, line `#262E3B`; sections schedule `#4797FF`,
+  expenses `#FF5340`, onTrack `#11C045`, atRisk `#E0A400`; attendance fixed
+  `#58D68D / #F1706F / #F0B429 / #8AA6F2`.
+- **Panel right**: controls that toggle every option live + the reasons ("mandos y razones").
+  He never picks blind ("no elige a ciegas"): each toggle needs a live preview, and for
+  decisions offer explicit toggles so he picks knowing the cost (Tasks D was closed as three
+  toggles: sheet+"open full", subtasks now, by-days).
+- **Proposal switcher** on top for competing approaches (`[ A ] [ B ] [ C ] [ D ]`), pure
+  vanilla JS swapping. Expect combinations ("A+B with C's ring") — design proposals to mix.
+- Detail level: "full M3E, con colores, organizados, armónicos visualmente". Artifacts with
+  too little detail get bounced ("le falta detalle, aunque no mucho").
 
-In UniStack, **no major screen redesign or new visual feature is written in Kotlin without prior visual approval via an interactive HTML artifact**.
+## 2. Component fidelity (must look like the app)
 
-### Why Artifacts First?
-1. Eliminates tedious trial-and-error compile/run cycles on Android.
-2. Allows instant comparison of competing UX approaches (e.g. Proposals A, B, C, D).
-3. Validates touch targets, state transitions, visual hierarchy, and edge cases with zero build overhead.
+`UniCard` (rounded ~16–20px, tonal surface, NO colored borders, inner padding) ·
+`MetricCard` (58px, big figure + label) · `OutcomeRangeBar` (floor–ceiling band + target
+needle, never a single projected point) · status wheels (24px round badge, SVG
+check/cross/dash/arrow) · connected groups (chosen one widens) · wavy ring for "cuánto
+llevas" (waves more near the end) · sheets (bg = page bg, top radius XL, handle, ExtraBold
+title, 18px inset, card rows) · docked bottom bar, never floating.
+Concrete, intuitive copy ("Quedan 3 de 4 faltas", not "Estado: OK"). Every animated moment
+carries its message ("esos círculos solos no van").
 
----
+## 3. Preview & publish protocol
 
-## 2. Technical Prototype Standards
+- Serve locally and click every flow for real (or via JS) before publishing:
+  `python -m http.server` in the scratchpad.
+- Always `<meta charset="utf-8">` for the local preview.
+- Published artifacts cache in his local browser: **cache-bust on review** (`?v=`).
+- Mark scope honestly: days estimate + what needs a new table/screen; what is NOT in
+  this round, and `PENDING`/`VERIFY` where open. No smoke ("humo").
 
-All UniStack UI artifacts must adhere to these specifications:
+## 4. Handoff to Compose (1:1)
 
-### Viewport & Shell
-- **Mobile Container**: Centered container sized at `390px` width by `844px` height (standard modern smartphone viewport).
-- **Device Chrome**: Render realistic Android status bar (time, battery, wifi icons) and system gesture bar at bottom.
-- **Scroll Behavior**: Inner scrollable body with hidden or styled scrollbars; header and bottom bars stay anchored.
-
-### Color Tokens & Styling (Dark Theme First)
-Use exact UniStack CSS variables:
-```css
-:root {
-  --bg-color: #0A0C11;
-  --surface-lowest: #0F1218;
-  --surface-low: #151820;
-  --surface-mid: #1B1E28;
-  --surface-high: #222632;
-  --surface-highest: #2A2F3E;
-  
-  --primary: #8AB4F8;
-  --on-primary: #042B59;
-  --primary-container: #1C3B6F;
-  --on-primary-container: #D2E3FC;
-
-  --text-primary: #E2E2E6;
-  --text-secondary: #C4C6D0;
-  --text-muted: #8E9099;
-  
-  --color-gastos: #E53935;
-  --color-horario: #3F51B5;
-  --color-presente: #4CAF50;
-  --color-ausente: #F44336;
-}
-```
-
-### Component Fidelity
-- **UniCard**: Rounded corners (`16px`), background `--surface-mid`, no colored borders.
-- **MetricCard**: Compact (`58px` height), distinct large number and label.
-- **OutcomeRangeBar**: Visual bar with floor, ceiling, and target indicator needle.
-- **State Wheels**: 24px round badge with SVG icons (check, cross, dash, arrow).
-
-### Proposal Switcher
-When presenting alternative solutions:
-- Provide an interactive switcher bar at the top (e.g., `[ Opción A ] [ Opción B ] [ Opción C ] [ Opción D ]`).
-- Toggling options dynamically swaps screens or states using pure vanilla JavaScript.
-
----
-
-## 3. Workflow Protocol
-
-1. **Synthesize Requirements**: Extract domain rules and user needs.
-2. **Author HTML Artifact**: Write complete standalone HTML file into `<appDataDir>/brain/<conversation-id>/...` or render inline.
-3. **Request Feedback**: Ask the user to interact with the mockup, test the proposals, and pick their preferred design.
-4. **Implementation Handoff**: Once approved, translate the winning proposal 1:1 into Jetpack Compose using `UniCard`, `MaterialTheme`, and bilingual strings.
+The approved artifact (or his stated combination) is the spec: implement with the
+design-system pieces, bilingual strings from the start, per-area commits. Numbered
+corrections come back as screenshots — iterate alphas until "ya está perfecto",
+then record decisions in memory / `DESIGN_DECISIONS.md` so they never reopen.

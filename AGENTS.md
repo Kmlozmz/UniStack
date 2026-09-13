@@ -92,8 +92,10 @@ This document establishes the authoritative rules, domain invariants, technical 
 - `unistack-domain-database`: Room migrations, GradeCalculator, attendance, and DataStore.
 - `unistack-i18n-coding-rules`: Bilingual string synchronization, Textos helper, test harness.
 - `unistack-artifact-prototyping`: Interactive HTML prototypes and multi-proposal design reviews.
+- `unistack-qa-testing`: Test suite, regression watchlist, debugging playbook, done criteria.
+- `unistack-product-decisions`: Vision, decision criteria, closed decisions, vetoes, TDL discipline.
 
-### Registered Subagents
+### Registered Subagents (briefs in `.agents/agents/`, dispatch via subagent with the brief as context)
 - `unistack_architect`: Specialist in Room migrations, domain models, DataStore, and repositories.
 - `unistack_ui_engineer`: Specialist in Jetpack Compose, M3 Expressive, gestures, and UI components.
 - `unistack_release_manager`: Specialist in Gradle tasks, APK delivery via Telegram, and Git synchronization.
