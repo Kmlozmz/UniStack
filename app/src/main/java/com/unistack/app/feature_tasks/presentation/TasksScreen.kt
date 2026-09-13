@@ -134,6 +134,7 @@ import com.unistack.app.core.design.components.entradaDeLista
 import com.unistack.app.core.design.components.latidoDeVencido
 import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.tachadoDe
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.contentColorOn
@@ -930,6 +931,11 @@ private fun TasksHeader(
     onToggleSearch: () -> Unit
 ) {
     val monthName = monday.format(DateTimeFormatter.ofPattern("MMMM", Locale.getDefault()))
+    val isDark = LocalIsDarkTheme.current
+    val searchBtnBg = if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
+    val searchBtnBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    val searchBtnTint = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -952,14 +958,15 @@ private fun TasksHeader(
         Surface(
             onClick = onToggleSearch,
             shape = CircleShape,
-            color = Color(0xFF1C222D),
+            color = searchBtnBg,
+            border = searchBtnBorder,
             modifier = Modifier.size(40.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Rounded.Search,
                     contentDescription = stringResource(R.string.tasks_search_field_placeholder),
-                    tint = Color(0xFF98A2B7),
+                    tint = searchBtnTint,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -982,9 +989,17 @@ private fun TasksWeekHero(
     todayPendingCount: Int,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalIsDarkTheme.current
     val hasOverdue = overdueCount > 0
-    val containerColor = if (hasOverdue) Color(0xFF6B4E00) else Color(0xFF2E2A6B)
-    val contentColor = if (hasOverdue) Color(0xFFFFE29E) else Color(0xFFE2DFFF)
+    val containerColor = when {
+        hasOverdue -> if (isDark) Color(0xFF6B4E00) else LocalSectionColors.current.atRiskContainer
+        else -> if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.primaryContainer
+    }
+    val contentColor = when {
+        hasOverdue -> if (isDark) Color(0xFFFFE29E) else LocalSectionColors.current.onAtRiskContainer
+        else -> if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onPrimaryContainer
+    }
+    val pillBg = if (isDark) Color.White.copy(alpha = 0.14f) else contentColor.copy(alpha = 0.10f)
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -1061,7 +1076,7 @@ private fun TasksWeekHero(
                     if (awaitingGradeCount > 0) {
                         Surface(
                             shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.14f)
+                            color = pillBg
                         ) {
                             Text(
                                 text = stringResource(R.string.tasks_hero_awaiting_grade, awaitingGradeCount),
@@ -1079,7 +1094,7 @@ private fun TasksWeekHero(
                     }
                     Surface(
                         shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.14f)
+                        color = pillBg
                     ) {
                         Text(
                             text = todayText,
@@ -1256,12 +1271,26 @@ private fun TarjetaAwaitingGrade(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalIsDarkTheme.current
+    val cardBg = if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.secondaryContainer
+    val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    val checkmarkBoxBg = if (isDark) Color(0xFF7F77DD) else MaterialTheme.colorScheme.primary
+    val checkmarkTint = if (isDark) Color(0xFF171040) else MaterialTheme.colorScheme.onPrimary
+    val titleColor = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSecondaryContainer
+    val subtitleColor = if (isDark) Color(0xFFE2DFFF).copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
+    val pillBg = if (isDark) Color.White.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+    val pillTextColor = if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onSecondaryContainer
+    val progressTrack = if (isDark) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.15f)
+    val progressFill = if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.primary
+    val progressText = if (isDark) Color(0xFFE2DFFF).copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSecondaryContainer
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .cleanClickable(shape = RoundedCornerShape(20.dp), onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        color = Color(0xFF2E2A6B),
+        color = cardBg,
+        border = cardBorder,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -1271,8 +1300,8 @@ private fun TarjetaAwaitingGrade(
         ) {
             Surface(
                 shape = RoundedCornerShape(6.dp),
-                color = Color(0xFF7F77DD),
-                border = BorderStroke(2.dp, Color(0xFF7F77DD)),
+                color = checkmarkBoxBg,
+                border = BorderStroke(2.dp, checkmarkBoxBg),
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 modifier = Modifier
@@ -1282,7 +1311,7 @@ private fun TarjetaAwaitingGrade(
                 Icon(
                     imageVector = Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = Color(0xFF171040),
+                    tint = checkmarkTint,
                     modifier = Modifier.padding(2.dp)
                 )
             }
@@ -1295,7 +1324,7 @@ private fun TarjetaAwaitingGrade(
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-0.01).em,
-                    color = Color(0xFFE8EBF3),
+                    color = titleColor,
                     lineHeight = 18.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -1329,7 +1358,7 @@ private fun TarjetaAwaitingGrade(
                     Text(
                         text = subtitleText,
                         fontSize = 11.5.sp,
-                        color = Color(0xFFE2DFFF).copy(alpha = 0.8f),
+                        color = subtitleColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
@@ -1344,14 +1373,14 @@ private fun TarjetaAwaitingGrade(
                                 .width(28.dp)
                                 .height(4.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.2f))
+                                .background(progressTrack)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .fillMaxWidth(fraction)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFE2DFFF))
+                                    .background(progressFill)
                             )
                         }
                         Spacer(modifier = Modifier.width(2.dp))
@@ -1359,7 +1388,7 @@ private fun TarjetaAwaitingGrade(
                             text = "$doneCount/${task.subtasks.size}",
                             fontSize = 10.5.sp,
                             fontFamily = FontFamily.Monospace,
-                            color = Color(0xFFE2DFFF).copy(alpha = 0.9f),
+                            color = progressText,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -1375,7 +1404,7 @@ private fun TarjetaAwaitingGrade(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.14f),
+                    color = pillBg,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
@@ -1384,7 +1413,7 @@ private fun TarjetaAwaitingGrade(
                         modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFE2DFFF),
+                        color = pillTextColor,
                         maxLines = 1,
                         softWrap = false
                     )
@@ -1414,17 +1443,32 @@ private fun FilaTarea(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalIsDarkTheme.current
     val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
     val isOverdue = !task.completed && dueDate.isBefore(today)
     val isToday = !task.completed && dueDate == today
     val isGraded = task.gradingStatus == TaskGradingStatus.GRADED
+
+    val cardBg = if (isDark) Color(0xFF171C24) else MaterialTheme.colorScheme.surfaceContainerLow
+    val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    val checkboxCheckedBg = if (isDark) Color(0xFF7F77DD) else MaterialTheme.colorScheme.primary
+    val checkboxUncheckedBorder = if (isDark) Color(0xFF6C7689) else MaterialTheme.colorScheme.outline
+    val checkmarkTint = if (isDark) Color(0xFF171040) else MaterialTheme.colorScheme.onPrimary
+
+    val titleBase = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
+    val titleColor = if (task.completed) titleBase.copy(alpha = 0.5f) else titleBase
+    val subtitleBase = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+    val subtitleColor = if (task.completed) subtitleBase.copy(alpha = 0.55f) else subtitleBase
+    val progressTrack = if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    val progressFill = if (isDark) Color(0xFF7F77DD) else MaterialTheme.colorScheme.primary
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .cleanClickable(shape = RoundedCornerShape(18.dp), onClick = onClick),
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFF171C24),
+        color = cardBg,
+        border = cardBorder,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -1435,10 +1479,10 @@ private fun FilaTarea(
             // Casilla de M3 cuadrada suave (6dp)
             Surface(
                 shape = RoundedCornerShape(6.dp),
-                color = if (task.completed) Color(0xFF7F77DD) else Color.Transparent,
+                color = if (task.completed) checkboxCheckedBg else Color.Transparent,
                 border = BorderStroke(
                     width = 2.dp,
-                    color = if (task.completed) Color(0xFF7F77DD) else Color(0xFF6C7689)
+                    color = if (task.completed) checkboxCheckedBg else checkboxUncheckedBorder
                 ),
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
@@ -1450,7 +1494,7 @@ private fun FilaTarea(
                     Icon(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = null,
-                        tint = Color(0xFF171040),
+                        tint = checkmarkTint,
                         modifier = Modifier.padding(2.dp)
                     )
                 }
@@ -1464,12 +1508,12 @@ private fun FilaTarea(
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.01).em,
-                    color = if (task.completed) Color(0xFFE8EBF3).copy(alpha = 0.5f) else Color(0xFFE8EBF3),
+                    color = titleColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.tachadoDe(
                         completado = task.completed,
-                        color = Color(0xFFE8EBF3).copy(alpha = 0.6f)
+                        color = titleBase.copy(alpha = 0.6f)
                     )
                 )
 
@@ -1489,7 +1533,6 @@ private fun FilaTarea(
                         )
                         Spacer(modifier = Modifier.width(1.dp))
                     }
-                    val subtitleColor = if (task.completed) Color(0xFF98A2B7).copy(alpha = 0.55f) else Color(0xFF98A2B7)
                     val subtitleText = buildString {
                         if (subject != null) {
                             append(subject.name)
@@ -1522,14 +1565,14 @@ private fun FilaTarea(
                                 .width(28.dp)
                                 .height(4.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF232B37))
+                                .background(progressTrack)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .fillMaxWidth(fraction)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF7F77DD))
+                                    .background(progressFill)
                             )
                         }
                         Spacer(modifier = Modifier.width(2.dp))
@@ -1556,7 +1599,7 @@ private fun FilaTarea(
                     isGraded -> {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF0A5C23),
+                            color = LocalSectionColors.current.onTrackContainer,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {
@@ -1565,7 +1608,7 @@ private fun FilaTarea(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFB4F2C4),
+                                color = LocalSectionColors.current.onOnTrackContainer,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -1574,7 +1617,7 @@ private fun FilaTarea(
                     task.completed -> {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF0A5C23),
+                            color = LocalSectionColors.current.onTrackContainer,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {
@@ -1583,7 +1626,7 @@ private fun FilaTarea(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFB4F2C4),
+                                color = LocalSectionColors.current.onOnTrackContainer,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -1597,7 +1640,7 @@ private fun FilaTarea(
                         }
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF8C1F0A),
+                            color = LocalSectionColors.current.expensesContainer,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {
@@ -1606,7 +1649,7 @@ private fun FilaTarea(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFFFDCD5),
+                                color = LocalSectionColors.current.onExpensesContainer,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -1618,7 +1661,7 @@ private fun FilaTarea(
                         } else ""
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF6B4E00),
+                            color = if (isDark) Color(0xFF6B4E00) else LocalSectionColors.current.atRiskContainer,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {
@@ -1627,7 +1670,7 @@ private fun FilaTarea(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFFFE29E),
+                                color = if (isDark) Color(0xFFFFE29E) else LocalSectionColors.current.onAtRiskContainer,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -1653,7 +1696,7 @@ private fun FilaTarea(
                             text = text,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF98A2B7),
+                            color = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -1665,13 +1708,7 @@ private fun FilaTarea(
                         modifier = Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(
-                                when (task.difficulty) {
-                                    TaskDifficulty.EASY -> Color(0xFF43A047)
-                                    TaskDifficulty.MEDIUM -> Color(0xFFFB8C00)
-                                    TaskDifficulty.HARD -> Color(0xFFE53935)
-                                }
-                            )
+                            .background(task.difficulty.color())
                     )
                 }
             }
@@ -1712,10 +1749,19 @@ private fun HojaTarea(
     val isOverdue = !task.completed && dueDate.isBefore(today)
     val isToday = !task.completed && dueDate == today
 
+    val isDark = LocalIsDarkTheme.current
+    val sheetContainerColor = if (isDark) Color(0xFF0D1017) else MaterialTheme.colorScheme.surfaceContainerLow
+    val cardBg = if (isDark) Color(0xFF171C24) else MaterialTheme.colorScheme.surface
+    val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    val textPrimary = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
+    val textSubtle = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+    val metaPillBg = if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
+    val metaPillBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = sheetContainerColor,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp) }
     ) {
@@ -1757,7 +1803,7 @@ private fun HojaTarea(
                         text = task.title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
+                        color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(
@@ -1766,7 +1812,8 @@ private fun HojaTarea(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF1C222D),
+                            color = metaPillBg,
+                            border = metaPillBorder,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {
@@ -1775,12 +1822,13 @@ private fun HojaTarea(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF98A2B7)
+                                color = textSubtle
                             )
                         }
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF1C222D),
+                            color = metaPillBg,
+                            border = metaPillBorder,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {
@@ -1799,7 +1847,7 @@ private fun HojaTarea(
                                     text = task.difficulty.shortLabel(),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFE8EBF3)
+                                    color = textPrimary
                                 )
                             }
                         }
@@ -1807,7 +1855,8 @@ private fun HojaTarea(
                             val durationText = formatEstimatedDuration(task.estimatedMinutes)
                             Surface(
                                 shape = CircleShape,
-                                color = Color(0xFF1C222D),
+                                color = metaPillBg,
+                                border = metaPillBorder,
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp
                             ) {
@@ -1816,7 +1865,7 @@ private fun HojaTarea(
                                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF98A2B7)
+                                    color = textSubtle
                                 )
                             }
                         }
@@ -1839,25 +1888,25 @@ private fun HojaTarea(
 
             // Bloque de Estado (Con botones de pospuesto rápido si está pendiente)
             val estadoColor = when {
-                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> Color(0xFF0A5C23)
-                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> Color(0xFF2E2A6B)
-                isOverdue -> Color(0xFF8C1F0A)
-                isToday -> Color(0xFF6B4E00)
-                else -> Color(0xFF1C222D)
+                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> if (isDark) Color(0xFF0A5C23) else LocalSectionColors.current.onTrackContainer
+                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.secondaryContainer
+                isOverdue -> if (isDark) Color(0xFF8C1F0A) else LocalSectionColors.current.expensesContainer
+                isToday -> if (isDark) Color(0xFF6B4E00) else LocalSectionColors.current.atRiskContainer
+                else -> if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
             }
             val estadoTextColor = when {
-                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> Color(0xFFB4F2C4)
-                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> Color(0xFFE2DFFF)
-                isOverdue -> Color(0xFFFFDCD5)
-                isToday -> Color(0xFFFFE29E)
-                else -> Color(0xFFE8EBF3)
+                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> if (isDark) Color(0xFFB4F2C4) else LocalSectionColors.current.onOnTrackContainer
+                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onSecondaryContainer
+                isOverdue -> if (isDark) Color(0xFFFFDCD5) else LocalSectionColors.current.onExpensesContainer
+                isToday -> if (isDark) Color(0xFFFFE29E) else LocalSectionColors.current.onAtRiskContainer
+                else -> if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
             }
             val estadoSubColor = when {
-                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> Color(0xFFB4F2C4).copy(alpha = 0.85f)
-                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> Color(0xFFE2DFFF).copy(alpha = 0.85f)
-                isOverdue -> Color(0xFFFFDCD5).copy(alpha = 0.85f)
-                isToday -> Color(0xFFFFE29E).copy(alpha = 0.85f)
-                else -> Color(0xFF98A2B7)
+                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> if (isDark) Color(0xFFB4F2C4).copy(alpha = 0.85f) else LocalSectionColors.current.onOnTrackContainer.copy(alpha = 0.85f)
+                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> if (isDark) Color(0xFFE2DFFF).copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
+                isOverdue -> if (isDark) Color(0xFFFFDCD5).copy(alpha = 0.85f) else LocalSectionColors.current.onExpensesContainer.copy(alpha = 0.85f)
+                isToday -> if (isDark) Color(0xFFFFE29E).copy(alpha = 0.85f) else LocalSectionColors.current.onAtRiskContainer.copy(alpha = 0.85f)
+                else -> if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
             }
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -1954,7 +2003,7 @@ private fun HojaTarea(
                                     .weight(1f)
                                     .cleanClickable { onPostponeTomorrow(task.id) },
                                 shape = RoundedCornerShape(topStart = 999.dp, bottomStart = 999.dp, topEnd = 10.dp, bottomEnd = 10.dp),
-                                color = Color.White.copy(alpha = 0.14f)
+                                color = if (isDark) Color.White.copy(alpha = 0.14f) else estadoTextColor.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                     text = stringResource(R.string.tasks_postpone_tomorrow),
@@ -1971,7 +2020,7 @@ private fun HojaTarea(
                                     .weight(1f)
                                     .cleanClickable { onPostponeNextMonday(task.id) },
                                 shape = RoundedCornerShape(10.dp),
-                                color = Color.White.copy(alpha = 0.14f)
+                                color = if (isDark) Color.White.copy(alpha = 0.14f) else estadoTextColor.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                     text = stringResource(R.string.tasks_postpone_next_monday),
@@ -1988,7 +2037,7 @@ private fun HojaTarea(
                                     .weight(1f)
                                     .cleanClickable { onOpenDatePicker(task.id) },
                                 shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 999.dp, bottomEnd = 999.dp),
-                                color = Color.White.copy(alpha = 0.14f)
+                                color = if (isDark) Color.White.copy(alpha = 0.14f) else estadoTextColor.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                     text = stringResource(R.string.tasks_postpone_pick_day),
@@ -2017,7 +2066,8 @@ private fun HojaTarea(
                         }
                     },
                 shape = RoundedCornerShape(22.dp),
-                color = Color(0xFF171C24)
+                color = cardBg,
+                border = cardBorder
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 15.dp, vertical = 13.dp),
@@ -2045,7 +2095,7 @@ private fun HojaTarea(
                             text = subject?.name ?: stringResource(R.string.tasks_no_subject),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE8EBF3)
+                            color = textPrimary
                         )
                         val subjectSubtitle = if (subject != null) {
                             val cutName = subject.cutScheme.cutName(subject.defaultCutId)
@@ -2057,14 +2107,14 @@ private fun HojaTarea(
                         Text(
                             text = subjectSubtitle,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF98A2B7)
+                            color = textSubtle
                         )
                     }
 
                     Icon(
                         imageVector = Icons.Rounded.ChevronRight,
                         contentDescription = null,
-                        tint = Color(0xFF98A2B7)
+                        tint = textSubtle
                     )
                 }
             }
@@ -2074,7 +2124,8 @@ private fun HojaTarea(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(22.dp),
-                    color = Color(0xFF171C24)
+                    color = cardBg,
+                    border = cardBorder
                 ) {
                     Column(
                         modifier = Modifier.padding(15.dp),
@@ -2085,12 +2136,12 @@ private fun HojaTarea(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.2.sp,
-                            color = Color(0xFF98A2B7)
+                            color = textSubtle
                         )
                         Text(
                             text = task.description,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFFE8EBF3),
+                            color = textPrimary,
                             lineHeight = 20.sp
                         )
                     }
@@ -2102,7 +2153,8 @@ private fun HojaTarea(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(22.dp),
-                    color = Color(0xFF171C24)
+                    color = cardBg,
+                    border = cardBorder
                 ) {
                     Column(
                         modifier = Modifier.padding(15.dp),
@@ -2118,7 +2170,7 @@ private fun HojaTarea(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 1.2.sp,
-                                color = Color(0xFF98A2B7)
+                                color = textSubtle
                             )
                             when {
                                 task.gradingStatus == TaskGradingStatus.GRADED -> {
@@ -2126,7 +2178,7 @@ private fun HojaTarea(
                                     Text(
                                         text = cutName,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFF98A2B7),
+                                        color = textSubtle,
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                                     )
                                 }
@@ -2134,7 +2186,7 @@ private fun HojaTarea(
                                     Text(
                                         text = "espera nota",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFF98A2B7),
+                                        color = textSubtle,
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                                     )
                                 }
@@ -2142,7 +2194,7 @@ private fun HojaTarea(
                                     Text(
                                         text = "${task.type.label().lowercase()} · se califica",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFF98A2B7),
+                                        color = textSubtle,
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                                     )
                                 }
@@ -2172,7 +2224,7 @@ private fun HojaTarea(
                                         Text(
                                             text = "registrada en la materia · ",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = Color(0xFF98A2B7)
+                                            color = textSubtle
                                         )
                                         Text(
                                             text = "verla allí",
@@ -2186,12 +2238,12 @@ private fun HojaTarea(
                                 Text(
                                     text = "Desvincular la nota la deja en la materia y la tarea queda como hecha.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF98A2B7),
+                                    color = textSubtle,
                                     fontSize = 12.sp
                                 )
                                 TextButton(
                                     onClick = { onUnlinkGradeClick(task.id) },
-                                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF5340))
+                                    colors = ButtonDefaults.textButtonColors(contentColor = if (isDark) Color(0xFFFF5340) else MaterialTheme.colorScheme.error)
                                 ) {
                                     Text(stringResource(R.string.tasks_action_unlink_grade), fontWeight = FontWeight.Bold)
                                 }
@@ -2222,14 +2274,14 @@ private fun HojaTarea(
                                 Text(
                                     text = "Se crea en ${subject.cutScheme.cutName(subject.defaultCutId)} de ${subject.name} y queda enlazada.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF98A2B7),
+                                    color = textSubtle,
                                     fontSize = 12.sp
                                 )
                                 TextButton(
                                     onClick = { onNoGradeClick(task.id) },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(stringResource(R.string.tasks_action_no_grade), color = Color(0xFF98A2B7))
+                                    Text(stringResource(R.string.tasks_action_no_grade), color = textSubtle)
                                 }
                             }
                             task.type.isGradable() -> {
@@ -2254,7 +2306,7 @@ private fun HojaTarea(
                                 Text(
                                     text = stringResource(R.string.tasks_eval_not_gradable_desc, task.type.label()),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF98A2B7)
+                                    color = textSubtle
                                 )
                             }
                         }
@@ -2266,7 +2318,8 @@ private fun HojaTarea(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
-                color = Color(0xFF171C24)
+                color = cardBg,
+                border = cardBorder
             ) {
                 Column(
                     modifier = Modifier.padding(15.dp),
@@ -2282,7 +2335,7 @@ private fun HojaTarea(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.2.sp,
-                            color = Color(0xFF98A2B7)
+                            color = textSubtle
                         )
                         val countText = if (task.subtasks.isNotEmpty()) {
                             stringResource(
@@ -2297,7 +2350,7 @@ private fun HojaTarea(
                             text = countText,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF98A2B7)
+                            color = textSubtle
                         )
                     }
 
@@ -2314,7 +2367,7 @@ private fun HojaTarea(
                                 color = if (subtask.isCompleted) Color(0xFF7F77DD) else Color.Transparent,
                                 border = BorderStroke(
                                     width = 1.5.dp,
-                                    color = if (subtask.isCompleted) Color(0xFF7F77DD) else Color(0xFF6C7689)
+                                    color = if (subtask.isCompleted) Color(0xFF7F77DD) else (if (isDark) Color(0xFF6C7689) else MaterialTheme.colorScheme.outline)
                                 ),
                                 modifier = Modifier.size(20.dp)
                             ) {
@@ -2334,9 +2387,9 @@ private fun HojaTarea(
                                 text = subtask.title,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .tachadoDe(subtask.isCompleted, Color(0xFF98A2B7)),
+                                    .tachadoDe(subtask.isCompleted, textSubtle),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (subtask.isCompleted) Color(0xFF98A2B7) else Color(0xFFE8EBF3)
+                                color = if (subtask.isCompleted) textSubtle else textPrimary
                             )
 
                             IconButton(
@@ -2346,7 +2399,7 @@ private fun HojaTarea(
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
                                     contentDescription = null,
-                                    tint = Color(0xFF98A2B7),
+                                    tint = textSubtle,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -2379,7 +2432,7 @@ private fun HojaTarea(
                             Icon(
                                 imageVector = Icons.Rounded.Add,
                                 contentDescription = stringResource(R.string.tasks_subtasks_add_step),
-                                tint = if (newSubtaskText.isNotBlank()) Color(0xFF7F77DD) else Color(0xFF98A2B7).copy(alpha = 0.4f)
+                                tint = if (newSubtaskText.isNotBlank()) Color(0xFF7F77DD) else textSubtle.copy(alpha = 0.4f)
                             )
                         }
                     }
@@ -2390,7 +2443,8 @@ private fun HojaTarea(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
-                color = Color(0xFF171C24)
+                color = cardBg,
+                border = cardBorder
             ) {
                 Column(
                     modifier = Modifier.padding(15.dp),
@@ -2401,7 +2455,7 @@ private fun HojaTarea(
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.2.sp,
-                        color = Color(0xFF98A2B7)
+                        color = textSubtle
                     )
 
                     val createdDate = remember(task.createdAt) { TaskDateUtils.fromMillis(task.createdAt) }
@@ -2463,12 +2517,12 @@ private fun HojaTarea(
                                             when {
                                                 paso.completado -> Color(0xFF11C045)
                                                 paso.actual -> Color(0xFF7F77DD)
-                                                else -> Color(0xFF232B37)
+                                                else -> if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
                                             }
                                         )
                                         .then(
                                             if (paso.actual) Modifier.border(2.dp, Color(0xFF7F77DD).copy(alpha = 0.5f), CircleShape)
-                                            else Modifier
+                                             else Modifier
                                         )
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -2476,13 +2530,13 @@ private fun HojaTarea(
                                     text = paso.titulo,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (paso.completado || paso.actual) Color(0xFFE8EBF3) else Color(0xFF98A2B7)
+                                    color = if (paso.completado || paso.actual) textPrimary else textSubtle
                                 )
                                 Text(
                                     text = paso.sub,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontSize = 10.sp,
-                                    color = Color(0xFF98A2B7)
+                                    color = textSubtle
                                 )
                             }
                         }
@@ -2506,8 +2560,8 @@ private fun HojaTarea(
                         .weight(1f)
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (task.completed) Color(0xFF232B37) else Color(0xFF11C045),
-                        contentColor = if (task.completed) Color(0xFFE8EBF3) else Color(0xFF00320F)
+                        containerColor = if (task.completed) (if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.surfaceContainerHigh) else Color(0xFF11C045),
+                        contentColor = if (task.completed) textPrimary else Color(0xFF00320F)
                     )
                 ) {
                     Text(
@@ -2525,7 +2579,8 @@ private fun HojaTarea(
 
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFF1C222D),
+                    color = metaPillBg,
+                    border = metaPillBorder,
                     modifier = Modifier.size(48.dp)
                 ) {
                     IconButton(
@@ -2537,7 +2592,7 @@ private fun HojaTarea(
                         Icon(
                             imageVector = Icons.Rounded.Edit,
                             contentDescription = stringResource(R.string.action_edit),
-                            tint = Color(0xFFE8EBF3),
+                            tint = textPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -2545,7 +2600,8 @@ private fun HojaTarea(
 
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFF1C222D),
+                    color = metaPillBg,
+                    border = metaPillBorder,
                     modifier = Modifier.size(48.dp)
                 ) {
                     IconButton(
@@ -2557,7 +2613,7 @@ private fun HojaTarea(
                         Icon(
                             imageVector = Icons.Rounded.ContentCopy,
                             contentDescription = stringResource(R.string.tasks_action_duplicate),
-                            tint = Color(0xFFE8EBF3),
+                            tint = textPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -2565,7 +2621,8 @@ private fun HojaTarea(
 
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFF1C222D),
+                    color = metaPillBg,
+                    border = metaPillBorder,
                     modifier = Modifier.size(48.dp)
                 ) {
                     IconButton(
@@ -2577,7 +2634,7 @@ private fun HojaTarea(
                         Icon(
                             imageVector = Icons.Rounded.Delete,
                             contentDescription = stringResource(R.string.action_delete),
-                            tint = Color(0xFFFF5340),
+                            tint = if (isDark) Color(0xFFFF5340) else MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -3046,10 +3103,26 @@ private fun TaskFilterSummaryChip(
         sortOrder = sortOrder
     )
 
+    val isDark = LocalIsDarkTheme.current
+    val chipBg = if (isFilterActive) {
+        if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.primaryContainer
+    } else {
+        if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val chipContent = if (isFilterActive) {
+        if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val chipBorder = if (!isFilterActive && !isDark) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    } else null
+
     Surface(
         modifier = Modifier.cleanClickable(shape = CircleShape, onClick = onClick),
         shape = CircleShape,
-        color = if (isFilterActive) Color(0xFF2E2A6B) else Color(0xFF1C222D),
+        color = chipBg,
+        border = chipBorder,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -3061,12 +3134,12 @@ private fun TaskFilterSummaryChip(
             Icon(
                 imageVector = Icons.Rounded.Tune,
                 contentDescription = stringResource(R.string.tasks_open_filters),
-                tint = if (isFilterActive) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                tint = chipContent,
                 modifier = Modifier.size(14.dp)
             )
             Text(
                 text = label,
-                color = if (isFilterActive) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                color = chipContent,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -3082,6 +3155,12 @@ private fun SectionTitle(
     count: Int,
     isOverdue: Boolean = false
 ) {
+    val isDark = LocalIsDarkTheme.current
+    val titleColor = if (isOverdue) {
+        if (isDark) Color(0xFFFF5340) else MaterialTheme.colorScheme.error
+    } else {
+        if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -3090,7 +3169,7 @@ private fun SectionTitle(
     ) {
         Text(
             text = text.uppercase(Locale.getDefault()),
-            color = if (isOverdue) Color(0xFFFF5340) else Color(0xFF98A2B7),
+            color = titleColor,
             fontSize = 10.5.sp,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 1.4.sp
@@ -3098,7 +3177,7 @@ private fun SectionTitle(
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = "$count",
-            color = if (isOverdue) Color(0xFFFF5340) else Color(0xFF98A2B7).copy(alpha = 0.85f),
+            color = titleColor.copy(alpha = 0.85f),
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.sp
@@ -3232,6 +3311,9 @@ private fun TasksFilterBottomSheet(
     onClear: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val isDark = LocalIsDarkTheme.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     val activeFiltersCount = (if (selectedStatus != TaskListFilter.ALL) 1 else 0) +
         (if (selectedSubjectId != null) 1 else 0) +
         (if (selectedPriority != null) 1 else 0) +
@@ -3245,26 +3327,26 @@ private fun TasksFilterBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF0D1017),
+        sheetState = sheetState,
+        containerColor = if (isDark) Color(0xFF0D1017) else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
             Box(
                 modifier = Modifier
-                    .padding(top = 10.dp)
+                    .padding(top = 16.dp, bottom = 12.dp)
                     .size(width = 44.dp, height = 4.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = if (isDark) 0.35f else 0.45f))
             )
         }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.85f)
                 .navigationBarsPadding()
-                .padding(start = 18.dp, end = 18.dp, bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             FiltersSheetHeader(
                 activeFiltersCount = activeFiltersCount,
@@ -3275,7 +3357,7 @@ private fun TasksFilterBottomSheet(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 FilterSheetSection(title = stringResource(R.string.tasks_status_title)) {
                     StatusFilterGrid(
@@ -3313,24 +3395,25 @@ private fun FiltersSheetHeader(
     activeFiltersCount: Int,
     onClear: () -> Unit
 ) {
+    val isDark = LocalIsDarkTheme.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 2.dp),
+            .padding(horizontal = 2.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(R.string.tasks_filter_title),
-                color = Color.White,
+                color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text = stringResource(R.string.tasks_filter_subtitle),
-                color = Color(0xFF8F97A8),
+                color = if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.5.sp,
                 lineHeight = 16.sp
             )
@@ -3341,7 +3424,7 @@ private fun FiltersSheetHeader(
         ) {
             Text(
                 text = stringResource(R.string.tasks_filter_clear),
-                color = if (activeFiltersCount > 0) Color(0xFF7C6EE6) else Color(0xFF98A2B7).copy(alpha = 0.5f),
+                color = if (activeFiltersCount > 0) Color(0xFF7C6EE6) else (if (isDark) Color(0xFF98A2B7).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -3355,20 +3438,26 @@ private fun FilterSheetSection(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    val isDark = LocalIsDarkTheme.current
+    val sectionBg = if (isDark) Color(0xFF141722) else MaterialTheme.colorScheme.surface
+    val titleColor = if (isDark) Color(0xFF727A8C) else MaterialTheme.colorScheme.onSurfaceVariant
+    val border = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        color = Color(0xFF141722),
+        color = sectionBg,
+        border = border,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
                 text = title.uppercase(Locale.getDefault()),
-                color = Color(0xFF727A8C),
+                color = titleColor,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.2.sp,
@@ -3384,6 +3473,7 @@ private fun StatusFilterGrid(
     selectedStatus: TaskListFilter,
     onStatusSelected: (TaskListFilter) -> Unit
 ) {
+    val isDark = LocalIsDarkTheme.current
     val options = listOf(
         Pair(TaskListFilter.ALL, stringResource(R.string.tasks_filter_all)),
         Pair(TaskListFilter.PENDING, stringResource(R.string.tasks_filter_pending)),
@@ -3399,9 +3489,10 @@ private fun StatusFilterGrid(
             ) {
                 rowItems.forEach { (filter, label) ->
                     val isSelected = selectedStatus == filter
-                    val cardBg = if (isSelected) Color(0xFF7C6EE6) else Color(0xFF1C202C)
-                    val contentColor = if (isSelected) Color(0xFF15112B) else Color(0xFFD8DCE8)
-                    val iconTint = if (isSelected) Color(0xFF15112B) else Color(0xFF8F97A8)
+                    val cardBg = if (isSelected) Color(0xFF7C6EE6) else (if (isDark) Color(0xFF1C202C) else MaterialTheme.colorScheme.surfaceContainerHigh)
+                    val contentColor = if (isSelected) Color(0xFF15112B) else (if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurface)
+                    val iconTint = if (isSelected) Color(0xFF15112B) else (if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant)
+                    val itemBorder = if (!isSelected && !isDark) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null
 
                     Surface(
                         modifier = Modifier
@@ -3409,6 +3500,7 @@ private fun StatusFilterGrid(
                             .cleanClickable(shape = RoundedCornerShape(16.dp)) { onStatusSelected(filter) },
                         shape = RoundedCornerShape(16.dp),
                         color = cardBg,
+                        border = itemBorder,
                         tonalElevation = 0.dp,
                         shadowElevation = 0.dp
                     ) {
@@ -3475,19 +3567,27 @@ private fun SubjectDropdownSelector(
     selectedSubjectId: String?,
     onSubjectSelected: (String?) -> Unit
 ) {
+    val isDark = LocalIsDarkTheme.current
     var expanded by remember { mutableStateOf(false) }
     val allSubjectsLabel = stringResource(R.string.tasks_all_subjects)
     val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
     val selectedLabel = selectedSubject?.name ?: allSubjectsLabel
+
+    val triggerBg = if (isDark) Color(0xFF1C202C) else MaterialTheme.colorScheme.surfaceContainerHigh
+    val triggerBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+    val triggerTextColor = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+    val triggerArrowColor = if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant
+    val menuBg = if (isDark) Color(0xFF171B26) else MaterialTheme.colorScheme.surfaceContainer
 
     FilterSheetSection(title = stringResource(R.string.tasks_field_subject)) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .cleanClickable(shape = RoundedCornerShape(16.dp)) { expanded = !expanded },
-                shape = RoundedCornerShape(16.dp),
-                color = Color(0xFF1C202C),
+                    .cleanClickable(shape = RoundedCornerShape(20.dp)) { expanded = !expanded },
+                shape = RoundedCornerShape(20.dp),
+                color = triggerBg,
+                border = triggerBorder,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp
             ) {
@@ -3516,7 +3616,7 @@ private fun SubjectDropdownSelector(
                     Text(
                         text = selectedLabel,
                         modifier = Modifier.weight(1f),
-                        color = Color.White,
+                        color = triggerTextColor,
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -3525,7 +3625,7 @@ private fun SubjectDropdownSelector(
                     Icon(
                         imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = Color(0xFF8F97A8),
+                        tint = triggerArrowColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -3534,16 +3634,24 @@ private fun SubjectDropdownSelector(
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = menuBg,
                 modifier = Modifier
-                    .background(Color(0xFF171B26))
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(24.dp))
+                    .then(
+                        if (!isDark) Modifier.border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                            RoundedCornerShape(24.dp)
+                        ) else Modifier
+                    )
             ) {
                 DropdownMenuItem(
                     text = {
                         Text(
                             text = allSubjectsLabel,
                             fontWeight = if (selectedSubjectId == null) FontWeight.ExtraBold else FontWeight.SemiBold,
-                            color = if (selectedSubjectId == null) Color(0xFFA396FF) else Color(0xFFD8DCE8),
+                            color = if (selectedSubjectId == null) Color(0xFF7C6EE6) else (if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurface),
                             fontSize = 13.5.sp
                         )
                     },
@@ -3551,7 +3659,7 @@ private fun SubjectDropdownSelector(
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                             contentDescription = null,
-                            tint = if (selectedSubjectId == null) Color(0xFF7C6EE6) else Color(0xFF8F97A8),
+                            tint = if (selectedSubjectId == null) Color(0xFF7C6EE6) else (if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant),
                             modifier = Modifier.size(20.dp)
                         )
                     },
@@ -3578,7 +3686,7 @@ private fun SubjectDropdownSelector(
                             Text(
                                 text = subject.name,
                                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
-                                color = if (isSelected) Color(0xFFA396FF) else Color(0xFFD8DCE8),
+                                color = if (isSelected) Color(0xFF7C6EE6) else (if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurface),
                                 fontSize = 13.5.sp
                             )
                         },
@@ -3617,48 +3725,30 @@ private fun PriorityFilterSection(
 ) {
     FilterSheetSection(title = stringResource(R.string.tasks_priority_title)) {
         val options = listOf(
-            null to stringResource(R.string.tasks_priority_all),
-            TaskDifficulty.HARD to stringResource(R.string.tasks_priority_high),
-            TaskDifficulty.MEDIUM to stringResource(R.string.tasks_priority_medium),
-            TaskDifficulty.EASY to stringResource(R.string.tasks_priority_low)
+            UniSegmentedOption<TaskDifficulty?>(
+                value = null,
+                label = stringResource(R.string.tasks_priority_all)
+            ),
+            UniSegmentedOption<TaskDifficulty?>(
+                value = TaskDifficulty.HARD,
+                label = stringResource(R.string.tasks_priority_high)
+            ),
+            UniSegmentedOption<TaskDifficulty?>(
+                value = TaskDifficulty.MEDIUM,
+                label = stringResource(R.string.tasks_priority_medium)
+            ),
+            UniSegmentedOption<TaskDifficulty?>(
+                value = TaskDifficulty.EASY,
+                label = stringResource(R.string.tasks_priority_low)
+            )
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            options.forEach { (priority, label) ->
-                val isSelected = selectedPriority == priority
-                val pillBg = if (isSelected) Color(0xFF7C6EE6) else Color(0xFF1C202C)
-                val textColor = if (isSelected) Color(0xFF15112B) else Color(0xFFD8DCE8)
-
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .cleanClickable(shape = RoundedCornerShape(14.dp)) { onPrioritySelected(priority) },
-                    shape = RoundedCornerShape(14.dp),
-                    color = pillBg,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(42.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                            color = textColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-        }
+        UniSegmentedControl(
+            selected = selectedPriority,
+            options = options,
+            onSelected = onPrioritySelected,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -3667,6 +3757,7 @@ private fun SortFilterSection(
     sortOrder: TaskSortOrder,
     onSortSelected: (TaskSortOrder) -> Unit
 ) {
+    val isDark = LocalIsDarkTheme.current
     FilterSheetSection(title = stringResource(R.string.tasks_order_title)) {
         val options = listOf(
             Pair(TaskSortOrder.DUE_DATE, stringResource(R.string.tasks_order_due_date)),
@@ -3677,6 +3768,12 @@ private fun SortFilterSection(
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             options.forEach { (option, label) ->
                 val isSelected = sortOrder == option
+                val textColor = if (isSelected) {
+                    if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+                } else {
+                    if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurfaceVariant
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -3691,7 +3788,7 @@ private fun SortFilterSection(
                         onClick = null,
                         colors = RadioButtonDefaults.colors(
                             selectedColor = Color(0xFF7C6EE6),
-                            unselectedColor = Color(0xFF52596A)
+                            unselectedColor = if (isDark) Color(0xFF52596A) else MaterialTheme.colorScheme.outline
                         ),
                         modifier = Modifier.size(20.dp)
                     )
@@ -3699,7 +3796,7 @@ private fun SortFilterSection(
                         text = label,
                         fontSize = 14.sp,
                         fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                        color = if (isSelected) Color.White else Color(0xFFD8DCE8)
+                        color = textColor
                     )
                 }
             }
