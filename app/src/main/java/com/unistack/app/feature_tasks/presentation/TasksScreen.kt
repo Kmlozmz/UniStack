@@ -139,6 +139,7 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
@@ -234,6 +235,8 @@ fun TasksScreen(
             }
         val prompt = viewModel.setTaskCompleted(task.id, checked)
         completionPrompt = prompt
+        // Si viene la hoja de nota, ella es el aviso: la barra sale al cerrarla.
+        val promptOcupaPantalla = prompt != null && subjects.any { it.id == prompt.task.subjectId }
         if (eraLaUltima) {
             if (prompt != null) {
                 pendingCelebration = true
@@ -242,7 +245,7 @@ fun TasksScreen(
             }
         }
 
-        coroutineScope.launch {
+        if (!promptOcupaPantalla) coroutineScope.launch {
             val msg = if (checked) {
                 if (task.gradingStatus == TaskGradingStatus.AWAITING_GRADE) {
                     "${task.title} · $msgAwaitingGrade"
@@ -829,6 +832,17 @@ fun TasksScreen(
                     if (pendingCelebration) {
                         celebrando = true
                         pendingCelebration = false
+                    }
+                    // «No lleva nota» vive en la barra: el aviso lo ofrece sin salir de la lista.
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = Textos.get(R.string.tasks_snackbar_submitted_waiting, prompt.task.title),
+                            actionLabel = Textos.get(R.string.tasks_snackbar_action_no_grade),
+                            duration = duracionDeDeshacer
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.markTaskAsNotGraded(prompt.task.id)
+                        }
                     }
                 },
                 onNoGrade = {
@@ -1822,7 +1836,7 @@ private fun HojaTarea(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = textSubtle
+                                color = textPrimary
                             )
                         }
                         Surface(
@@ -1865,7 +1879,7 @@ private fun HojaTarea(
                                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = textSubtle
+                                    color = textPrimary
                                 )
                             }
                         }
@@ -1937,7 +1951,7 @@ private fun HojaTarea(
                     val time = remember(task.dueDateMillis) { TaskDateUtils.timeFromMillis(task.dueDateMillis) }
 
                     val grande = when {
-                        task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> stringResource(R.string.tasks_pill_awaiting_grade)
+                        task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> stringResource(R.string.tasks_detail_awaiting_title)
                         task.gradingStatus == TaskGradingStatus.GRADED -> {
                             val grade = subject?.grades?.firstOrNull { it.id == task.linkedGradeId }
                             if (grade != null) {
@@ -1970,7 +1984,16 @@ private fun HojaTarea(
                             } ?: "hoy"
                             "Entregada el $deliveredDateStr · la nota ya está en la materia"
                         }
-                        task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> stringResource(R.string.tasks_detail_awaiting_desc, "hoy")
+                        task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> {
+                            // «Entregada el 9 sep»: fecha real de entrega; el orden día/mes lo pone cada idioma.
+                            val entregadaEl = remember(task.completedAt, task.dueDateMillis) {
+                                val d = TaskDateUtils.fromMillis(task.completedAt ?: task.dueDateMillis)
+                                d.dayOfMonth to d.month
+                                    .getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())
+                                    .replace(".", "").take(3)
+                            }
+                            stringResource(R.string.tasks_detail_awaiting_desc, entregadaEl.first, entregadaEl.second)
+                        }
                         task.completed -> stringResource(R.string.tasks_detail_done_desc, task.type.label().lowercase())
                         diff < 0 -> stringResource(R.string.tasks_detail_overdue_desc, formatTaskDate(dueDate) + if (hasTime) " ${formatTaskTime(time)}" else "")
                         diff == 0L -> {
@@ -2098,9 +2121,33 @@ private fun HojaTarea(
                             color = textPrimary
                         )
                         val subjectSubtitle = if (subject != null) {
-                            val cutName = subject.cutScheme.cutName(subject.defaultCutId)
-                            val targetStr = GradingScaleUtils.formatGrade(subject.targetAverage, gradingScale)
-                            "$cutName · Meta $targetStr · ${subject.grades.size} notas"
+                            // «Corte 2 · promedio 4,25 · te falta 3,1»: cuenta del corte con GradeCalculator, sin proyecciones.
+                            val corteId = subject.defaultCutId
+                            val cutName = subject.cutScheme.cutName(corteId)
+                            val notasDelCorte = subject.grades.filter { it.cutId == corteId }
+                            val promedioDelCorte = GradeCalculator.calculateCutAverage(notasDelCorte)
+                            if (promedioDelCorte == null) {
+                                stringResource(R.string.tasks_detail_subject_no_grades, cutName)
+                            } else {
+                                val promedioStr = GradingScaleUtils.formatGrade(promedioDelCorte, gradingScale)
+                                val cuenta = GradeCalculator.calculateCut(notasDelCorte)
+                                val falta = GradeCalculator.calculateNeededGrade(
+                                    cuenta.weightedPoints,
+                                    1.0 - cuenta.evaluatedFraction,
+                                    subject.targetAverage,
+                                    GradingScaleUtils.maxGradeFor(gradingScale)
+                                )
+                                if (falta != null && falta > 0.0) {
+                                    stringResource(
+                                        R.string.tasks_detail_subject_avg,
+                                        cutName,
+                                        promedioStr,
+                                        GradingScaleUtils.formatGrade(falta, gradingScale)
+                                    )
+                                } else {
+                                    stringResource(R.string.tasks_detail_subject_avg_only, cutName, promedioStr)
+                                }
+                            }
                         } else {
                             stringResource(R.string.tasks_detail_no_subject_hint)
                         }
@@ -2166,7 +2213,7 @@ private fun HojaTarea(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (task.type.isGradable() && task.gradingStatus == TaskGradingStatus.UNDECIDED) "AL MARCARLA" else stringResource(R.string.tasks_eval_title).uppercase(),
+                                text = stringResource(R.string.tasks_detail_eval_title).uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 1.2.sp,
@@ -2184,7 +2231,7 @@ private fun HojaTarea(
                                 }
                                 task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> {
                                     Text(
-                                        text = "espera nota",
+                                        text = stringResource(R.string.tasks_detail_awaiting_hint),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = textSubtle,
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
@@ -2192,7 +2239,10 @@ private fun HojaTarea(
                                 }
                                 task.type.isGradable() && !task.completed -> {
                                     Text(
-                                        text = "${task.type.label().lowercase()} · se califica",
+                                        text = stringResource(
+                                            R.string.tasks_detail_eval_gradable_hint,
+                                            task.type.label().lowercase()
+                                        ),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = textSubtle,
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
@@ -2254,35 +2304,33 @@ private fun HojaTarea(
                                     onClick = { onOpenGradeSheet(task) },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(48.dp),
+                                        .height(52.dp),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFF7F77DD),
                                         contentColor = Color(0xFF171040)
                                     )
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Grade,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = stringResource(R.string.tasks_record_grade_button),
                                         fontWeight = FontWeight.ExtraBold
                                     )
                                 }
                                 Text(
-                                    text = "Se crea en ${subject.cutScheme.cutName(subject.defaultCutId)} de ${subject.name} y queda enlazada.",
+                                    text = stringResource(
+                                        R.string.tasks_detail_eval_creates,
+                                        subject.cutScheme.cutName(subject.defaultCutId),
+                                        subject.name
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = textSubtle,
                                     fontSize = 12.sp
                                 )
-                                TextButton(
-                                    onClick = { onNoGradeClick(task.id) },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(stringResource(R.string.tasks_action_no_grade), color = textSubtle)
-                                }
+                                Text(
+                                    text = stringResource(R.string.tasks_detail_eval_no_grade_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = textSubtle,
+                                    fontSize = 12.sp
+                                )
                             }
                             task.type.isGradable() -> {
                                 val isWaiting = task.gradingStatus != TaskGradingStatus.NOT_GRADED

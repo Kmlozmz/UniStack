@@ -379,7 +379,6 @@
     <string name="tasks_review">Review</string>
     <string name="tasks_more_options">More options</string>
     <string name="tasks_action_record">Record</string>
-    <string name="tasks_action_no_grade">No grade received</string>
     <string name="tasks_action_unlink_grade">Unlink grade</string>
     <string name="tasks_action_duplicate">Duplicate</string>
     <string name="tasks_action_mark_completed">Mark completed</string>
@@ -768,7 +767,7 @@
     <string name="tasks_view_pending_results">View pending results</string>
     <string name="tasks_action_delete">Delete</string>
     <string name="tasks_action_edit">Edit</string>
-    <string name="tasks_record_grade_button">Record grade</string>
+    <string name="tasks_record_grade_button">Record the grade</string>
     <string name="tasks_grade_prefix">Grade %1$s</string>
     <string name="tasks_grade_recorded">Grade recorded</string>
     <string name="tasks_more_options_for">More options for %1$s</string>
@@ -859,7 +858,16 @@
     <string name="tasks_detail_in_days">In %1$d days · %2$s</string>
     <string name="tasks_detail_overdue_desc">Was due on %1$s and is still pending</string>
     <string name="tasks_detail_graded_desc">Submitted on %1$s · grade is already in the subject</string>
-    <string name="tasks_detail_awaiting_desc">Submitted on %1$s · enter it here when you receive it</string>
+    <string name="tasks_detail_awaiting_desc">Submitted on %2$s %1$d · enter it here when you receive it</string>
+    <string name="tasks_detail_awaiting_title">Waiting for grade</string>
+    <string name="tasks_detail_awaiting_hint">awaiting grade</string>
+    <string name="tasks_detail_eval_title">Evaluation</string>
+    <string name="tasks_detail_eval_gradable_hint">%1$s · graded</string>
+    <string name="tasks_detail_subject_avg">%1$s · average %2$s · need %3$s</string>
+    <string name="tasks_detail_subject_avg_only">%1$s · average %2$s</string>
+    <string name="tasks_detail_subject_no_grades">%1$s · no grades</string>
+    <string name="tasks_detail_eval_creates">It is created in %1$s of %2$s and stays linked.</string>
+    <string name="tasks_detail_eval_no_grade_hint">If it ends up with no grade, use “No grade” in the bar.</string>
     <string name="tasks_detail_done_desc">No grade · %1$s</string>
     <string name="tasks_detail_no_subject_hint">No subject · Assigning one allows recording a grade</string>
     <string name="tasks_postpone_tomorrow">Tomorrow</string>

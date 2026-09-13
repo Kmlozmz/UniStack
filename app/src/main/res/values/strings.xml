@@ -379,7 +379,6 @@
     <string name="tasks_review">Revisar</string>
     <string name="tasks_more_options">Más opciones</string>
     <string name="tasks_action_record">Registrar</string>
-    <string name="tasks_action_no_grade">No tuvo nota</string>
     <string name="tasks_action_unlink_grade">Desvincular nota</string>
     <string name="tasks_action_duplicate">Duplicar</string>
     <string name="tasks_action_mark_completed">Marcar completada</string>
@@ -768,7 +767,7 @@
     <string name="tasks_view_pending_results">Ver resultados pendientes</string>
     <string name="tasks_action_delete">Eliminar</string>
     <string name="tasks_action_edit">Editar</string>
-    <string name="tasks_record_grade_button">Registrar nota</string>
+    <string name="tasks_record_grade_button">Registrar la nota</string>
     <string name="tasks_grade_prefix">Nota %1$s</string>
     <string name="tasks_grade_recorded">Nota registrada</string>
     <string name="tasks_more_options_for">Más opciones de %1$s</string>
@@ -859,7 +858,16 @@
     <string name="tasks_detail_in_days">En %1$d días · %2$s</string>
     <string name="tasks_detail_overdue_desc">Vencía el %1$s y sigue pendiente</string>
     <string name="tasks_detail_graded_desc">Entregada el %1$s · la nota ya está en la materia</string>
-    <string name="tasks_detail_awaiting_desc">Entregada %1$s · cuando la tengas, regístrala aquí</string>
+    <string name="tasks_detail_awaiting_desc">Entregada el %1$d %2$s · cuando la tengas, regístrala aquí</string>
+    <string name="tasks_detail_awaiting_title">Esperando la nota</string>
+    <string name="tasks_detail_awaiting_hint">espera nota</string>
+    <string name="tasks_detail_eval_title">Evaluación</string>
+    <string name="tasks_detail_eval_gradable_hint">%1$s · se califica</string>
+    <string name="tasks_detail_subject_avg">%1$s · promedio %2$s · te falta %3$s</string>
+    <string name="tasks_detail_subject_avg_only">%1$s · promedio %2$s</string>
+    <string name="tasks_detail_subject_no_grades">%1$s · sin notas</string>
+    <string name="tasks_detail_eval_creates">Se crea en %1$s de %2$s y queda enlazada.</string>
+    <string name="tasks_detail_eval_no_grade_hint">Si al final no llevó nota, «No lleva nota» en la barra.</string>
     <string name="tasks_detail_done_desc">Sin nota · %1$s</string>
     <string name="tasks_detail_no_subject_hint">Sin materia · Ponérsela es lo que permite registrarle nota</string>
     <string name="tasks_postpone_tomorrow">Mañana</string>
