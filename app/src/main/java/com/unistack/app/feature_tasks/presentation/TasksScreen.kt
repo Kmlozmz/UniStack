@@ -56,6 +56,12 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material3.toPath
+import androidx.compose.ui.graphics.drawscope.withTransform
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.feature_grades.presentation.formaDeMateria
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -105,6 +111,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -398,7 +405,7 @@ fun TasksScreen(
                         doneCount = weekDone.size,
                         totalCount = weekTasks.size,
                         awaitingGradeCount = pendingGradeCount,
-                        estimatedMinutes = weekEstimatedMinutes
+                        todayPendingCount = todayTasks.size
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                 }
@@ -972,7 +979,7 @@ private fun TasksWeekHero(
     doneCount: Int,
     totalCount: Int,
     awaitingGradeCount: Int,
-    estimatedMinutes: Int,
+    todayPendingCount: Int,
     modifier: Modifier = Modifier
 ) {
     val hasOverdue = overdueCount > 0
@@ -1046,7 +1053,7 @@ private fun TasksWeekHero(
                 )
             }
 
-            if (awaitingGradeCount > 0 || estimatedMinutes > 0) {
+            if (awaitingGradeCount > 0 || todayPendingCount > 0 || (todayPendingCount == 0 && pendingCount > 0)) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -1065,22 +1072,22 @@ private fun TasksWeekHero(
                             )
                         }
                     }
-                    if (estimatedMinutes > 0) {
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.14f)
-                        ) {
-                            Text(
-                                text = stringResource(
-                                    R.string.tasks_hero_estimated_time,
-                                    TaskDateUtils.estimatedTimeText(estimatedMinutes)
-                                ),
-                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = contentColor
-                            )
-                        }
+                    val todayText = if (todayPendingCount > 0) {
+                        stringResource(R.string.tasks_hero_due_today, todayPendingCount)
+                    } else {
+                        stringResource(R.string.tasks_hero_today_clear)
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.14f)
+                    ) {
+                        Text(
+                            text = todayText,
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = contentColor
+                        )
                     }
                 }
             }
@@ -3238,7 +3245,7 @@ private fun TasksFilterBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color(0xFF0D1017),
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
@@ -3256,8 +3263,8 @@ private fun TasksFilterBottomSheet(
                 .fillMaxWidth()
                 .fillMaxHeight(0.85f)
                 .navigationBarsPadding()
-                .padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(start = 18.dp, end = 18.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             FiltersSheetHeader(
                 activeFiltersCount = activeFiltersCount,
@@ -3268,11 +3275,10 @@ private fun TasksFilterBottomSheet(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 FilterSheetSection(title = stringResource(R.string.tasks_status_title)) {
                     StatusFilterGrid(
-                        tasks = tasks,
                         selectedStatus = selectedStatus,
                         onStatusSelected = onStatusSelected
                     )
@@ -3296,7 +3302,6 @@ private fun TasksFilterBottomSheet(
             }
 
             FiltersSheetFooter(
-                tasksCount = filteredCount,
                 onDismiss = onDismiss
             )
         }
@@ -3309,47 +3314,34 @@ private fun FiltersSheetHeader(
     onClear: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Icon(
-            imageVector = Icons.Rounded.Tune,
-            contentDescription = null,
-            tint = Color(0xFF7F77DD),
-            modifier = Modifier.size(22.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = stringResource(R.string.tasks_filter_title),
-            color = Color(0xFFE8EBF3),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.ExtraBold
-        )
-        if (activeFiltersCount > 0) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Surface(
-                shape = CircleShape,
-                color = Color(0xFF2E2A6B),
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
-            ) {
-                Text(
-                    text = "$activeFiltersCount",
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                    color = Color(0xFFE2DFFF),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.tasks_filter_title),
+                color = Color.White,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = stringResource(R.string.tasks_filter_subtitle),
+                color = Color(0xFF8F97A8),
+                fontSize = 12.5.sp,
+                lineHeight = 16.sp
+            )
         }
-        Spacer(modifier = Modifier.weight(1f))
         TextButton(
             onClick = onClear,
             shape = CircleShape
         ) {
             Text(
                 text = stringResource(R.string.tasks_filter_clear),
-                color = if (activeFiltersCount > 0) Color(0xFF7F77DD) else Color(0xFF98A2B7).copy(alpha = 0.5f),
+                color = if (activeFiltersCount > 0) Color(0xFF7C6EE6) else Color(0xFF98A2B7).copy(alpha = 0.5f),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -3360,32 +3352,43 @@ private fun FiltersSheetHeader(
 @Composable
 private fun FilterSheetSection(
     title: String,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            text = title.uppercase(Locale.getDefault()),
-            color = Color(0xFF98A2B7),
-            fontSize = 10.5.sp,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 1.2.sp
-        )
-        content()
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = Color(0xFF141722),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = title.uppercase(Locale.getDefault()),
+                color = Color(0xFF727A8C),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.2.sp,
+                modifier = Modifier.padding(start = 2.dp)
+            )
+            content()
+        }
     }
 }
 
 @Composable
 private fun StatusFilterGrid(
-    tasks: List<StudentTask>,
     selectedStatus: TaskListFilter,
     onStatusSelected: (TaskListFilter) -> Unit
 ) {
-    val today = remember { TaskDateUtils.today() }
     val options = listOf(
-        Triple(TaskListFilter.ALL, stringResource(R.string.tasks_status_all), Color(0xFF7F77DD)),
-        Triple(TaskListFilter.PENDING, stringResource(R.string.tasks_tab_pending), Color(0xFFFFB800)),
-        Triple(TaskListFilter.COMPLETED, stringResource(R.string.tasks_tab_completed), Color(0xFF43A047)),
-        Triple(TaskListFilter.OVERDUE, stringResource(R.string.tasks_tab_overdue), Color(0xFFE53935))
+        Pair(TaskListFilter.ALL, stringResource(R.string.tasks_filter_all)),
+        Pair(TaskListFilter.PENDING, stringResource(R.string.tasks_filter_pending)),
+        Pair(TaskListFilter.COMPLETED, stringResource(R.string.tasks_filter_done)),
+        Pair(TaskListFilter.OVERDUE, stringResource(R.string.tasks_filter_overdue))
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3394,71 +3397,73 @@ private fun StatusFilterGrid(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                rowItems.forEach { (filter, label, accentColor) ->
-                    val count = when (filter) {
-                        TaskListFilter.ALL -> tasks.size
-                        TaskListFilter.PENDING -> tasks.count { !it.completed }
-                        TaskListFilter.COMPLETED -> tasks.count { it.completed }
-                        TaskListFilter.OVERDUE -> tasks.count { !it.completed && TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today) }
-                    }
+                rowItems.forEach { (filter, label) ->
                     val isSelected = selectedStatus == filter
+                    val cardBg = if (isSelected) Color(0xFF7C6EE6) else Color(0xFF1C202C)
+                    val contentColor = if (isSelected) Color(0xFF15112B) else Color(0xFFD8DCE8)
+                    val iconTint = if (isSelected) Color(0xFF15112B) else Color(0xFF8F97A8)
 
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .cleanClickable(shape = RoundedCornerShape(20.dp)) { onStatusSelected(filter) },
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (isSelected) accentColor.copy(alpha = 0.16f) else Color(0xFF171C24),
-                        border = BorderStroke(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) accentColor else Color(0xFF262E3B)
-                        ),
+                            .cleanClickable(shape = RoundedCornerShape(16.dp)) { onStatusSelected(filter) },
+                        shape = RoundedCornerShape(16.dp),
+                        color = cardBg,
                         tonalElevation = 0.dp,
                         shadowElevation = 0.dp
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp)
-                                .padding(horizontal = 12.dp),
+                                .height(52.dp)
+                                .padding(horizontal = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Icon(
                                 imageVector = filter.icon(),
                                 contentDescription = null,
-                                tint = if (isSelected) accentColor else Color(0xFF98A2B7),
-                                modifier = Modifier.size(18.dp)
+                                tint = iconTint,
+                                modifier = Modifier.size(19.dp)
                             )
                             Text(
                                 text = label,
-                                color = if (isSelected) Color.White else Color(0xFFE8EBF3),
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Bold,
+                                color = contentColor,
+                                fontSize = 13.5.sp,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
+                                overflow = TextOverflow.Ellipsis
                             )
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) accentColor.copy(alpha = 0.28f) else Color(0xFF232B37),
-                                tonalElevation = 0.dp,
-                                shadowElevation = 0.dp
-                            ) {
-                                Text(
-                                    text = "$count",
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = if (isSelected) accentColor else Color(0xFF98A2B7)
-                                )
-                            }
                         }
                     }
                 }
                 if (rowItems.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Icono de forma Material 3 Expressive para la materia seleccionada o en lista.
+ * Sincronizado 1:1 con la forma (formaDeMateria) y el color de Académico.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun SubjectShapeIcon(
+    color: Color,
+    seed: String,
+    modifier: Modifier = Modifier,
+    size: Dp = 18.dp
+) {
+    val estilo = LocalAppearancePreferences.current.badgeShape
+    val polygon = remember(seed, estilo) { formaDeMateria(estilo, seed) }
+    val path = polygon.toPath()
+    Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.size(size)) {
+            withTransform({ scale(this.size.width, this.size.height, pivot = Offset.Zero) }) {
+                drawPath(path, color)
             }
         }
     }
@@ -3480,10 +3485,9 @@ private fun SubjectDropdownSelector(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .cleanClickable(shape = RoundedCornerShape(20.dp)) { expanded = !expanded },
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF171C24),
-                border = BorderStroke(1.dp, if (expanded) Color(0xFF7F77DD) else Color(0xFF262E3B)),
+                    .cleanClickable(shape = RoundedCornerShape(16.dp)) { expanded = !expanded },
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF1C202C),
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp
             ) {
@@ -3496,24 +3500,23 @@ private fun SubjectDropdownSelector(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (selectedSubject != null) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .background(subjectAccent(selectedSubject))
+                        SubjectShapeIcon(
+                            color = subjectAccent(selectedSubject),
+                            seed = selectedSubject.id,
+                            size = 20.dp
                         )
                     } else {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                             contentDescription = null,
-                            tint = Color(0xFF98A2B7),
-                            modifier = Modifier.size(18.dp)
+                            tint = Color(0xFF7C6EE6),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     Text(
                         text = selectedLabel,
                         modifier = Modifier.weight(1f),
-                        color = Color(0xFFE8EBF3),
+                        color = Color.White,
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -3522,7 +3525,7 @@ private fun SubjectDropdownSelector(
                     Icon(
                         imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = Color(0xFF98A2B7),
+                        tint = Color(0xFF8F97A8),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -3532,25 +3535,36 @@ private fun SubjectDropdownSelector(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
-                    .background(Color(0xFF1C222D))
-                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF171B26))
+                    .clip(RoundedCornerShape(20.dp))
             ) {
                 DropdownMenuItem(
                     text = {
                         Text(
                             text = allSubjectsLabel,
-                            fontWeight = if (selectedSubjectId == null) FontWeight.ExtraBold else FontWeight.Normal,
-                            color = if (selectedSubjectId == null) Color(0xFF7F77DD) else Color(0xFFE8EBF3)
+                            fontWeight = if (selectedSubjectId == null) FontWeight.ExtraBold else FontWeight.SemiBold,
+                            color = if (selectedSubjectId == null) Color(0xFFA396FF) else Color(0xFFD8DCE8),
+                            fontSize = 13.5.sp
                         )
                     },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                             contentDescription = null,
-                            tint = if (selectedSubjectId == null) Color(0xFF7F77DD) else Color(0xFF98A2B7),
-                            modifier = Modifier.size(18.dp)
+                            tint = if (selectedSubjectId == null) Color(0xFF7C6EE6) else Color(0xFF8F97A8),
+                            modifier = Modifier.size(20.dp)
                         )
                     },
+                    trailingIcon = if (selectedSubjectId == null) {
+                        {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = Color(0xFF7C6EE6),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    } else null,
                     onClick = {
                         onSubjectSelected(null)
                         expanded = false
@@ -3563,18 +3577,28 @@ private fun SubjectDropdownSelector(
                         text = {
                             Text(
                                 text = subject.name,
-                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
-                                color = if (isSelected) Color(0xFF7F77DD) else Color(0xFFE8EBF3)
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                                color = if (isSelected) Color(0xFFA396FF) else Color(0xFFD8DCE8),
+                                fontSize = 13.5.sp
                             )
                         },
                         leadingIcon = {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(subjectColor)
+                            SubjectShapeIcon(
+                                color = subjectColor,
+                                seed = subject.id,
+                                size = 20.dp
                             )
                         },
+                        trailingIcon = if (isSelected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = Color(0xFF7C6EE6),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        } else null,
                         onClick = {
                             onSubjectSelected(subject.id)
                             expanded = false
@@ -3594,9 +3618,9 @@ private fun PriorityFilterSection(
     FilterSheetSection(title = stringResource(R.string.tasks_priority_title)) {
         val options = listOf(
             null to stringResource(R.string.tasks_priority_all),
-            TaskDifficulty.EASY to stringResource(R.string.tasks_priority_low),
+            TaskDifficulty.HARD to stringResource(R.string.tasks_priority_high),
             TaskDifficulty.MEDIUM to stringResource(R.string.tasks_priority_medium),
-            TaskDifficulty.HARD to stringResource(R.string.tasks_priority_high)
+            TaskDifficulty.EASY to stringResource(R.string.tasks_priority_low)
         )
 
         Row(
@@ -3605,46 +3629,29 @@ private fun PriorityFilterSection(
         ) {
             options.forEach { (priority, label) ->
                 val isSelected = selectedPriority == priority
-                val dotColor = when (priority) {
-                    TaskDifficulty.EASY -> Color(0xFF43A047)
-                    TaskDifficulty.MEDIUM -> Color(0xFFFB8C00)
-                    TaskDifficulty.HARD -> Color(0xFFE53935)
-                    null -> null
-                }
+                val pillBg = if (isSelected) Color(0xFF7C6EE6) else Color(0xFF1C202C)
+                val textColor = if (isSelected) Color(0xFF15112B) else Color(0xFFD8DCE8)
 
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .cleanClickable(shape = RoundedCornerShape(20.dp)) { onPrioritySelected(priority) },
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isSelected) Color(0xFF2E2A6B) else Color(0xFF171C24),
-                    border = BorderStroke(
-                        width = if (isSelected) 1.5.dp else 1.dp,
-                        color = if (isSelected) Color(0xFF7F77DD) else Color(0xFF262E3B)
-                    ),
+                        .cleanClickable(shape = RoundedCornerShape(14.dp)) { onPrioritySelected(priority) },
+                    shape = RoundedCornerShape(14.dp),
+                    color = pillBg,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 11.dp, horizontal = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(42.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        if (dotColor != null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(dotColor)
-                            )
-                        }
                         Text(
                             text = label,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
+                            fontSize = 13.sp,
+                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                            color = textColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -3660,72 +3667,40 @@ private fun SortFilterSection(
     sortOrder: TaskSortOrder,
     onSortSelected: (TaskSortOrder) -> Unit
 ) {
-    FilterSheetSection(title = stringResource(R.string.tasks_sort_title)) {
+    FilterSheetSection(title = stringResource(R.string.tasks_order_title)) {
         val options = listOf(
-            Pair(TaskSortOrder.DUE_DATE, Icons.Rounded.CalendarMonth),
-            Pair(TaskSortOrder.PRIORITY, Icons.Rounded.Flag),
-            Pair(TaskSortOrder.SUBJECT, Icons.AutoMirrored.Rounded.MenuBook),
-            Pair(TaskSortOrder.RECENT, Icons.Rounded.Schedule)
+            Pair(TaskSortOrder.DUE_DATE, stringResource(R.string.tasks_order_due_date)),
+            Pair(TaskSortOrder.PRIORITY, stringResource(R.string.tasks_order_priority)),
+            Pair(TaskSortOrder.SUBJECT, stringResource(R.string.tasks_order_subject))
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            options.chunked(2).forEach { rowItems ->
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            options.forEach { (option, label) ->
+                val isSelected = sortOrder == option
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .cleanClickable(shape = RoundedCornerShape(12.dp)) { onSortSelected(option) }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    rowItems.forEach { (option, icon) ->
-                        val isSelected = sortOrder == option
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .cleanClickable(shape = RoundedCornerShape(20.dp)) { onSortSelected(option) },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) Color(0xFF2E2A6B) else Color(0xFF171C24),
-                            border = BorderStroke(
-                                width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) Color(0xFF7F77DD) else Color(0xFF262E3B)
-                            ),
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                                    .padding(horizontal = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = if (isSelected) Color(0xFFE2DFFF) else Color(0xFF98A2B7),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = option.label,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) Color.White else Color(0xFFE8EBF3),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        tint = Color(0xFF7F77DD),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    if (rowItems.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = null,
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = Color(0xFF7C6EE6),
+                            unselectedColor = Color(0xFF52596A)
+                        ),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = label,
+                        fontSize = 14.sp,
+                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                        color = if (isSelected) Color.White else Color(0xFFD8DCE8)
+                    )
                 }
             }
         }
@@ -3734,7 +3709,6 @@ private fun SortFilterSection(
 
 @Composable
 private fun FiltersSheetFooter(
-    tasksCount: Int,
     onDismiss: () -> Unit
 ) {
     Button(
@@ -3742,33 +3716,27 @@ private fun FiltersSheetFooter(
         onClick = onDismiss,
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp),
+            .height(52.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF7F77DD),
-            contentColor = Color(0xFF171040)
+            containerColor = Color(0xFF7C6EE6),
+            contentColor = Color(0xFF15112B)
         )
     ) {
-        Icon(
-            imageVector = Icons.Rounded.Check,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "${stringResource(R.string.tasks_filter_apply)} ($tasksCount)",
-            color = Color(0xFF171040),
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 15.sp
+            text = stringResource(R.string.tasks_filter_ready),
+            color = Color(0xFF15112B),
+            fontSize = 15.sp,
+            fontWeight = FontWeight.ExtraBold
         )
     }
 }
 
 private fun TaskListFilter.icon(): ImageVector {
     return when (this) {
-        TaskListFilter.ALL -> Icons.Rounded.Check
-        TaskListFilter.PENDING -> Icons.Rounded.Schedule
-        TaskListFilter.COMPLETED -> Icons.Rounded.CheckCircle
-        TaskListFilter.OVERDUE -> Icons.Rounded.CalendarMonth
+        TaskListFilter.ALL -> Icons.Rounded.Menu
+        TaskListFilter.PENDING -> Icons.Rounded.CalendarMonth
+        TaskListFilter.COMPLETED -> Icons.Rounded.Check
+        TaskListFilter.OVERDUE -> Icons.Rounded.Info
     }
 }
 

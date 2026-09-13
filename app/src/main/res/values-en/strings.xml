@@ -820,6 +820,8 @@
     <string name="tasks_hero_hechas">done</string>
     <string name="tasks_hero_awaiting_grade">%1$d awaiting grade</string>
     <string name="tasks_hero_estimated_time">%1$s estimated</string>
+    <string name="tasks_hero_due_today">%1$d due today</string>
+    <string name="tasks_hero_today_clear">All clear today</string>
     <string name="tasks_rail_all">All</string>
     <string name="tasks_group_submitted_waiting">Submitted without grade</string>
     <string name="tasks_group_overdue">Overdue</string>
@@ -833,6 +835,9 @@
     <string name="tasks_filter_pending">Pending</string>
     <string name="tasks_filter_done">Done</string>
     <string name="tasks_filter_overdue">Overdue</string>
+    <string name="tasks_filter_subtitle">What appears in the list. The numbers above stay the same.</string>
+    <string name="tasks_filter_ready">Done</string>
+    <string name="tasks_order_title">Order</string>
     <string name="tasks_order_due_date">By due date</string>
     <string name="tasks_order_priority">By priority</string>
     <string name="tasks_order_subject">By subject</string>

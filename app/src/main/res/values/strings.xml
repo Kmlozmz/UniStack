@@ -820,6 +820,8 @@
     <string name="tasks_hero_hechas">hechas</string>
     <string name="tasks_hero_awaiting_grade">%1$d esperan nota</string>
     <string name="tasks_hero_estimated_time">%1$s estimadas</string>
+    <string name="tasks_hero_due_today">%1$d para hoy</string>
+    <string name="tasks_hero_today_clear">Al día hoy</string>
     <string name="tasks_rail_all">Todas</string>
     <string name="tasks_group_submitted_waiting">Entregadas sin nota</string>
     <string name="tasks_group_overdue">Vencidas</string>
@@ -833,6 +835,9 @@
     <string name="tasks_filter_pending">Pendientes</string>
     <string name="tasks_filter_done">Hechas</string>
     <string name="tasks_filter_overdue">Vencidas</string>
+    <string name="tasks_filter_subtitle">Lo que se ve en la lista. Las cifras de arriba no cambian.</string>
+    <string name="tasks_filter_ready">Listo</string>
+    <string name="tasks_order_title">Orden</string>
     <string name="tasks_order_due_date">Por fecha de entrega</string>
     <string name="tasks_order_priority">Por prioridad</string>
     <string name="tasks_order_subject">Por materia</string>
