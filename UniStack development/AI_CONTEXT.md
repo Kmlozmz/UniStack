@@ -33,7 +33,7 @@ Detalle: [`TECH_STACK.md`](TECH_STACK.md), [`ARCHITECTURE.md`](ARCHITECTURE.md),
 1. **Todo APK de release recién compilado va al bot de Telegram del desarrollador, sin
    preguntar.** El comando del día a día:
    `./gradlew sendAlpha "-PversionName=1.6.0-alpha.N"` (comillas obligatorias en PowerShell).
-   Siguiente número al escribir esto: **`1.6.0-alpha.96`**. → [`BUILD.md`](BUILD.md)
+   Siguiente número al escribir esto: **`1.6.1-alpha.5`** (la serie pasó a 1.6.1 el 13 sep 2026). → [`BUILD.md`](BUILD.md)
 2. **Commits en inglés, Conventional Commits, cuerpo que explica el porqué, y NUNCA un trailer
    `Co-Authored-By` ni «Generated with…».** El desarrollador lo pidió y tuvo que repetirlo.
    Escribir el mensaje a un fichero y usar `git commit -F`. → [`DEVELOPMENT_WORKFLOW.md`](DEVELOPMENT_WORKFLOW.md)

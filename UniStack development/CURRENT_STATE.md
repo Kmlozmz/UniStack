@@ -10,7 +10,7 @@ el `git log` de la rama `TDL` manda.
 | Rama de trabajo | `TDL` (= `main`, fast-forward al cerrar cada tanda) |
 | Último commit | `f06d392` — `feat(i18n): support, templates, previews, theme names and the last loose texts read resources` |
 | Última alpha enviada | `1.6.0-alpha.95` (envío #99 por el bot, 11 sep 2026) |
-| Siguiente alpha | `1.6.0-alpha.96` |
+| Siguiente alpha | `1.6.1-alpha.5` (serie 1.6.1 desde el 13 sep 2026) |
 | Última versión **publicada** en GitHub | `1.5.10` (26 ago 2026) |
 | Base de datos | Room v21, 12 tablas |
 | Código | 307 ficheros Kotlin, ~84.500 líneas; 2.733 cadenas por idioma (es, en) |
