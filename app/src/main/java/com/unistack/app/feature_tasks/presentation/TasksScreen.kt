@@ -130,7 +130,6 @@ import com.unistack.app.core.design.components.UniSearchField
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButtonDefaults
-import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.components.celebracionDelDia
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.components.duracionDeDeshacer
@@ -2699,13 +2698,20 @@ private fun HojaNota(
     onDismiss: () -> Unit,
     onSaveGrade: (Double, Double?, String) -> Boolean
 ) {
+    val isDark = LocalIsDarkTheme.current
+    val sheetContainerColor = if (isDark) Color(0xFF0D1017) else MaterialTheme.colorScheme.surfaceContainerLow
+    val cardBg = if (isDark) Color(0xFF171C24) else MaterialTheme.colorScheme.surface
+    val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    val textPrimary = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
+    val textSubtle = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+    val greenAccent = Color(0xFF11C045)
+    val greenText = Color(0xFF00320F)
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var valueInput by remember(task.id) {
         val initialVal = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) 85.0 else 4.0
         mutableDoubleStateOf(initialVal)
     }
-    var percentageInput by remember(task.id) { mutableStateOf("") }
-    var weightUnknown by remember(task.id) { mutableStateOf(false) }
     var selectedCutId by remember(task.id, subject.activeCutId) {
         mutableStateOf(task.cutId ?: subject.defaultCutId)
     }
@@ -2715,7 +2721,7 @@ private fun HojaNota(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = sheetContainerColor,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp) }
     ) {
@@ -2724,9 +2730,9 @@ private fun HojaNota(
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 20.dp)
+                .padding(bottom = 24.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Cabecera
             Row(
@@ -2744,7 +2750,7 @@ private fun HojaNota(
                         text = subject.name.firstOrNull()?.uppercase() ?: "?",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.surface
+                        color = Color(0xFF0A0C11)
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
@@ -2752,82 +2758,116 @@ private fun HojaNota(
                         text = stringResource(R.string.tasks_grade_sheet_title, task.title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = textPrimary
                     )
                     Text(
                         text = stringResource(R.string.tasks_grade_sheet_subtitle, subject.name),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = textSubtle
                     )
                 }
             }
 
-            // Stepper de nota
+            // Stepper de nota (Tarjeta VALOR)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer
+                shape = RoundedCornerShape(22.dp),
+                color = cardBg,
+                border = cardBorder
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.tasks_grade_value_label).uppercase() + " · " + stringResource(R.string.tasks_grade_scale_label, maxGrade.toInt()),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.2.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.tasks_grade_value_label).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.2.sp,
+                            color = textSubtle
+                        )
+                        val maxGradeLabel = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) {
+                            "100"
+                        } else {
+                            GradingScaleUtils.formatGrade(maxGrade, gradingScale).let {
+                                if (java.util.Locale.getDefault().language == "es") it.replace('.', ',') else it
+                            }
+                        }
+                        Text(
+                            text = stringResource(R.string.tasks_grade_scale_label, maxGradeLabel),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = textSubtle
+                        )
+                    }
 
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            color = if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.size(48.dp)
                         ) {
                             IconButton(
                                 onClick = {
-                                    val step = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) 1.0 else 0.1
-                                    valueInput = (valueInput - step).coerceAtLeast(0.0)
+                                    valueInput = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) {
+                                        (valueInput - 1.0).coerceAtLeast(0.0)
+                                    } else {
+                                        (Math.round((valueInput - 0.1) * 10.0) / 10.0).coerceAtLeast(0.0)
+                                    }
                                 }
                             ) {
                                 Text(
                                     text = "−",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = textPrimary
                                 )
                             }
                         }
 
+                        Spacer(modifier = Modifier.width(32.dp))
+
+                        val formattedGrade = remember(valueInput, gradingScale) {
+                            val formatted = GradingScaleUtils.formatGrade(valueInput, gradingScale)
+                            if (java.util.Locale.getDefault().language == "es") formatted.replace('.', ',') else formatted
+                        }
                         Text(
-                            text = GradingScaleUtils.formatGrade(valueInput, gradingScale),
+                            text = formattedGrade,
                             style = MaterialTheme.typography.displayMedium,
                             fontWeight = FontWeight.Black,
-                            color = LocalSectionColors.current.onTrack
+                            color = greenAccent
                         )
+
+                        Spacer(modifier = Modifier.width(32.dp))
 
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            color = if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.size(48.dp)
                         ) {
                             IconButton(
                                 onClick = {
-                                    val step = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) 1.0 else 0.1
-                                    valueInput = (valueInput + step).coerceAtMost(maxGrade)
+                                    valueInput = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) {
+                                        (valueInput + 1.0).coerceAtMost(maxGrade)
+                                    } else {
+                                        (Math.round((valueInput + 0.1) * 10.0) / 10.0).coerceAtMost(maxGrade)
+                                    }
                                 }
                             ) {
                                 Text(
                                     text = "+",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = textPrimary
                                 )
                             }
                         }
@@ -2835,127 +2875,75 @@ private fun HojaNota(
                 }
             }
 
-            // Selector de corte
+            // Selector de corte (Tarjeta CORTE)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer
+                shape = RoundedCornerShape(22.dp),
+                color = cardBg,
+                border = cardBorder
             ) {
                 Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.tasks_grade_cut_label).uppercase(),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.2.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = textSubtle
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        subject.cutScheme.cuts.sortedBy { it.order }.forEach { cut ->
-                            val isSelected = selectedCutId == cut.id
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .cleanClickable { selectedCutId = cut.id },
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
-                            ) {
-                                Text(
-                                    text = cut.name,
-                                    modifier = Modifier.padding(vertical = 10.dp),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                    val cutOptions = remember(subject) {
+                        subject.cutScheme.cuts.sortedBy { it.order }.map { cut ->
+                            UniSegmentedOption(
+                                value = cut.id,
+                                label = cut.name
+                            )
                         }
                     }
+                    UniSegmentedControl(
+                        selected = selectedCutId,
+                        options = cutOptions,
+                        onSelected = { selectedCutId = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Text(
                         text = stringResource(R.string.tasks_grade_cut_hint),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = textSubtle,
+                        lineHeight = 16.sp
                     )
                 }
             }
 
-            // Peso opcional
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.tasks_unknown_weight),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(R.string.tasks_unknown_weight_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        UniSwitch(
-                            checked = weightUnknown,
-                            onCheckedChange = { weightUnknown = it }
-                        )
-                    }
-
-                    if (!weightUnknown) {
-                        OutlinedTextField(
-                            value = percentageInput,
-                            onValueChange = { percentageInput = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                            label = { Text(stringResource(R.string.tasks_weight_in_cut)) },
-                            suffix = { Text("%") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-                }
-            }
-
             error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
 
             Button(
-                shapes = UniStackButtonDefaults.shapes,
                 onClick = {
-                    val percentage = if (weightUnknown) null else percentageInput.toDoubleOrNull()
-                    if (!onSaveGrade(valueInput, percentage, selectedCutId)) {
+                    if (!onSaveGrade(valueInput, null, selectedCutId)) {
                         error = "Error al guardar la nota"
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
+                    .height(52.dp),
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LocalSectionColors.current.onTrack,
-                    contentColor = MaterialTheme.colorScheme.surface
+                    containerColor = greenAccent,
+                    contentColor = greenText
                 )
             ) {
                 Text(
                     text = stringResource(R.string.tasks_grade_save_action),
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold
                 )
             }

@@ -893,7 +893,7 @@
     <string name="tasks_grade_scale_label">out of %1$s</string>
     <string name="tasks_grade_cut_label">Cut</string>
     <string name="tasks_grade_save_action">Save grade</string>
-    <string name="tasks_grade_cut_hint">Pre-selected based on the task due date.</string>
+    <string name="tasks_grade_cut_hint">The cut matching the due date is preselected. Weight within the cut is distributed as configured in the subject.</string>
     <string name="tasks_snackbar_submitted_waiting">%1$s submitted · awaiting grade</string>
     <string name="tasks_snackbar_action_no_grade">Not graded</string>
     <string name="tasks_snackbar_done">%1$s done</string>

@@ -893,7 +893,7 @@
     <string name="tasks_grade_scale_label">sobre %1$s</string>
     <string name="tasks_grade_cut_label">Corte</string>
     <string name="tasks_grade_save_action">Guardar la nota</string>
-    <string name="tasks_grade_cut_hint">Viene puesto el corte que toca por la fecha de entrega.</string>
+    <string name="tasks_grade_cut_hint">Viene puesto el corte que toca por la fecha de entrega. El peso dentro del corte se reparte como en la materia.</string>
     <string name="tasks_snackbar_submitted_waiting">%1$s entregada · esperando la nota</string>
     <string name="tasks_snackbar_action_no_grade">No lleva nota</string>
     <string name="tasks_snackbar_done">%1$s hecha</string>
