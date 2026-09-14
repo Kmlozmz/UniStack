@@ -879,7 +879,7 @@
     <string name="tasks_postpone_pick_day">Pick day</string>
     <string name="tasks_full_related_title">More from %1$s</string>
     <string name="tasks_attachment_sheet_title">Attach to the task</string>
-    <string name="tasks_attachment_sheet_subtitle">Copied inside UniStack — up to %1$s, 12 per task</string>
+    <string name="tasks_attachment_sheet_subtitle">Up to %1$s, 12 per task</string>
     <string name="tasks_attachment_pick_photo">Photo from gallery</string>
     <string name="tasks_attachment_take_photo">Take photo</string>
     <string name="tasks_attachment_pick_file">File</string>

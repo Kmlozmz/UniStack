@@ -7,7 +7,12 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.unistack.app.R
 import com.unistack.app.core.design.components.cleanClickable
@@ -162,36 +168,50 @@ fun TaskAttachMenuSheet(
                 text = stringResource(R.string.tasks_attachment_sheet_subtitle, Attachments.formatSize(Attachments.MAX_BYTES)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 10.dp, start = 2.dp)
+                modifier = Modifier.padding(bottom = 14.dp, start = 2.dp)
             )
-            TaskAttachMenuRow(Icons.Rounded.Image, stringResource(R.string.tasks_attachment_pick_photo), onPickPhoto)
-            TaskAttachMenuRow(Icons.Rounded.CameraAlt, stringResource(R.string.tasks_attachment_take_photo), onTakePhoto)
-            TaskAttachMenuRow(Icons.Rounded.Description, stringResource(R.string.tasks_attachment_pick_file), onPickFile)
-            TaskAttachMenuRow(Icons.Rounded.Mic, stringResource(R.string.tasks_attachment_record_audio), onRecordAudio)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TaskAttachMenuTile(Modifier.weight(1f), Icons.Rounded.Image, stringResource(R.string.tasks_attachment_pick_photo), onPickPhoto)
+                TaskAttachMenuTile(Modifier.weight(1f), Icons.Rounded.CameraAlt, stringResource(R.string.tasks_attachment_take_photo), onTakePhoto)
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TaskAttachMenuTile(Modifier.weight(1f), Icons.Rounded.Description, stringResource(R.string.tasks_attachment_pick_file), onPickFile)
+                TaskAttachMenuTile(Modifier.weight(1f), Icons.Rounded.Mic, stringResource(R.string.tasks_attachment_record_audio), onRecordAudio)
+            }
         }
     }
 }
 
 @Composable
-private fun TaskAttachMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+private fun TaskAttachMenuTile(
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .cleanClickable(shape = RoundedCornerShape(16.dp), onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .heightIn(min = 96.dp)
+            .cleanClickable(shape = RoundedCornerShape(18.dp), onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
-        androidx.compose.foundation.layout.Row(
-            modifier = Modifier.padding(horizontal = 15.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 16.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = label,
-                modifier = Modifier.padding(start = 14.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
         }
     }

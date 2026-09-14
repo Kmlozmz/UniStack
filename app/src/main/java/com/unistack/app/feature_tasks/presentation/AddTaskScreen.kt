@@ -6,7 +6,6 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 
-import androidx.compose.animation.AnimatedVisibility
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
@@ -40,6 +39,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -644,26 +647,23 @@ private fun AddTaskContent(
                             },
                             onRemove = { viewModel.removeTaskAttachment(it) }
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth().bounceClick { attachController.openMenu() },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                            Text(
-                                text = stringResource(R.string.tasks_attachment_add),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        AttachmentAddBox(onClick = { attachController.openMenu() })
                     }
                 }
             }
             FormSection(title = stringResource(R.string.tasks_classification_title)) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     TaskTypeSelector(selected = selectedType, onSelected = onTypeSelected)
-                    PrioritySegmentedControl(selected = selectedPriority, onSelected = onPrioritySelected)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.tasks_priority_title),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                        PrioritySegmentedControl(selected = selectedPriority, onSelected = onPrioritySelected)
+                    }
                 }
             }
             FormSection(title = stringResource(R.string.tasks_evaluation_title)) {
@@ -760,6 +760,52 @@ private fun AddTaskContent(
                 TextButton(onClick = { attachError = null }) { Text(stringResource(R.string.common_understood)) }
             }
         )
+    }
+}
+
+/**
+ * Recuadro de borde punteado para adjuntar. Era una fila de texto plano, «+ Adjuntar»: la única
+ * llamada a acción de la pantalla sin superficie propia, así que se perdía entre las tarjetas.
+ */
+@Composable
+private fun AttachmentAddBox(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val strokeColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)
+    val cornerRadiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { 16.dp.toPx() }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(60.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .drawWithCache {
+                val stroke = Stroke(
+                    width = 1.5.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 7f), 0f)
+                )
+                onDrawBehind {
+                    drawRoundRect(
+                        color = strokeColor,
+                        style = stroke,
+                        cornerRadius = CornerRadius(cornerRadiusPx)
+                    )
+                }
+            }
+            .bounceClick(onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(
+                Icons.Rounded.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = stringResource(R.string.tasks_attachment_add),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
@@ -894,7 +940,6 @@ private fun BasicInfoCard(
             isValid = titleIsValid,
             error = titleError
         )
-        FormDivider()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -916,16 +961,14 @@ private fun BasicInfoCard(
                 onClick = onTimeClick
             )
         }
-        FormDivider()
+        val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
         SubjectDropdown(
             subjects = subjects,
             selectedSubjectId = selectedSubjectId,
             onCreateSubjectClick = onCreateSubjectClick,
             onSubjectSelected = onSubjectSelected
         )
-        val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
         if (selectedSubject != null) {
-            FormDivider()
             CutDropdown(
                 subject = selectedSubject,
                 selectedCutId = selectedCutId ?: selectedSubject.defaultCutId,
@@ -1004,7 +1047,7 @@ private fun TaskNameRow(
             singleLine = true,
             textStyle = MaterialTheme.typography.titleMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.SemiBold
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             decorationBox = { innerTextField ->
@@ -1040,8 +1083,10 @@ private fun BasicInfoActionRow(
     label: String,
     value: String,
     placeholder: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    accentColor: Color? = null
 ) {
+    val isSet = value.isNotBlank()
     BasicInfoRowShell(
         modifier = Modifier
             .heightIn(min = 72.dp)
@@ -1050,11 +1095,19 @@ private fun BasicInfoActionRow(
         label = label
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            if (isSet && accentColor != null) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(accentColor, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
             Text(
                 text = value.ifBlank { placeholder },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isSet) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = if (isSet) FontWeight.SemiBold else FontWeight.Normal
             )
             Spacer(modifier = Modifier.weight(1f))
             Icon(
@@ -1101,9 +1154,9 @@ private fun BasicInfoRowShell(
             content = {
                 Text(
                     text = label,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Normal
                 )
                 content()
             }
@@ -1223,7 +1276,7 @@ private fun GradingIntentSelector(
     onSelected: (TaskGradingChoice) -> Unit
 ) {
     val gradable = taskType.isGradable()
-    FormSectionCard {
+    Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -1270,7 +1323,6 @@ private fun SubtasksCard(
     onDeleteSubtask: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var subtasksEnabled by remember(subtasks.isNotEmpty()) { mutableStateOf(subtasks.isNotEmpty()) }
     var isAdding by remember { mutableStateOf(false) }
     var newStepText by remember { mutableStateOf("") }
 
@@ -1283,183 +1335,152 @@ private fun SubtasksCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.tasks_subtasks_enable_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 12.dp)
-                )
-                UniSwitch(
-                    checked = subtasksEnabled,
-                    onCheckedChange = { checked ->
-                        subtasksEnabled = checked
-                        if (checked && subtasks.isEmpty()) {
-                            isAdding = true
+            subtasks.forEachIndexed { index, subtask ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                color = if (subtask.isCompleted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                else Color.Transparent,
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .border(
+                                width = 1.5.dp,
+                                color = if (subtask.isCompleted) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outlineVariant,
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .clickable { onToggleSubtask(index) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (subtask.isCompleted) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
-                )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = subtask.title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                        ),
+                        color = if (subtask.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.onSurface
+                    )
+                    IconButton(
+                        onClick = { onDeleteSubtask(index) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
 
-            AnimatedVisibility(visible = subtasksEnabled) {
-                Column(
+            if (isAdding) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    subtasks.forEachIndexed { index, subtask ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        color = if (subtask.isCompleted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                        else Color.Transparent,
-                                        shape = RoundedCornerShape(6.dp)
-                                    )
-                                    .border(
-                                        width = 1.5.dp,
-                                        color = if (subtask.isCompleted) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.outlineVariant,
-                                        shape = RoundedCornerShape(6.dp)
-                                    )
-                                    .clickable { onToggleSubtask(index) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (subtask.isCompleted) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = subtask.title,
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else TextDecoration.None
-                                ),
-                                color = if (subtask.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                else MaterialTheme.colorScheme.onSurface
-                            )
-                            IconButton(
-                                onClick = { onDeleteSubtask(index) },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Delete,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(18.dp)
+                    BasicTextField(
+                        value = newStepText,
+                        onValueChange = { newStepText = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        decorationBox = { inner ->
+                            if (newStepText.isBlank()) {
+                                Text(
+                                    stringResource(R.string.tasks_subtasks_add_step),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                             }
+                            inner()
                         }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            if (newStepText.isNotBlank()) {
+                                onAddSubtask(newStepText.trim())
+                                newStepText = ""
+                                isAdding = false
+                            }
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
-
-                    if (isAdding) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            BasicTextField(
-                                value = newStepText,
-                                onValueChange = { newStepText = it },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                decorationBox = { inner ->
-                                    if (newStepText.isBlank()) {
-                                        Text(
-                                            stringResource(R.string.tasks_subtasks_add_step),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                        )
-                                    }
-                                    inner()
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(
-                                onClick = {
-                                    if (newStepText.isNotBlank()) {
-                                        onAddSubtask(newStepText.trim())
-                                        newStepText = ""
-                                        isAdding = false
-                                    }
-                                },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    newStepText = ""
-                                    isAdding = false
-                                },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Close,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { isAdding = true }
-                                .padding(vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .border(
-                                        width = 1.5.dp,
-                                        color = MaterialTheme.colorScheme.outlineVariant,
-                                        shape = RoundedCornerShape(6.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Add,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                stringResource(R.string.tasks_subtasks_add_step),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                    IconButton(
+                        onClick = {
+                            newStepText = ""
+                            isAdding = false
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { isAdding = true }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .border(
+                                width = 1.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                shape = RoundedCornerShape(6.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        stringResource(R.string.tasks_subtasks_add_step),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
@@ -1495,7 +1516,8 @@ private fun SubjectDropdown(
 ) {
     var showSheet by rememberSaveable { mutableStateOf(false) }
     var subjectQuery by rememberSaveable { mutableStateOf("") }
-    val selectedLabel = selectedSubjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name }
+    val selectedSubjectForRow = selectedSubjectId?.let { id -> subjects.firstOrNull { it.id == id } }
+    val selectedLabel = selectedSubjectForRow?.name
     val filteredSubjects = remember(subjects, subjectQuery) {
         val query = subjectQuery.trim()
         if (query.isBlank()) {
@@ -1510,7 +1532,8 @@ private fun SubjectDropdown(
         label = stringResource(R.string.tasks_field_subject),
         value = selectedLabel.orEmpty(),
         placeholder = stringResource(R.string.tasks_field_subject_select),
-        onClick = { showSheet = true }
+        onClick = { showSheet = true },
+        accentColor = selectedSubjectForRow?.let { subjectAccent(it) }
     )
 
     if (showSheet) {
@@ -1919,69 +1942,179 @@ private fun TaskDescriptionField(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TaskTypeSelector(
     selected: TaskType,
     onSelected: (TaskType) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .bounceClick { expanded = true },
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
+    var showSheet by rememberSaveable { mutableStateOf(false) }
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .bounceClick { showSheet = true },
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Icon(
+                Icons.Rounded.TaskAlt,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Icon(
-                    Icons.Rounded.TaskAlt,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
+                Text(
+                    text = stringResource(R.string.tasks_type_title),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Normal
                 )
-                Column(
+                Text(
+                    text = selected.label(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    // El mismo tipo de hoja que Materia y Corte: reemplaza el menu desplegable de Material,
+    // que era la unica pieza de la pantalla sin la forma redondeada del resto.
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            containerColor = SubjectSheetSurface,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.62f),
+            shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+            contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
+            dragHandle = {
+                Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.tasks_type_title),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Normal
-                    )
-                    Text(
-                        text = selected.label(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                        .padding(top = 12.dp, bottom = 4.dp)
+                        .size(width = 42.dp, height = 4.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.20f),
+                            CircleShape
+                        )
+                )
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(start = 22.dp, end = 22.dp, bottom = 24.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.tasks_type_title),
+                    color = SubjectSheetText,
+                    fontSize = 23.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.sp
+                )
+                Spacer(modifier = Modifier.height(18.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TaskType.entries.forEach { type ->
+                        TaskTypeSheetOption(
+                            title = type.label(),
+                            selected = type == selected,
+                            onClick = {
+                                onSelected(type)
+                                showSheet = false
+                            }
+                        )
+                    }
                 }
-                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
             }
         }
-        UniDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.88f)
+    }
+}
+
+@Composable
+private fun TaskTypeSheetOption(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val shape = MaterialTheme.shapes.large
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .background(
+                color = if (selected) SubjectSheetSelectedSurface else SubjectSheetItemSurface,
+                shape = shape
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(
+                    color = if (selected) SubjectSheetAccent.copy(alpha = 0.22f) else SubjectSheetAccent.copy(alpha = 0.14f),
+                    shape = MaterialTheme.shapes.medium
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            TaskType.entries.forEach { type ->
-                DropdownMenuItem(
-                    text = { Text(type.label()) },
-                    trailingIcon = {
-                        if (selected == type) {
-                            Icon(Icons.Rounded.Check, contentDescription = null)
-                        }
-                    },
-                    onClick = {
-                        expanded = false
-                        onSelected(type)
-                    }
+            Icon(
+                imageVector = Icons.Rounded.TaskAlt,
+                contentDescription = null,
+                tint = if (selected) SubjectSheetSelectedIcon else SubjectSheetAccentSoft,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            color = SubjectSheetText,
+            fontSize = 15.sp,
+            lineHeight = 19.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .background(
+                    color = if (selected) SubjectSheetAccent.copy(alpha = 0.18f) else Color.Transparent,
+                    shape = CircleShape
+                )
+                .border(
+                    width = 1.dp,
+                    color = if (selected) SubjectSheetAccent else SubjectSheetMuted.copy(alpha = 0.36f),
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = SubjectSheetSelectedIcon,
+                    modifier = Modifier.size(15.dp)
                 )
             }
         }

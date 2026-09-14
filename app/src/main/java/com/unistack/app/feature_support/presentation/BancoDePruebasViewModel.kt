@@ -11,6 +11,8 @@ import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_tasks.data.TaskAttachmentSamples
+import com.unistack.app.feature_tasks.data.TaskAttachmentStore
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
@@ -50,7 +52,8 @@ class BancoDePruebasViewModel @Inject constructor(
     private val gradesRepository: GradesRepository,
     private val expensesRepository: ExpensesRepository,
     private val tasksRepository: TasksRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val taskAttachmentStore: TaskAttachmentStore
 ) : ViewModel() {
 
     private companion object {
@@ -303,7 +306,10 @@ class BancoDePruebasViewModel @Inject constructor(
             )
         }
 
-        // Limpiar tareas de prueba anteriores para idempotencia
+        // Limpiar tareas de prueba anteriores para idempotencia (y los archivos que dejaron).
+        tasksRepository.attachments.value
+            .filter { it.id.startsWith(MARCA) }
+            .forEach { taskAttachmentStore.delete(it.storedName) }
         tasksRepository.tasks.value
             .filter { it.id.startsWith(MARCA) }
             .forEach { tasksRepository.deleteTask(it.id) }
@@ -469,6 +475,27 @@ class BancoDePruebasViewModel @Inject constructor(
                 )
             )
         )
+
+        // Adjuntos de ejemplo: una foto de apunte, un archivo y un audio, repartidos en tres
+        // tareas distintas para ver la tira, el carrusel y la vista a pantalla completa.
+        TaskAttachmentSamples.pizarra(taskAttachmentStore, t2Id, variante = 0)
+            ?.let(tasksRepository::addAttachment)
+        TaskAttachmentSamples.pizarra(taskAttachmentStore, t4Id, variante = 1)
+            ?.let(tasksRepository::addAttachment)
+        TaskAttachmentSamples.documento(
+            store = taskAttachmentStore,
+            taskId = t5Id,
+            nombreVisible = "requisitos-backend.txt",
+            contenido = """
+                Avance 2 — requisitos
+                ======================
+                - Endpoints REST documentados en OpenAPI.
+                - Migraciones versionadas, sin editar una ya aplicada.
+                - Tests unitarios sobre los casos borde de cada endpoint.
+            """
+        )?.let(tasksRepository::addAttachment)
+        TaskAttachmentSamples.grabacion(taskAttachmentStore, t1Id)
+            ?.let(tasksRepository::addAttachment)
     }
 
     // ------------------------------------------------------------------ preferencias
@@ -555,8 +582,11 @@ class BancoDePruebasViewModel @Inject constructor(
         sinPresupuesto()
     }
 
-    /** Deshace solo lo de Tareas y sus materias fabricadas. */
+    /** Deshace solo lo de Tareas: sus adjuntos (fila y archivo), materias y tareas fabricadas. */
     fun recogerTareas() {
+        tasksRepository.attachments.value
+            .filter { it.id.startsWith(MARCA) }
+            .forEach { taskAttachmentStore.delete(it.storedName) }
         tasksRepository.tasks.value
             .filter { it.id.startsWith(MARCA) }
             .forEach { tasksRepository.deleteTask(it.id) }
