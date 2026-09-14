@@ -112,6 +112,16 @@ class TasksViewModel @Inject constructor(
         attachmentStore.delete(attachment.storedName)
     }
 
+    /**
+     * Tira los adjuntos que se colgaron de un borrador que nunca llegó a guardarse.
+     *
+     * El formulario de crear reserva el id de la tarea al abrirse para poder adjuntar antes de
+     * guardar; si se sale descartando, esas filas quedarían apuntando a una tarea inexistente.
+     */
+    fun discardTaskAttachments(taskId: String) {
+        attachments.value.filter { it.taskId == taskId }.forEach(::removeTaskAttachment)
+    }
+
     fun taskAttachmentFileExists(attachment: TaskAttachment): Boolean =
         attachmentStore.exists(attachment.storedName)
 
@@ -146,7 +156,12 @@ class TasksViewModel @Inject constructor(
         difficulty: TaskDifficulty,
         cutId: String? = null,
         gradingStatus: TaskGradingStatus = TaskGradingStatus.UNDECIDED,
-        subtasks: List<TaskSubtask> = emptyList()
+        subtasks: List<TaskSubtask> = emptyList(),
+        /**
+         * El id que el formulario ya reservó para poder adjuntar antes de guardar. Si no viene,
+         * se mina aquí como siempre.
+         */
+        presetId: String? = null
     ): Boolean {
         val parsed = validatedTaskInput(
             title = title,
@@ -156,7 +171,7 @@ class TasksViewModel @Inject constructor(
         ) ?: return false
 
         val now = System.currentTimeMillis()
-        val taskId = "task-${UUID.randomUUID()}"
+        val taskId = presetId ?: "task-${UUID.randomUUID()}"
         val normalizedSubtasks = subtasks.mapIndexed { index, sub ->
             sub.copy(
                 id = if (sub.id.isBlank()) "sub-${UUID.randomUUID()}" else sub.id,

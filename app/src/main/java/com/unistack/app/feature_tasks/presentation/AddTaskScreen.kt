@@ -137,6 +137,7 @@ fun AddTaskScreen(
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val allAttachmentsForDirtyCheck by viewModel.attachments.collectAsStateWithLifecycle()
     val task = taskId?.let { id -> tasks.firstOrNull { it.id == id } }
     val isEditing = taskId != null
 
@@ -163,21 +164,36 @@ fun AddTaskScreen(
     var showUnlinkConfirmation by rememberSaveable { mutableStateOf(false) }
     val estimatedMinutes = "60"
 
+    // El id se reserva al abrir el formulario de crear: así se puede adjuntar una foto antes de
+    // guardar (los adjuntos necesitan una tarea a la que colgarse). Si se sale descartando, esas
+    // filas se borran; si se guarda, `addTask` recibe este mismo id.
+    val draftTaskId = rememberSaveable(taskId) { taskId ?: "task-${java.util.UUID.randomUUID()}" }
+    val attachTargetId = task?.id ?: draftTaskId
+    val draftAttachments = remember(allAttachmentsForDirtyCheck, attachTargetId) {
+        allAttachmentsForDirtyCheck.count { it.taskId == attachTargetId }
+    }
+
     // Lo que se compara es lo que se escribe, no lo que la pantalla elige sola: el tipo y
     // la dificultad vienen con un valor puesto, así que preguntarían por cambios que nadie hizo.
     val hasUnsavedChanges = if (task == null) {
         title.isNotBlank() || description.isNotBlank() || dueDate.isNotBlank() ||
-            dueTime.isNotBlank() || selectedSubjectId != null || gradingChoice != null
+            dueTime.isNotBlank() || selectedSubjectId != null || gradingChoice != null ||
+            subtasks.isNotEmpty() || draftAttachments > 0
     } else {
         title != task.title ||
             description != task.description ||
             selectedSubjectId != task.subjectId ||
             selectedType != task.type ||
-            difficulty != task.difficulty
+            difficulty != task.difficulty ||
+            subtasks != task.subtasks
     }
     val requestLeave = rememberLeaveGuard(
         hasUnsavedChanges = hasUnsavedChanges,
-        onLeave = onBackClick,
+        onLeave = {
+            // Un borrador descartado no deja adjuntos colgando de una tarea que nunca existió.
+            if (task == null) viewModel.discardTaskAttachments(draftTaskId)
+            onBackClick()
+        },
         message = if (task == null) {
             stringResource(R.string.tasks_unsaved_leave_create)
         } else {
@@ -272,7 +288,10 @@ fun AddTaskScreen(
         linkedGradeChanged = linkedGradeChanged,
         isSaveEnabled = isValid,
         error = error,
-        onBackClick = onBackClick,
+        attachTargetId = attachTargetId,
+        // El atrás de la barra pasa por el guard igual que el gesto del sistema: antes llamaba a
+        // `onBackClick` directo y el aviso de descartar no llegaba a salir nunca.
+        onBackClick = requestLeave,
         onDeleteClick = if (isEditing && task != null) {
             { showDeleteConfirmation = true }
         } else {
@@ -397,7 +416,9 @@ fun AddTaskScreen(
                     difficulty = difficulty,
                     cutId = selectedCutId,
                     gradingStatus = gradingChoice.toInitialGradingStatus(),
-                    subtasks = subtasks
+                    subtasks = subtasks,
+                    // Los adjuntos ya se colgaron de este id mientras se llenaba el formulario.
+                    presetId = draftTaskId
                 )
             }
 
@@ -510,6 +531,7 @@ private fun AddTaskContent(
     linkedGradeChanged: Boolean,
     isSaveEnabled: Boolean,
     error: String?,
+    attachTargetId: String,
     onBackClick: () -> Unit,
     onDeleteClick: (() -> Unit)?,
     onDuplicateClick: (() -> Unit)?,
@@ -536,14 +558,12 @@ private fun AddTaskContent(
     val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
     var attachError by remember { mutableStateOf<String?>(null) }
     val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
-    val taskAttachments = remember(allAttachments, taskId) {
-        if (taskId == null) emptyList() else allAttachments.filter { it.taskId == taskId }
+    // `attachTargetId` es el id real al editar y el reservado al crear, así que adjuntar funciona
+    // en los dos casos sin esperar a guardar.
+    val taskAttachments = remember(allAttachments, attachTargetId) {
+        allAttachments.filter { it.taskId == attachTargetId }
     }
-    val attachController = if (taskId != null) {
-        rememberTaskAttachController(taskId, viewModel) { attachError = it }
-    } else {
-        null
-    }
+    val attachController = rememberTaskAttachController(attachTargetId, viewModel) { attachError = it }
     val attachContext = androidx.compose.ui.platform.LocalContext.current
     val headerContext = listOfNotNull(
         selectedSubject?.name,
@@ -608,41 +628,33 @@ private fun AddTaskContent(
                     color = MaterialTheme.colorScheme.surfaceContainerLow
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (attachController != null) {
-                            TaskAttachmentStrip(
-                                attachments = taskAttachments,
-                                pathFor = { viewModel.taskAttachmentPath(it) },
-                                existsFor = { viewModel.taskAttachmentFileExists(it) },
-                                onOpen = { attachment ->
-                                    val uri = viewModel.taskAttachmentUri(attachment)
-                                    if (uri != null) {
-                                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                            setDataAndType(uri, attachment.mimeType)
-                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        runCatching { attachContext.startActivity(intent) }
+                        TaskAttachmentStrip(
+                            attachments = taskAttachments,
+                            pathFor = { viewModel.taskAttachmentPath(it) },
+                            existsFor = { viewModel.taskAttachmentFileExists(it) },
+                            onOpen = { attachment ->
+                                val uri = viewModel.taskAttachmentUri(attachment)
+                                if (uri != null) {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                        setDataAndType(uri, attachment.mimeType)
+                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     }
-                                },
-                                onRemove = { viewModel.removeTaskAttachment(it) }
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth().bounceClick { attachController.openMenu() },
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                Text(
-                                    text = stringResource(R.string.tasks_attachment_add),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        } else {
+                                    runCatching { attachContext.startActivity(intent) }
+                                }
+                            },
+                            onRemove = { viewModel.removeTaskAttachment(it) }
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().bounceClick { attachController.openMenu() },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                             Text(
-                                text = stringResource(R.string.tasks_attachment_save_first),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = stringResource(R.string.tasks_attachment_add),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -711,7 +723,7 @@ private fun AddTaskContent(
         }
     }
 
-    if (attachController != null) {
+    run {
         if (attachController.menuOpen) {
             TaskAttachMenuSheet(
                 onDismiss = attachController.dismissMenu,
@@ -721,13 +733,13 @@ private fun AddTaskContent(
                 onRecordAudio = attachController.openRecorder
             )
         }
-        if (attachController.recorderOpen && taskId != null) {
+        if (attachController.recorderOpen) {
             com.unistack.app.feature_notes.presentation.NoteRecorderSheet(
                 createFile = { ext -> viewModel.newTaskAttachmentFile(ext) },
                 onDiscard = { viewModel.discardTaskStoredFile(it) },
                 onSaved = { storedName, durationMillis ->
                     viewModel.attachTaskStoredFile(
-                        taskId = taskId,
+                        taskId = attachTargetId,
                         storedName = storedName,
                         displayName = com.unistack.app.core.utils.Textos.get(R.string.tasks_attachment_new_recording),
                         mimeType = "audio/mp4",
@@ -1195,6 +1207,14 @@ private fun LinkedGradeCard(
     }
 }
 
+/**
+ * Una fila con interruptor en vez de la tarjeta de antes.
+ *
+ * Tenía título, una línea de explicación y dos botones grandes para decir sí o no: media pantalla
+ * para una pregunta binaria que además ya tiene respuesta por defecto (la da el tipo de tarea).
+ * El interruptor dice lo mismo en una fila, y la explicación solo aparece cuando hace falta
+ * —cuando se pide nota sin materia a la que colgarla.
+ */
 @Composable
 private fun GradingIntentSelector(
     selected: TaskGradingChoice?,
@@ -1202,69 +1222,42 @@ private fun GradingIntentSelector(
     taskType: TaskType,
     onSelected: (TaskGradingChoice) -> Unit
 ) {
+    val gradable = taskType.isGradable()
     FormSectionCard {
-        Text(
-            stringResource(R.string.tasks_eval_title),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        if (!taskType.isGradable()) {
-            Text(
-                stringResource(R.string.tasks_eval_not_gradable_desc, taskType.label()),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
-        } else {
-            Text(
-                stringResource(R.string.tasks_will_have_grade_hint),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf(TaskGradingChoice.YES, TaskGradingChoice.NO).forEach { choice ->
-                    val isSelected = selected == choice
-                    val label = if (choice == TaskGradingChoice.YES) {
-                        stringResource(R.string.tasks_eval_awaiting_grade)
-                    } else {
-                        stringResource(R.string.tasks_eval_only_done)
-                    }
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .bounceClick { onSelected(choice) },
-                        shape = MaterialTheme.shapes.medium,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainer
-                        }
-                    ) {
-                        Text(
-                            text = label,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 14.dp),
-                            textAlign = TextAlign.Center,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                Text(
+                    stringResource(R.string.tasks_eval_switch_title),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (!gradable) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        stringResource(R.string.tasks_eval_not_gradable_desc, taskType.label()),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-            if (selected == TaskGradingChoice.YES && !hasSubject) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    stringResource(R.string.tasks_select_subject_for_grade_hint),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            UniSwitch(
+                checked = selected == TaskGradingChoice.YES,
+                onCheckedChange = { marcado ->
+                    onSelected(if (marcado) TaskGradingChoice.YES else TaskGradingChoice.NO)
+                }
+            )
+        }
+        if (selected == TaskGradingChoice.YES && !hasSubject) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.tasks_select_subject_for_grade_hint),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

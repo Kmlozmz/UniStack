@@ -394,7 +394,7 @@
     <string name="tasks_save_grade">Save grade</string>
     <string name="tasks_delete_dialog_title">Delete task?</string>
     <string name="tasks_delete_dialog_body">This action cannot be undone.</string>
-    <string name="tasks_details_title">Main details</string>
+    <string name="tasks_details_title">Details</string>
     <string name="tasks_classification_title">Classification</string>
     <string name="tasks_evaluation_title">Grading</string>
     <string name="tasks_field_title">Title</string>
@@ -891,7 +891,7 @@
     <string name="tasks_attachment_error_camera">Couldn\'t prepare the camera.</string>
     <string name="tasks_attachment_error_title">Couldn\'t attach</string>
     <string name="tasks_field_attachments">Attachments</string>
-    <string name="tasks_attachment_save_first">Create the task first to attach photos, files or audio.</string>
+    <string name="tasks_eval_switch_title">Will it be graded?</string>
     <string name="tasks_attachment_add">Attach</string>
     <string name="tasks_eval_title">When marking</string>
     <string name="tasks_eval_awaiting_grade">Submitted, awaiting grade</string>

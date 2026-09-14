@@ -394,7 +394,7 @@
     <string name="tasks_save_grade">Guardar nota</string>
     <string name="tasks_delete_dialog_title">¿Eliminar tarea?</string>
     <string name="tasks_delete_dialog_body">Esta acción no se puede deshacer.</string>
-    <string name="tasks_details_title">Detalles principales</string>
+    <string name="tasks_details_title">Detalles</string>
     <string name="tasks_classification_title">Clasificación</string>
     <string name="tasks_evaluation_title">Calificación</string>
     <string name="tasks_field_title">Título</string>
@@ -891,7 +891,7 @@
     <string name="tasks_attachment_error_camera">No se pudo preparar la cámara.</string>
     <string name="tasks_attachment_error_title">No se pudo adjuntar</string>
     <string name="tasks_field_attachments">Adjuntos</string>
-    <string name="tasks_attachment_save_first">Crea la tarea para poder adjuntar fotos, archivos o audio.</string>
+    <string name="tasks_eval_switch_title">¿Recibirá nota?</string>
     <string name="tasks_attachment_add">Adjuntar</string>
     <string name="tasks_eval_title">Al marcarla</string>
     <string name="tasks_eval_awaiting_grade">Entregada, espero nota</string>
