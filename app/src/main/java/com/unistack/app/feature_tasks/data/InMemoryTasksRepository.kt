@@ -1,6 +1,7 @@
 package com.unistack.app.feature_tasks.data
 
 import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskAttachment
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,6 +11,17 @@ import kotlinx.coroutines.flow.update
 class InMemoryTasksRepository : TasksRepository {
     private val _tasks = MutableStateFlow<List<StudentTask>>(emptyList())
     override val tasks: StateFlow<List<StudentTask>> = _tasks.asStateFlow()
+
+    private val _attachments = MutableStateFlow<List<TaskAttachment>>(emptyList())
+    override val attachments: StateFlow<List<TaskAttachment>> = _attachments.asStateFlow()
+
+    override fun addAttachment(attachment: TaskAttachment) {
+        _attachments.update { current -> current + attachment }
+    }
+
+    override fun deleteAttachment(attachmentId: String) {
+        _attachments.update { current -> current.filterNot { it.id == attachmentId } }
+    }
 
     override fun addTask(task: StudentTask) {
         _tasks.update { current ->
@@ -25,6 +37,7 @@ class InMemoryTasksRepository : TasksRepository {
 
     override fun deleteTask(taskId: String) {
         _tasks.update { current -> current.filterNot { it.id == taskId } }
+        _attachments.update { current -> current.filterNot { it.taskId == taskId } }
     }
 
     override fun setTaskCompleted(taskId: String, completed: Boolean) {

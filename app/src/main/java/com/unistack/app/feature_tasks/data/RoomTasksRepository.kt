@@ -1,9 +1,11 @@
 package com.unistack.app.feature_tasks.data
 
+import com.unistack.app.feature_tasks.data.local.TaskAttachmentDao
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_tasks.data.local.toDomain
 import com.unistack.app.feature_tasks.data.local.toEntity
 import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskAttachment
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.UserIds
@@ -20,6 +22,7 @@ import kotlinx.coroutines.launch
 
 class RoomTasksRepository(
     private val taskDao: TaskDao,
+    private val attachmentDao: TaskAttachmentDao,
     private val userRepository: UserRepository
 ) : TasksRepository {
 
@@ -45,6 +48,26 @@ class RoomTasksRepository(
             started = SharingStarted.Eagerly,
             initialValue = emptyList()
         )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val attachments: StateFlow<List<TaskAttachment>> = userRepository.currentUser
+        .map { UserIds.storageIdsFor(it.userId) }
+        .flatMapLatest { ids ->
+            attachmentDao.observeAttachmentsForUsers(ids).map { rows -> rows.map { it.toDomain() } }
+        }
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
+
+    override fun addAttachment(attachment: TaskAttachment) {
+        scope.launch { attachmentDao.insertAttachment(attachment.toEntity(userId)) }
+    }
+
+    override fun deleteAttachment(attachmentId: String) {
+        scope.launch { attachmentDao.deleteAttachmentById(attachmentId, userIds) }
+    }
 
     override fun addTask(task: StudentTask) {
         scope.launch {
@@ -83,6 +106,7 @@ class RoomTasksRepository(
     override fun deleteTask(taskId: String) {
         scope.launch {
             taskDao.deleteTaskById(taskId, userIds)
+            attachmentDao.deleteAttachmentsOfTask(taskId, userIds)
         }
     }
 

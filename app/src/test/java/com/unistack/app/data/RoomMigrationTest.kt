@@ -401,6 +401,28 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationTwentyTwoToTwentyThreeCreatesTaskAttachmentsTableAndIndexes() {
+        val database = createDatabaseWithSchema(version = 22)
+
+        UniStackDatabase.MIGRATION_22_23.migrate(database)
+
+        assertTrue(database.hasTable("task_attachments"))
+        assertTrue(database.hasColumn("task_attachments", "id"))
+        assertTrue(database.hasColumn("task_attachments", "userId"))
+        assertTrue(database.hasColumn("task_attachments", "taskId"))
+        assertTrue(database.hasColumn("task_attachments", "kind"))
+        assertTrue(database.hasColumn("task_attachments", "displayName"))
+        assertTrue(database.hasColumn("task_attachments", "storedName"))
+        assertTrue(database.hasColumn("task_attachments", "mimeType"))
+        assertTrue(database.hasColumn("task_attachments", "sizeBytes"))
+        assertTrue(database.hasColumn("task_attachments", "durationMillis"))
+        assertTrue(database.hasColumn("task_attachments", "createdAt"))
+        assertTrue(database.hasIndex("index_task_attachments_userId"))
+        assertTrue(database.hasIndex("index_task_attachments_taskId"))
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -455,6 +477,7 @@ class RoomMigrationTest {
         if (targetVersion >= 20) UniStackDatabase.MIGRATION_19_20.migrate(db)
         if (targetVersion >= 21) UniStackDatabase.MIGRATION_20_21.migrate(db)
         if (targetVersion >= 22) UniStackDatabase.MIGRATION_21_22.migrate(db)
+        if (targetVersion >= 23) UniStackDatabase.MIGRATION_22_23.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

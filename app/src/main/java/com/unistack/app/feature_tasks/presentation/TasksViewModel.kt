@@ -1,5 +1,6 @@
 package com.unistack.app.feature_tasks.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import com.unistack.app.core.utils.GradingScaleUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,7 +12,11 @@ import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_notes.domain.AttachmentKind
+import com.unistack.app.feature_notes.domain.Attachments
+import com.unistack.app.feature_tasks.data.TaskAttachmentStore
 import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskAttachment
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -30,11 +35,96 @@ import com.unistack.app.R
 class TasksViewModel @Inject constructor(
     private val tasksRepository: TasksRepository,
     private val gradesRepository: GradesRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val attachmentStore: TaskAttachmentStore
 ) : ViewModel() {
     val tasks: StateFlow<List<StudentTask>> = tasksRepository.tasks
     val subjects: StateFlow<List<Subject>> = gradesRepository.subjects
     val userProfile = userRepository.userProfile
+    val attachments: StateFlow<List<TaskAttachment>> = tasksRepository.attachments
+
+    fun attachmentsOf(taskId: String?): List<TaskAttachment> {
+        if (taskId == null) return emptyList()
+        return attachments.value.filter { it.taskId == taskId }
+    }
+
+    /**
+     * Copia dentro de UniStack lo que se acaba de elegir y lo cuelga de la tarea.
+     * Calcado de `NotesViewModel.attach` — mismo límite (25 MB, 12 por elemento).
+     */
+    fun attachTask(taskId: String, uri: Uri): Boolean {
+        if (attachmentsOf(taskId).size >= Attachments.MAX_PER_NOTE) return false
+        val guardado = attachmentStore.import(uri) ?: return false
+        val now = System.currentTimeMillis()
+        tasksRepository.addAttachment(
+            TaskAttachment(
+                id = "tatt-" + UUID.randomUUID(),
+                taskId = taskId,
+                kind = guardado.kind,
+                displayName = guardado.displayName,
+                storedName = guardado.storedName,
+                mimeType = guardado.mimeType,
+                sizeBytes = guardado.sizeBytes,
+                durationMillis = null,
+                createdAt = now
+            )
+        )
+        return true
+    }
+
+    /** Lo mismo, para un archivo que ya se escribió dentro (la cámara y el grabador). */
+    fun attachTaskStoredFile(
+        taskId: String,
+        storedName: String,
+        displayName: String,
+        mimeType: String,
+        kind: AttachmentKind,
+        durationMillis: Long? = null
+    ): Boolean {
+        val archivo = attachmentStore.file(storedName)
+        if (!archivo.exists() || archivo.length() == 0L) {
+            attachmentStore.delete(storedName)
+            return false
+        }
+        if (attachmentsOf(taskId).size >= Attachments.MAX_PER_NOTE) {
+            attachmentStore.delete(storedName)
+            return false
+        }
+        val now = System.currentTimeMillis()
+        tasksRepository.addAttachment(
+            TaskAttachment(
+                id = "tatt-" + UUID.randomUUID(),
+                taskId = taskId,
+                kind = kind,
+                displayName = displayName,
+                storedName = storedName,
+                mimeType = mimeType,
+                sizeBytes = archivo.length(),
+                durationMillis = durationMillis,
+                createdAt = now
+            )
+        )
+        return true
+    }
+
+    fun removeTaskAttachment(attachment: TaskAttachment) {
+        tasksRepository.deleteAttachment(attachment.id)
+        attachmentStore.delete(attachment.storedName)
+    }
+
+    fun taskAttachmentFileExists(attachment: TaskAttachment): Boolean =
+        attachmentStore.exists(attachment.storedName)
+
+    fun taskAttachmentPath(attachment: TaskAttachment): String =
+        attachmentStore.file(attachment.storedName).absolutePath
+
+    fun taskAttachmentUri(attachment: TaskAttachment): Uri? =
+        runCatching { attachmentStore.shareUri(attachment.storedName) }.getOrNull()
+
+    fun newTaskAttachmentFile(extension: String): Pair<String, java.io.File> =
+        attachmentStore.newFileFor(extension)
+
+    fun discardTaskStoredFile(storedName: String) = attachmentStore.delete(storedName)
 
     fun taskById(taskId: String): StudentTask? {
         return tasks.value.firstOrNull { it.id == taskId }
@@ -223,6 +313,7 @@ class TasksViewModel @Inject constructor(
                     gradesRepository.updateGrade(subject.id, grade.copy(taskId = null))
                 }
         }
+        attachmentsOf(taskId).forEach { attachmentStore.delete(it.storedName) }
         tasksRepository.deleteTask(taskId)
         return true
     }

@@ -261,6 +261,7 @@ class RoomRepositoriesTest {
         runBlocking {
         val repository = RoomTasksRepository(
             taskDao = database.taskDao(),
+            attachmentDao = database.taskAttachmentDao(),
             userRepository = userRepository
         )
         val task = StudentTask(

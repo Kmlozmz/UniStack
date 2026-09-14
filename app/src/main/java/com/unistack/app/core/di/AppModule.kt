@@ -13,6 +13,7 @@ import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
 import com.unistack.app.feature_schedule.data.local.ClassSessionDao
 import com.unistack.app.feature_notes.data.local.NoteAttachmentDao
 import com.unistack.app.feature_notes.data.local.NoteDao
+import com.unistack.app.feature_tasks.data.local.TaskAttachmentDao
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_templates.data.local.AcademicWorkDao
 import dagger.Module
@@ -47,6 +48,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideTaskDao(db: UniStackDatabase): TaskDao = db.taskDao()
+
+    @Provides
+    @Singleton
+    fun provideTaskAttachmentDao(db: UniStackDatabase): TaskAttachmentDao = db.taskAttachmentDao()
 
     @Provides
     @Singleton

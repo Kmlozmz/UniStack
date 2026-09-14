@@ -32,6 +32,8 @@ import com.unistack.app.feature_sync.data.LocalJsonBackupRepository
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
 import com.unistack.app.feature_sync.domain.LocalBackupRepository
 import com.unistack.app.feature_tasks.data.RoomTasksRepository
+import com.unistack.app.feature_tasks.data.TaskAttachmentStore
+import com.unistack.app.feature_tasks.data.local.TaskAttachmentDao
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.data.RoomAcademicWorksRepository
@@ -73,9 +75,11 @@ object RepositoriesModule {
     @Singleton
     fun provideTasksRepository(
         taskDao: TaskDao,
+        attachmentDao: TaskAttachmentDao,
         userRepository: UserRepository
     ): TasksRepository = RoomTasksRepository(
         taskDao = taskDao,
+        attachmentDao = attachmentDao,
         userRepository = userRepository
     )
 
@@ -83,6 +87,11 @@ object RepositoriesModule {
     @Singleton
     fun provideNoteAttachmentStore(@ApplicationContext context: Context): NoteAttachmentStore =
         NoteAttachmentStore(context)
+
+    @Provides
+    @Singleton
+    fun provideTaskAttachmentStore(@ApplicationContext context: Context): TaskAttachmentStore =
+        TaskAttachmentStore(context)
 
     @Provides
     @Singleton

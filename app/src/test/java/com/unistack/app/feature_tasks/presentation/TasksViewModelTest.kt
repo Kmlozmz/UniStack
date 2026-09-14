@@ -1,10 +1,13 @@
 package com.unistack.app.feature_tasks.presentation
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.unistack.app.TextosDePrueba
 import com.unistack.app.core.MainDispatcherRule
 import com.unistack.app.feature_grades.data.InMemoryGradesRepository
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_tasks.data.InMemoryTasksRepository
+import com.unistack.app.feature_tasks.data.TaskAttachmentStore
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -18,8 +21,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.time.LocalDate
 
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE, sdk = [34])
 class TasksViewModelTest {
 
     @get:Rule
@@ -34,6 +42,7 @@ class TasksViewModelTest {
 
     @Before
     fun setUp() {
+        java.util.Locale.setDefault(java.util.Locale("es"))
         TextosDePrueba.instalar()
         tasksRepo = InMemoryTasksRepository()
         gradesRepo = InMemoryGradesRepository()
@@ -41,7 +50,8 @@ class TasksViewModelTest {
         viewModel = TasksViewModel(
             tasksRepository = tasksRepo,
             gradesRepository = gradesRepo,
-            userRepository = userRepo
+            userRepository = userRepo,
+            attachmentStore = TaskAttachmentStore(ApplicationProvider.getApplicationContext<Context>())
         )
     }
 

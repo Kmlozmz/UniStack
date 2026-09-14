@@ -299,6 +299,14 @@ private class FakeNotesRepository : NotesRepository {
 private class FakeTasksRepository : TasksRepository {
     private val state = MutableStateFlow<List<StudentTask>>(emptyList())
     override val tasks: StateFlow<List<StudentTask>> = state
+    private val attachmentState = MutableStateFlow<List<com.unistack.app.feature_tasks.domain.TaskAttachment>>(emptyList())
+    override val attachments: StateFlow<List<com.unistack.app.feature_tasks.domain.TaskAttachment>> = attachmentState
+    override fun addAttachment(attachment: com.unistack.app.feature_tasks.domain.TaskAttachment) {
+        attachmentState.value = attachmentState.value + attachment
+    }
+    override fun deleteAttachment(attachmentId: String) {
+        attachmentState.value = attachmentState.value.filterNot { it.id == attachmentId }
+    }
     override fun addTask(task: StudentTask) {
         state.value = if (state.value.any { it.id == task.id }) state.value else state.value + task
     }

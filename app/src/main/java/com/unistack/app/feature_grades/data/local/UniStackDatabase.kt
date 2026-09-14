@@ -16,6 +16,8 @@ import com.unistack.app.feature_templates.data.local.AcademicWorkDao
 import com.unistack.app.feature_templates.data.local.AcademicWorkEntity
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_tasks.data.local.TaskEntity
+import com.unistack.app.feature_tasks.data.local.TaskAttachmentDao
+import com.unistack.app.feature_tasks.data.local.TaskAttachmentEntity
 import com.unistack.app.feature_schedule.data.local.ClassSessionDao
 import com.unistack.app.feature_schedule.data.local.ClassSessionEntity
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
@@ -43,15 +45,17 @@ import com.unistack.app.feature_tasks.data.local.TaskSubtaskEntity
         AcademicTermEntity::class,
         AcademicBreakEntity::class,
         NoteEntity::class,
-        NoteAttachmentEntity::class
+        NoteAttachmentEntity::class,
+        TaskAttachmentEntity::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
     abstract fun subjectDao(): SubjectDao
     abstract fun gradeDao(): GradeDao
     abstract fun taskDao(): TaskDao
+    abstract fun taskAttachmentDao(): TaskAttachmentDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun academicWorkDao(): AcademicWorkDao
     abstract fun classSessionDao(): ClassSessionDao
@@ -509,6 +513,36 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Lo que se cuelga de una tarea: fotos, archivos y grabaciones — el mismo derecho que
+         * ya tenían las notas rápidas. Tabla aparte y calcada de `note_attachments`, con
+         * `taskId` en vez de `noteId`; misma razón: un adjunto tiene datos propios y borrar uno
+         * no debe reescribir la tarea entera.
+         */
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS task_attachments (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        taskId TEXT NOT NULL,
+                        kind TEXT NOT NULL,
+                        displayName TEXT NOT NULL,
+                        storedName TEXT NOT NULL,
+                        mimeType TEXT NOT NULL,
+                        sizeBytes INTEGER NOT NULL,
+                        durationMillis INTEGER,
+                        createdAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_task_attachments_userId ON task_attachments(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_task_attachments_taskId ON task_attachments(taskId)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -543,7 +577,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_18_19,
             MIGRATION_19_20,
             MIGRATION_20_21,
-            MIGRATION_21_22
+            MIGRATION_21_22,
+            MIGRATION_22_23
         )
     }
 }
