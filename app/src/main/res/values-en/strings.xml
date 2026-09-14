@@ -868,6 +868,9 @@
     <string name="tasks_detail_subject_no_grades">%1$s · no grades</string>
     <string name="tasks_detail_eval_creates">It is created in %1$s of %2$s and stays linked.</string>
     <string name="tasks_detail_eval_no_grade_hint">If it ends up with no grade, use “No grade” in the bar.</string>
+    <string name="tasks_detail_eval_registered_in_subject">recorded in the subject · </string>
+    <string name="tasks_detail_eval_view_there">view it there</string>
+    <string name="tasks_detail_eval_unlink_hint">Unlinking the grade leaves it in the subject and the task goes back to done.</string>
     <string name="tasks_detail_done_desc">No grade · %1$s</string>
     <string name="tasks_detail_no_subject_hint">No subject · Assigning one allows recording a grade</string>
     <string name="tasks_postpone_tomorrow">Tomorrow</string>

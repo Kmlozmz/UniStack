@@ -868,6 +868,9 @@
     <string name="tasks_detail_subject_no_grades">%1$s · sin notas</string>
     <string name="tasks_detail_eval_creates">Se crea en %1$s de %2$s y queda enlazada.</string>
     <string name="tasks_detail_eval_no_grade_hint">Si al final no llevó nota, «No lleva nota» en la barra.</string>
+    <string name="tasks_detail_eval_registered_in_subject">registrada en la materia · </string>
+    <string name="tasks_detail_eval_view_there">verla allí</string>
+    <string name="tasks_detail_eval_unlink_hint">Desvincular la nota la deja en la materia y la tarea queda como hecha.</string>
     <string name="tasks_detail_done_desc">Sin nota · %1$s</string>
     <string name="tasks_detail_no_subject_hint">Sin materia · Ponérsela es lo que permite registrarle nota</string>
     <string name="tasks_postpone_tomorrow">Mañana</string>

@@ -949,9 +949,9 @@ private fun TasksHeader(
 ) {
     val monthName = monday.format(DateTimeFormatter.ofPattern("MMMM", Locale.getDefault()))
     val isDark = LocalIsDarkTheme.current
-    val searchBtnBg = if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
+    val searchBtnBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val searchBtnBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-    val searchBtnTint = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+    val searchBtnTint = MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1009,14 +1009,14 @@ private fun TasksWeekHero(
     val isDark = LocalIsDarkTheme.current
     val hasOverdue = overdueCount > 0
     val containerColor = when {
-        hasOverdue -> if (isDark) Color(0xFF6B4E00) else LocalSectionColors.current.atRiskContainer
-        else -> if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.primaryContainer
+        hasOverdue -> LocalSectionColors.current.atRiskContainer
+        else -> MaterialTheme.colorScheme.primaryContainer
     }
     val contentColor = when {
-        hasOverdue -> if (isDark) Color(0xFFFFE29E) else LocalSectionColors.current.onAtRiskContainer
-        else -> if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onPrimaryContainer
+        hasOverdue -> LocalSectionColors.current.onAtRiskContainer
+        else -> MaterialTheme.colorScheme.onPrimaryContainer
     }
-    val pillBg = if (isDark) Color.White.copy(alpha = 0.14f) else contentColor.copy(alpha = 0.10f)
+    val pillBg = contentColor.copy(alpha = 0.10f)
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -1137,7 +1137,7 @@ fun OutcomeWaveRing(
     doneCount: Int,
     totalCount: Int,
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFFE2DFFF)
+    color: Color = MaterialTheme.colorScheme.onPrimaryContainer
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
@@ -1289,17 +1289,17 @@ private fun TarjetaAwaitingGrade(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalIsDarkTheme.current
-    val cardBg = if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.secondaryContainer
+    val cardBg = MaterialTheme.colorScheme.secondaryContainer
     val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-    val checkmarkBoxBg = if (isDark) Color(0xFF7F77DD) else MaterialTheme.colorScheme.primary
-    val checkmarkTint = if (isDark) Color(0xFF171040) else MaterialTheme.colorScheme.onPrimary
-    val titleColor = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSecondaryContainer
-    val subtitleColor = if (isDark) Color(0xFFE2DFFF).copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
-    val pillBg = if (isDark) Color.White.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
-    val pillTextColor = if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onSecondaryContainer
-    val progressTrack = if (isDark) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.15f)
-    val progressFill = if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.primary
-    val progressText = if (isDark) Color(0xFFE2DFFF).copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSecondaryContainer
+    val checkmarkBoxBg = MaterialTheme.colorScheme.primary
+    val checkmarkTint = MaterialTheme.colorScheme.onPrimary
+    val titleColor = MaterialTheme.colorScheme.onSecondaryContainer
+    val subtitleColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
+    val pillBg = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+    val pillTextColor = MaterialTheme.colorScheme.onSecondaryContainer
+    val progressTrack = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.15f)
+    val progressFill = MaterialTheme.colorScheme.primary
+    val progressText = MaterialTheme.colorScheme.onSecondaryContainer
 
     Surface(
         modifier = modifier
@@ -1466,18 +1466,18 @@ private fun FilaTarea(
     val isToday = !task.completed && dueDate == today
     val isGraded = task.gradingStatus == TaskGradingStatus.GRADED
 
-    val cardBg = if (isDark) Color(0xFF171C24) else MaterialTheme.colorScheme.surfaceContainerLow
+    val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
     val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-    val checkboxCheckedBg = if (isDark) Color(0xFF7F77DD) else MaterialTheme.colorScheme.primary
-    val checkboxUncheckedBorder = if (isDark) Color(0xFF6C7689) else MaterialTheme.colorScheme.outline
-    val checkmarkTint = if (isDark) Color(0xFF171040) else MaterialTheme.colorScheme.onPrimary
+    val checkboxCheckedBg = MaterialTheme.colorScheme.primary
+    val checkboxUncheckedBorder = MaterialTheme.colorScheme.outline
+    val checkmarkTint = MaterialTheme.colorScheme.onPrimary
 
-    val titleBase = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
+    val titleBase = MaterialTheme.colorScheme.onSurface
     val titleColor = if (task.completed) titleBase.copy(alpha = 0.5f) else titleBase
-    val subtitleBase = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+    val subtitleBase = MaterialTheme.colorScheme.onSurfaceVariant
     val subtitleColor = if (task.completed) subtitleBase.copy(alpha = 0.55f) else subtitleBase
-    val progressTrack = if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-    val progressFill = if (isDark) Color(0xFF7F77DD) else MaterialTheme.colorScheme.primary
+    val progressTrack = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    val progressFill = MaterialTheme.colorScheme.primary
 
     Surface(
         modifier = modifier
@@ -1678,7 +1678,7 @@ private fun FilaTarea(
                         } else ""
                         Surface(
                             shape = CircleShape,
-                            color = if (isDark) Color(0xFF6B4E00) else LocalSectionColors.current.atRiskContainer,
+                            color = LocalSectionColors.current.atRiskContainer,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {
@@ -1687,7 +1687,7 @@ private fun FilaTarea(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (isDark) Color(0xFFFFE29E) else LocalSectionColors.current.onAtRiskContainer,
+                                color = LocalSectionColors.current.onAtRiskContainer,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -1713,7 +1713,7 @@ private fun FilaTarea(
                             text = text,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -1733,1223 +1733,6 @@ private fun FilaTarea(
     }
 }
 
-/**
- * Hoja modal de detalle de la tarea (HojaTarea de Propuesta D).
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HojaTarea(
-    task: StudentTask,
-    subject: Subject?,
-    gradingScale: GradingScale,
-    onDismiss: () -> Unit,
-    onSubjectClick: (String) -> Unit,
-    onEditTaskClick: (String) -> Unit,
-    onDuplicateTask: (String) -> Unit,
-    onDeleteTask: (String) -> Unit,
-    onToggleSubtask: (String, String) -> Unit,
-    onAddSubtask: (String, String) -> Unit,
-    onDeleteSubtask: (String, String) -> Unit,
-    onPostponeTomorrow: (String) -> Unit,
-    onPostponeNextMonday: (String) -> Unit,
-    onOpenDatePicker: (String) -> Unit,
-    onOpenGradeSheet: (StudentTask) -> Unit,
-    onNoGradeClick: (String) -> Unit,
-    onUnlinkGradeClick: (String) -> Unit,
-    onSetGradingDecision: (String, Boolean) -> Unit,
-    onToggleComplete: (StudentTask) -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var newSubtaskText by remember { mutableStateOf("") }
-    var subtasksEnabled by remember(task.id) { mutableStateOf(task.subtasks.isNotEmpty()) }
-    var showConfirmDisableSubtasks by remember { mutableStateOf(false) }
-    val today = remember { TaskDateUtils.today() }
-    val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
-    val isOverdue = !task.completed && dueDate.isBefore(today)
-    val isToday = !task.completed && dueDate == today
-
-    val isDark = LocalIsDarkTheme.current
-    val sheetContainerColor = if (isDark) Color(0xFF0D1017) else MaterialTheme.colorScheme.surfaceContainerLow
-    val cardBg = if (isDark) Color(0xFF171C24) else MaterialTheme.colorScheme.surface
-    val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-    val textPrimary = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
-    val textSubtle = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
-    val metaPillBg = if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
-    val metaPillBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = sheetContainerColor,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        contentWindowInsets = { WindowInsets(0.dp) }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 20.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Cabecera: icono tipo, título, metadatos y botón "Abrir entera"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
-            ) {
-                val taskIcon = taskTypeIcon(task.type)
-                val typeColor = subject?.let { subjectAccent(it) } ?: Color(0xFF7F77DD)
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(typeColor.copy(alpha = 0.16f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = taskIcon,
-                        contentDescription = null,
-                        tint = typeColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = task.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = metaPillBg,
-                            border = metaPillBorder,
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp
-                        ) {
-                            Text(
-                                text = task.type.label(),
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = textPrimary
-                            )
-                        }
-                        Surface(
-                            shape = CircleShape,
-                            color = metaPillBg,
-                            border = metaPillBorder,
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(5.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(task.difficulty.color())
-                                )
-                                Text(
-                                    text = task.difficulty.shortLabel(),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = textPrimary
-                                )
-                            }
-                        }
-                        if (task.estimatedMinutes > 0) {
-                            val durationText = formatEstimatedDuration(task.estimatedMinutes)
-                            Surface(
-                                shape = CircleShape,
-                                color = metaPillBg,
-                                border = metaPillBorder,
-                                tonalElevation = 0.dp,
-                                shadowElevation = 0.dp
-                            ) {
-                                Text(
-                                    text = durationText,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = textPrimary
-                                )
-                            }
-                        }
-                    }
-                }
-
-                IconButton(
-                    onClick = {
-                        onDismiss()
-                        onEditTaskClick(task.id)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
-                        contentDescription = stringResource(R.string.tasks_detail_open_full),
-                        tint = Color(0xFF7F77DD)
-                    )
-                }
-            }
-
-            // Bloque de Estado (Con botones de pospuesto rápido si está pendiente)
-            val estadoColor = when {
-                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> if (isDark) Color(0xFF0A5C23) else LocalSectionColors.current.onTrackContainer
-                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.secondaryContainer
-                isOverdue -> if (isDark) Color(0xFF8C1F0A) else LocalSectionColors.current.expensesContainer
-                isToday -> if (isDark) Color(0xFF6B4E00) else LocalSectionColors.current.atRiskContainer
-                else -> if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
-            }
-            val estadoTextColor = when {
-                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> if (isDark) Color(0xFFB4F2C4) else LocalSectionColors.current.onOnTrackContainer
-                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onSecondaryContainer
-                isOverdue -> if (isDark) Color(0xFFFFDCD5) else LocalSectionColors.current.onExpensesContainer
-                isToday -> if (isDark) Color(0xFFFFE29E) else LocalSectionColors.current.onAtRiskContainer
-                else -> if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
-            }
-            val estadoSubColor = when {
-                task.gradingStatus == TaskGradingStatus.GRADED || (task.completed && task.gradingStatus == TaskGradingStatus.NOT_GRADED) -> if (isDark) Color(0xFFB4F2C4).copy(alpha = 0.85f) else LocalSectionColors.current.onOnTrackContainer.copy(alpha = 0.85f)
-                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> if (isDark) Color(0xFFE2DFFF).copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
-                isOverdue -> if (isDark) Color(0xFFFFDCD5).copy(alpha = 0.85f) else LocalSectionColors.current.onExpensesContainer.copy(alpha = 0.85f)
-                isToday -> if (isDark) Color(0xFFFFE29E).copy(alpha = 0.85f) else LocalSectionColors.current.onAtRiskContainer.copy(alpha = 0.85f)
-                else -> if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
-            }
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = estadoColor
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val rotulo = when {
-                        task.gradingStatus == TaskGradingStatus.GRADED -> stringResource(R.string.tasks_detail_graded_label)
-                        task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> stringResource(R.string.tasks_detail_submitted_label)
-                        task.completed -> stringResource(R.string.tasks_detail_done_label)
-                        isOverdue -> stringResource(R.string.tasks_detail_overdue_label)
-                        else -> stringResource(R.string.tasks_detail_due_label)
-                    }
-                    Text(
-                        text = rotulo.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.2.sp,
-                        color = estadoSubColor
-                    )
-
-                    val diff = remember(dueDate, today) { ChronoUnit.DAYS.between(today, dueDate) }
-                    val hasTime = remember(task.dueDateMillis) { TaskDateUtils.hasExplicitTime(task.dueDateMillis) }
-                    val time = remember(task.dueDateMillis) { TaskDateUtils.timeFromMillis(task.dueDateMillis) }
-
-                    val grande = when {
-                        task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> stringResource(R.string.tasks_detail_awaiting_title)
-                        task.gradingStatus == TaskGradingStatus.GRADED -> {
-                            val grade = subject?.grades?.firstOrNull { it.id == task.linkedGradeId }
-                            if (grade != null) {
-                                "${GradingScaleUtils.formatGrade(grade.value, gradingScale)} en ${subject.cutScheme.cutName(grade.cutId)}"
-                            } else {
-                                stringResource(R.string.tasks_grade_recorded)
-                            }
-                        }
-                        task.completed -> stringResource(R.string.tasks_pill_done)
-                        diff < 0 -> if (diff == -1L) "Ayer" else "Hace ${-diff} días"
-                        diff == 0L -> "Hoy" + (if (hasTime) " a las ${formatTaskTime(time)}" else "")
-                        diff == 1L -> "Mañana" + (if (hasTime) " a las ${formatTaskTime(time)}" else "")
-                        diff in 2L..6L -> {
-                            val dayName = dueDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.uppercase() }
-                            "$dayName" + (if (hasTime) " a las ${formatTaskTime(time)}" else "")
-                        }
-                        else -> formatTaskDate(dueDate) + (if (hasTime) " a las ${formatTaskTime(time)}" else "")
-                    }
-                    Text(
-                        text = grande,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black,
-                        color = estadoTextColor
-                    )
-
-                    val peq = when {
-                        task.gradingStatus == TaskGradingStatus.GRADED -> {
-                            val deliveredDateStr = task.completedAt?.let { d ->
-                                TaskDateUtils.fromMillis(d).let { "${it.dayOfMonth} de ${it.month.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())}" }
-                            } ?: "hoy"
-                            "Entregada el $deliveredDateStr · la nota ya está en la materia"
-                        }
-                        task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> {
-                            // «Entregada el 9 sep»: fecha real de entrega; el orden día/mes lo pone cada idioma.
-                            val entregadaEl = remember(task.completedAt, task.dueDateMillis) {
-                                val d = TaskDateUtils.fromMillis(task.completedAt ?: task.dueDateMillis)
-                                d.dayOfMonth to d.month
-                                    .getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())
-                                    .replace(".", "").take(3)
-                            }
-                            stringResource(R.string.tasks_detail_awaiting_desc, entregadaEl.first, entregadaEl.second)
-                        }
-                        task.completed -> stringResource(R.string.tasks_detail_done_desc, task.type.label().lowercase())
-                        diff < 0 -> stringResource(R.string.tasks_detail_overdue_desc, formatTaskDate(dueDate) + if (hasTime) " ${formatTaskTime(time)}" else "")
-                        diff == 0L -> {
-                            if (hasTime) {
-                                val now = LocalTime.now()
-                                val remainingHours = (time.hour - now.hour).coerceAtLeast(0)
-                                val remainingMins = ((time.minute - now.minute) + 60) % 60
-                                stringResource(R.string.tasks_detail_time_left, remainingHours, remainingMins)
-                            } else {
-                                stringResource(R.string.tasks_detail_anytime_today)
-                            }
-                        }
-                        diff == 1L -> stringResource(R.string.due_tomorrow) + " · " + formatTaskDate(dueDate)
-                        else -> stringResource(R.string.tasks_detail_in_days, diff, formatTaskDate(dueDate))
-                    }
-                    Text(
-                        text = peq,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = estadoSubColor
-                    )
-
-                    if (!task.completed) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .cleanClickable { onPostponeTomorrow(task.id) },
-                                shape = RoundedCornerShape(topStart = 999.dp, bottomStart = 999.dp, topEnd = 10.dp, bottomEnd = 10.dp),
-                                color = if (isDark) Color.White.copy(alpha = 0.14f) else estadoTextColor.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.tasks_postpone_tomorrow),
-                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = estadoTextColor,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 1
-                                )
-                            }
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .cleanClickable { onPostponeNextMonday(task.id) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isDark) Color.White.copy(alpha = 0.14f) else estadoTextColor.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.tasks_postpone_next_monday),
-                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = estadoTextColor,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 1
-                                )
-                            }
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .cleanClickable { onOpenDatePicker(task.id) },
-                                shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 999.dp, bottomEnd = 999.dp),
-                                color = if (isDark) Color.White.copy(alpha = 0.14f) else estadoTextColor.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.tasks_postpone_pick_day),
-                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = estadoTextColor,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Fila de Materia: tocar lleva a SubjectDetailScreen
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .cleanClickable {
-                        if (subject != null) {
-                            onSubjectClick(subject.id)
-                        } else {
-                            onEditTaskClick(task.id)
-                        }
-                    },
-                shape = RoundedCornerShape(22.dp),
-                color = cardBg,
-                border = cardBorder
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 15.dp, vertical = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(subject?.let { subjectAccent(it) } ?: Color(0xFF232B37)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = subject?.name?.firstOrNull()?.uppercase() ?: "?",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Black,
-                            color = Color(0xFF0A0C11)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = subject?.name ?: stringResource(R.string.tasks_no_subject),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = textPrimary
-                        )
-                        val subjectSubtitle = if (subject != null) {
-                            // «Corte 2 · promedio 4,25 · te falta 3,1»: cuenta del corte con GradeCalculator, sin proyecciones.
-                            val corteId = subject.defaultCutId
-                            val cutName = subject.cutScheme.cutName(corteId)
-                            val notasDelCorte = subject.grades.filter { it.cutId == corteId }
-                            val promedioDelCorte = GradeCalculator.calculateCutAverage(notasDelCorte)
-                            if (promedioDelCorte == null) {
-                                stringResource(R.string.tasks_detail_subject_no_grades, cutName)
-                            } else {
-                                val promedioStr = GradingScaleUtils.formatGrade(promedioDelCorte, gradingScale)
-                                val cuenta = GradeCalculator.calculateCut(notasDelCorte)
-                                val falta = GradeCalculator.calculateNeededGrade(
-                                    cuenta.weightedPoints,
-                                    1.0 - cuenta.evaluatedFraction,
-                                    subject.targetAverage,
-                                    GradingScaleUtils.maxGradeFor(gradingScale)
-                                )
-                                if (falta != null && falta > 0.0) {
-                                    stringResource(
-                                        R.string.tasks_detail_subject_avg,
-                                        cutName,
-                                        promedioStr,
-                                        GradingScaleUtils.formatGrade(falta, gradingScale)
-                                    )
-                                } else {
-                                    stringResource(R.string.tasks_detail_subject_avg_only, cutName, promedioStr)
-                                }
-                            }
-                        } else {
-                            stringResource(R.string.tasks_detail_no_subject_hint)
-                        }
-                        Text(
-                            text = subjectSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = textSubtle
-                        )
-                    }
-
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = null,
-                        tint = textSubtle
-                    )
-                }
-            }
-
-            // Descripción (ubicada justo debajo de la materia para acceso directo y práctico)
-            if (task.description.isNotBlank()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp),
-                    color = cardBg,
-                    border = cardBorder
-                ) {
-                    Column(
-                        modifier = Modifier.padding(15.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.tasks_field_description).uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.2.sp,
-                            color = textSubtle
-                        )
-                        Text(
-                            text = task.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = textPrimary,
-                            lineHeight = 20.sp
-                        )
-                    }
-                }
-            }
-
-            // Bloque de Evaluación
-            if (subject != null) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp),
-                    color = cardBg,
-                    border = cardBorder
-                ) {
-                    Column(
-                        modifier = Modifier.padding(15.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.tasks_detail_eval_title).uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.2.sp,
-                                color = textSubtle
-                            )
-                            when {
-                                task.gradingStatus == TaskGradingStatus.GRADED -> {
-                                    val cutName = subject.cutScheme.cutName(subject.grades.firstOrNull { it.id == task.linkedGradeId }?.cutId ?: subject.defaultCutId)
-                                    Text(
-                                        text = cutName,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = textSubtle,
-                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                    )
-                                }
-                                task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> {
-                                    Text(
-                                        text = stringResource(R.string.tasks_detail_awaiting_hint),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = textSubtle,
-                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                    )
-                                }
-                                task.type.isGradable() && !task.completed -> {
-                                    Text(
-                                        text = stringResource(
-                                            R.string.tasks_detail_eval_gradable_hint,
-                                            task.type.label().lowercase()
-                                        ),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = textSubtle,
-                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                    )
-                                }
-                            }
-                        }
-
-                        when {
-                            task.gradingStatus == TaskGradingStatus.GRADED -> {
-                                val grade = subject.grades.firstOrNull { it.id == task.linkedGradeId }
-                                val gradeStr = grade?.let { GradingScaleUtils.formatGrade(it.value, gradingScale) } ?: "—"
-                                Row(
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = gradeStr,
-                                        fontSize = 32.sp,
-                                        fontWeight = FontWeight.Black,
-                                        letterSpacing = (-1).sp,
-                                        color = Color(0xFF11C045)
-                                    )
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(bottom = 4.dp)
-                                    ) {
-                                        Text(
-                                            text = "registrada en la materia · ",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = textSubtle
-                                        )
-                                        Text(
-                                            text = "verla allí",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF7F77DD),
-                                            modifier = Modifier.cleanClickable { onSubjectClick(subject.id) }
-                                        )
-                                    }
-                                }
-                                Text(
-                                    text = "Desvincular la nota la deja en la materia y la tarea queda como hecha.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = textSubtle,
-                                    fontSize = 12.sp
-                                )
-                                TextButton(
-                                    onClick = { onUnlinkGradeClick(task.id) },
-                                    colors = ButtonDefaults.textButtonColors(contentColor = if (isDark) Color(0xFFFF5340) else MaterialTheme.colorScheme.error)
-                                ) {
-                                    Text(stringResource(R.string.tasks_action_unlink_grade), fontWeight = FontWeight.Bold)
-                                }
-                            }
-                            task.gradingStatus == TaskGradingStatus.AWAITING_GRADE -> {
-                                Button(
-                                    shapes = UniStackButtonDefaults.shapes,
-                                    onClick = { onOpenGradeSheet(task) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(52.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF7F77DD),
-                                        contentColor = Color(0xFF171040)
-                                    )
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.tasks_record_grade_button),
-                                        fontWeight = FontWeight.ExtraBold
-                                    )
-                                }
-                                Text(
-                                    text = stringResource(
-                                        R.string.tasks_detail_eval_creates,
-                                        subject.cutScheme.cutName(subject.defaultCutId),
-                                        subject.name
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = textSubtle,
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = stringResource(R.string.tasks_detail_eval_no_grade_hint),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = textSubtle,
-                                    fontSize = 12.sp
-                                )
-                            }
-                            task.type.isGradable() -> {
-                                val isWaiting = task.gradingStatus != TaskGradingStatus.NOT_GRADED
-                                UniSegmentedControl(
-                                    selected = isWaiting,
-                                    options = listOf(
-                                        UniSegmentedOption(
-                                            value = true,
-                                            label = stringResource(R.string.tasks_eval_awaiting_grade)
-                                        ),
-                                        UniSegmentedOption(
-                                            value = false,
-                                            label = stringResource(R.string.tasks_eval_only_done)
-                                        )
-                                    ),
-                                    onSelected = { onSetGradingDecision(task.id, it) },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                            else -> {
-                                Text(
-                                    text = stringResource(R.string.tasks_eval_not_gradable_desc, task.type.label()),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = textSubtle
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Subtareas
-            if (showConfirmDisableSubtasks) {
-                AlertDialog(
-                    onDismissRequest = { showConfirmDisableSubtasks = false },
-                    title = {
-                        Text(
-                            text = stringResource(R.string.tasks_subtasks_disable_confirm_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = stringResource(R.string.tasks_subtasks_disable_confirm_desc),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                task.subtasks.forEach { onDeleteSubtask(task.id, it.id) }
-                                subtasksEnabled = false
-                                showConfirmDisableSubtasks = false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            )
-                        ) {
-                            Text(stringResource(R.string.action_delete))
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showConfirmDisableSubtasks = false }) {
-                            Text(stringResource(R.string.action_cancel))
-                        }
-                    }
-                )
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                color = cardBg,
-                border = cardBorder
-            ) {
-                Column(
-                    modifier = Modifier.padding(15.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 12.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.tasks_subtasks_title).uppercase(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = 1.2.sp,
-                                    color = textSubtle
-                                )
-                                if (subtasksEnabled && task.subtasks.isNotEmpty()) {
-                                    val doneCount = task.subtasks.count { it.isCompleted }
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = if (doneCount == task.subtasks.size) Color(0xFF11C045).copy(alpha = 0.18f) else metaPillBg,
-                                        border = metaPillBorder
-                                    ) {
-                                        Text(
-                                            text = "$doneCount/${task.subtasks.size}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (doneCount == task.subtasks.size) Color(0xFF11C045) else textPrimary,
-                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (!subtasksEnabled || task.subtasks.isEmpty()) {
-                                    stringResource(R.string.tasks_subtasks_enable_desc)
-                                } else {
-                                    stringResource(
-                                        R.string.tasks_subtasks_count,
-                                        task.subtasks.count { it.isCompleted },
-                                        task.subtasks.size
-                                    )
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = textSubtle
-                            )
-                        }
-
-                        UniSwitch(
-                            checked = subtasksEnabled,
-                            onCheckedChange = { checked ->
-                                if (!checked && task.subtasks.isNotEmpty()) {
-                                    showConfirmDisableSubtasks = true
-                                } else {
-                                    subtasksEnabled = checked
-                                }
-                            }
-                        )
-                    }
-
-                    AnimatedVisibility(visible = subtasksEnabled) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            task.subtasks.forEach { subtask ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .cleanClickable { onToggleSubtask(task.id, subtask.id) }
-                                        .padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = if (subtask.isCompleted) Color(0xFF7F77DD) else Color.Transparent,
-                                        border = BorderStroke(
-                                            width = 1.5.dp,
-                                            color = if (subtask.isCompleted) Color(0xFF7F77DD) else (if (isDark) Color(0xFF6C7689) else MaterialTheme.colorScheme.outline)
-                                        ),
-                                        modifier = Modifier.size(20.dp)
-                                    ) {
-                                        if (subtask.isCompleted) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Check,
-                                                contentDescription = null,
-                                                tint = Color(0xFF171040),
-                                                modifier = Modifier.padding(2.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.width(10.dp))
-
-                                    Text(
-                                        text = subtask.title,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .tachadoDe(subtask.isCompleted, textSubtle),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = if (subtask.isCompleted) textSubtle else textPrimary
-                                    )
-
-                                    IconButton(
-                                        onClick = { onDeleteSubtask(task.id, subtask.id) },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = null,
-                                            tint = textSubtle,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Añadir subtarea
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = newSubtaskText,
-                                    onValueChange = { newSubtaskText = it },
-                                    placeholder = { Text(stringResource(R.string.tasks_subtasks_add_step)) },
-                                    singleLine = true,
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                    keyboardActions = KeyboardActions(
-                                        onDone = {
-                                            if (newSubtaskText.isNotBlank()) {
-                                                onAddSubtask(task.id, newSubtaskText.trim())
-                                                newSubtaskText = ""
-                                            }
-                                        }
-                                    )
-                                )
-                                IconButton(
-                                    onClick = {
-                                        if (newSubtaskText.isNotBlank()) {
-                                            onAddSubtask(task.id, newSubtaskText.trim())
-                                            newSubtaskText = ""
-                                        }
-                                    },
-                                    enabled = newSubtaskText.isNotBlank()
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Add,
-                                        contentDescription = stringResource(R.string.tasks_subtasks_add_step),
-                                        tint = if (newSubtaskText.isNotBlank()) Color(0xFF7F77DD) else textSubtle.copy(alpha = 0.4f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Acciones al pie: botón principal + editar + duplicar + borrar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    shape = CircleShape,
-                    onClick = {
-                        onDismiss()
-                        onToggleComplete(task)
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (task.completed) (if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.surfaceContainerHigh) else Color(0xFF11C045),
-                        contentColor = if (task.completed) textPrimary else Color(0xFF00320F)
-                    )
-                ) {
-                    Text(
-                        text = if (task.completed) {
-                            stringResource(R.string.tasks_action_revert_pending)
-                        } else if (task.type.isGradable() && task.gradingStatus != TaskGradingStatus.NOT_GRADED) {
-                            stringResource(R.string.tasks_action_mark_submitted)
-                        } else {
-                            stringResource(R.string.tasks_action_mark_done)
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = metaPillBg,
-                    border = metaPillBorder,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            onDismiss()
-                            onEditTaskClick(task.id)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Edit,
-                            contentDescription = stringResource(R.string.action_edit),
-                            tint = textPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = metaPillBg,
-                    border = metaPillBorder,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            onDismiss()
-                            onDuplicateTask(task.id)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ContentCopy,
-                            contentDescription = stringResource(R.string.tasks_action_duplicate),
-                            tint = textPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = metaPillBg,
-                    border = metaPillBorder,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            onDismiss()
-                            onDeleteTask(task.id)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Delete,
-                            contentDescription = stringResource(R.string.action_delete),
-                            tint = if (isDark) Color(0xFFFF5340) else MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Hoja modal para registrar la nota obtenida en una tarea directamente en el corte de la materia.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HojaNota(
-    task: StudentTask,
-    subject: Subject,
-    gradingScale: GradingScale,
-    onDismiss: () -> Unit,
-    onSaveGrade: (Double, Double?, String) -> Boolean
-) {
-    val isDark = LocalIsDarkTheme.current
-    val sheetContainerColor = if (isDark) Color(0xFF0D1017) else MaterialTheme.colorScheme.surfaceContainerLow
-    val cardBg = if (isDark) Color(0xFF171C24) else MaterialTheme.colorScheme.surface
-    val cardBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-    val textPrimary = if (isDark) Color(0xFFE8EBF3) else MaterialTheme.colorScheme.onSurface
-    val textSubtle = if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
-    val greenAccent = Color(0xFF11C045)
-    val greenText = Color(0xFF00320F)
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var valueInput by remember(task.id) {
-        val initialVal = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) 85.0 else 4.0
-        mutableDoubleStateOf(initialVal)
-    }
-    var selectedCutId by remember(task.id, subject.activeCutId) {
-        mutableStateOf(task.cutId ?: subject.defaultCutId)
-    }
-    var error by remember(task.id) { mutableStateOf<String?>(null) }
-    val maxGrade: Double = remember(gradingScale) { GradingScaleUtils.maxGradeFor(gradingScale) }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = sheetContainerColor,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        contentWindowInsets = { WindowInsets(0.dp) }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Cabecera
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(subjectAccent(subject)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = subject.name.firstOrNull()?.uppercase() ?: "?",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = Color(0xFF0A0C11)
-                    )
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.tasks_grade_sheet_title, task.title),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = textPrimary
-                    )
-                    Text(
-                        text = stringResource(R.string.tasks_grade_sheet_subtitle, subject.name),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = textSubtle
-                    )
-                }
-            }
-
-            // Stepper de nota (Tarjeta VALOR)
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                color = cardBg,
-                border = cardBorder
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.tasks_grade_value_label).uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.2.sp,
-                            color = textSubtle
-                        )
-                        val maxGradeLabel = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) {
-                            "100"
-                        } else {
-                            GradingScaleUtils.formatGrade(maxGrade, gradingScale).let {
-                                if (java.util.Locale.getDefault().language == "es") it.replace('.', ',') else it
-                            }
-                        }
-                        Text(
-                            text = stringResource(R.string.tasks_grade_scale_label, maxGradeLabel),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = textSubtle
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    valueInput = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) {
-                                        (valueInput - 1.0).coerceAtLeast(0.0)
-                                    } else {
-                                        (Math.round((valueInput - 0.1) * 10.0) / 10.0).coerceAtLeast(0.0)
-                                    }
-                                }
-                            ) {
-                                Text(
-                                    text = "−",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = textPrimary
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(32.dp))
-
-                        val formattedGrade = remember(valueInput, gradingScale) {
-                            val formatted = GradingScaleUtils.formatGrade(valueInput, gradingScale)
-                            if (java.util.Locale.getDefault().language == "es") formatted.replace('.', ',') else formatted
-                        }
-                        Text(
-                            text = formattedGrade,
-                            style = MaterialTheme.typography.displayMedium,
-                            fontWeight = FontWeight.Black,
-                            color = greenAccent
-                        )
-
-                        Spacer(modifier = Modifier.width(32.dp))
-
-                        Surface(
-                            shape = CircleShape,
-                            color = if (isDark) Color(0xFF232B37) else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    valueInput = if (gradingScale == GradingScale.ZERO_TO_HUNDRED) {
-                                        (valueInput + 1.0).coerceAtMost(maxGrade)
-                                    } else {
-                                        (Math.round((valueInput + 0.1) * 10.0) / 10.0).coerceAtMost(maxGrade)
-                                    }
-                                }
-                            ) {
-                                Text(
-                                    text = "+",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = textPrimary
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Selector de corte (Tarjeta CORTE)
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                color = cardBg,
-                border = cardBorder
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.tasks_grade_cut_label).uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.2.sp,
-                        color = textSubtle
-                    )
-
-                    val cutOptions = remember(subject) {
-                        subject.cutScheme.cuts.sortedBy { it.order }.map { cut ->
-                            UniSegmentedOption(
-                                value = cut.id,
-                                label = cut.name
-                            )
-                        }
-                    }
-                    UniSegmentedControl(
-                        selected = selectedCutId,
-                        options = cutOptions,
-                        onSelected = { selectedCutId = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Text(
-                        text = stringResource(R.string.tasks_grade_cut_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = textSubtle,
-                        lineHeight = 16.sp
-                    )
-                }
-            }
-
-            error?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Button(
-                onClick = {
-                    if (!onSaveGrade(valueInput, null, selectedCutId)) {
-                        error = "Error al guardar la nota"
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = greenAccent,
-                    contentColor = greenText
-                )
-            ) {
-                Text(
-                    text = stringResource(R.string.tasks_grade_save_action),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -3136,14 +1919,14 @@ private fun TaskFilterSummaryChip(
 
     val isDark = LocalIsDarkTheme.current
     val chipBg = if (isFilterActive) {
-        if (isDark) Color(0xFF2E2A6B) else MaterialTheme.colorScheme.primaryContainer
+        MaterialTheme.colorScheme.primaryContainer
     } else {
-        if (isDark) Color(0xFF1C222D) else MaterialTheme.colorScheme.surfaceContainerHigh
+        MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val chipContent = if (isFilterActive) {
-        if (isDark) Color(0xFFE2DFFF) else MaterialTheme.colorScheme.onPrimaryContainer
+        MaterialTheme.colorScheme.onPrimaryContainer
     } else {
-        if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
     val chipBorder = if (!isFilterActive && !isDark) {
         BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
@@ -3188,9 +1971,9 @@ private fun SectionTitle(
 ) {
     val isDark = LocalIsDarkTheme.current
     val titleColor = if (isOverdue) {
-        if (isDark) Color(0xFFFF5340) else MaterialTheme.colorScheme.error
+        MaterialTheme.colorScheme.error
     } else {
-        if (isDark) Color(0xFF98A2B7) else MaterialTheme.colorScheme.onSurfaceVariant
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
     Row(
         modifier = Modifier
@@ -3359,7 +2142,7 @@ private fun TasksFilterBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (isDark) Color(0xFF0D1017) else MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
@@ -3437,14 +2220,14 @@ private fun FiltersSheetHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(R.string.tasks_filter_title),
-                color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text = stringResource(R.string.tasks_filter_subtitle),
-                color = if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.5.sp,
                 lineHeight = 16.sp
             )
@@ -3455,7 +2238,7 @@ private fun FiltersSheetHeader(
         ) {
             Text(
                 text = stringResource(R.string.tasks_filter_clear),
-                color = if (activeFiltersCount > 0) Color(0xFF7C6EE6) else (if (isDark) Color(0xFF98A2B7).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                color = if (activeFiltersCount > 0) MaterialTheme.colorScheme.primary else (MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -3470,8 +2253,8 @@ private fun FilterSheetSection(
     content: @Composable () -> Unit
 ) {
     val isDark = LocalIsDarkTheme.current
-    val sectionBg = if (isDark) Color(0xFF141722) else MaterialTheme.colorScheme.surface
-    val titleColor = if (isDark) Color(0xFF727A8C) else MaterialTheme.colorScheme.onSurfaceVariant
+    val sectionBg = MaterialTheme.colorScheme.surface
+    val titleColor = MaterialTheme.colorScheme.onSurfaceVariant
     val border = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
     Surface(
@@ -3520,9 +2303,9 @@ private fun StatusFilterGrid(
             ) {
                 rowItems.forEach { (filter, label) ->
                     val isSelected = selectedStatus == filter
-                    val cardBg = if (isSelected) Color(0xFF7C6EE6) else (if (isDark) Color(0xFF1C202C) else MaterialTheme.colorScheme.surfaceContainerHigh)
-                    val contentColor = if (isSelected) Color(0xFF15112B) else (if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurface)
-                    val iconTint = if (isSelected) Color(0xFF15112B) else (if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant)
+                    val cardBg = if (isSelected) MaterialTheme.colorScheme.primary else (MaterialTheme.colorScheme.surfaceContainerHigh)
+                    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else (MaterialTheme.colorScheme.onSurface)
+                    val iconTint = if (isSelected) MaterialTheme.colorScheme.onPrimary else (MaterialTheme.colorScheme.onSurfaceVariant)
                     val itemBorder = if (!isSelected && !isDark) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null
 
                     Surface(
@@ -3604,11 +2387,11 @@ private fun SubjectDropdownSelector(
     val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
     val selectedLabel = selectedSubject?.name ?: allSubjectsLabel
 
-    val triggerBg = if (isDark) Color(0xFF1C202C) else MaterialTheme.colorScheme.surfaceContainerHigh
+    val triggerBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val triggerBorder = if (isDark) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-    val triggerTextColor = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
-    val triggerArrowColor = if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant
-    val menuBg = if (isDark) Color(0xFF171B26) else MaterialTheme.colorScheme.surfaceContainer
+    val triggerTextColor = MaterialTheme.colorScheme.onSurface
+    val triggerArrowColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val menuBg = MaterialTheme.colorScheme.surfaceContainer
 
     FilterSheetSection(title = stringResource(R.string.tasks_field_subject)) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -3640,7 +2423,7 @@ private fun SubjectDropdownSelector(
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                             contentDescription = null,
-                            tint = Color(0xFF7C6EE6),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -3682,7 +2465,7 @@ private fun SubjectDropdownSelector(
                         Text(
                             text = allSubjectsLabel,
                             fontWeight = if (selectedSubjectId == null) FontWeight.ExtraBold else FontWeight.SemiBold,
-                            color = if (selectedSubjectId == null) Color(0xFF7C6EE6) else (if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurface),
+                            color = if (selectedSubjectId == null) MaterialTheme.colorScheme.primary else (MaterialTheme.colorScheme.onSurface),
                             fontSize = 13.5.sp
                         )
                     },
@@ -3690,7 +2473,7 @@ private fun SubjectDropdownSelector(
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                             contentDescription = null,
-                            tint = if (selectedSubjectId == null) Color(0xFF7C6EE6) else (if (isDark) Color(0xFF8F97A8) else MaterialTheme.colorScheme.onSurfaceVariant),
+                            tint = if (selectedSubjectId == null) MaterialTheme.colorScheme.primary else (MaterialTheme.colorScheme.onSurfaceVariant),
                             modifier = Modifier.size(20.dp)
                         )
                     },
@@ -3699,7 +2482,7 @@ private fun SubjectDropdownSelector(
                             Icon(
                                 imageVector = Icons.Rounded.Check,
                                 contentDescription = null,
-                                tint = Color(0xFF7C6EE6),
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -3717,7 +2500,7 @@ private fun SubjectDropdownSelector(
                             Text(
                                 text = subject.name,
                                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
-                                color = if (isSelected) Color(0xFF7C6EE6) else (if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurface),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else (MaterialTheme.colorScheme.onSurface),
                                 fontSize = 13.5.sp
                             )
                         },
@@ -3733,7 +2516,7 @@ private fun SubjectDropdownSelector(
                                 Icon(
                                     imageVector = Icons.Rounded.Check,
                                     contentDescription = null,
-                                    tint = Color(0xFF7C6EE6),
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -3800,9 +2583,9 @@ private fun SortFilterSection(
             options.forEach { (option, label) ->
                 val isSelected = sortOrder == option
                 val textColor = if (isSelected) {
-                    if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.colorScheme.onSurface
                 } else {
-                    if (isDark) Color(0xFFD8DCE8) else MaterialTheme.colorScheme.onSurfaceVariant
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 }
 
                 Row(
@@ -3818,8 +2601,8 @@ private fun SortFilterSection(
                         selected = isSelected,
                         onClick = null,
                         colors = RadioButtonDefaults.colors(
-                            selectedColor = Color(0xFF7C6EE6),
-                            unselectedColor = if (isDark) Color(0xFF52596A) else MaterialTheme.colorScheme.outline
+                            selectedColor = MaterialTheme.colorScheme.primary,
+                            unselectedColor = MaterialTheme.colorScheme.outline
                         ),
                         modifier = Modifier.size(20.dp)
                     )
@@ -3846,13 +2629,13 @@ private fun FiltersSheetFooter(
             .fillMaxWidth()
             .height(52.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF7C6EE6),
-            contentColor = Color(0xFF15112B)
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
         Text(
             text = stringResource(R.string.tasks_filter_ready),
-            color = Color(0xFF15112B),
+            color = MaterialTheme.colorScheme.onPrimary,
             fontSize = 15.sp,
             fontWeight = FontWeight.ExtraBold
         )
@@ -3904,7 +2687,7 @@ private fun formatFutureDayTitle(date: LocalDate): String {
 private val shortDateFormatter: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
 
 @Composable
-private fun TaskDifficulty.shortLabel(): String {
+internal fun TaskDifficulty.shortLabel(): String {
     return when (this) {
         TaskDifficulty.EASY -> stringResource(R.string.tasks_priority_low)
         TaskDifficulty.MEDIUM -> stringResource(R.string.tasks_priority_medium)
@@ -3922,7 +2705,7 @@ private fun TaskDifficulty.rank(): Int {
 
 @Composable
 @ReadOnlyComposable
-private fun TaskDifficulty.color(): Color {
+internal fun TaskDifficulty.color(): Color {
     return when (this) {
         TaskDifficulty.EASY -> LocalSectionColors.current.onTrack
         TaskDifficulty.MEDIUM -> LocalSectionColors.current.atRisk
@@ -3966,7 +2749,7 @@ private fun filterSummaryLabel(
     }
 }
 
-private fun formatEstimatedDuration(minutes: Int): String {
+internal fun formatEstimatedDuration(minutes: Int): String {
     if (minutes <= 0) return ""
     val h = minutes / 60
     val m = minutes % 60
@@ -3977,7 +2760,7 @@ private fun formatEstimatedDuration(minutes: Int): String {
     }
 }
 
-private fun taskTypeIcon(type: TaskType): ImageVector = when (type) {
+internal fun taskTypeIcon(type: TaskType): ImageVector = when (type) {
     TaskType.PROJECT -> Icons.Rounded.Category
     TaskType.WORKSHOP -> Icons.AutoMirrored.Rounded.MenuBook
     TaskType.EXAM, TaskType.TEST -> Icons.Rounded.Grade
