@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.automirrored.rounded.TrendingFlat
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
@@ -70,6 +71,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
@@ -81,6 +83,7 @@ import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.utils.GradeCalculator
+import com.unistack.app.core.utils.Textos
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -107,9 +110,11 @@ internal fun HojaTarea(
     task: StudentTask,
     subject: Subject?,
     gradingScale: GradingScale,
+    viewModel: TasksViewModel,
     onDismiss: () -> Unit,
     onSubjectClick: (String) -> Unit,
     onEditTaskClick: (String) -> Unit,
+    onOpenFull: (String) -> Unit,
     onDuplicateTask: (String) -> Unit,
     onDeleteTask: (String) -> Unit,
     onToggleSubtask: (String, String) -> Unit,
@@ -128,6 +133,11 @@ internal fun HojaTarea(
     var newSubtaskText by remember { mutableStateOf("") }
     var subtasksEnabled by remember(task.id) { mutableStateOf(task.subtasks.isNotEmpty()) }
     var showConfirmDisableSubtasks by remember { mutableStateOf(false) }
+    var attachError by remember { mutableStateOf<String?>(null) }
+    val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
+    val taskAttachments = remember(allAttachments, task.id) { allAttachments.filter { it.taskId == task.id } }
+    val attachController = rememberTaskAttachController(task.id, viewModel) { attachError = it }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val today = remember { TaskDateUtils.today() }
     val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
     val isOverdue = !task.completed && dueDate.isBefore(today)
@@ -259,7 +269,7 @@ internal fun HojaTarea(
                 IconButton(
                     onClick = {
                         onDismiss()
-                        onEditTaskClick(task.id)
+                        onOpenFull(task.id)
                     }
                 ) {
                     Icon(
@@ -386,62 +396,42 @@ internal fun HojaTarea(
                     )
 
                     if (!task.completed) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider(color = estadoTextColor.copy(alpha = 0.15f))
                         Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = stringResource(R.string.tasks_postpone_label).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.1.sp,
+                            color = estadoSubColor
+                        )
+                        Spacer(modifier = Modifier.height(7.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .cleanClickable { onPostponeTomorrow(task.id) },
+                            PostponePill(
+                                icon = Icons.AutoMirrored.Rounded.TrendingFlat,
+                                label = stringResource(R.string.tasks_postpone_tomorrow),
+                                color = estadoTextColor,
                                 shape = RoundedCornerShape(topStart = 999.dp, bottomStart = 999.dp, topEnd = 10.dp, bottomEnd = 10.dp),
-                                color = estadoTextColor.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.tasks_postpone_tomorrow),
-                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = estadoTextColor,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 1
-                                )
-                            }
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .cleanClickable { onPostponeNextMonday(task.id) },
+                                modifier = Modifier.weight(1f).cleanClickable { onPostponeTomorrow(task.id) }
+                            )
+                            PostponePill(
+                                icon = Icons.AutoMirrored.Rounded.TrendingFlat,
+                                label = stringResource(R.string.tasks_postpone_next_monday),
+                                color = estadoTextColor,
                                 shape = RoundedCornerShape(10.dp),
-                                color = estadoTextColor.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.tasks_postpone_next_monday),
-                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = estadoTextColor,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 1
-                                )
-                            }
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .cleanClickable { onOpenDatePicker(task.id) },
+                                modifier = Modifier.weight(1f).cleanClickable { onPostponeNextMonday(task.id) }
+                            )
+                            PostponePill(
+                                icon = Icons.Rounded.CalendarMonth,
+                                label = stringResource(R.string.tasks_postpone_pick_day),
+                                color = estadoTextColor,
                                 shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 999.dp, bottomEnd = 999.dp),
-                                color = estadoTextColor.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.tasks_postpone_pick_day),
-                                    modifier = Modifier.padding(vertical = 11.dp, horizontal = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = estadoTextColor,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 1
-                                )
-                            }
+                                modifier = Modifier.weight(1f).cleanClickable { onOpenDatePicker(task.id) }
+                            )
                         }
                     }
                 }
@@ -560,6 +550,63 @@ internal fun HojaTarea(
                             style = MaterialTheme.typography.bodyMedium,
                             color = textPrimary,
                             lineHeight = 20.sp
+                        )
+                    }
+                }
+            }
+
+            // Adjuntos: fotos, archivos y audio, justo después de la descripción — igual de a mano.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                color = cardBg,
+                border = cardBorder
+            ) {
+                Column(
+                    modifier = Modifier.padding(15.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.tasks_field_attachments).uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.2.sp,
+                        color = textSubtle
+                    )
+                    TaskAttachmentStrip(
+                        attachments = taskAttachments,
+                        pathFor = { viewModel.taskAttachmentPath(it) },
+                        existsFor = { viewModel.taskAttachmentFileExists(it) },
+                        onOpen = { attachment ->
+                            val uri = viewModel.taskAttachmentUri(attachment)
+                            if (uri != null) {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, attachment.mimeType)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                runCatching { context.startActivity(intent) }
+                            }
+                        },
+                        onRemove = { viewModel.removeTaskAttachment(it) }
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .cleanClickable(shape = RoundedCornerShape(14.dp), onClick = attachController.openMenu),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.tasks_attachment_add),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -951,11 +998,13 @@ internal fun HojaTarea(
                 }
             }
 
-            // Acciones al pie: botón principal + editar + duplicar + borrar
+            // Acciones al pie: sólo dos zonas de toque — marcar hecha, y un único «⋮» aparte
+            // para editar/duplicar/eliminar. Antes eran cuatro botones pegados y era fácil
+            // tocar el que no era.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Button(
                     shape = CircleShape,
@@ -971,6 +1020,12 @@ internal fun HojaTarea(
                         contentColor = if (task.completed) textPrimary else LocalSectionColors.current.onOnTrack
                     )
                 ) {
+                    Icon(
+                        imageVector = if (task.completed) Icons.Rounded.Close else Icons.Rounded.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(19.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (task.completed) {
                             stringResource(R.string.tasks_action_revert_pending)
@@ -990,64 +1045,51 @@ internal fun HojaTarea(
                     border = metaPillBorder,
                     modifier = Modifier.size(48.dp)
                 ) {
-                    IconButton(
-                        onClick = {
-                            onDismiss()
-                            onEditTaskClick(task.id)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Edit,
-                            contentDescription = stringResource(R.string.action_edit),
-                            tint = textPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = metaPillBg,
-                    border = metaPillBorder,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            onDismiss()
-                            onDuplicateTask(task.id)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ContentCopy,
-                            contentDescription = stringResource(R.string.tasks_action_duplicate),
-                            tint = textPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = metaPillBg,
-                    border = metaPillBorder,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            onDismiss()
-                            onDeleteTask(task.id)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Delete,
-                            contentDescription = stringResource(R.string.action_delete),
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    TaskActionsOverflowMenu(
+                        onEdit = { onDismiss(); onEditTaskClick(task.id) },
+                        onDuplicate = { onDismiss(); onDuplicateTask(task.id) },
+                        onDelete = { onDismiss(); onDeleteTask(task.id) }
+                    )
                 }
             }
         }
+    }
+
+    if (attachController.menuOpen) {
+        TaskAttachMenuSheet(
+            onDismiss = attachController.dismissMenu,
+            onPickPhoto = attachController.pickPhoto,
+            onTakePhoto = attachController.takePhoto,
+            onPickFile = attachController.pickFile,
+            onRecordAudio = attachController.openRecorder
+        )
+    }
+    if (attachController.recorderOpen) {
+        com.unistack.app.feature_notes.presentation.NoteRecorderSheet(
+            createFile = { ext -> viewModel.newTaskAttachmentFile(ext) },
+            onDiscard = { viewModel.discardTaskStoredFile(it) },
+            onSaved = { storedName, durationMillis ->
+                viewModel.attachTaskStoredFile(
+                    taskId = task.id,
+                    storedName = storedName,
+                    displayName = Textos.get(R.string.tasks_attachment_new_recording),
+                    mimeType = "audio/mp4",
+                    kind = com.unistack.app.feature_notes.domain.AttachmentKind.AUDIO,
+                    durationMillis = durationMillis
+                )
+            },
+            onDismiss = attachController.dismissRecorder
+        )
+    }
+    attachError?.let { mensaje ->
+        AlertDialog(
+            onDismissRequest = { attachError = null },
+            title = { Text(stringResource(R.string.tasks_attachment_error_title)) },
+            text = { Text(mensaje) },
+            confirmButton = {
+                TextButton(onClick = { attachError = null }) { Text(stringResource(R.string.common_understood)) }
+            }
+        )
     }
 }
 
@@ -1318,26 +1360,36 @@ internal fun HojaNota(
 
 
 /** El separador decimal del idioma activo, para pintar notas sin depender de comparar el idioma a mano. */
-private fun localizedDecimalSeparator(): Char =
-    DecimalFormatSymbols.getInstance(Locale.getDefault()).decimalSeparator
-
-/**
- * Copia local de la etiqueta de [TaskType]: la de `TasksScreen.kt` es privada a ese fichero y
- * `AddTaskScreen.kt` ya guarda la suya propia por el mismo motivo (`private` en Kotlin es de
- * fichero, no de paquete); subirla a `internal` chocaba con esa segunda copia.
- */
 @Composable
-private fun TaskType.label(): String {
-    return when (this) {
-        TaskType.WORKSHOP -> stringResource(R.string.tasks_type_workshop)
-        TaskType.EXAM -> stringResource(R.string.tasks_type_midterm)
-        TaskType.ESSAY -> stringResource(R.string.tasks_type_essay)
-        TaskType.PRESENTATION -> stringResource(R.string.tasks_type_presentation)
-        TaskType.RESEARCH -> stringResource(R.string.tasks_type_research)
-        TaskType.TEST -> stringResource(R.string.tasks_type_exam)
-        TaskType.PRACTICE -> stringResource(R.string.tasks_type_practice)
-        TaskType.PROJECT -> stringResource(R.string.tasks_type_project)
-        TaskType.READING -> stringResource(R.string.tasks_type_reading)
-        TaskType.OTHER -> stringResource(R.string.tasks_type_other)
+private fun PostponePill(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    shape: RoundedCornerShape,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = shape,
+        color = color.copy(alpha = 0.12f)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 9.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = color,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 1
+            )
+        }
     }
 }
+
+private fun localizedDecimalSeparator(): Char =
+    DecimalFormatSymbols.getInstance(Locale.getDefault()).decimalSeparator

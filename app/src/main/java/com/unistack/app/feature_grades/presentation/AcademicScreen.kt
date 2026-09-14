@@ -67,6 +67,7 @@ fun AcademicScreen(
     onEditSubjectClick: (String) -> Unit,
     onNewTaskClick: () -> Unit,
     onEditTaskClick: (String) -> Unit,
+    onOpenTaskClick: (String) -> Unit,
     onCompleteHistoryClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     initialTab: String? = null,
@@ -177,6 +178,7 @@ fun AcademicScreen(
                     AcademicTab.TASKS -> TasksScreen(
                         onNewTaskClick = onNewTaskClick,
                         onEditTaskClick = onEditTaskClick,
+                        onOpenTaskClick = onOpenTaskClick,
                         onCompleteHistoryClick = onCompleteHistoryClick,
                         onSubjectClick = onSubjectClick,
                         embedded = true

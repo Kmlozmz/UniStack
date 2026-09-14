@@ -191,6 +191,7 @@ fun TasksScreen(
     modifier: Modifier = Modifier,
     onCompleteHistoryClick: (String) -> Unit = {},
     onSubjectClick: (String) -> Unit = {},
+    onOpenTaskClick: (String) -> Unit = {},
     viewModel: TasksViewModel = hiltViewModel(),
     embedded: Boolean = false
 ) {
@@ -639,6 +640,7 @@ fun TasksScreen(
             task = task,
             subject = subject,
             gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
+            viewModel = viewModel,
             onDismiss = { selectedTaskIdForSheet = null },
             onSubjectClick = { subjectId ->
                 selectedTaskIdForSheet = null
@@ -647,6 +649,10 @@ fun TasksScreen(
             onEditTaskClick = { taskId ->
                 selectedTaskIdForSheet = null
                 onEditTaskClick(taskId)
+            },
+            onOpenFull = { taskId ->
+                selectedTaskIdForSheet = null
+                onOpenTaskClick(taskId)
             },
             onDuplicateTask = { taskId ->
                 val copy = viewModel.duplicateTask(taskId)
@@ -2714,7 +2720,7 @@ internal fun TaskDifficulty.color(): Color {
 }
 
 @Composable
-private fun TaskType.label(): String {
+internal fun TaskType.label(): String {
     return when (this) {
         TaskType.WORKSHOP -> stringResource(R.string.tasks_type_workshop)
         TaskType.EXAM -> stringResource(R.string.tasks_type_midterm)

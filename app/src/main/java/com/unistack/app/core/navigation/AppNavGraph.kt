@@ -511,6 +511,9 @@ fun MainNavGraph(
                     onEditTaskClick = { taskId ->
                         navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules)
                     },
+                    onOpenTaskClick = { taskId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.taskDetail(taskId), enabledModules)
+                    },
                     onCompleteHistoryClick = { subjectId ->
                         navController.navigateIfModuleEnabled(AppRoutes.priorHistory(subjectId), enabledModules)
                     }
@@ -1044,6 +1047,22 @@ fun MainNavGraph(
                     }
                 )
             }
+            screen("${AppRoutes.TaskDetail}/{taskId}") { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId").orEmpty()
+                com.unistack.app.feature_tasks.presentation.TaskDetailScreen(
+                    taskId = taskId,
+                    onBackClick = { navController.navigateUp() },
+                    onSubjectClick = { subjectId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules)
+                    },
+                    onEditTaskClick = { editId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.editTask(editId), enabledModules)
+                    },
+                    onOpenTaskClick = { openId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.taskDetail(openId), enabledModules)
+                    }
+                )
+            }
             screen(AppRoutes.AddExpense) {
                 AddExpenseScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Expenses, enabledModules) })
             }
@@ -1191,6 +1210,7 @@ private val ModalRoutes = setOf(
     AppRoutes.EditGrade,
     AppRoutes.AddTask,
     AppRoutes.EditTask,
+    AppRoutes.TaskDetail,
     AppRoutes.AddExpense,
     AppRoutes.EditExpense
 )
@@ -1262,6 +1282,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Tasks) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditTask) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.TaskDetail) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.Expenses) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.ExpenseInsights) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.AddExpense) -> AppRoutes.Expenses
@@ -1333,6 +1354,7 @@ internal fun moduleForRoute(route: String?): AppModule? {
         routeBelongsTo(route, AppRoutes.Tasks) -> AppModule.TASKS
         routeBelongsTo(route, AppRoutes.AddTask) -> AppModule.TASKS
         routeBelongsTo(route, AppRoutes.EditTask) -> AppModule.TASKS
+        routeBelongsTo(route, AppRoutes.TaskDetail) -> AppModule.TASKS
         routeBelongsTo(route, AppRoutes.Expenses) -> AppModule.EXPENSES
         routeBelongsTo(route, AppRoutes.AddExpense) -> AppModule.EXPENSES
         routeBelongsTo(route, AppRoutes.EditExpense) -> AppModule.EXPENSES

@@ -103,6 +103,7 @@ object AppRoutes {
     const val EditGrade = "edit_grade"
     const val AddTask = "add_task"
     const val EditTask = "edit_task"
+    const val TaskDetail = "task_detail"
     const val AddExpense = "add_expense"
     const val EditExpense = "edit_expense"
 
@@ -139,6 +140,7 @@ object AppRoutes {
     fun editSubjectFromSchedule(subjectId: String) = "$EditSubjectFromSchedule/$subjectId"
     fun editGrade(subjectId: String, gradeId: String) = "$EditGrade/$subjectId/$gradeId"
     fun editTask(taskId: String) = "$EditTask/$taskId"
+    fun taskDetail(taskId: String) = "$TaskDetail/$taskId"
     fun editExpense(expenseId: String) = "$EditExpense/$expenseId"
     fun notificationDetail(notificationId: Int) = "$NotificationDetail/$notificationId"
 }

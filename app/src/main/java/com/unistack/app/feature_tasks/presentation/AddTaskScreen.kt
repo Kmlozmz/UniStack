@@ -2001,22 +2001,6 @@ private val SubjectSheetMuted: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
-private fun TaskType.label(): String {
-    return when (this) {
-        TaskType.WORKSHOP -> stringResource(R.string.tasks_type_workshop)
-        TaskType.EXAM -> stringResource(R.string.tasks_type_midterm)
-        TaskType.ESSAY -> stringResource(R.string.tasks_type_essay)
-        TaskType.PRESENTATION -> stringResource(R.string.tasks_type_presentation)
-        TaskType.RESEARCH -> stringResource(R.string.tasks_type_research)
-        TaskType.TEST -> stringResource(R.string.tasks_type_exam)
-        TaskType.PRACTICE -> stringResource(R.string.tasks_type_practice)
-        TaskType.PROJECT -> stringResource(R.string.tasks_type_project)
-        TaskType.READING -> stringResource(R.string.tasks_type_reading)
-        TaskType.OTHER -> stringResource(R.string.tasks_type_other)
-    }
-}
-
-@Composable
 private fun TaskDifficulty.label(): String {
     return when (this) {
         TaskDifficulty.EASY -> stringResource(R.string.tasks_priority_low)
