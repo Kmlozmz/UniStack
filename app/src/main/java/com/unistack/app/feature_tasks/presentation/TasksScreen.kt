@@ -2551,15 +2551,18 @@ private fun PriorityFilterSection(
             ),
             UniSegmentedOption<TaskDifficulty?>(
                 value = TaskDifficulty.HARD,
-                label = stringResource(R.string.tasks_priority_high)
+                label = stringResource(R.string.tasks_priority_high),
+                dotColor = TaskDifficulty.HARD.color()
             ),
             UniSegmentedOption<TaskDifficulty?>(
                 value = TaskDifficulty.MEDIUM,
-                label = stringResource(R.string.tasks_priority_medium)
+                label = stringResource(R.string.tasks_priority_medium),
+                dotColor = TaskDifficulty.MEDIUM.color()
             ),
             UniSegmentedOption<TaskDifficulty?>(
                 value = TaskDifficulty.EASY,
-                label = stringResource(R.string.tasks_priority_low)
+                label = stringResource(R.string.tasks_priority_low),
+                dotColor = TaskDifficulty.EASY.color()
             )
         )
 
@@ -2580,13 +2583,13 @@ private fun SortFilterSection(
     val isDark = LocalIsDarkTheme.current
     FilterSheetSection(title = stringResource(R.string.tasks_order_title)) {
         val options = listOf(
-            Pair(TaskSortOrder.DUE_DATE, stringResource(R.string.tasks_order_due_date)),
-            Pair(TaskSortOrder.PRIORITY, stringResource(R.string.tasks_order_priority)),
-            Pair(TaskSortOrder.SUBJECT, stringResource(R.string.tasks_order_subject))
+            Triple(TaskSortOrder.DUE_DATE, stringResource(R.string.tasks_order_due_date), Icons.Rounded.CalendarMonth),
+            Triple(TaskSortOrder.PRIORITY, stringResource(R.string.tasks_order_priority), Icons.Rounded.Flag),
+            Triple(TaskSortOrder.SUBJECT, stringResource(R.string.tasks_order_subject), Icons.AutoMirrored.Rounded.MenuBook)
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            options.forEach { (option, label) ->
+            options.forEach { (option, label, icon) ->
                 val isSelected = sortOrder == option
                 val textColor = if (isSelected) {
                     MaterialTheme.colorScheme.onSurface
@@ -2611,6 +2614,12 @@ private fun SortFilterSection(
                             unselectedColor = MaterialTheme.colorScheme.outline
                         ),
                         modifier = Modifier.size(20.dp)
+                    )
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = textColor,
+                        modifier = Modifier.size(17.dp)
                     )
                     Text(
                         text = label,

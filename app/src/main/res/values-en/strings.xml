@@ -891,6 +891,7 @@
     <string name="tasks_attachment_error_camera">Couldn\'t prepare the camera.</string>
     <string name="tasks_attachment_error_title">Couldn\'t attach</string>
     <string name="tasks_field_attachments">Attachments</string>
+    <string name="tasks_attachment_save_first">Create the task first to attach photos, files or audio.</string>
     <string name="tasks_attachment_add">Attach</string>
     <string name="tasks_eval_title">When marking</string>
     <string name="tasks_eval_awaiting_grade">Submitted, awaiting grade</string>

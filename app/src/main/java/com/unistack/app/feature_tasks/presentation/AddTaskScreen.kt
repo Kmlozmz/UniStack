@@ -237,6 +237,8 @@ fun AddTaskScreen(
     }
 
     AddTaskContent(
+        taskId = taskId,
+        viewModel = viewModel,
         title = title,
         description = description,
         isEditing = isEditing,
@@ -486,6 +488,8 @@ fun AddTaskScreen(
 
 @Composable
 private fun AddTaskContent(
+    taskId: String?,
+    viewModel: TasksViewModel,
     title: String,
     description: String,
     isEditing: Boolean,
@@ -529,8 +533,18 @@ private fun AddTaskContent(
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var descriptionExpanded by rememberSaveable { mutableStateOf(description.isNotBlank()) }
     val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
+    var attachError by remember { mutableStateOf<String?>(null) }
+    val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
+    val taskAttachments = remember(allAttachments, taskId) {
+        if (taskId == null) emptyList() else allAttachments.filter { it.taskId == taskId }
+    }
+    val attachController = if (taskId != null) {
+        rememberTaskAttachController(taskId, viewModel) { attachError = it }
+    } else {
+        null
+    }
+    val attachContext = androidx.compose.ui.platform.LocalContext.current
     val headerContext = listOfNotNull(
         selectedSubject?.name,
         linkedGradeValue?.let { stringResource(R.string.tasks_grade_prefix, it) }
@@ -576,6 +590,64 @@ private fun AddTaskContent(
                     onCreateSubjectClick = onCreateSubjectClick
                 )
             }
+            FormSection(title = stringResource(R.string.tasks_field_description)) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                ) {
+                    Box(modifier = Modifier.padding(16.dp)) {
+                        TaskDescriptionField(value = description, onValueChange = onDescriptionChange)
+                    }
+                }
+            }
+            FormSection(title = stringResource(R.string.tasks_field_attachments)) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (attachController != null) {
+                            TaskAttachmentStrip(
+                                attachments = taskAttachments,
+                                pathFor = { viewModel.taskAttachmentPath(it) },
+                                existsFor = { viewModel.taskAttachmentFileExists(it) },
+                                onOpen = { attachment ->
+                                    val uri = viewModel.taskAttachmentUri(attachment)
+                                    if (uri != null) {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, attachment.mimeType)
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        runCatching { attachContext.startActivity(intent) }
+                                    }
+                                },
+                                onRemove = { viewModel.removeTaskAttachment(it) }
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth().bounceClick { attachController.openMenu() },
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                Text(
+                                    text = stringResource(R.string.tasks_attachment_add),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = stringResource(R.string.tasks_attachment_save_first),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
             FormSection(title = stringResource(R.string.tasks_classification_title)) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     TaskTypeSelector(selected = selectedType, onSelected = onTypeSelected)
@@ -609,49 +681,6 @@ private fun AddTaskContent(
                     onDeleteSubtask = onDeleteSubtask
                 )
             }
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .bounceClick { descriptionExpanded = !descriptionExpanded }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Rounded.Description,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = if (description.isBlank()) stringResource(R.string.tasks_add_description) else stringResource(R.string.tasks_field_description),
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 12.dp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Icon(
-                            if (descriptionExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = null
-                        )
-                    }
-                    if (descriptionExpanded) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-                        Box(modifier = Modifier.padding(14.dp)) {
-                            TaskDescriptionField(
-                                value = description,
-                                onValueChange = onDescriptionChange
-                            )
-                        }
-                    }
-                }
-            }
             if (taskMissing) {
                 Text(stringResource(R.string.tasks_not_found), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
             }
@@ -680,6 +709,45 @@ private fun AddTaskContent(
                     .fillMaxWidth()
             )
         }
+    }
+
+    if (attachController != null) {
+        if (attachController.menuOpen) {
+            TaskAttachMenuSheet(
+                onDismiss = attachController.dismissMenu,
+                onPickPhoto = attachController.pickPhoto,
+                onTakePhoto = attachController.takePhoto,
+                onPickFile = attachController.pickFile,
+                onRecordAudio = attachController.openRecorder
+            )
+        }
+        if (attachController.recorderOpen && taskId != null) {
+            com.unistack.app.feature_notes.presentation.NoteRecorderSheet(
+                createFile = { ext -> viewModel.newTaskAttachmentFile(ext) },
+                onDiscard = { viewModel.discardTaskStoredFile(it) },
+                onSaved = { storedName, durationMillis ->
+                    viewModel.attachTaskStoredFile(
+                        taskId = taskId,
+                        storedName = storedName,
+                        displayName = com.unistack.app.core.utils.Textos.get(R.string.tasks_attachment_new_recording),
+                        mimeType = "audio/mp4",
+                        kind = com.unistack.app.feature_notes.domain.AttachmentKind.AUDIO,
+                        durationMillis = durationMillis
+                    )
+                },
+                onDismiss = attachController.dismissRecorder
+            )
+        }
+    }
+    attachError?.let { mensaje ->
+        AlertDialog(
+            onDismissRequest = { attachError = null },
+            title = { Text(stringResource(R.string.tasks_attachment_error_title)) },
+            text = { Text(mensaje) },
+            confirmButton = {
+                TextButton(onClick = { attachError = null }) { Text(stringResource(R.string.common_understood)) }
+            }
+        )
     }
 }
 
@@ -1934,10 +2002,11 @@ private fun PrioritySegmentedControl(
 ) {
     // Un grupo conectado, el mismo que eligen Horario/Calendario o Materias/Tareas. Era una
     // pastilla dentro de otra pastilla: fondo teñido, contorno y un relleno flotando dentro.
+    // El punto de color es el mismo que ya llevan las filas de tarea (rojo/ámbar/verde).
     UniSegmentedControl(
         selected = selected,
         options = TaskDifficulty.entries.map {
-            UniSegmentedOption(value = it, label = it.label())
+            UniSegmentedOption(value = it, label = it.label(), dotColor = it.color())
         },
         onSelected = onSelected,
         modifier = Modifier.fillMaxWidth()
