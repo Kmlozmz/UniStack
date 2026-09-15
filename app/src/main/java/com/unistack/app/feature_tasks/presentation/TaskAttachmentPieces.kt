@@ -3,7 +3,12 @@
 package com.unistack.app.feature_tasks.presentation
 
 import android.media.MediaPlayer
+import android.widget.MediaController
+import android.widget.VideoView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -24,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
@@ -35,14 +42,21 @@ import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -88,6 +102,118 @@ fun TaskAttachmentStrip(
         }
         resto.forEach { adjunto ->
             SingleTaskAttachment(adjunto, pathFor, existsFor, onOpen, onRemove)
+        }
+    }
+}
+
+/**
+ * El visor a pantalla completa: la foto o el vídeo, sin salir de la app.
+ *
+ * Fondo negro y nada más que lo que se mira. La foto se deja acercar con dos dedos y arrastrar
+ * mientras esté acercada —una foto de un enunciado escrito a mano no se lee al tamaño de la
+ * pantalla—, y vuelve sola a su sitio al soltarla en el mínimo. El vídeo usa el reproductor del
+ * sistema con sus propios controles, que es lo que ya sabe hacer pausa, barra y volumen.
+ */
+@Composable
+fun TaskAttachmentViewer(
+    attachment: TaskAttachment,
+    path: String,
+    onOpenExternally: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val esVideo = attachment.mimeType.startsWith("video/")
+    var escala by remember { mutableFloatStateOf(1f) }
+    var desplazamiento by remember { mutableStateOf(Offset.Zero) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                // design-tokens-ok: un visor de fotos se mira sobre negro, no sobre el tema.
+                .background(Color.Black)
+        ) {
+            if (esVideo) {
+                AndroidView(
+                    factory = { contexto ->
+                        VideoView(contexto).apply {
+                            setVideoPath(path)
+                            setMediaController(MediaController(contexto).also { it.setAnchorView(this) })
+                            setOnPreparedListener { it.isLooping = false; start() }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().align(Alignment.Center)
+                )
+            } else {
+                val gestos = rememberTransformableState { cambioEscala, cambioPan, _ ->
+                    escala = (escala * cambioEscala).coerceIn(1f, 5f)
+                    desplazamiento = if (escala <= 1f) Offset.Zero else desplazamiento + cambioPan
+                }
+                AsyncImage(
+                    model = File(path),
+                    contentDescription = attachment.displayName,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = escala,
+                            scaleY = escala,
+                            translationX = desplazamiento.x,
+                            translationY = desplazamiento.y
+                        )
+                        .transformable(gestos)
+                )
+            }
+
+            // La barra flota encima y no ocupa sitio: lo que se mira manda.
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                VisorBoton(icon = Icons.Rounded.Close, description = stringResource(R.string.action_close), onClick = onDismiss)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = attachment.displayName,
+                    modifier = Modifier.weight(1f),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                VisorBoton(
+                    icon = Icons.Rounded.OpenInNew,
+                    description = stringResource(R.string.notes_attachment_open),
+                    onClick = onOpenExternally
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun VisorBoton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    description: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        // design-tokens-ok: va sobre el negro del visor, no sobre una superficie del tema.
+        color = Color.White.copy(alpha = 0.16f),
+        contentColor = Color.White,
+        modifier = Modifier.size(40.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = description, modifier = Modifier.size(20.dp))
         }
     }
 }

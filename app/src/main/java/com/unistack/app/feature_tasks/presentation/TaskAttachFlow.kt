@@ -2,7 +2,12 @@
 
 package com.unistack.app.feature_tasks.presentation
 
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.unistack.app.core.utils.performSafely
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +48,58 @@ import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.Attachments
+import com.unistack.app.feature_tasks.domain.TaskAttachment
+
+/**
+ * Abrir un adjunto: dentro si se puede ver, fuera si no.
+ *
+ * **Una foto no debería sacarte de la app.** Tocar «Abrir» lanzaba siempre un intent, así que
+ * mirar la foto del enunciado significaba irse a la galería y volver. Las fotos y los vídeos se
+ * ven aquí, a pantalla completa; lo demás —un PDF, un documento— sí sale fuera, que para eso
+ * están las apps que saben abrirlo. El visor lleva su propia salida a la app externa, por si la
+ * foto se quiere editar o compartir.
+ */
+class TaskAttachmentOpener internal constructor(
+    val open: (TaskAttachment) -> Unit
+)
+
+@Composable
+fun rememberTaskAttachmentOpener(viewModel: TasksViewModel): TaskAttachmentOpener {
+    val context = LocalContext.current
+    var viendo by remember { mutableStateOf<TaskAttachment?>(null) }
+
+    val abrirFuera: (TaskAttachment) -> Unit = { adjunto ->
+        val uri = viewModel.taskAttachmentUri(adjunto)
+        if (uri != null) {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, adjunto.mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            runCatching { context.startActivity(intent) }
+        }
+    }
+
+    viendo?.let { adjunto ->
+        TaskAttachmentViewer(
+            attachment = adjunto,
+            path = viewModel.taskAttachmentPath(adjunto),
+            onOpenExternally = { abrirFuera(adjunto) },
+            onDismiss = { viendo = null }
+        )
+    }
+
+    return remember(viewModel) {
+        TaskAttachmentOpener(
+            open = { adjunto ->
+                if (seVeDentro(adjunto.mimeType)) viendo = adjunto else abrirFuera(adjunto)
+            }
+        )
+    }
+}
+
+/** Lo que el visor sabe pintar por su cuenta. Lo demás se lo queda quien sepa abrirlo. */
+private fun seVeDentro(mimeType: String): Boolean =
+    mimeType.startsWith("image/") || mimeType.startsWith("video/")
 
 /** Lo que necesita cualquier pantalla que deje adjuntar a una tarea: hoja, pantalla completa o formulario. */
 class TaskAttachController internal constructor(
@@ -191,12 +248,19 @@ private fun TaskAttachMenuTile(
 ) {
     // Alto fijo, no `heightIn`: dentro de la hoja la restricción de alto llega suelta, así que
     // un mínimo con `fillMaxSize` dentro hacía que cada casilla se comiera la pantalla entera.
+    val haptica = LocalHapticFeedback.current
     Surface(
         modifier = modifier
             .height(96.dp)
-            .cleanClickable(shape = RoundedCornerShape(18.dp), onClick = onClick),
+            .cleanClickable(shape = RoundedCornerShape(18.dp)) {
+                haptica.performSafely(HapticFeedbackType.Confirm)
+                onClick()
+            },
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        // Con temas de poco contraste entre superficies, el relleno solo no separa la casilla
+        // del fondo de la hoja: el contorno es lo que la hace un botón y no un hueco.
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier

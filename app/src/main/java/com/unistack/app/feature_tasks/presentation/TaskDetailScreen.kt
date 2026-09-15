@@ -110,6 +110,7 @@ fun TaskDetailScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var attachError by remember { mutableStateOf<String?>(null) }
     val attachController = rememberTaskAttachController(task.id, viewModel) { attachError = it }
+    val attachmentOpener = rememberTaskAttachmentOpener(viewModel)
     val context = LocalContext.current
 
     val isDark = LocalIsDarkTheme.current
@@ -255,16 +256,7 @@ fun TaskDetailScreen(
                         attachments = taskAttachments,
                         pathFor = { viewModel.taskAttachmentPath(it) },
                         existsFor = { viewModel.taskAttachmentFileExists(it) },
-                        onOpen = { attachment ->
-                            val uri = viewModel.taskAttachmentUri(attachment)
-                            if (uri != null) {
-                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                    setDataAndType(uri, attachment.mimeType)
-                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                runCatching { context.startActivity(intent) }
-                            }
-                        },
+                        onOpen = attachmentOpener.open,
                         onRemove = { viewModel.removeTaskAttachment(it) }
                     )
                     Row(
@@ -364,7 +356,10 @@ fun TaskDetailScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (task.completed) MaterialTheme.colorScheme.surfaceContainerHigh else LocalSectionColors.current.onTrack,
                     contentColor = if (task.completed) textPrimary else LocalSectionColors.current.onOnTrack
-                )
+                ),
+                // Ya completada, el botón va en superficie y no en color: sin contorno se
+                // confundía con el fondo de la barra y no parecía un botón.
+                border = if (task.completed) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null
             ) {
                 Icon(imageVector = if (task.completed) Icons.Rounded.Close else Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(19.dp))
                 Spacer(modifier = Modifier.width(8.dp))
@@ -374,7 +369,12 @@ fun TaskDetailScreen(
                     fontWeight = FontWeight.ExtraBold
                 )
             }
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.size(48.dp)) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.size(48.dp)
+            ) {
                 TaskActionsOverflowMenu(
                     onEdit = { onEditTaskClick(task.id) },
                     onDuplicate = { viewModel.duplicateTask(task.id); onBackClick() },

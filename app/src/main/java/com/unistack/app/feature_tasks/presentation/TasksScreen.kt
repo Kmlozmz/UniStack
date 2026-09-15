@@ -8,6 +8,9 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.unistack.app.core.utils.performSafely
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -1867,18 +1870,26 @@ private fun OpcionDeNota(
 ) {
     val shape = MaterialTheme.shapes.large
     val fondo = if (destacada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
-    val tinta = if (destacada) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val tinta = if (destacada) contentColorOn(MaterialTheme.colorScheme.primary) else MaterialTheme.colorScheme.onSurface
     val tintaSuave = if (destacada) {
-        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f)
+        contentColorOn(MaterialTheme.colorScheme.primary).copy(alpha = 0.78f)
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    // Contorno en las que no van rellenas: con temas de poco contraste entre superficies, el
+    // relleno solo no basta y las dos opciones de abajo se perdían contra el fondo de la hoja.
+    val contorno = if (destacada) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val haptica = LocalHapticFeedback.current
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .cleanClickable(shape = shape, onClick = onClick),
+            .cleanClickable(shape = shape) {
+                haptica.performSafely(HapticFeedbackType.Confirm)
+                onClick()
+            },
         shape = shape,
-        color = fondo
+        color = fondo,
+        border = contorno
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),

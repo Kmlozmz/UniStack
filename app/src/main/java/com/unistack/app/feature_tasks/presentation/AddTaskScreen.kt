@@ -567,6 +567,7 @@ private fun AddTaskContent(
         allAttachments.filter { it.taskId == attachTargetId }
     }
     val attachController = rememberTaskAttachController(attachTargetId, viewModel) { attachError = it }
+    val attachmentOpener = rememberTaskAttachmentOpener(viewModel)
     val attachContext = androidx.compose.ui.platform.LocalContext.current
     val headerContext = listOfNotNull(
         selectedSubject?.name,
@@ -635,16 +636,7 @@ private fun AddTaskContent(
                             attachments = taskAttachments,
                             pathFor = { viewModel.taskAttachmentPath(it) },
                             existsFor = { viewModel.taskAttachmentFileExists(it) },
-                            onOpen = { attachment ->
-                                val uri = viewModel.taskAttachmentUri(attachment)
-                                if (uri != null) {
-                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                        setDataAndType(uri, attachment.mimeType)
-                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    runCatching { attachContext.startActivity(intent) }
-                                }
-                            },
+                            onOpen = attachmentOpener.open,
                             onRemove = { viewModel.removeTaskAttachment(it) }
                         )
                         AttachmentAddBox(onClick = { attachController.openMenu() })

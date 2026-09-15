@@ -139,6 +139,7 @@ internal fun HojaTarea(
     val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
     val taskAttachments = remember(allAttachments, task.id) { allAttachments.filter { it.taskId == task.id } }
     val attachController = rememberTaskAttachController(task.id, viewModel) { attachError = it }
+    val attachmentOpener = rememberTaskAttachmentOpener(viewModel)
     val context = androidx.compose.ui.platform.LocalContext.current
     val today = remember { TaskDateUtils.today() }
     val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
@@ -586,16 +587,7 @@ internal fun HojaTarea(
                         attachments = taskAttachments,
                         pathFor = { viewModel.taskAttachmentPath(it) },
                         existsFor = { viewModel.taskAttachmentFileExists(it) },
-                        onOpen = { attachment ->
-                            val uri = viewModel.taskAttachmentUri(attachment)
-                            if (uri != null) {
-                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                    setDataAndType(uri, attachment.mimeType)
-                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                runCatching { context.startActivity(intent) }
-                            }
-                        },
+                        onOpen = attachmentOpener.open,
                         onRemove = { viewModel.removeTaskAttachment(it) }
                     )
                     Row(
@@ -1027,7 +1019,9 @@ internal fun HojaTarea(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (task.completed) (MaterialTheme.colorScheme.surfaceContainerHigh) else LocalSectionColors.current.onTrack,
                         contentColor = if (task.completed) textPrimary else LocalSectionColors.current.onOnTrack
-                    )
+                    ),
+                    // Ya completada va en superficie: sin contorno se pierde contra la hoja.
+                    border = if (task.completed) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null
                 ) {
                     Icon(
                         imageVector = if (task.completed) Icons.Rounded.Close else Icons.Rounded.Check,
