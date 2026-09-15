@@ -180,7 +180,7 @@ fun AccessibilitySettingsScreen(
 
             // ------------------------------------------------------------------ VISIÓN Y LECTURA
             item {
-                SettingsGroup(label = stringResource(R.string.a11y_section_vision), rowCount = 5) {
+                SettingsGroup(label = stringResource(R.string.a11y_section_vision), rowCount = 6) {
                     SettingsCustomRow(
                         icon = Icons.Rounded.Contrast,
                         title = stringResource(R.string.a11y_contrast_title),
