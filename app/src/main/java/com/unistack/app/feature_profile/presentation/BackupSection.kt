@@ -7,6 +7,7 @@ import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import com.unistack.app.core.design.components.cookieCorner
 import com.unistack.app.core.design.theme.SectionLabelStyle
@@ -155,17 +156,28 @@ internal fun BackupSection(
          * que uno viene a comprobar —si la última es de hoy o de hace tres meses— estaba
          * enterrado dentro de un recuadro gris a media tarjeta.
          */
+        // La tarjeta de la copia flota sobre el resto: es lo único de la pantalla que se toca
+        // a diario. La sombra va teñida de su propio color porque sobre el fondo oscuro de la
+        // app una sombra negra no se ve, y sin sombra la tarjeta quedaba pegada al papel.
+        val floteShape = MaterialTheme.shapes.extraLarge
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
+                .shadow(
+                    elevation = 14.dp,
+                    shape = floteShape,
+                    ambientColor = LocalSectionColors.current.schedule,
+                    spotColor = LocalSectionColors.current.schedule
+                )
                 .cookieCorner(
                     color = LocalSectionColors.current.onScheduleContainer,
+                    shape = floteShape,
                     size = 150.dp,
                     offsetX = 250.dp,
                     offsetY = (-50).dp,
                     alpha = 0.16f
                 ),
-            shape = MaterialTheme.shapes.extraLarge,
+            shape = floteShape,
             color = LocalSectionColors.current.scheduleContainer,
             contentColor = LocalSectionColors.current.onScheduleContainer
         ) {
