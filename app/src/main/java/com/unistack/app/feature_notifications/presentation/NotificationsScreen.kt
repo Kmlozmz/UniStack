@@ -54,6 +54,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -185,6 +186,7 @@ fun NotificationHistoryScreen(
             item {
                 NotificationFilterBar(
                     selected = selectedFilter,
+                    notifications = notifications,
                     onSelected = { selectedFilter = it }
                 )
             }
@@ -306,31 +308,36 @@ private fun NotificationInboxSummary(
     unreadCount: Int,
     actionCount: Int
 ) {
+    // Sin contorno y más bajo: es un resumen, no una tarjeta más de la lista.
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = NotificationCard,
-        border = BorderStroke(1.dp, NotificationBorder)
+        shape = MaterialTheme.shapes.medium,
+        color = NotificationCard
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
+                    .size(38.dp)
+                    .clip(MaterialTheme.shapes.small)
                     .background(NotificationPrimary.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.NotificationsNone, contentDescription = null, tint = NotificationPrimary)
+                Icon(
+                    Icons.Rounded.NotificationsNone,
+                    contentDescription = null,
+                    tint = NotificationPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Spacer(Modifier.width(11.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
                     if (unreadCount == 0) stringResource(R.string.notif_all_reviewed) else stringResource(R.string.notif_unreviewed_count, unreadCount),
                     color = NotificationText,
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
@@ -366,6 +373,7 @@ private fun NotificationInboxSummary(
 @Composable
 private fun NotificationFilterBar(
     selected: NotificationFilter,
+    notifications: List<NotificationHistoryItem>,
     onSelected: (NotificationFilter) -> Unit
 ) {
     Row(
@@ -379,6 +387,9 @@ private fun NotificationFilterBar(
     ) {
         NotificationFilter.entries.filterNot { it == NotificationFilter.READ }.forEach { filter ->
             val isSelected = selected == filter
+            // Cada filtro lleva su cuenta: sin ella, tocar «Clases» es tirar a ciegas y a veces
+            // caer en una lista vacía que no avisaba de nada antes de tocarla.
+            val count = notifications.count(filter::matches)
             Surface(
                 onClick = { onSelected(filter) },
                 shape = CircleShape,
@@ -386,16 +397,33 @@ private fun NotificationFilterBar(
                 border = if (isSelected) null else BorderStroke(1.dp, NotificationBorder.copy(alpha = 0.45f)),
                 tonalElevation = 0.dp
             ) {
-                Text(
-                    text = stringResource(filter.labelRes),
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else NotificationMuted,
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(filter.labelRes),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else NotificationMuted,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        text = count.toString(),
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        } else {
+                            NotificationMuted.copy(alpha = 0.65f)
+                        },
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                }
             }
         }
     }
@@ -407,82 +435,83 @@ private fun NotificationHistoryCard(
     onClick: () -> Unit
 ) {
     val category = item.category()
+    /*
+     * Una fila, una columna, y la hora dentro.
+     *
+     * Antes eran dos filas: arriba el aviso y abajo una tira con «requiere acción», un reloj y
+     * la hora. Esa segunda tira repetía en palabras lo que ya decían el color y la flecha, y le
+     * daba a cada aviso el alto de dos. Lo leído baja de opacidad en vez de cambiar de grosor:
+     * quince filas del mismo peso no dejan ver por dónde vas.
+     */
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = NotificationCard,
-        border = BorderStroke(
-            1.dp,
-            if (category.requiresAction && !item.read) category.color.copy(alpha = 0.36f) else NotificationBorder
-        )
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (item.read) 0.58f else 1f),
+        shape = MaterialTheme.shapes.medium,
+        color = NotificationCard
     ) {
-        Column(modifier = Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(category.color.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = category.icon,
-                        contentDescription = null,
-                        tint = category.color,
-                        modifier = Modifier.size(23.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        NotificationCategoryPill(category)
-                        Spacer(Modifier.width(7.dp))
-                        NotificationStatusPill(item = item, compact = true)
-                    }
-                    Text(
-                        text = item.title,
-                        color = NotificationText,
-                        fontSize = 15.sp,
-                        lineHeight = 19.sp,
-                        fontWeight = if (!item.read) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = item.body,
-                        color = NotificationBody,
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
-                        fontWeight = FontWeight.Normal,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+        Row(
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(category.color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    imageVector = Icons.Rounded.ChevronRight,
+                    imageVector = category.icon,
                     contentDescription = null,
-                    tint = NotificationMuted,
-                    modifier = Modifier.size(18.dp)
+                    tint = category.color,
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (category.requiresAction) {
-                    Text(
-                        stringResource(R.string.notif_requires_action),
-                        color = category.color,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(11.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NotificationCategoryPill(category)
+                    Spacer(Modifier.width(6.dp))
+                    NotificationStatusPill(item = item, compact = true)
                 }
-                Icon(Icons.Rounded.AccessTime, contentDescription = null, tint = NotificationMuted, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = item.title,
+                    color = NotificationText,
+                    fontSize = 14.5.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = item.body,
+                    color = NotificationBody,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     text = item.timeLabel(),
                     color = NotificationMuted,
                     fontSize = 11.sp,
-                    lineHeight = 13.sp
+                    lineHeight = 14.sp,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            // La flecha sale sólo si hay a dónde ir. Estaba en todas, y doce de quince no
+            // guardan destino: prometía una pantalla que no existe.
+            if (item.targetRoute != null) {
+                Icon(
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = null,
+                    tint = NotificationMuted,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .size(18.dp)
                 )
             }
         }
