@@ -39,7 +39,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.core.design.theme.SectionLabelStyle
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -140,7 +145,8 @@ fun SubjectFormScreen(
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
-    val subjectSchedule = subjectId?.let { id -> classSessions.firstOrNull { it.subjectId == id } }
+    val subjectSessions = subjectId?.let { id -> classSessions.filter { it.subjectId == id } }.orEmpty()
+    val subjectSchedule = subjectSessions.firstOrNull()
     val defaultCutScheme = subject?.cutScheme ?: profile?.gradingCutScheme ?: GradingCutScheme.default()
     // Desde Horario no tiene sentido guardar una materia sin clase: es justo lo que se venía
     // a crear. El interruptor solo aparece en la ruta académica.
@@ -158,8 +164,12 @@ fun SubjectFormScreen(
     // Vacío mientras nadie lo elija. En edición se carga el que ya tuviera la materia,
     // para no borrar una elección hecha desde su pantalla.
     var activeCutId by remember { mutableStateOf("") }
-    var scheduleDraft by remember(subjectId) { mutableStateOf(defaultSubjectScheduleDraft()) }
+    // Varias franjas por materia: «Lun y Mié 8-10» y «Vie 14-16» son la misma materia.
+    var scheduleDrafts by remember(subjectId) { mutableStateOf(listOf(defaultSubjectScheduleDraft())) }
+    val scheduleDraft = scheduleDrafts.first()
     var scheduleInitialized by remember(subjectId) { mutableStateOf(false) }
+    // La materia que se llama igual, si la hay: sale el aviso antes de crear una repetida.
+    var duplicada by remember(subjectId) { mutableStateOf<Subject?>(null) }
     var initialized by remember(subjectId) { mutableStateOf(false) }
     var academicExpanded by rememberSaveable(mode) { mutableStateOf(mode == SubjectFormMode.ACADEMIC) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -228,18 +238,18 @@ fun SubjectFormScreen(
         }
     }
 
-    LaunchedEffect(subject?.id, subjectSchedule?.id, subjectId) {
+    LaunchedEffect(subject?.id, subjectSessions.size, subjectSchedule?.id, subjectId) {
         when {
-            subjectSchedule != null -> {
-                scheduleDraft = subjectSchedule.toSubjectScheduleDraft()
+            subjectSessions.isNotEmpty() -> {
+                scheduleDrafts = subjectSessions.map { it.toSubjectScheduleDraft() }
                 scheduleInitialized = true
             }
             !scheduleInitialized && isEditing && subject != null -> {
-                scheduleDraft = defaultSubjectScheduleDraft().copy(enabled = !scheduleIsOptional)
+                scheduleDrafts = listOf(defaultSubjectScheduleDraft().copy(enabled = !scheduleIsOptional))
                 scheduleInitialized = true
             }
             !scheduleInitialized && !isEditing -> {
-                scheduleDraft = defaultSubjectScheduleDraft()
+                scheduleDrafts = listOf(defaultSubjectScheduleDraft())
                 scheduleInitialized = true
             }
         }
@@ -339,7 +349,10 @@ fun SubjectFormScreen(
                     }
                 OutlinedTextField(
                     value = scheduleDraft.professor,
-                    onValueChange = { scheduleDraft = scheduleDraft.copy(professor = it.take(60)) },
+                    // El profesor es de la materia, no de una franja suelta: va en todas.
+                    onValueChange = { texto ->
+                        scheduleDrafts = scheduleDrafts.map { it.copy(professor = texto.take(60)) }
+                    },
                     label = { Text(stringResource(R.string.subject_form_professor)) },
                     placeholder = { Text(stringResource(R.string.subject_form_professor_placeholder)) },
                     leadingIcon = { Icon(Icons.Rounded.Person, null) },
@@ -360,22 +373,64 @@ fun SubjectFormScreen(
                     {
                         UniSwitch(
                             checked = scheduleDraft.enabled,
-                            onCheckedChange = { scheduleDraft = scheduleDraft.copy(enabled = it) }
+                            onCheckedChange = { marcado ->
+                                scheduleDrafts = scheduleDrafts.map { it.copy(enabled = marcado) }
+                            }
                         )
                     }
                 } else {
                     null
                 }
             ) {
-                SubjectWhenFields(
-                    draft = scheduleDraft,
-                    onDraftChange = {
-                        scheduleDraft = it
-                        error = null
-                    },
-                    // Las de las demas materias: la propia no se cruza consigo misma.
-                    otrasClases = classSessions.filter { it.subjectId != subjectId }
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    scheduleDrafts.forEachIndexed { indice, franja ->
+                        if (indice > 0) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.subject_form_schedule_slot, indice + 1),
+                                    style = SectionLabelStyle,
+                                    color = accent,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(
+                                    onClick = {
+                                        scheduleDrafts = scheduleDrafts.filterIndexed { i, _ -> i != indice }
+                                        error = null
+                                    }
+                                ) { Text(stringResource(R.string.subject_form_schedule_remove_slot)) }
+                            }
+                        }
+                        SubjectWhenFields(
+                            draft = franja,
+                            onDraftChange = { cambiada ->
+                                scheduleDrafts = scheduleDrafts.mapIndexed { i, previa ->
+                                    if (i == indice) cambiada else previa
+                                }
+                                error = null
+                            },
+                            // Las de las demas materias, y las otras franjas de esta: una
+                            // materia sí puede pisarse consigo misma si te equivocas de hora.
+                            otrasClases = classSessions.filter { it.subjectId != subjectId } +
+                                scheduleDrafts.filterIndexed { i, otra -> i != indice && otra.enabled }
+                                    .map { it.toClassSessionPreview(subjectId.orEmpty()) }
+                        )
+                    }
+                    if (scheduleDraft.enabled) {
+                        TextButton(
+                            onClick = {
+                                scheduleDrafts = scheduleDrafts + defaultSubjectScheduleDraft()
+                                error = null
+                            }
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.subject_form_schedule_add_slot))
+                        }
+                    }
+                }
             }
 
             FormBlock(
@@ -413,7 +468,12 @@ fun SubjectFormScreen(
                 if (scheduleDraft.enabled) {
                     SubjectReminderField(
                         draft = scheduleDraft,
-                        onDraftChange = { scheduleDraft = it }
+                        // El recordatorio es de la materia: se aplica a todas sus franjas.
+                        onDraftChange = { cambiada ->
+                            scheduleDrafts = scheduleDrafts.map {
+                                it.copy(reminderMinutes = cambiada.reminderMinutes)
+                            }
+                        }
                     )
                 }
             }
@@ -442,8 +502,19 @@ fun SubjectFormScreen(
             UniStackButton(
                 text = if (isEditing) stringResource(R.string.subject_form_save_changes) else stringResource(R.string.subject_form_save_subject),
                 enabled = isValid,
-                onClick = {
+                onClick = guardar@{
                     val editingSubjectId = subjectId
+                    // Antes de crear una nueva, mirar si ya hay una con ese nombre: la mayoría
+                    // de las veces no es otra materia, es la misma en otro horario.
+                    val gemela = if (editingSubjectId == null) {
+                        viewModel.subjectWithSameName(TextValidators.normalizeText(name))
+                    } else {
+                        null
+                    }
+                    if (gemela != null) {
+                        duplicada = gemela
+                        return@guardar
+                    }
                     val savedSubjectId = if (editingSubjectId != null) {
                         val saved = viewModel.updateSubject(
                             subjectId = editingSubjectId,
@@ -467,11 +538,13 @@ fun SubjectFormScreen(
                     val scheduleSaved = savedSubjectId?.let { id ->
                         viewModel.saveSubjectSchedule(
                             subjectId = id,
-                            draft = scheduleDraft.copy(
-                                recurrenceStartEpochDay = scheduleDraft.recurrenceStartEpochDay
-                                    .takeIf { it > 0L }
-                                    ?: LocalDate.now().toEpochDay()
-                            )
+                            drafts = scheduleDrafts.map { franja ->
+                                franja.copy(
+                                    recurrenceStartEpochDay = franja.recurrenceStartEpochDay
+                                        .takeIf { it > 0L }
+                                        ?: LocalDate.now().toEpochDay()
+                                )
+                            }
                         )
                     } ?: false
 
@@ -509,6 +582,53 @@ fun SubjectFormScreen(
                 .padding(bottom = 84.dp)
         )
     }
+
+    duplicada?.let { gemela ->
+        /*
+         * La red de seguridad, no el camino principal.
+         *
+         * Quien ya sabe que su materia va dos veces por semana la dice de una vez con «Añadir
+         * otro horario». Esto recoge al que no vio ese botón y estaba a punto de tener la misma
+         * materia dos veces, con las notas y la asistencia repartidas entre las dos.
+         */
+        AlertDialog(
+            onDismissRequest = { duplicada = null },
+            title = { Text(stringResource(R.string.subject_form_same_name_title)) },
+            text = { Text(stringResource(R.string.subject_form_same_name_body, gemela.name)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        duplicada = null
+                        val añadidas = classSessions.count { it.subjectId == gemela.id }
+                        val previas = classSessions
+                            .filter { it.subjectId == gemela.id }
+                            .map { it.toSubjectScheduleDraft() }
+                        val nuevas = scheduleDrafts.filter { it.enabled }.map { franja ->
+                            franja.copy(
+                                recurrenceStartEpochDay = franja.recurrenceStartEpochDay
+                                    .takeIf { it > 0L } ?: LocalDate.now().toEpochDay()
+                            )
+                        }
+                        if (viewModel.saveSubjectSchedule(gemela.id, previas + nuevas)) {
+                            scope.launch {
+                                launch { snackbarHostState.showSnackbar(toastUpdated) }
+                                delay(650)
+                                onSubjectSaved(gemela.id)
+                            }
+                        } else {
+                            error = scheduleWarningMsg
+                        }
+                    }
+                ) { Text(stringResource(R.string.subject_form_same_name_link)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { duplicada = null }) {
+                    Text(stringResource(R.string.subject_form_same_name_create))
+                }
+            }
+        )
+    }
+
 }
 
 

@@ -1,5 +1,6 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.TextosDePrueba
 import com.unistack.app.core.MainDispatcherRule
 import com.unistack.app.feature_grades.data.InMemoryGradesRepository
 import com.unistack.app.feature_grades.domain.GradeSource
@@ -17,6 +18,11 @@ import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
+import com.unistack.app.feature_terms.domain.AcademicTerm
+import com.unistack.app.feature_terms.domain.AcademicTermRepository
+import com.unistack.app.feature_terms.domain.AcademicTermType
+import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
+import java.time.LocalDate
 import com.unistack.app.feature_user.data.InMemoryUserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +50,9 @@ class GradesViewModelTest {
 
     @Before
     fun setUp() {
+        // Sin esto, la clase dependía de que otra prueba hubiera instalado el proveedor antes:
+        // `Textos` es global al proceso, así que funcionaba o no según el orden de ejecución.
+        TextosDePrueba.instalar()
         gradesRepo = InMemoryGradesRepository()
         userRepo = InMemoryUserRepository()
         tasksRepo = InMemoryTasksRepository()
@@ -54,7 +63,8 @@ class GradesViewModelTest {
             userRepository = userRepo,
             tasksRepository = tasksRepo,
             scheduleRepository = scheduleRepo,
-            academicWorksRepository = worksRepo
+            academicWorksRepository = worksRepo,
+            termRepository = FakeTermRepositoryParaMaterias()
         )
     }
 
@@ -326,6 +336,81 @@ class GradesViewModelTest {
         val stored = viewModel.subjects.value.first { it.id == subject.id }
         assertEquals(PriorHistoryPromptStatus.SNOOZED, stored.historyPromptStatus)
     }
+    private fun franja(dias: Set<Int>, desde: Int, hasta: Int) = SubjectScheduleDraft(
+        enabled = true,
+        daysOfWeek = dias,
+        startMinute = desde,
+        endMinute = hasta,
+        recurrenceStartEpochDay = LocalDate.now().toEpochDay()
+    )
+
+    @Test
+    fun `una materia puede tener dos franjas a horas distintas`() {
+        val materia = viewModel.addSubject("Cálculo III", 4.0, SubjectVisualType.BLUE)!!
+
+        val guardado = viewModel.saveSubjectSchedule(
+            subjectId = materia.id,
+            drafts = listOf(
+                franja(setOf(1), 8 * 60, 10 * 60),
+                franja(setOf(3), 14 * 60, 16 * 60)
+            )
+        )
+
+        assertTrue(guardado)
+        val suyas = scheduleRepo.sessions.value.filter { it.subjectId == materia.id }
+        assertEquals(2, suyas.size)
+        assertEquals(setOf(8 * 60, 14 * 60), suyas.map { it.startMinute }.toSet())
+    }
+
+    @Test
+    fun `editar el horario conserva el id de las franjas que siguen`() {
+        val materia = viewModel.addSubject("Física II", 4.0, SubjectVisualType.PURPLE)!!
+        viewModel.saveSubjectSchedule(
+            materia.id,
+            listOf(franja(setOf(1), 8 * 60, 10 * 60), franja(setOf(3), 14 * 60, 16 * 60))
+        )
+        val idsAntes = scheduleRepo.sessions.value.filter { it.subjectId == materia.id }.map { it.id }
+
+        viewModel.saveSubjectSchedule(
+            materia.id,
+            listOf(franja(setOf(1), 9 * 60, 11 * 60), franja(setOf(3), 14 * 60, 16 * 60))
+        )
+
+        val idsDespues = scheduleRepo.sessions.value.filter { it.subjectId == materia.id }.map { it.id }
+        // Si cambiaran de id, la asistencia ya registrada quedaria colgando de una clase que
+        // dejo de existir.
+        assertEquals(idsAntes, idsDespues)
+    }
+
+    @Test
+    fun `quitar una franja borra solo la que sobra`() {
+        val materia = viewModel.addSubject("Sociología", 4.0, SubjectVisualType.YELLOW)!!
+        viewModel.saveSubjectSchedule(
+            materia.id,
+            listOf(franja(setOf(1), 8 * 60, 10 * 60), franja(setOf(3), 14 * 60, 16 * 60))
+        )
+
+        viewModel.saveSubjectSchedule(materia.id, listOf(franja(setOf(1), 8 * 60, 10 * 60)))
+
+        val suyas = scheduleRepo.sessions.value.filter { it.subjectId == materia.id }
+        assertEquals(1, suyas.size)
+        assertEquals(8 * 60, suyas.first().startMinute)
+    }
+
+    @Test
+    fun `una materia con el mismo nombre se reconoce sin acentos ni mayusculas`() {
+        viewModel.addSubject("Cálculo III", 4.0, SubjectVisualType.BLUE)
+
+        assertNotNull(viewModel.subjectWithSameName("calculo iii"))
+        assertNull(viewModel.subjectWithSameName("Álgebra"))
+    }
+
+    @Test
+    fun `la materia que se edita no se detecta a si misma como repetida`() {
+        val materia = viewModel.addSubject("Programación", 4.0, SubjectVisualType.GREEN)!!
+
+        assertNull(viewModel.subjectWithSameName("Programación", excludingId = materia.id))
+    }
 }
 
 private class FakeScheduleRepository : ScheduleRepository {
@@ -385,4 +470,19 @@ private class FakeAcademicWorksRepository : AcademicWorksRepository {
             if (work.id == workId) work.copy(status = status) else work
         }
     }
+}
+
+/** Sin periodo activo: para estas pruebas, la comparación de nombres no se acota por periodo. */
+private class FakeTermRepositoryParaMaterias : AcademicTermRepository {
+    override val terms: StateFlow<List<AcademicTerm>> = MutableStateFlow(emptyList())
+    override val activeTerm: StateFlow<AcademicTerm?> = MutableStateFlow(null)
+    override suspend fun create(
+        name: String,
+        type: AcademicTermType,
+        start: LocalDate,
+        plannedEnd: LocalDate?
+    ): Result<AcademicTerm> = Result.failure(UnsupportedOperationException())
+    override suspend fun update(term: AcademicTerm): Result<Unit> = Result.success(Unit)
+    override suspend fun close(termId: String, closedOn: LocalDate): Result<Unit> = Result.success(Unit)
+    override suspend fun delete(termId: String): Result<Unit> = Result.success(Unit)
 }

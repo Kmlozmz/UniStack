@@ -398,3 +398,25 @@ private fun dayLetter(day: DayOfWeek): String =
     DayLabels.short[day.value - 1]
 
 private fun formatMinute(value: Int): String = "%02d:%02d".format(value / 60, value % 60)
+
+/**
+ * Una franja vista como si ya fuera una clase guardada, sólo para comprobar cruces.
+ *
+ * No se guarda ni se muestra: existe para que el aviso de choque también mire las otras franjas
+ * de la propia materia. Una materia sí puede pisarse consigo misma —lunes 8-10 y lunes 9-11 es
+ * un error de dedo— y antes ese caso no lo veía nadie.
+ */
+internal fun SubjectScheduleDraft.toClassSessionPreview(subjectId: String): ClassSession =
+    ClassSession(
+        id = "preview",
+        subjectId = subjectId,
+        daysOfWeek = daysOfWeek,
+        startMinute = startMinute,
+        endMinute = endMinute,
+        location = room,
+        reminderMinutes = reminderMinutes,
+        createdAt = 0L,
+        updatedAt = 0L,
+        repeatEveryWeeks = repeatEveryWeeks,
+        recurrenceStartEpochDay = recurrenceStartEpochDay
+    )

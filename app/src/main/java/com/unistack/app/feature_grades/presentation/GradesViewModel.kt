@@ -2,6 +2,8 @@ package com.unistack.app.feature_grades.presentation
 
 import androidx.lifecycle.ViewModel
 import com.unistack.app.core.utils.TextValidators
+import com.unistack.app.feature_terms.domain.AcademicTermRepository
+import java.util.Locale
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.core.utils.GradeCalculator
@@ -35,7 +37,8 @@ class GradesViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val tasksRepository: TasksRepository,
     private val scheduleRepository: ScheduleRepository,
-    private val academicWorksRepository: AcademicWorksRepository
+    private val academicWorksRepository: AcademicWorksRepository,
+    private val termRepository: AcademicTermRepository
 ) : ViewModel() {
     val subjects: StateFlow<List<Subject>> = repository.subjects
     val userProfile: StateFlow<UserProfile?> = userRepository.userProfile
@@ -119,33 +122,72 @@ class GradesViewModel @Inject constructor(
         return true
     }
 
-    fun saveSubjectSchedule(subjectId: String, draft: SubjectScheduleDraft): Boolean {
-        if (subjectId.isBlank() || !draft.isValid) return false
+    /**
+     * El horario de una materia, que puede ser **más de una franja**.
+     *
+     * Una materia que se da dos veces por semana a horas distintas —lunes 8-10 y miércoles
+     * 14-16— es lo normal, no la excepción. La tabla siempre lo admitió: `ClassSession` lleva
+     * `subjectId` y nada impide varias. Lo que lo impedía era esto: se guardaba la primera y
+     * **se borraban las demás**, así que aunque existieran, editar la materia se las llevaba.
+     *
+     * Las franjas existentes se reaprovechan por orden para no romper lo que cuelgue de su id
+     * —la asistencia ya registrada, sin ir más lejos—; sólo se borran las que sobran.
+     */
+    fun saveSubjectSchedule(subjectId: String, drafts: List<SubjectScheduleDraft>): Boolean {
+        if (subjectId.isBlank()) return false
         val existing = classSessions.value.filter { it.subjectId == subjectId }
-        if (!draft.enabled) {
+        val activos = drafts.filter { it.enabled }
+        if (activos.any { !it.isValid }) return false
+
+        if (activos.isEmpty()) {
             existing.forEach { scheduleRepository.deleteSession(it.id) }
             return true
         }
 
         val now = System.currentTimeMillis()
-        val primary = existing.firstOrNull()
-        scheduleRepository.saveSession(
-            ClassSession(
-                id = primary?.id ?: "class-${UUID.randomUUID()}",
-                subjectId = subjectId,
-                daysOfWeek = draft.daysOfWeek,
-                startMinute = draft.startMinute,
-                endMinute = draft.endMinute,
-                location = draft.location,
-                reminderMinutes = draft.reminderMinutes,
-                createdAt = primary?.createdAt ?: now,
-                updatedAt = now,
-                repeatEveryWeeks = draft.repeatEveryWeeks,
-                recurrenceStartEpochDay = draft.recurrenceStartEpochDay
+        activos.forEachIndexed { indice, draft ->
+            val previa = existing.getOrNull(indice)
+            scheduleRepository.saveSession(
+                ClassSession(
+                    id = previa?.id ?: "class-${UUID.randomUUID()}",
+                    subjectId = subjectId,
+                    daysOfWeek = draft.daysOfWeek,
+                    startMinute = draft.startMinute,
+                    endMinute = draft.endMinute,
+                    location = draft.location,
+                    reminderMinutes = draft.reminderMinutes,
+                    createdAt = previa?.createdAt ?: now,
+                    updatedAt = now,
+                    repeatEveryWeeks = draft.repeatEveryWeeks,
+                    recurrenceStartEpochDay = draft.recurrenceStartEpochDay
+                )
             )
-        )
-        existing.drop(1).forEach { scheduleRepository.deleteSession(it.id) }
+        }
+        existing.drop(activos.size).forEach { scheduleRepository.deleteSession(it.id) }
         return true
+    }
+
+    /**
+     * ¿Ya hay una materia con este nombre en el periodo activo?
+     *
+     * La red de seguridad de quien no vio el botón de añadir franja y va a crear la materia
+     * dos veces. Compara sin acentos ni mayúsculas, y se queda en el periodo activo a propósito:
+     * repetir el nombre entre semestres es legítimo y para eso está `repeatedFromSubjectId`.
+     */
+    private fun sinTildes(texto: String): String =
+        java.text.Normalizer.normalize(TextValidators.normalizeText(texto), java.text.Normalizer.Form.NFD)
+            .replace(Regex("""\p{Mn}+"""), "")
+            .lowercase(Locale.ROOT)
+
+    fun subjectWithSameName(name: String, excludingId: String? = null): Subject? {
+        val buscado = TextValidators.normalizeText(name).lowercase(Locale.ROOT)
+        if (buscado.isBlank()) return null
+        val termId = termRepository.activeTerm.value?.id
+        return subjects.value.firstOrNull { otra ->
+            otra.id != excludingId &&
+                (termId == null || otra.termId == null || otra.termId == termId) &&
+                sinTildes(otra.name) == buscado
+        }
     }
 
     fun deleteSubject(subjectId: String): Boolean {

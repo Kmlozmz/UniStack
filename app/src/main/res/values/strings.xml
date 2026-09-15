@@ -3002,4 +3002,11 @@ a tu medida</string>
     <string name="theme_nieve">Nieve</string>
     <string name="theme_menta">Menta</string>
     <string name="theme_arena">Arena</string>
+    <string name="subject_form_schedule_slot">Horario %1$d</string>
+    <string name="subject_form_schedule_add_slot">Añadir otro horario</string>
+    <string name="subject_form_schedule_remove_slot">Quitar</string>
+    <string name="subject_form_same_name_title">Ya tienes una materia con ese nombre</string>
+    <string name="subject_form_same_name_body">«%1$s» ya existe en este periodo. Si es la misma materia en otro horario, añádele la franja en vez de crearla otra vez.</string>
+    <string name="subject_form_same_name_link">Añadir el horario a la que ya tengo</string>
+    <string name="subject_form_same_name_create">Crear una aparte</string>
 </resources>
