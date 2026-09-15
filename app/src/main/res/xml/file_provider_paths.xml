@@ -5,4 +5,10 @@
     <cache-path name="exports" path="." />
     <!-- Los adjuntos de las notas viven dentro de la app; solo se prestan para abrirlos. -->
     <files-path name="note_attachments" path="note_attachments/" />
+    <!--
+      Los de las tareas, igual, y en su propia carpeta. Faltaba declararla: sin la raíz,
+      `FileProvider.getUriForFile` lanza, `taskAttachmentUri` lo convierte en null y el botón de
+      abrir fuera no hacía nada, con ningún tipo de adjunto.
+    -->
+    <files-path name="task_attachments" path="task_attachments/" />
 </paths>

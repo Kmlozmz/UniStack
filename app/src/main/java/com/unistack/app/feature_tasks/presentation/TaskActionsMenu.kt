@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniDropdownMenu
+import androidx.compose.foundation.layout.Box
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniIconButtonVariant
 
@@ -35,6 +36,15 @@ fun TaskActionsOverflowMenu(
     variant: UniIconButtonVariant = UniIconButtonVariant.Standard
 ) {
     var expanded by remember { mutableStateOf(false) }
+    /*
+     * El botón y su menú van dentro de una misma caja, y no sueltos.
+     *
+     * Emitidos como hermanos, quien los coloca es la fila de abajo: el menú se anclaba a la
+     * fila entera —por eso salía por el lado que no era— y al abrirse entraba en el reparto de
+     * `spacedBy`, así que empujaba al botón de al lado. Dentro de un `Box` el menú cuelga del
+     * icono, que es a lo que pertenece, y nada de fuera se mueve.
+     */
+    Box {
     UniIconButton(
         icon = Icons.Rounded.MoreVert,
         contentDescription = stringResource(R.string.tasks_more_actions),
@@ -58,5 +68,6 @@ fun TaskActionsOverflowMenu(
             leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             onClick = { expanded = false; onDelete() }
         )
+    }
     }
 }

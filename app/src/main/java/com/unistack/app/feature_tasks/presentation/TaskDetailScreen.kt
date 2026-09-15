@@ -376,7 +376,7 @@ fun TaskDetailScreen(
                 onEdit = { onEditTaskClick(task.id) },
                 onDuplicate = { viewModel.duplicateTask(task.id); onBackClick() },
                 onDelete = { showDeleteConfirm = true },
-                variant = UniIconButtonVariant.Outlined
+                variant = UniIconButtonVariant.Surface
             )
         }
     }

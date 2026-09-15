@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_tasks.domain.TaskAttachment
@@ -239,6 +240,7 @@ private fun TaskPhotoCarousel(
                 .fillMaxHeight()
                 .maskClip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .cleanClickable { onOpen(foto) }
         ) {
             AsyncImage(
                 model = File(pathFor(foto)),
@@ -253,20 +255,6 @@ private fun TaskPhotoCarousel(
                 onRemove = { onRemove(foto) },
                 modifier = Modifier.align(Alignment.TopEnd).padding(7.dp)
             )
-            Surface(
-                onClick = { onOpen(foto) },
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.align(Alignment.BottomStart).padding(7.dp)
-            ) {
-                Text(
-                    stringResource(R.string.notes_attachment_open),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
         }
     }
 }
@@ -307,7 +295,14 @@ private fun TaskImageAttachment(
     onOpen: () -> Unit,
     onRemove: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxWidth()) {
+    // La foto entera abre. Antes sólo abría la pastilla de «Abrir» en una esquina: tocar una
+    // foto para verla es el gesto que cualquiera prueba primero, y no pasaba nada.
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .cleanClickable(shape = RoundedCornerShape(12.dp), onClick = onOpen)
+    ) {
         AsyncImage(
             model = File(path),
             contentDescription = attachment.displayName,
@@ -315,27 +310,12 @@ private fun TaskImageAttachment(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 260.dp)
-                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         )
         TaskAttachmentRemoveBadge(
             onRemove = onRemove,
             modifier = Modifier.align(Alignment.TopEnd).padding(7.dp)
         )
-        Surface(
-            onClick = onOpen,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.align(Alignment.BottomStart).padding(7.dp)
-        ) {
-            Text(
-                stringResource(R.string.notes_attachment_open),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-            )
-        }
     }
 }
 

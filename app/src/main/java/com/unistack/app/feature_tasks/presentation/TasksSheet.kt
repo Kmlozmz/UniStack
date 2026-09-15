@@ -1049,7 +1049,7 @@ internal fun HojaTarea(
                     onEdit = { onDismiss(); onEditTaskClick(task.id) },
                     onDuplicate = { onDismiss(); onDuplicateTask(task.id) },
                     onDelete = { onDismiss(); onDeleteTask(task.id) },
-                    variant = UniIconButtonVariant.Outlined
+                    variant = UniIconButtonVariant.Surface
                 )
             }
         }
