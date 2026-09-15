@@ -279,7 +279,9 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_reduce_transparency_title),
                         subtitle = stringResource(R.string.a11y_reduce_transparency_subtitle),
                         checked = a11y.reduceTransparency,
-                        iconColor = MaterialTheme.colorScheme.outline,
+                        // Un acento de verdad, como sus vecinas: con `outline` la casilla salía
+                        // gris y parecía desactivada al lado de las otras cuatro.
+                        iconColor = MaterialTheme.colorScheme.primary,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(reduceTransparency = valor) }
                         }

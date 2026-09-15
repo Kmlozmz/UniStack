@@ -73,6 +73,7 @@ import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniIconButtonVariant
 import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.core.navigation.AppRoutes
 import com.unistack.app.core.notifications.NotificationHistoryItem
 import com.unistack.app.core.notifications.NotificationHistoryStore
 import java.time.Instant
@@ -562,7 +563,7 @@ private fun NotificationCategoryPill(category: NotificationCategory) {
         color = category.color.copy(alpha = 0.15f)
     ) {
         Text(
-            category.label.uppercase(Locale.getDefault()),
+            category.label,
             color = category.color,
             fontSize = 9.sp,
             lineHeight = 11.sp,
@@ -1086,31 +1087,75 @@ private fun NotificationHistoryItem.visual(): NotificationVisual {
     }
 }
 
+/**
+ * De qué va un aviso.
+ *
+ * **Primero se mira a dónde apunta, y sólo después qué dice.** Clasificar leyendo el texto
+ * fallaba en lo más común: el título de un aviso de tarea es el nombre que tú le pusiste
+ * —«Taller 3»—, y ahí no aparece la palabra «tarea» por ningún lado, así que casi todo caía en
+ * «Aviso». La ruta que el aviso ya guarda para saber a dónde llevarte es un dato de verdad y no
+ * una adivinanza; el texto se queda como respaldo para los que no llevan ruta.
+ */
 private fun NotificationHistoryItem.category(): NotificationCategory {
     val text = "$title $body".lowercase(Locale.ROOT)
-    return when {
-        "resumen" in text || "summary" in text || "dia despejado" in text || "clear day" in text || "día despejado" in text -> NotificationCategory(
-            label = Textos.get(R.string.notif_cat_summary),
-            kind = NotificationKind.SUMMARY,
-            icon = Icons.Rounded.Event,
-            hint = Textos.get(R.string.notif_revisa_tu_agenda_y_decide_el),
-            requiresAction = false
-        )
-        "clase" in text || "class" in text || "asististe" in text || "attend" in text -> NotificationCategory(
-            label = Textos.get(R.string.notif_cat_class),
-            kind = NotificationKind.CLASS,
-            icon = Icons.Rounded.School,
-            hint = Textos.get(R.string.notif_registra_asistencia_modalidad_o_cambios_para),
-            requiresAction = "asististe" in text || "asistencia" in text || "attendance" in text
-        )
-        "tarea" in text || "task" in text || "trabajo" in text || "assignment" in text || "entrega" in text || "due" in text -> NotificationCategory(
+    val ruta = targetRoute?.lowercase(Locale.ROOT).orEmpty()
+    when {
+        ruta.startsWith(AppRoutes.Tasks) || ruta.contains("task") -> return NotificationCategory(
             label = Textos.get(R.string.notif_cat_delivery),
             kind = NotificationKind.TASK,
             icon = Icons.Rounded.TaskAlt,
             hint = Textos.get(R.string.notif_abre_la_actividad_para_actualizar_estado),
             requiresAction = true
         )
-        "nota" in text || "grade" in text || "promedio" in text || "gpa" in text || "corte" in text || "materia" in text || "subject" in text -> NotificationCategory(
+        ruta.startsWith(AppRoutes.Calendar) -> return NotificationCategory(
+            label = Textos.get(R.string.notif_cat_class),
+            kind = NotificationKind.CLASS,
+            icon = Icons.Rounded.School,
+            hint = Textos.get(R.string.notif_registra_asistencia_modalidad_o_cambios_para),
+            requiresAction = true
+        )
+        ruta.startsWith(AppRoutes.Academic) || ruta.startsWith(AppRoutes.Grades) -> return NotificationCategory(
+            label = Textos.get(R.string.notif_academico),
+            kind = NotificationKind.ACADEMIC,
+            icon = Icons.Rounded.School,
+            hint = Textos.get(R.string.notif_completa_notas_pesos_o_cortes_anteriores),
+            requiresAction = true
+        )
+        ruta.startsWith(AppRoutes.Home) -> return NotificationCategory(
+            label = Textos.get(R.string.notif_cat_summary),
+            kind = NotificationKind.SUMMARY,
+            icon = Icons.Rounded.Event,
+            hint = Textos.get(R.string.notif_revisa_tu_agenda_y_decide_el),
+            requiresAction = false
+        )
+    }
+    return when {
+        "resumen" in text || "summary" in text || "dia despejado" in text || "clear day" in text ||
+            "día despejado" in text || "buenos días" in text || "buenos dias" in text -> NotificationCategory(
+            label = Textos.get(R.string.notif_cat_summary),
+            kind = NotificationKind.SUMMARY,
+            icon = Icons.Rounded.Event,
+            hint = Textos.get(R.string.notif_revisa_tu_agenda_y_decide_el),
+            requiresAction = false
+        )
+        "clase" in text || "class" in text || "asististe" in text || "attend" in text ||
+            "empieza en" in text || "aula" in text || "fuiste a" in text -> NotificationCategory(
+            label = Textos.get(R.string.notif_cat_class),
+            kind = NotificationKind.CLASS,
+            icon = Icons.Rounded.School,
+            hint = Textos.get(R.string.notif_registra_asistencia_modalidad_o_cambios_para),
+            requiresAction = "asististe" in text || "asistencia" in text || "attendance" in text
+        )
+        "tarea" in text || "task" in text || "trabajo" in text || "assignment" in text ||
+            "entrega" in text || "due" in text || "vence" in text || "vencid" in text -> NotificationCategory(
+            label = Textos.get(R.string.notif_cat_delivery),
+            kind = NotificationKind.TASK,
+            icon = Icons.Rounded.TaskAlt,
+            hint = Textos.get(R.string.notif_abre_la_actividad_para_actualizar_estado),
+            requiresAction = true
+        )
+        "nota" in text || "grade" in text || "promedio" in text || "gpa" in text || "corte" in text ||
+            "materia" in text || "subject" in text || "faltas" in text || "fallas" in text -> NotificationCategory(
             label = Textos.get(R.string.notif_academico),
             kind = NotificationKind.ACADEMIC,
             icon = Icons.Rounded.School,

@@ -3,7 +3,14 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.components.LargeTitleScaffold
+import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsGroupCard
+import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.HourglassEmpty
+import androidx.compose.material.icons.automirrored.rounded.Assignment
+import com.unistack.app.core.design.components.SettingsToggleRow
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -158,58 +165,80 @@ fun NotificationSettingsScreen(
         }
         item {
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
-                SettingsGroupCard(label = stringResource(R.string.settings_notif_sec_alerts)) {
-                    AlertRow(
+                /*
+                 * Lista segmentada, no cinco filas sueltas dentro de una tarjeta.
+                 *
+                 * Es la misma pieza que usan Accesibilidad y el centro de ajustes: cada aviso
+                 * es su propia superficie, con su icono y su color, y las esquinas se conectan
+                 * para que los cinco se lean como un grupo. Antes eran texto sobre texto y el
+                 * único relieve lo ponía el interruptor.
+                 */
+                val muestraTrabajos = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
+                SettingsGroup(
+                    label = stringResource(R.string.settings_notif_sec_alerts),
+                    rowCount = if (muestraTrabajos) 5 else 4
+                ) {
+                    SettingsToggleRow(
+                        icon = Icons.Rounded.TaskAlt,
                         title = stringResource(R.string.settings_notif_tasks_title),
-                        detail = stringResource(R.string.settings_notif_tasks_desc),
+                        subtitle = stringResource(R.string.settings_notif_tasks_desc),
                         checked = current.taskRemindersEnabled,
-                        enabled = granted
-                    ) {
-                        setReminders(!current.taskRemindersEnabled, current.academicWorkRemindersEnabled, current.overdueRemindersEnabled, lead)
-                    }
-                    // El aviso de Trabajos solo se ofrece donde Trabajos se puede abrir.
-                    if (BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished) {
-                        AlertRow(
-                            title = stringResource(R.string.settings_notif_works_title),
-                            detail = stringResource(R.string.settings_notif_works_desc),
-                            checked = current.academicWorkRemindersEnabled,
-                            enabled = granted
-                        ) {
-                            setReminders(current.taskRemindersEnabled, !current.academicWorkRemindersEnabled, current.overdueRemindersEnabled, lead)
+                        iconColor = LocalSectionColors.current.schedule,
+                        onCheckedChange = {
+                            setReminders(!current.taskRemindersEnabled, current.academicWorkRemindersEnabled, current.overdueRemindersEnabled, lead)
                         }
+                    )
+                    // El aviso de Trabajos solo se ofrece donde Trabajos se puede abrir.
+                    if (muestraTrabajos) {
+                        SettingsToggleRow(
+                            icon = Icons.AutoMirrored.Rounded.Assignment,
+                            title = stringResource(R.string.settings_notif_works_title),
+                            subtitle = stringResource(R.string.settings_notif_works_desc),
+                            checked = current.academicWorkRemindersEnabled,
+                            iconColor = MaterialTheme.colorScheme.tertiary,
+                            onCheckedChange = {
+                                setReminders(current.taskRemindersEnabled, !current.academicWorkRemindersEnabled, current.overdueRemindersEnabled, lead)
+                            }
+                        )
                     }
-                    AlertRow(
+                    SettingsToggleRow(
+                        icon = Icons.Rounded.WarningAmber,
                         title = stringResource(R.string.settings_notif_overdue_title),
-                        detail = stringResource(R.string.settings_notif_overdue_desc),
+                        subtitle = stringResource(R.string.settings_notif_overdue_desc),
                         checked = current.overdueRemindersEnabled,
-                        enabled = granted
-                    ) {
-                        setReminders(current.taskRemindersEnabled, current.academicWorkRemindersEnabled, !current.overdueRemindersEnabled, lead)
-                    }
-                    AlertRow(
+                        iconColor = LocalSectionColors.current.atRisk,
+                        onCheckedChange = {
+                            setReminders(current.taskRemindersEnabled, current.academicWorkRemindersEnabled, !current.overdueRemindersEnabled, lead)
+                        }
+                    )
+                    SettingsToggleRow(
+                        icon = Icons.Rounded.School,
                         title = stringResource(R.string.settings_notif_grades_cuts_title),
-                        detail = stringResource(R.string.settings_notif_grades_cuts_desc),
+                        subtitle = stringResource(R.string.settings_notif_grades_cuts_desc),
                         checked = current.gradeInsightRemindersEnabled,
-                        enabled = granted
-                    ) {
-                        granted = context.hasNotificationPermission()
-                        viewModel.updateAcademicReminderSettings(
-                            !current.gradeInsightRemindersEnabled,
-                            current.pendingGradeRemindersEnabled
-                        )
-                    }
-                    AlertRow(
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        onCheckedChange = {
+                            granted = context.hasNotificationPermission()
+                            viewModel.updateAcademicReminderSettings(
+                                !current.gradeInsightRemindersEnabled,
+                                current.pendingGradeRemindersEnabled
+                            )
+                        }
+                    )
+                    SettingsToggleRow(
+                        icon = Icons.Rounded.HourglassEmpty,
                         title = stringResource(R.string.settings_notif_pending_results_title),
-                        detail = stringResource(R.string.settings_notif_pending_results_desc),
+                        subtitle = stringResource(R.string.settings_notif_pending_results_desc),
                         checked = current.pendingGradeRemindersEnabled,
-                        enabled = granted
-                    ) {
-                        granted = context.hasNotificationPermission()
-                        viewModel.updateAcademicReminderSettings(
-                            current.gradeInsightRemindersEnabled,
-                            !current.pendingGradeRemindersEnabled
-                        )
-                    }
+                        iconColor = LocalSectionColors.current.onTrack,
+                        onCheckedChange = {
+                            granted = context.hasNotificationPermission()
+                            viewModel.updateAcademicReminderSettings(
+                                current.gradeInsightRemindersEnabled,
+                                !current.pendingGradeRemindersEnabled
+                            )
+                        }
+                    )
                 }
             }
         }

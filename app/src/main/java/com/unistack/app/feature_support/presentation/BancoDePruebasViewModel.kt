@@ -536,7 +536,7 @@ class BancoDePruebasViewModel @Inject constructor(
             Semilla("Ensayo: la ciudad como texto", "Vence mañana 23:59. Sociología.", hoy, 8, 0),
             Semilla("ADMINISTRACIÓN FINANCIERA empieza en 15 minutos", "Aula 302. Recuerda la calculadora.", ayer, 18, 45),
             Semilla("Corte 1 cerrado", "Sociología quedó en 4,2. Ya cuenta para el promedio.", ayer, 14, 10, AppRoutes.Academic),
-            Semilla("Quiz 3 espera nota", "Lo marcaste como entregado hace dos días.", ayer, 11, 2),
+            Semilla("Quiz 3 espera nota", "Lo marcaste hace dos días y la nota aún no llega.", ayer, 11, 2),
             Semilla("Parcial 2", "Vence el domingo 10:00. Física II.", ayer, 9, 30),
             Semilla("¿Fuiste a Cálculo III?", "La clase terminó hace 20 minutos y no la has marcado.", ayer, 8, 20),
             Semilla("Resumen de la semana", "5 tareas hechas, 2 vencidas. Vas mejor que la semana pasada.", lunes, 20, 0),
