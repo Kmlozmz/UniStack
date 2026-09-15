@@ -68,14 +68,24 @@ fun rememberTaskAttachmentOpener(viewModel: TasksViewModel): TaskAttachmentOpene
     val context = LocalContext.current
     var viendo by remember { mutableStateOf<TaskAttachment?>(null) }
 
+    /*
+     * **El selector, y no el intent a pelo.** Lanzado tal cual no pasaba nada: si nadie declara
+     * que sabe abrir ese tipo, `startActivity` lanza y el `runCatching` se lo tragaba en
+     * silencio, así que el botón parecía roto. Con `createChooser` siempre hay algo que sale, y
+     * `NEW_TASK` porque desde el visor —que vive en su propia ventana— el contexto puede no ser
+     * el de la actividad.
+     */
     val abrirFuera: (TaskAttachment) -> Unit = { adjunto ->
         val uri = viewModel.taskAttachmentUri(adjunto)
         if (uri != null) {
-            val intent = Intent(Intent.ACTION_VIEW).apply {
+            val ver = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, adjunto.mimeType)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            runCatching { context.startActivity(intent) }
+            val selector = Intent.createChooser(ver, adjunto.displayName).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            runCatching { context.startActivity(selector) }
         }
     }
 

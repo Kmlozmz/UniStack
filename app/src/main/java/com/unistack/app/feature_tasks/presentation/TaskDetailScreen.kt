@@ -57,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
+import com.unistack.app.core.design.components.UniIconButtonVariant
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -369,18 +370,14 @@ fun TaskDetailScreen(
                     fontWeight = FontWeight.ExtraBold
                 )
             }
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.size(48.dp)
-            ) {
-                TaskActionsOverflowMenu(
-                    onEdit = { onEditTaskClick(task.id) },
-                    onDuplicate = { viewModel.duplicateTask(task.id); onBackClick() },
-                    onDelete = { showDeleteConfirm = true }
-                )
-            }
+            // Sin envoltorio propio: `UniIconButton` ya trae su contenedor y su forma, así que
+            // meterlo en otro círculo dibujaba dos fondos desalineados, uno saliéndose del otro.
+            TaskActionsOverflowMenu(
+                onEdit = { onEditTaskClick(task.id) },
+                onDuplicate = { viewModel.duplicateTask(task.id); onBackClick() },
+                onDelete = { showDeleteConfirm = true },
+                variant = UniIconButtonVariant.Outlined
+            )
         }
     }
 

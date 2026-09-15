@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniIconButtonVariant
 
 /**
  * El «⋮» de editar/duplicar/eliminar, igual en la hoja de detalle y en la pantalla completa.
@@ -30,13 +31,15 @@ import com.unistack.app.core.design.components.UniIconButton
 fun TaskActionsOverflowMenu(
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    variant: UniIconButtonVariant = UniIconButtonVariant.Standard
 ) {
     var expanded by remember { mutableStateOf(false) }
     UniIconButton(
         icon = Icons.Rounded.MoreVert,
         contentDescription = stringResource(R.string.tasks_more_actions),
-        onClick = { expanded = true }
+        onClick = { expanded = true },
+        variant = variant
     )
     UniDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         DropdownMenuItem(

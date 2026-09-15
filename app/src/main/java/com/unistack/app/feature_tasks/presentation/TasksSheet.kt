@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
+import com.unistack.app.core.design.components.UniIconButtonVariant
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButtonDefaults
@@ -1042,18 +1043,14 @@ internal fun HojaTarea(
                     )
                 }
 
-                Surface(
-                    shape = CircleShape,
-                    color = metaPillBg,
-                    border = metaPillBorder,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    TaskActionsOverflowMenu(
-                        onEdit = { onDismiss(); onEditTaskClick(task.id) },
-                        onDuplicate = { onDismiss(); onDuplicateTask(task.id) },
-                        onDelete = { onDismiss(); onDeleteTask(task.id) }
-                    )
-                }
+                // Igual que en la pantalla completa: el botón ya trae su contenedor, envolverlo
+                // en otro círculo pintaba dos fondos que no encajan.
+                TaskActionsOverflowMenu(
+                    onEdit = { onDismiss(); onEditTaskClick(task.id) },
+                    onDuplicate = { onDismiss(); onDuplicateTask(task.id) },
+                    onDelete = { onDismiss(); onDeleteTask(task.id) },
+                    variant = UniIconButtonVariant.Outlined
+                )
             }
         }
         }
