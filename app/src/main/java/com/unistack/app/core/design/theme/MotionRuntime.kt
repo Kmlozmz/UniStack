@@ -87,6 +87,22 @@ fun motionActual(): MotionPreferences {
 fun hayMovimiento(): Boolean = LocalMotionAllowance.current != MotionPreference.NONE
 
 /**
+ * Movimiento en espera: hay algo tapando lo que se movería.
+ *
+ * **Una animación detrás de una hoja es una animación perdida.** Al marcar la última tarea del
+ * día sale la hoja de «¿recibiste nota?», y detrás de ella —tapada y atenuada— corrían el
+ * tachado de la fila y el reacomodo de la lista: para cuando la hoja se cerraba ya habían
+ * terminado, así que parecía que no existían. Quien abre una capa encima pone esto en cierto, y
+ * lo de debajo espera su turno en vez de gastarse a escondidas.
+ */
+val LocalMovimientoEnEspera = androidx.compose.runtime.compositionLocalOf { false }
+
+/** ¿Puede arrancar ahora lo que se mueve, o hay algo encima esperando a cerrarse? */
+@Composable
+@ReadOnlyComposable
+fun movimientoEnEspera(): Boolean = LocalMovimientoEnEspera.current
+
+/**
  * Una duración en milisegundos, ya multiplicada por la velocidad elegida.
  *
  * Con la velocidad en «nada» devuelve cero, y una animación de cero milisegundos es un salto:

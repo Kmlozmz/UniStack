@@ -388,6 +388,10 @@
     <string name="tasks_record_grade_yes">Yes, record grade</string>
     <string name="tasks_record_grade_not_yet">Not yet</string>
     <string name="tasks_record_grade_never">This task does not receive a grade</string>
+    <string name="tasks_record_grade_question_short">Did you get a grade?</string>
+    <string name="tasks_record_grade_yes_hint">Saved to the cut and counted in your average</string>
+    <string name="tasks_record_grade_not_yet_hint">Stays waiting for a grade until it arrives</string>
+    <string name="tasks_record_grade_never_hint">You won\'t be asked about this one again</string>
     <string name="tasks_grade_obtained">Grade obtained</string>
     <string name="tasks_weight_in_cut">Weight within cut</string>
     <string name="tasks_unknown_weight">I don\'t know the weight</string>

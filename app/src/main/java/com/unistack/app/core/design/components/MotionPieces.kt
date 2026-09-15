@@ -46,6 +46,7 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.duracion
 import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
+import com.unistack.app.core.design.theme.movimientoEnEspera
 import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.feature_user.domain.ListEntry
@@ -210,8 +211,10 @@ fun Modifier.latidoDeVencido(activo: Boolean): Modifier {
  */
 @Composable
 fun Modifier.tachadoDe(completado: Boolean, color: Color): Modifier {
+    // Con una hoja encima el tachado espera: detrás del velo no se ve, y si corre ahí se gasta.
+    val enEspera = movimientoEnEspera()
     val avance by animateFloatAsState(
-        targetValue = if (completado) 1f else 0f,
+        targetValue = if (completado && !enEspera) 1f else 0f,
         animationSpec = tweenDeMovimiento(baseMs = 340),
         label = "tachado"
     )

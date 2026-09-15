@@ -52,7 +52,9 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.DoNotDisturbOn
 import androidx.compose.material.icons.rounded.Grade
+import androidx.compose.material.icons.rounded.HourglassEmpty
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Schedule
@@ -138,7 +140,9 @@ import com.unistack.app.core.design.components.entradaDeLista
 import com.unistack.app.core.design.components.latidoDeVencido
 import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.tachadoDe
+import androidx.compose.runtime.CompositionLocalProvider
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import com.unistack.app.core.design.theme.LocalMovimientoEnEspera
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.contentColorOn
@@ -367,6 +371,9 @@ fun TasksScreen(
     val taskForGradeSheet = tasks.firstOrNull { it.id == taskForGradeSheetId }
     val taskForDatePicker = tasks.firstOrNull { it.id == taskForDatePickerId }
 
+    // Mientras la hoja de «¿recibiste nota?» tapa la lista, lo que se mueve detrás espera: si
+    // no, el tachado de la fila se gasta a escondidas y al cerrar la hoja ya no queda nada.
+    CompositionLocalProvider(LocalMovimientoEnEspera provides (completionPrompt != null)) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -644,6 +651,7 @@ fun TasksScreen(
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 20.dp, vertical = 92.dp)
         )
+    }
     }
 
     // Hoja de Tarea (Detalle)
@@ -1791,6 +1799,115 @@ private fun FilaTarea(
 }
 
 
+/**
+ * La tarea que se acaba de cerrar, con el visto y la marca de su materia.
+ *
+ * Pone cara a la pregunta: sin esto, la hoja preguntaba por un título entre comillas metido en
+ * una frase, y de qué materia era o en qué corte caía había que acordarse.
+ */
+@Composable
+private fun TareaRecienCerrada(task: StudentTask, subject: Subject) {
+    val acento = subjectAccent(subject)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = acento.copy(alpha = 0.12f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(acento),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = contentColorOn(acento),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = listOfNotNull(
+                        subject.name,
+                        subject.cutScheme.cutName(task.cutId ?: subject.defaultCutId)
+                    ).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+/** Una de las tres salidas de la hoja: qué hace arriba y qué implica abajo. */
+@Composable
+private fun OpcionDeNota(
+    icon: ImageVector,
+    title: String,
+    detail: String,
+    destacada: Boolean,
+    onClick: () -> Unit
+) {
+    val shape = MaterialTheme.shapes.large
+    val fondo = if (destacada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
+    val tinta = if (destacada) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val tintaSuave = if (destacada) {
+        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .cleanClickable(shape = shape, onClick = onClick),
+        shape = shape,
+        color = fondo
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tinta,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = tinta
+                )
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = tintaSuave
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TaskGradeResultSheet(
@@ -1828,29 +1945,43 @@ private fun TaskGradeResultSheet(
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
-            Text(
-                text = if (enteringGrade) {
-                    "${task.title} · ${subject.name}"
-                } else {
-                    stringResource(R.string.tasks_record_grade_question, task.title)
-                },
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (enteringGrade) {
+                Text(
+                    text = "${task.title} · ${subject.name}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             if (!enteringGrade) {
-                Button(
-                    shapes = UniStackButtonDefaults.shapes,
-                    onClick = { enteringGrade = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-                ) { Text(stringResource(R.string.tasks_record_grade_yes)) }
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.tasks_record_grade_not_yet))
-                }
-                TextButton(onClick = onNoGrade, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.tasks_record_grade_never))
-                }
+                // Qué se acaba de cerrar, con la marca de la materia: la hoja era un título, una
+                // pregunta y tres renglones sueltos, sin nada que dijera de qué tarea hablaba.
+                TareaRecienCerrada(task = task, subject = subject)
+                Text(
+                    text = stringResource(R.string.tasks_record_grade_question_short),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                OpcionDeNota(
+                    icon = Icons.Rounded.Grade,
+                    title = stringResource(R.string.tasks_record_grade_yes),
+                    detail = stringResource(R.string.tasks_record_grade_yes_hint),
+                    destacada = true,
+                    onClick = { enteringGrade = true }
+                )
+                OpcionDeNota(
+                    icon = Icons.Rounded.HourglassEmpty,
+                    title = stringResource(R.string.tasks_record_grade_not_yet),
+                    detail = stringResource(R.string.tasks_record_grade_not_yet_hint),
+                    destacada = false,
+                    onClick = onDismiss
+                )
+                OpcionDeNota(
+                    icon = Icons.Rounded.DoNotDisturbOn,
+                    title = stringResource(R.string.tasks_record_grade_never),
+                    detail = stringResource(R.string.tasks_record_grade_never_hint),
+                    destacada = false,
+                    onClick = onNoGrade
+                )
             } else {
                 Text(stringResource(R.string.tasks_field_cut), fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

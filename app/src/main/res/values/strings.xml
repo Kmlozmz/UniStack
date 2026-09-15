@@ -388,6 +388,10 @@
     <string name="tasks_record_grade_yes">Sí, registrar nota</string>
     <string name="tasks_record_grade_not_yet">Todavía no la recibo</string>
     <string name="tasks_record_grade_never">Esta tarea no recibe nota</string>
+    <string name="tasks_record_grade_question_short">¿Recibiste una nota?</string>
+    <string name="tasks_record_grade_yes_hint">Se guarda en el corte y cuenta para el promedio</string>
+    <string name="tasks_record_grade_not_yet_hint">Queda esperando nota hasta que llegue</string>
+    <string name="tasks_record_grade_never_hint">No se vuelve a preguntar por esta</string>
     <string name="tasks_grade_obtained">Nota obtenida</string>
     <string name="tasks_weight_in_cut">Peso dentro del corte</string>
     <string name="tasks_unknown_weight">No conozco el porcentaje</string>
