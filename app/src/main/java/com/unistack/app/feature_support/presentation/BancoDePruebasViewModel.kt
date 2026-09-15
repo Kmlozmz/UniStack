@@ -1,6 +1,11 @@
 package com.unistack.app.feature_support.presentation
 
 import androidx.lifecycle.ViewModel
+import android.content.Context
+import com.unistack.app.core.navigation.AppRoutes
+import com.unistack.app.core.notifications.NotificationHistoryItem
+import com.unistack.app.core.notifications.NotificationHistoryStore
+import java.time.ZoneId
 import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -497,6 +502,74 @@ class BancoDePruebasViewModel @Inject constructor(
         TaskAttachmentSamples.grabacion(taskAttachmentStore, t1Id)
             ?.let(tasksRepository::addAttachment)
     }
+
+    // ------------------------------------------------------------------ notificaciones
+
+    /**
+     * Las quince de la réplica interactiva, con sus horas y sus días.
+     *
+     * Son las mismas que se usaron para decidir el rediseño: tres con destino —las únicas que
+     * ofrecen «Abrir»— y el resto sin él, repartidas entre hoy, ayer y el lunes para que se vean
+     * los cortes por día y las cuentas de los filtros.
+     */
+    fun sembrarNotificacionesDelArtifact(context: Context) {
+        val hoy = LocalDate.now()
+        fun cuando(dia: LocalDate, hora: Int, minuto: Int): Long =
+            dia.atTime(hora, minuto).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+        data class Semilla(
+            val titulo: String,
+            val cuerpo: String,
+            val dia: LocalDate,
+            val hora: Int,
+            val minuto: Int,
+            val ruta: String? = null
+        )
+
+        val ayer = hoy.minusDays(1)
+        val lunes = hoy.minusDays(3)
+        val semillas = listOf(
+            Semilla("Taller 3", "Vence hoy 23:59. Cálculo III.", hoy, 9, 26, AppRoutes.Tasks),
+            Semilla("Lectura cap. 4", "Vence hoy 18:00. Programación.", hoy, 9, 26),
+            Semilla("¡Buenos días!", "Tienes un pendiente vencido. Priorízalo antes de seguir.", hoy, 9, 25),
+            Semilla("¿Fuiste a Sociología?", "La clase terminó hace 20 minutos y no la has marcado.", hoy, 10, 50, AppRoutes.Calendar),
+            Semilla("Ensayo: la ciudad como texto", "Vence mañana 23:59. Sociología.", hoy, 8, 0),
+            Semilla("ADMINISTRACIÓN FINANCIERA empieza en 15 minutos", "Aula 302. Recuerda la calculadora.", ayer, 18, 45),
+            Semilla("Corte 1 cerrado", "Sociología quedó en 4,2. Ya cuenta para el promedio.", ayer, 14, 10, AppRoutes.Academic),
+            Semilla("Quiz 3 espera nota", "Lo marcaste como entregado hace dos días.", ayer, 11, 2),
+            Semilla("Parcial 2", "Vence el domingo 10:00. Física II.", ayer, 9, 30),
+            Semilla("¿Fuiste a Cálculo III?", "La clase terminó hace 20 minutos y no la has marcado.", ayer, 8, 20),
+            Semilla("Resumen de la semana", "5 tareas hechas, 2 vencidas. Vas mejor que la semana pasada.", lunes, 20, 0),
+            Semilla("Avance 1 del proyecto", "Vence el miércoles 23:59. Programación.", lunes, 16, 40),
+            Semilla("Llevas 3 faltas en Sociología", "El tope que pusiste es 4. Una más y pierdes por fallas.", lunes, 12, 15),
+            Semilla("PROGRAMACIÓN empieza en 15 minutos", "Laboratorio 2.", lunes, 9, 45),
+            Semilla("UniStack instalada", "Mira qué cambió en Novedades.", lunes, 8, 5)
+        )
+
+        NotificationHistoryStore.seedForTesting(
+            context = context,
+            items = semillas.mapIndexed { indice, s ->
+                NotificationHistoryItem(
+                    id = NotificationHistoryStore.TEST_ID_BASE + indice,
+                    requestCode = NotificationHistoryStore.TEST_ID_BASE + indice,
+                    title = s.titulo,
+                    body = s.cuerpo,
+                    timestampMillis = cuando(s.dia, s.hora, s.minuto),
+                    scheduledAtMillis = null,
+                    delivered = true,
+                    read = false,
+                    targetRoute = s.ruta
+                )
+            }
+        )
+    }
+
+    fun recogerNotificaciones(context: Context) {
+        NotificationHistoryStore.removeSeeded(context)
+    }
+
+    fun cuantasNotificacionesDePrueba(context: Context): Int =
+        NotificationHistoryStore.countSeeded(context)
 
     // ------------------------------------------------------------------ preferencias
 

@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -248,6 +249,62 @@ private fun LazyListScope.caraSimular(
     seccion("Tareas")
     palanca("Sembrar tareas del artifact", "7 tareas con subtareas y estados del diseño") { vm.sembrarTareasDelArtifact() }
     palanca("Deshacer lo de Tareas", "Elimina tareas y materias de prueba", suave = true) { vm.recogerTareas() }
+
+    seccion("Notificaciones")
+    item {
+        val contexto = LocalContext.current
+        val haptics = LocalHapticFeedback.current
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable {
+                    haptics.performSafely(HapticFeedbackType.Confirm)
+                    vm.sembrarNotificacionesDelArtifact(contexto)
+                }
+                .padding(horizontal = 13.dp, vertical = 11.dp)
+        ) {
+            Text(
+                "Sembrar las 15 del artifact",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "Repartidas entre hoy, ayer y el lunes. Tres con destino.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.5.sp
+            )
+        }
+    }
+    item {
+        val contexto = LocalContext.current
+        val haptics = LocalHapticFeedback.current
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable {
+                    haptics.performSafely(HapticFeedbackType.Confirm)
+                    vm.recogerNotificaciones(contexto)
+                }
+                .padding(horizontal = 13.dp, vertical = 11.dp)
+        ) {
+            Text(
+                "Deshacer lo de Notificaciones",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "Sólo los avisos sembrados; los de verdad se quedan.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.5.sp
+            )
+        }
+    }
 
     seccion("Ir a")
     palanca("Ajustes de Movimiento", "La pantalla entera, si hace falta") { onAbrirMovimiento() }

@@ -72,6 +72,36 @@ object NotificationHistoryStore {
         return deliveredItem
     }
 
+    /**
+     * Siembra avisos con su hora ya puesta, para el panel de pruebas.
+     *
+     * `recordDelivered` sella con la hora actual, así que con él los quince avisos caerían en el
+     * mismo minuto y no habría «Hoy» ni «Ayer» que mirar. Los ids van desde [TEST_ID_BASE] para
+     * poder recogerlos después sin tocar los de verdad.
+     */
+    fun seedForTesting(context: Context, items: List<NotificationHistoryItem>) {
+        ensureLoaded(context.applicationContext)
+        update(context.applicationContext) { current ->
+            (items + current.filterNot { it.id >= TEST_ID_BASE })
+                .sortedByDescending { it.timestampMillis }
+                .take(MAX_HISTORY_ITEMS)
+        }
+    }
+
+    /** Se lleva sólo lo sembrado desde el panel. */
+    fun removeSeeded(context: Context) {
+        ensureLoaded(context.applicationContext)
+        update(context.applicationContext) { current -> current.filterNot { it.id >= TEST_ID_BASE } }
+    }
+
+    fun countSeeded(context: Context): Int {
+        ensureLoaded(context.applicationContext)
+        return itemsFlow.value.count { it.id >= TEST_ID_BASE }
+    }
+
+    /** Desde aquí arriba, lo que hay es de mentira. */
+    const val TEST_ID_BASE = 900_000
+
     fun markAllRead(context: Context) {
         ensureLoaded(context.applicationContext)
         update(context.applicationContext) { current ->
