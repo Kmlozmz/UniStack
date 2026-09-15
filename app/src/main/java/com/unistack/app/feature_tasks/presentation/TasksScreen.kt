@@ -42,6 +42,7 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -198,6 +199,11 @@ fun TasksScreen(
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
+    // Cuántos adjuntos tiene cada tarea, para que la fila lo diga sin abrirla.
+    val attachmentCounts = remember(allAttachments) {
+        allAttachments.groupingBy { it.taskId }.eachCount()
+    }
 
     var taskIdPendingDelete by remember { mutableStateOf<String?>(null) }
     var selectedFilter by remember { mutableStateOf(TaskListFilter.ALL) }
@@ -454,6 +460,7 @@ fun TasksScreen(
                                 indice = indice,
                                 task = task,
                                 subjects = subjects,
+                                attachmentCount = attachmentCounts[task.id] ?: 0,
                                 today = today,
                                 onCheckedChange = { onTaskChecked(task, it) },
                                 onClick = {
@@ -479,6 +486,7 @@ fun TasksScreen(
                                 indice = indice,
                                 task = task,
                                 subjects = subjects,
+                                attachmentCount = attachmentCounts[task.id] ?: 0,
                                 today = today,
                                 onCheckedChange = { onTaskChecked(task, it) },
                                 onClick = {
@@ -503,6 +511,7 @@ fun TasksScreen(
                                 indice = indice,
                                 task = task,
                                 subjects = subjects,
+                                attachmentCount = attachmentCounts[task.id] ?: 0,
                                 today = today,
                                 onCheckedChange = { onTaskChecked(task, it) },
                                 onClick = {
@@ -527,6 +536,7 @@ fun TasksScreen(
                                 indice = indice,
                                 task = task,
                                 subjects = subjects,
+                                attachmentCount = attachmentCounts[task.id] ?: 0,
                                 today = today,
                                 onCheckedChange = { onTaskChecked(task, it) },
                                 onClick = {
@@ -551,6 +561,7 @@ fun TasksScreen(
                                 indice = indice,
                                 task = task,
                                 subjects = subjects,
+                                attachmentCount = attachmentCounts[task.id] ?: 0,
                                 today = today,
                                 onCheckedChange = { onTaskChecked(task, it) },
                                 onClick = {
@@ -575,6 +586,7 @@ fun TasksScreen(
                                 indice = indice,
                                 task = task,
                                 subjects = subjects,
+                                attachmentCount = attachmentCounts[task.id] ?: 0,
                                 today = today,
                                 onCheckedChange = { onTaskChecked(task, it) },
                                 onClick = {
@@ -599,6 +611,7 @@ fun TasksScreen(
                                 indice = indice,
                                 task = task,
                                 subjects = subjects,
+                                attachmentCount = attachmentCounts[task.id] ?: 0,
                                 today = today,
                                 onCheckedChange = { onTaskChecked(task, it) },
                                 onClick = {
@@ -1233,6 +1246,7 @@ private fun LazyItemScope.TaskRowItem(
     indice: Int,
     task: StudentTask,
     subjects: List<Subject>,
+    attachmentCount: Int,
     today: LocalDate,
     onCheckedChange: (Boolean) -> Unit,
     onClick: () -> Unit,
@@ -1256,6 +1270,7 @@ private fun LazyItemScope.TaskRowItem(
             TarjetaAwaitingGrade(
                 task = task,
                 subject = subject,
+                attachmentCount = attachmentCount,
                 onCheckedChange = onCheckedChange,
                 onClick = onClick
             )
@@ -1273,12 +1288,38 @@ private fun LazyItemScope.TaskRowItem(
             FilaTarea(
                 task = task,
                 subject = subject,
+                attachmentCount = attachmentCount,
                 today = today,
                 onCheckedChange = onCheckedChange,
                 onClick = onClick
             )
         }
     }
+}
+
+/**
+ * El clip con la cuenta: dice que la tarea lleva algo colgado sin tener que abrirla.
+ *
+ * Va en la misma fila que el progreso de subtareas porque las dos contestan lo mismo —qué hay
+ * dentro— y así la fila sigue teniendo una sola línea de metadatos.
+ */
+@Composable
+private fun IndicadorAdjuntos(count: Int, color: Color) {
+    Spacer(modifier = Modifier.width(4.dp))
+    Icon(
+        imageVector = Icons.Rounded.AttachFile,
+        contentDescription = null,
+        tint = color,
+        modifier = Modifier.size(12.dp)
+    )
+    Text(
+        text = count.toString(),
+        fontSize = 10.5.sp,
+        fontFamily = FontFamily.Monospace,
+        color = color,
+        maxLines = 1,
+        softWrap = false
+    )
 }
 
 /**
@@ -1290,6 +1331,7 @@ private fun LazyItemScope.TaskRowItem(
 private fun TarjetaAwaitingGrade(
     task: StudentTask,
     subject: Subject?,
+    attachmentCount: Int,
     onCheckedChange: (Boolean) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -1387,6 +1429,10 @@ private fun TarjetaAwaitingGrade(
                         modifier = Modifier.weight(1f, fill = false)
                     )
 
+                    if (attachmentCount > 0) {
+                        IndicadorAdjuntos(count = attachmentCount, color = subtitleColor)
+                    }
+
                     if (task.subtasks.isNotEmpty()) {
                         val doneCount = task.subtasks.count { it.isCompleted }
                         val fraction = (doneCount.toFloat() / task.subtasks.size).coerceIn(0f, 1f)
@@ -1461,6 +1507,7 @@ private fun TarjetaAwaitingGrade(
 private fun FilaTarea(
     task: StudentTask,
     subject: Subject?,
+    attachmentCount: Int,
     today: LocalDate,
     onCheckedChange: (Boolean) -> Unit,
     onClick: () -> Unit,
@@ -1578,6 +1625,10 @@ private fun FilaTarea(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
+
+                    if (attachmentCount > 0) {
+                        IndicadorAdjuntos(count = attachmentCount, color = subtitleColor)
+                    }
 
                     if (task.subtasks.isNotEmpty()) {
                         val doneCount = task.subtasks.count { it.isCompleted }

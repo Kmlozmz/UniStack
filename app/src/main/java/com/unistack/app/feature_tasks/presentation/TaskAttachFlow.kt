@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -190,9 +189,11 @@ private fun TaskAttachMenuTile(
     label: String,
     onClick: () -> Unit
 ) {
+    // Alto fijo, no `heightIn`: dentro de la hoja la restricción de alto llega suelta, así que
+    // un mínimo con `fillMaxSize` dentro hacía que cada casilla se comiera la pantalla entera.
     Surface(
         modifier = modifier
-            .heightIn(min = 96.dp)
+            .height(96.dp)
             .cleanClickable(shape = RoundedCornerShape(18.dp), onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -200,7 +201,7 @@ private fun TaskAttachMenuTile(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(vertical = 16.dp, horizontal = 8.dp),
+                .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {

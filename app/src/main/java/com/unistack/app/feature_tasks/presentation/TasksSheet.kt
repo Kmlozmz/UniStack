@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -159,6 +161,10 @@ internal fun HojaTarea(
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp) }
     ) {
+        // Sin efecto de borde dentro de la hoja: el gesto se reparte entre desplazar el
+        // contenido y mover la hoja entera, así que el estirado llega siempre tarde y se lee
+        // como un parón y un tirón. Mismo motivo y misma salida que en la hoja de notas.
+        CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -416,21 +422,24 @@ internal fun HojaTarea(
                                 label = stringResource(R.string.tasks_postpone_tomorrow),
                                 color = estadoTextColor,
                                 shape = RoundedCornerShape(topStart = 999.dp, bottomStart = 999.dp, topEnd = 10.dp, bottomEnd = 10.dp),
-                                modifier = Modifier.weight(1f).cleanClickable { onPostponeTomorrow(task.id) }
+                                onClick = { onPostponeTomorrow(task.id) },
+                                modifier = Modifier.weight(1f)
                             )
                             PostponePill(
                                 icon = Icons.AutoMirrored.Rounded.TrendingFlat,
                                 label = stringResource(R.string.tasks_postpone_next_monday),
                                 color = estadoTextColor,
                                 shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.weight(1f).cleanClickable { onPostponeNextMonday(task.id) }
+                                onClick = { onPostponeNextMonday(task.id) },
+                                modifier = Modifier.weight(1f)
                             )
                             PostponePill(
                                 icon = Icons.Rounded.CalendarMonth,
                                 label = stringResource(R.string.tasks_postpone_pick_day),
                                 color = estadoTextColor,
                                 shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 999.dp, bottomEnd = 999.dp),
-                                modifier = Modifier.weight(1f).cleanClickable { onOpenDatePicker(task.id) }
+                                onClick = { onOpenDatePicker(task.id) },
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -1053,6 +1062,7 @@ internal fun HojaTarea(
                 }
             }
         }
+        }
     }
 
     if (attachController.menuOpen) {
@@ -1132,6 +1142,7 @@ internal fun HojaNota(
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp) }
     ) {
+        CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1355,6 +1366,7 @@ internal fun HojaNota(
                 )
             }
         }
+        }
     }
 }
 
@@ -1366,10 +1378,13 @@ private fun PostponePill(
     label: String,
     color: Color,
     shape: RoundedCornerShape,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // El toque se monta aquí dentro y no en quien llama: fuera se pasaba sin forma, así que la
+    // onda salía cuadrada y se derramaba por las esquinas redondeadas de la pastilla.
     Surface(
-        modifier = modifier,
+        modifier = modifier.cleanClickable(shape = shape, onClick = onClick),
         shape = shape,
         color = color.copy(alpha = 0.12f)
     ) {

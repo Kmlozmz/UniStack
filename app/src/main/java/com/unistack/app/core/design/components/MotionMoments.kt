@@ -463,9 +463,46 @@ fun Modifier.celebracionDelDia(
         return this
     }
 
+    /*
+     * **La háptica sigue a la variante.** Era un único golpe en el instante cero, que en el
+     * confeti y en la onda cae antes de que se vea nada: se sentía un tic suelto sin relación
+     * con lo que pasaba en pantalla. Ahora cada figura lleva su propio compás, medido sobre la
+     * misma línea de tiempo que la dibuja —los dos cañones del confeti, el golpe del sello
+     * cuando aterriza, los chispazos del destello— y en la onda, el empujón de salida.
+     */
     val haptica = LocalHapticFeedback.current
+    val total = duracion(2200)
+    val compas: List<Pair<Float, HapticFeedbackType>> = remember(estilo) {
+        when (estilo) {
+            CelebrationMotion.CONFETI -> listOf(
+                0f to HapticFeedbackType.LongPress,
+                0.06f to HapticFeedbackType.SegmentTick,
+                0.13f to HapticFeedbackType.SegmentTick
+            )
+            CelebrationMotion.ONDA -> listOf(
+                0f to HapticFeedbackType.LongPress,
+                0.40f to HapticFeedbackType.SegmentTick
+            )
+            CelebrationMotion.SELLO -> listOf(0.32f to HapticFeedbackType.LongPress)
+            CelebrationMotion.DESTELLO -> listOf(
+                0f to HapticFeedbackType.SegmentTick,
+                0.16f to HapticFeedbackType.SegmentTick,
+                0.30f to HapticFeedbackType.LongPress
+            )
+            CelebrationMotion.NINGUNA -> emptyList()
+        }
+    }
     LaunchedEffect(disparada) {
-        if (disparada) haptica.performSafely(HapticFeedbackType.LongPress)
+        if (!disparada) return@LaunchedEffect
+        var transcurrido = 0L
+        compas.forEach { (momento, tipo) ->
+            val enMs = (total * momento).toLong()
+            if (enMs > transcurrido) {
+                delay(enMs - transcurrido)
+                transcurrido = enMs
+            }
+            haptica.performSafely(tipo)
+        }
     }
 
     val avance by animateFloatAsState(
@@ -476,7 +513,7 @@ fun Modifier.celebracionDelDia(
          * las particulas volvian a recogerse en el centro, como un video en reversa. Lo
          * que se apaga tiene que apagarse, no rebobinarse.
          */
-        animationSpec = if (disparada) tween(duracion(2200).coerceAtLeast(1), easing = LinearEasing) else snap(),
+        animationSpec = if (disparada) tween(total.coerceAtLeast(1), easing = LinearEasing) else snap(),
         label = "celebracion",
         finishedListener = { if (it >= 1f) onTerminada() }
     )

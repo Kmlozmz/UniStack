@@ -223,7 +223,14 @@ fun Modifier.tachadoDe(completado: Boolean, color: Color): Modifier {
         val fin = size.width * avance
         // Una linea que se dibuja de izquierda a derecha. El marcador, el visto y la tinta
         // se retiraron: sobre una fila de tarea, la linea es la unica que se lee como tachar.
-        drawLine(color = color, start = Offset(0f, medio), end = Offset(fin, medio), strokeWidth = 2.5f)
+        // El grosor va en dp: en px crudos eran 2,5 px —un pelo a 3x— y el tachado no se veia.
+        drawLine(
+            color = color,
+            start = Offset(0f, medio),
+            end = Offset(fin, medio),
+            strokeWidth = 2.dp.toPx(),
+            cap = StrokeCap.Round
+        )
     }
 }
 
