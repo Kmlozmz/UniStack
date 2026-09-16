@@ -1,6 +1,5 @@
 package com.unistack.app.feature_support.presentation
 
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -31,6 +30,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -52,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
@@ -91,9 +94,9 @@ import kotlinx.coroutines.flow.collectLatest
  * pantallas atrás— y quedar en ridículo inventándolo es peor que no decirlo. Lo concreto lo
  * pone quien lo vivió, en el campo de texto de la hoja de reporte.
  *
- * **Es la réplica aprobada (opción B, «las cuatro fichas») número por número.** Cada medida de
- * este archivo es un píxel de su CSS, y [AEscalaDeLaReplica] es quien los lleva al tamaño del
- * teléfono. Si algo de aquí no coincide con la réplica, el fallo está aquí.
+ * **Es la réplica aprobada (opción B, «las cuatro fichas»).** Cada medida de este archivo es un
+ * píxel de su CSS, salvo la letra, y [AEscalaDeLaReplica] es quien los lleva al tamaño del
+ * teléfono.
  */
 @Composable
 fun PantallaDeFallo(
@@ -122,11 +125,9 @@ fun PantallaDeFallo(
                 /*
                  * El aviso en el centro y las acciones abajo del todo, como en la réplica.
                  *
-                 * La tarjeta **cede el alto que falte**. En la réplica no cabe entera: el
-                 * navegador la encoge para que los botones sigan en su sitio, y por eso el
-                 * nombre del archivo queda pegado a su borde de abajo. `weight(fill = false)`
-                 * hace lo mismo —toma lo que sobra y ni un píxel más— y el desplazamiento propio
-                 * de la tarjeta deja al alcance lo que quede debajo.
+                 * Plegada, la tarjeta cabe entera: la escala lo garantiza. Al desplegar el texto
+                 * completo ya no, y entonces `weight(fill = false)` le da el alto que sobra y se
+                 * desplaza por dentro, sin empujar los botones fuera de la pantalla.
                  */
                 Column(
                     modifier = Modifier
@@ -169,14 +170,14 @@ fun PantallaDeFallo(
                             texto = Textos.get(R.string.fallo_btn_contar),
                             onClick = onContar,
                             tipo = TipoDeBoton.Relleno,
-                            icono = R.drawable.ic_fallo_enviar,
+                            icono = Icons.AutoMirrored.Filled.Send,
                             modifier = Modifier.weight(1f)
                         )
                         BotonDelFallo(
                             texto = Textos.get(R.string.fallo_btn_guardar),
                             onClick = onGuardar,
                             tipo = TipoDeBoton.Tonal,
-                            icono = R.drawable.ic_fallo_guardar,
+                            icono = Icons.Rounded.SaveAlt,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -199,8 +200,12 @@ fun PantallaDeFallo(
 /** El ancho de la pantalla de la réplica, sin el marco del teléfono: 290 menos 9 por lado. */
 private const val ANCHO_DE_LA_REPLICA = 272f
 
-/** Su alto por debajo de la barra de estado: 602 de pantalla menos los 28,3 de la barra. */
-private const val ALTO_BAJO_LA_BARRA = 573.7f
+/**
+ * Lo que necesita la pantalla por debajo de la barra de estado con la tarjeta plegada entera:
+ * cabecera, tarjeta y botones con la letra de ahora, y unos píxeles de margen para teléfonos
+ * cuya letra parte los renglones en otro sitio.
+ */
+private const val ALTO_BAJO_LA_BARRA = 550f
 
 /** Lo que queda entre el último botón y el borde de abajo. */
 private const val MARGEN_INFERIOR = 16f
@@ -219,11 +224,15 @@ private const val MARGEN_INFERIOR = 16f
  * y siguen donde están, y el tamaño de letra que elija el usuario sigue multiplicando encima.
  *
  * **Manda la dimensión que antes se acabe**, y el alto se cuenta sin las barras del sistema,
- * que cambian de un teléfono a otro. Con sólo el ancho, una barra de estado cuatro píxeles más
- * alta que la de la réplica le robaba ese alto a la tarjeta, y el nombre del archivo perdía la
- * pata de la «p» contra el borde. La barra de gestos cabe en el margen de abajo; la de tres
- * botones no, y lo que sobresale también se descuenta. Nunca baja de uno: en horizontal la
- * réplica no cabe, y ahí lo que toca es desplazarse, no encoger la letra.
+ * que cambian de un teléfono a otro: plegada, la tarjeta tiene que verse entera, con el nombre
+ * del archivo y su margen, sin desplazar nada. Sólo el texto desplegado puede no caber. La barra
+ * de gestos cabe en el margen de abajo; la de tres botones no, y lo que sobresale también se
+ * descuenta. Nunca baja de uno: en horizontal no cabe, y ahí lo que toca es desplazarse, no
+ * encoger la letra.
+ *
+ * **La letra va un 15 % por debajo de la réplica** (16 sep): escalada con la pantalla quedaba
+ * grande en el teléfono. Así cae en los tamaños de siempre de la app: 16 sp los botones, 14 el
+ * cuerpo y 11 los rótulos.
  */
 @Composable
 private fun AEscalaDeLaReplica(ancho: Dp, alto: Dp, content: @Composable () -> Unit) {
@@ -298,13 +307,13 @@ private fun CabeceraDelFallo(informe: InformeDeFallo, enElActo: Boolean) {
             },
             color = tinta,
             textAlign = TextAlign.Center,
-            style = letra(tamano = 18.sp, peso = FontWeight.ExtraBold, espaciado = (-0.01).em)
+            style = letra(tamano = 15.5.sp, peso = FontWeight.ExtraBold, espaciado = (-0.01).em)
         )
         Text(
             text = InformeDeFallo.fechaLegible(informe.fecha),
             color = tinta.copy(alpha = 0.75f),
             textAlign = TextAlign.Center,
-            style = letra(tamano = 11.sp),
+            style = letra(tamano = 9.5.sp),
             modifier = Modifier.padding(top = 2.dp)
         )
     }
@@ -388,10 +397,10 @@ private fun TarjetaDelInforme(
                 )
                 Ficha(
                     etiqueta = Textos.get(R.string.fallo_dato_version),
-                    // Cortada en el guion a mano, como sale en la réplica. Android no respeta
-                    // que un punto y una cifra van juntos, y por su cuenta dejaba «1.6.2-alpha.»
-                    // arriba y un «4» solo en el renglón siguiente.
-                    valor = informe.version.replaceFirst("-", "-\n") +
+                    // Con un unidor invisible tras cada punto: Android no respeta que un punto y
+                    // una cifra van juntos, y si la versión no cabía dejaba «1.6.2-alpha.» arriba
+                    // y un «8» solo debajo. Así, si corta, corta en el guion.
+                    valor = informe.version.replace(".", ".\u2060") +
                         "\n(" + informe.codigoDeVersion + ")",
                     modifier = Modifier
                         .weight(1f)
@@ -427,7 +436,7 @@ private fun TarjetaDelInforme(
             Text(
                 text = Textos.get(R.string.fallo_no_se_envia_solo),
                 color = esquema.onSurfaceVariant,
-                style = letra(tamano = 10.sp, renglon = 1.45f)
+                style = letra(tamano = 8.5.sp, renglon = 1.45f)
             )
         }
 
@@ -451,13 +460,13 @@ private fun TarjetaDelInforme(
                 Text(
                     text = nombreDelArchivo(informe),
                     color = esquema.primary,
-                    style = letra(tamano = 11.5.sp, peso = FontWeight.SemiBold)
+                    style = letra(tamano = 10.sp, peso = FontWeight.SemiBold)
                 )
                 if (estadoDelArchivo != null) {
                     Text(
                         text = estadoDelArchivo,
                         color = esquema.onSurfaceVariant,
-                        style = letra(tamano = 10.sp, renglon = 1.45f)
+                        style = letra(tamano = 8.5.sp, renglon = 1.45f)
                     )
                 }
             }
@@ -483,13 +492,13 @@ private fun TarjetaDelInforme(
                 Text(
                     text = resumenDeLoQuitado(informe),
                     color = esquema.onSurfaceVariant,
-                    style = letra(tamano = 10.sp, renglon = 1.45f),
+                    style = letra(tamano = 8.5.sp, renglon = 1.45f),
                     modifier = Modifier.padding(bottom = 7.dp)
                 )
                 Text(
                     text = informe.comoTexto(),
                     color = esquema.onSurfaceVariant,
-                    style = letra(tamano = 8.5.sp, renglon = 1.65f, mono = true),
+                    style = letra(tamano = 7.5.sp, renglon = 1.65f, mono = true),
                     modifier = Modifier
                         .heightIn(max = 150.dp)
                         .verticalScroll(rememberScrollState())
@@ -517,12 +526,12 @@ private fun Ficha(
         Text(
             text = etiqueta.uppercase(),
             color = esquema.onSurfaceVariant,
-            style = letra(tamano = 8.5.sp, espaciado = 0.1.em, mono = true)
+            style = letra(tamano = 7.5.sp, espaciado = 0.1.em, mono = true)
         )
         Text(
             text = valor,
             color = if (esError) esquema.error else esquema.onSurface,
-            style = letra(tamano = if (esError) 12.5.sp else 10.5.sp, renglon = 1.4f, mono = true),
+            style = letra(tamano = if (esError) 10.5.sp else 9.sp, renglon = 1.4f, mono = true),
             modifier = Modifier.padding(top = 2.dp)
         )
     }
@@ -549,7 +558,7 @@ private fun BotonDelFallo(
     onClick: () -> Unit,
     tipo: TipoDeBoton,
     modifier: Modifier = Modifier,
-    @DrawableRes icono: Int? = null
+    icono: ImageVector? = null
 ) {
     val colores = coloresDelFallo()
     val esquema = MaterialTheme.colorScheme
@@ -561,7 +570,7 @@ private fun BotonDelFallo(
     val contenido: @Composable RowScope.() -> Unit = {
         if (icono != null) {
             Icon(
-                painter = painterResource(icono),
+                imageVector = icono,
                 contentDescription = null,
                 modifier = Modifier.size(15.dp)
             )
@@ -569,7 +578,7 @@ private fun BotonDelFallo(
         }
         Text(
             text = texto,
-            style = letra(tamano = 12.5.sp, renglon = 1.2f, peso = FontWeight.Bold),
+            style = letra(tamano = 11.sp, renglon = 1.36f, peso = FontWeight.Bold),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
