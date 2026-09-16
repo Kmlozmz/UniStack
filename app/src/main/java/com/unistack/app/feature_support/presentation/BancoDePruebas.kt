@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_support.presentation
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -50,6 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.BuildConfig
+import com.unistack.app.core.fallos.AlmacenDeFallos
+import com.unistack.app.core.fallos.falloDeMuestra
+import com.unistack.app.core.fallos.informeDeMuestra
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_user.domain.MotionCatalog
@@ -306,6 +310,26 @@ private fun LazyListScope.caraSimular(
         }
     }
 
+    seccion("Se cerró sola")
+    palancaDeContexto(
+        titulo = "Provocar un fallo ahora",
+        detalle = "Rompe la app de verdad: debe salir la pantalla al vuelo, sin diálogo de Android",
+        peligro = true
+    ) { throw falloDeMuestra() }
+    palancaDeContexto(
+        titulo = "Reventar un hilo de fondo",
+        detalle = "La app NO debe cerrarse. El informe queda esperando al siguiente arranque"
+    ) { Thread { throw falloDeMuestra() }.start() }
+    palancaDeContexto(
+        titulo = "Dejar un fallo esperando",
+        detalle = "Sin romper nada. Cierra la app del todo y vuelve a abrirla: sale por la puerta lenta"
+    ) { contexto -> AlmacenDeFallos.guardar(contexto, informeDeMuestra(contexto)) }
+    palancaDeContexto(
+        titulo = "Recoger el fallo esperando",
+        detalle = "Borra el informe pendiente sin pasar por la pantalla",
+        suave = true
+    ) { contexto -> AlmacenDeFallos.limpiar(contexto) }
+
     seccion("Ir a")
     palanca("Ajustes de Movimiento", "La pantalla entera, si hace falta") { onAbrirMovimiento() }
 }
@@ -482,6 +506,45 @@ private fun LazyListScope.palanca(
                 .clickable {
                     haptics.performSafely(HapticFeedbackType.Confirm)
                     onClick()
+                }
+                .padding(horizontal = 13.dp, vertical = 11.dp)
+        ) {
+            Text(titulo, color = tono, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(detalle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp)
+        }
+    }
+}
+
+/**
+ * La misma palanca, para lo que necesita un `Context`.
+ *
+ * [caraSimular] no es composable, así que una palanca corriente no puede capturar
+ * `LocalContext`: la lambda se crea fuera de la composición. Esta lo lee dentro del `item` y
+ * se lo pasa hecho.
+ */
+private fun LazyListScope.palancaDeContexto(
+    titulo: String,
+    detalle: String,
+    peligro: Boolean = false,
+    suave: Boolean = false,
+    onClick: (Context) -> Unit
+) {
+    item {
+        val contexto = LocalContext.current
+        val haptics = LocalHapticFeedback.current
+        val tono = when {
+            peligro -> MaterialTheme.colorScheme.error
+            suave -> MaterialTheme.colorScheme.onSurfaceVariant
+            else -> MaterialTheme.colorScheme.onSurface
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable {
+                    haptics.performSafely(HapticFeedbackType.Confirm)
+                    onClick(contexto)
                 }
                 .padding(horizontal = 13.dp, vertical = 11.dp)
         ) {

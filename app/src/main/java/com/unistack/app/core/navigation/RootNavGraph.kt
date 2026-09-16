@@ -21,7 +21,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniStackAnimatedLaunchScreen
+import com.unistack.app.core.fallos.AlmacenDeFallos
 import com.unistack.app.feature_setup.presentation.SetupFlow
+import com.unistack.app.feature_support.presentation.FlujoDeFallo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -51,6 +53,9 @@ fun RootNavGraph(
             .distinctUntilChanged()
     }.collectAsStateWithLifecycle(initialValue = null)
     var setupLaunchRoute by remember { mutableStateOf<String?>(null) }
+    // Se lee una sola vez, al entrar: lo que pase con el archivo a partir de aquí lo decide
+    // esta misma pantalla al despacharlo.
+    var falloPendiente by remember { mutableStateOf(AlmacenDeFallos.pendiente(context)) }
     var launchAnimationFinished by rememberSaveable { mutableStateOf(animationsDisabled) }
     var repositoryDidLoad by remember { mutableStateOf(userRepository.didLoad) }
 
@@ -106,6 +111,21 @@ fun RootNavGraph(
     ) {
         if (!isLoading) {
             when {
+                /*
+                 * La puerta lenta del «se cerró sola».
+                 *
+                 * Va **antes que todo lo demás**, incluido el alta: si la app se rompió a
+                 * mitad del onboarding, ese es justo el fallo que más interesa que alguien
+                 * cuente. Es la misma pantalla que sale al vuelo cuando el fallo se puede
+                 * cazar; aquí llega cuando el proceso se fue tan de golpe que no dio tiempo
+                 * a nada y el informe se quedó esperando en disco.
+                 */
+                falloPendiente != null -> FlujoDeFallo(
+                    informe = falloPendiente!!,
+                    enElActo = false,
+                    onTerminar = { falloPendiente = null },
+                    modifier = Modifier.fillMaxSize()
+                )
                 setupCompleted == true -> MainNavGraph(
                     modifier = Modifier
                         .fillMaxSize()

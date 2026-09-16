@@ -3010,4 +3010,32 @@ your course catalog.</string>
     <string name="subject_form_same_name_body">“%1$s” already exists this term. If it is the same subject at another time, add the slot to it instead of creating it again.</string>
     <string name="subject_form_same_name_link">Add the schedule to the existing one</string>
     <string name="subject_form_same_name_create">Create a separate one</string>
+
+    <!-- It closed itself: the crash screen, through both doors. -->
+    <string name="fallo_titulo_en_el_acto">Something broke</string>
+    <string name="fallo_titulo_al_volver">It closed itself</string>
+    <string name="fallo_archivo_enviado">Sent</string>
+    <string name="fallo_archivo_guardado">Saved on your phone</string>
+    <string name="fallo_dato_version">Version</string>
+    <string name="fallo_dato_telefono">Phone</string>
+    <string name="fallo_dato_fecha">Date</string>
+    <string name="fallo_dato_error">Error</string>
+    <string name="fallo_limpio_nada">There was nothing of yours to remove.</string>
+    <string name="fallo_limpio_uno">1 piece of your data was removed before saving it: %1$s.</string>
+    <string name="fallo_limpio_varios">%1$d pieces of your data were removed before saving it: %2$s.</string>
+    <string name="fallo_limpio_correo_uno">your email</string>
+    <string name="fallo_limpio_correo_varios">%1$d emails</string>
+    <string name="fallo_limpio_texto_uno">1 quoted text</string>
+    <string name="fallo_limpio_texto_varios">%1$d quoted texts</string>
+    <string name="fallo_ver_texto">See the full text</string>
+    <string name="fallo_no_se_envia_solo">It carries the version, the phone and where it broke.</string>
+    <string name="fallo_btn_contar">Report</string>
+    <string name="fallo_btn_guardar">Save it</string>
+    <string name="fallo_btn_reiniciar">Restart</string>
+    <string name="fallo_btn_seguir">Continue to the app</string>
+    <string name="fallo_hoja_titulo">Tell us what happened</string>
+    <string name="fallo_hoja_cuerpo">The report is attached. What really helps is what you write here, even if it is three words.</string>
+    <string name="fallo_hoja_campo">What you remember (optional)</string>
+    <string name="fallo_hoja_enviar">Send</string>
+    <string name="fallo_archivo_relato">What the user reported:</string>
 </resources>

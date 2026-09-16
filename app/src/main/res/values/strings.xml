@@ -3009,4 +3009,32 @@ a tu medida</string>
     <string name="subject_form_same_name_body">«%1$s» ya existe en este periodo. Si es la misma materia en otro horario, añádele la franja en vez de crearla otra vez.</string>
     <string name="subject_form_same_name_link">Añadir el horario a la que ya tengo</string>
     <string name="subject_form_same_name_create">Crear una aparte</string>
+
+    <!-- Se cerró sola: la pantalla del fallo, por sus dos puertas. -->
+    <string name="fallo_titulo_en_el_acto">Algo se rompió</string>
+    <string name="fallo_titulo_al_volver">Se cerró sola</string>
+    <string name="fallo_archivo_enviado">Enviado</string>
+    <string name="fallo_archivo_guardado">Guardado en tu teléfono</string>
+    <string name="fallo_dato_version">Versión</string>
+    <string name="fallo_dato_telefono">Teléfono</string>
+    <string name="fallo_dato_fecha">Fecha</string>
+    <string name="fallo_dato_error">Error</string>
+    <string name="fallo_limpio_nada">No había ningún dato tuyo que quitar.</string>
+    <string name="fallo_limpio_uno">Se quitó 1 dato tuyo antes de guardarlo: %1$s.</string>
+    <string name="fallo_limpio_varios">Se quitaron %1$d datos tuyos antes de guardarlo: %2$s.</string>
+    <string name="fallo_limpio_correo_uno">tu correo</string>
+    <string name="fallo_limpio_correo_varios">%1$d correos</string>
+    <string name="fallo_limpio_texto_uno">1 texto entre comillas</string>
+    <string name="fallo_limpio_texto_varios">%1$d textos entre comillas</string>
+    <string name="fallo_ver_texto">Ver el texto completo</string>
+    <string name="fallo_no_se_envia_solo">Lleva la versión, el teléfono y dónde se rompió.</string>
+    <string name="fallo_btn_contar">Reportar</string>
+    <string name="fallo_btn_guardar">Guardarlo</string>
+    <string name="fallo_btn_reiniciar">Reiniciar</string>
+    <string name="fallo_btn_seguir">Seguir a la app</string>
+    <string name="fallo_hoja_titulo">Contar qué pasó</string>
+    <string name="fallo_hoja_cuerpo">El informe va adjunto. Lo que de verdad ayuda es lo que escribas aquí, aunque sean tres palabras.</string>
+    <string name="fallo_hoja_campo">Qué recuerdas (opcional)</string>
+    <string name="fallo_hoja_enviar">Enviar</string>
+    <string name="fallo_archivo_relato">Lo que contó el usuario:</string>
 </resources>

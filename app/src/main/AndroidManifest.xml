@@ -92,6 +92,24 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+        <!--
+            La pantalla de «se cerró sola», en su propio proceso.
+
+            `android:process` no es un adorno: cuando esto arranca, el proceso principal está
+            a punto de morir por el fallo que la lanzó. Compartiendo proceso, la actividad se
+            iría con él y el usuario seguiría viendo el diálogo gris de Android. Aparte, el
+            que se cae se cae y esta sigue en pie.
+
+            `excludeFromRecents` y `taskAffinity` vacío para que no quede una segunda tarjeta
+            de UniStack en Recientes después de un fallo.
+        -->
+        <activity
+            android:name=".core.fallos.PantallaDeFalloActivity"
+            android:process=":fallo"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:launchMode="singleInstance" />
         <receiver
             android:name=".core.notifications.ReminderReceiver"
             android:exported="false" />

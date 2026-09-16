@@ -2,6 +2,7 @@ package com.unistack.app
 
 import android.app.Application
 import androidx.work.Configuration
+import com.unistack.app.core.fallos.ManejadorDeFallos
 import com.unistack.app.core.notifications.ReminderCoordinator
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_notes.domain.NotesRepository
@@ -13,6 +14,7 @@ import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.core.utils.Textos
 import dagger.hilt.android.HiltAndroidApp
+import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,7 +52,28 @@ class UniStackApplication : Application(), Configuration.Provider {
         // de actualizaciones crea su canal de avisos en el constructor, con nombre traducido.
         // Con esto despues, el primer `Textos.get` reventaba antes de tener proveedor.
         Textos.desde(this)
+        /*
+         * El manejador se pone lo primero, para que un fallo durante el propio arranque —una
+         * inyección que revienta, un repositorio que no construye— también se cace.
+         *
+         * **Menos en el proceso de la pantalla de fallo.** Ahí sería un bucle: la pantalla se
+         * rompe, el manejador la vuelve a lanzar, se rompe otra vez. En ese proceso manda el
+         * de Android, y lo peor que puede pasar es ver el diálogo gris, que es justo de donde
+         * veníamos.
+         */
+        val procesoDeFallos = esElProcesoDeFallos()
+        if (!procesoDeFallos) ManejadorDeFallos.instalar(this)
         super.onCreate()
+        /*
+         * El proceso de la pantalla de fallo no arranca la app.
+         *
+         * `Application.onCreate` corre una vez por proceso, así que el de `:fallo` pasa por
+         * aquí igual que el principal. Ahí no pinta nada reprogramar alarmas ni preguntarle a
+         * GitHub por actualizaciones: ese proceso existe para enseñar una pantalla y morirse.
+         * Duplicar el trabajo, además, sería hacerlo justo mientras el proceso de al lado se
+         * está cayendo.
+         */
+        if (procesoDeFallos) return
         ReminderCoordinator.start(
             context = this,
             userRepository = userRepository,
@@ -82,4 +105,15 @@ class UniStackApplication : Application(), Configuration.Provider {
         // dependía de cerrar el proceso y volver a arrancarlo.
         UpdateCheckWorker.schedule(this)
     }
+
+    /**
+     * Si este proceso es el de la pantalla de fallo.
+     *
+     * Se lee de `/proc` y no de `Application.getProcessName()` porque ese llegó en API 28 y la
+     * app baja hasta la 26. Si la lectura falla se responde que no, que es el lado seguro:
+     * como mucho se arranca de más en un proceso que se va a cerrar solo.
+     */
+    private fun esElProcesoDeFallos(): Boolean = runCatching {
+        File("/proc/self/cmdline").readText().trim { it <= ' ' }.endsWith(":fallo")
+    }.getOrDefault(false)
 }
