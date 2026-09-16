@@ -31,8 +31,9 @@ sealed interface PendienteDeCierre {
 object RevisionDeCierre {
 
     /**
-     * Primero lo que cuesta puntos, luego la asistencia y al final las entregas.
+     * Materia por materia, en el orden de la lista: sus notas, sus clases y sus entregas.
      *
+     * Es el orden de la simulación aprobada, y lo que se revisa de una materia queda junto.
      * Un corte que el usuario dio por desconocido no se reclama: ya dijo que esa nota no la
      * tiene. Las tareas que cuentan son las de sus materias que vencieron dentro del periodo;
      * una de hace dos semestres no tiene nada que ver con este cierre.
@@ -43,26 +44,22 @@ object RevisionDeCierre {
         hoy: LocalDate,
         ignoradas: Set<String> = emptySet(),
         zona: ZoneId = ZoneId.systemDefault()
-    ): List<PendienteDeCierre> {
-        val notas = periodo.materias.flatMap { materia ->
-            materia.cortes
-                .filter { !it.completo && it.cut.id !in materia.subject.unknownCutIds }
-                .map { PendienteDeCierre.Nota(materia, it) }
-        }
-        val clases = periodo.materias.mapNotNull { materia ->
-            materia.asistencia.clases
-                .filter { it.status == ClassAttendanceStatus.PENDING }
-                .takeIf { it.isNotEmpty() }
-                ?.let { PendienteDeCierre.Clases(materia, it) }
-        }
-        val ids = periodo.materias.associateBy { it.id }
+    ): List<PendienteDeCierre> = periodo.materias.flatMap { materia ->
+        val notas = materia.cortes
+            .filter { !it.completo && it.cut.id !in materia.subject.unknownCutIds }
+            .map { PendienteDeCierre.Nota(materia, it) }
+        val clases = materia.asistencia.clases
+            .filter { it.status == ClassAttendanceStatus.PENDING }
+            .takeIf { it.isNotEmpty() }
+            ?.let { listOf(PendienteDeCierre.Clases(materia, it)) }
+            .orEmpty()
         val tareas = tasks.asSequence()
-            .filter { !it.completed && it.subjectId in ids.keys }
+            .filter { !it.completed && it.subjectId == materia.id }
             .map { it to Instant.ofEpochMilli(it.dueDateMillis).atZone(zona).toLocalDate() }
             .filter { (_, vence) -> vence.isBefore(hoy) && !vence.isBefore(periodo.inicio) }
             .sortedBy { (_, vence) -> vence }
-            .map { (tarea, vence) -> PendienteDeCierre.Tarea(ids[tarea.subjectId], tarea, vence) }
+            .map { (tarea, vence) -> PendienteDeCierre.Tarea(materia, tarea, vence) }
             .toList()
-        return (notas + clases + tareas).filter { it.clave !in ignoradas }
-    }
+        notas + clases + tareas
+    }.filter { it.clave !in ignoradas }
 }

@@ -54,7 +54,9 @@ import com.unistack.app.BuildConfig
 import com.unistack.app.core.fallos.AlmacenDeFallos
 import com.unistack.app.core.fallos.falloDeMuestra
 import com.unistack.app.core.fallos.informeDeMuestra
+import com.unistack.app.core.navigation.AppRoutes
 import com.unistack.app.core.utils.BuildStage
+import com.unistack.app.feature_terms.presentation.HistoricoDeMuestra
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_user.domain.MotionCatalog
 import kotlin.math.roundToInt
@@ -77,7 +79,9 @@ import kotlin.math.roundToInt
 @Composable
 fun BancoDePruebas(
     modifier: Modifier = Modifier,
-    onAbrirMovimiento: () -> Unit
+    onAbrirMovimiento: () -> Unit,
+    /** Para las palancas que dejan un estado que se mira en otra pantalla: el histórico, Inicio. */
+    onNavegar: (String) -> Unit = {}
 ) {
     val etapa = BuildStage.of(BuildConfig.VERSION_NAME)
     if (etapa != BuildStage.DEV && etapa != BuildStage.ALPHA) return
@@ -105,7 +109,7 @@ fun BancoDePruebas(
             )
         }
     } else {
-        VentanaDePruebas(onCerrar = { abierto = false }, onAbrirMovimiento = onAbrirMovimiento)
+        VentanaDePruebas(onCerrar = { abierto = false }, onAbrirMovimiento = onAbrirMovimiento, onNavegar = onNavegar)
     }
 }
 
@@ -117,7 +121,7 @@ private enum class Cara(val rotulo: String) {
 }
 
 @Composable
-private fun VentanaDePruebas(onCerrar: () -> Unit, onAbrirMovimiento: () -> Unit) {
+private fun VentanaDePruebas(onCerrar: () -> Unit, onAbrirMovimiento: () -> Unit, onNavegar: (String) -> Unit) {
     val vm: BancoDePruebasViewModel = hiltViewModel()
     val haptics = LocalHapticFeedback.current
     var cara by remember { mutableStateOf(Cara.SIMULAR) }
@@ -217,7 +221,7 @@ private fun VentanaDePruebas(onCerrar: () -> Unit, onAbrirMovimiento: () -> Unit
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 when (cara) {
-                    Cara.SIMULAR -> caraSimular(vm, onAbrirMovimiento)
+                    Cara.SIMULAR -> caraSimular(vm, onAbrirMovimiento, onNavegar)
                     Cara.MOVIMIENTO -> caraMovimiento(vm)
                     Cara.ESTADO -> caraEstado(vm)
                 }
@@ -230,8 +234,31 @@ private fun VentanaDePruebas(onCerrar: () -> Unit, onAbrirMovimiento: () -> Unit
 
 private fun LazyListScope.caraSimular(
     vm: BancoDePruebasViewModel,
-    onAbrirMovimiento: () -> Unit
+    onAbrirMovimiento: () -> Unit,
+    onNavegar: (String) -> Unit
 ) {
+    seccion("Histórico")
+    palanca(
+        "Simular el histórico del artifact",
+        "Los 4 periodos, con 2026-2 listo para cerrar y hoy en el sáb 5 dic 2026. Tus datos no se tocan"
+    ) {
+        HistoricoDeMuestra.empezar()
+        onNavegar(AppRoutes.AcademicHistory)
+    }
+    palanca("Saltar a Inicio sin periodo", "2026-2 ya cerrado hoy: Inicio cuenta cómo te fue") {
+        HistoricoDeMuestra.saltarASinPeriodo()
+        onNavegar(AppRoutes.Home)
+    }
+    palanca("Saltar a periodo por empezar", "2027-1 creado, con Ecuaciones diferenciales traída") {
+        HistoricoDeMuestra.saltarAPorEmpezar()
+        onNavegar(AppRoutes.Home)
+    }
+    palanca(
+        "Salir de la simulación",
+        "Vuelven tus periodos de verdad. Cerrar la app también la quita",
+        suave = true
+    ) { HistoricoDeMuestra.salir() }
+
     seccion("Horario")
     palanca("Clase en curso ahora", "Una clase que cubre este minuto") { vm.claseEnCursoAhora() }
     palanca("Cruzar dos horarios", "Dos clases pisándose hoy") { vm.cruceDeHorarios() }
@@ -417,6 +444,7 @@ private fun LazyListScope.caraEstado(vm: BancoDePruebasViewModel) {
             Cuenta("Académico", resumen.academico, "notas")
             Cuenta("Gastos", resumen.gastos, "gastos")
             Cuenta("Tareas", resumen.tareas, "tareas")
+            Cuenta("Histórico", if (HistoricoDeMuestra.enMarcha) 1 else 0, "simulación puesta")
         }
     }
     seccion("Deshacer")

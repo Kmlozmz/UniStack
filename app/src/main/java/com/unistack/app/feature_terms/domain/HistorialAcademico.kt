@@ -86,9 +86,9 @@ data class MateriaDelPeriodo(
     val cortes: List<CorteDeMateria>,
     /** La definitiva: existe cuando no queda nada por evaluar. */
     val final: Double?,
-    /** Lo que queda sacando cero en lo que falta. Nulo si no hay nada evaluado. */
+    /** Lo que queda sacando cero en lo que falta, sin redondear. Nulo si no hay nada evaluado. */
     val piso: Double?,
-    /** Lo que queda sacando el máximo en lo que falta. Nulo si no hay nada evaluado. */
+    /** Lo que queda sacando el máximo en lo que falta, sin redondear. Nulo si no hay nada evaluado. */
     val techo: Double?,
     val aprobada: Boolean?,
     val asistencia: AsistenciaDelPeriodo,
@@ -188,11 +188,17 @@ data class HistorialAcademico(
         return notas.media()
     }
 
-    /** Entre qué valores puede acabar el promedio del periodo. Sin proyecciones: piso y techo. */
+    /**
+     * Entre qué valores puede acabar el promedio del periodo. Sin proyecciones: piso y techo.
+     *
+     * Con los puntos sin redondear, también en las materias completas: redondear cada una a un
+     * decimal antes de promediar movía el extremo una centésima, y el rango dejaba de coincidir
+     * con el de la simulación aprobada.
+     */
     fun rangoDelPeriodo(periodo: PeriodoDelHistorico): Pair<Double, Double>? {
         if (periodo.materias.isEmpty()) return null
-        val piso = periodo.materias.map { it.final ?: it.piso ?: 0.0 }.media() ?: return null
-        val techo = periodo.materias.map { it.final ?: it.techo ?: notaMaxima }.media() ?: return null
+        val piso = periodo.materias.map { it.piso ?: 0.0 }.media() ?: return null
+        val techo = periodo.materias.map { it.techo ?: notaMaxima }.media() ?: return null
         return piso to techo
     }
 
@@ -202,8 +208,8 @@ data class HistorialAcademico(
         val n = base.size + periodo.materias.size
         if (n == 0) return null
         val suma = base.sum()
-        val piso = periodo.materias.sumOf { it.final ?: it.piso ?: 0.0 }
-        val techo = periodo.materias.sumOf { it.final ?: it.techo ?: notaMaxima }
+        val piso = periodo.materias.sumOf { it.piso ?: 0.0 }
+        val techo = periodo.materias.sumOf { it.techo ?: notaMaxima }
         return (suma + piso) / n to (suma + techo) / n
     }
 
@@ -395,8 +401,9 @@ object CalculoDelHistorico {
                 )
             },
             final = final,
-            piso = calculo.guaranteedMinimum,
-            techo = calculo.bestPossible,
+            piso = calculo.confirmedWeightedPoints.takeIf { calculo.evaluatedSemesterFraction > 0.0 },
+            techo = (calculo.confirmedWeightedPoints + calculo.remainingSemesterFraction * notaMaxima)
+                .takeIf { calculo.evaluatedSemesterFraction > 0.0 },
             aprobada = final?.let { it >= aprobado - 0.0001 },
             asistencia = asistencia(clases),
             tareasHechas = suyasTareas.count { it.completed },

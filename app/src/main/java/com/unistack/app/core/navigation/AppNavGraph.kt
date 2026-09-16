@@ -1179,7 +1179,8 @@ fun MainNavGraph(
         ) {
             BancoDePruebas(
                 modifier = Modifier.padding(start = 14.dp),
-                onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) }
+                onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) },
+                onNavegar = { ruta -> navController.go(ruta) }
             )
         }
         }

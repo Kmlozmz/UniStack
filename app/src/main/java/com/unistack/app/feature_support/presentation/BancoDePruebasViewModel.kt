@@ -669,6 +669,7 @@ class BancoDePruebasViewModel @Inject constructor(
     }
 
     fun recogerlo() {
+        com.unistack.app.feature_terms.presentation.HistoricoDeMuestra.salir()
         recogerHorario()
         recogerAcademico()
         recogerGastos()

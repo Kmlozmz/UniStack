@@ -34,7 +34,9 @@ import com.unistack.app.feature_terms.domain.PropuestaDePeriodo
 import com.unistack.app.feature_terms.domain.PropuestaDelSiguientePeriodo
 import com.unistack.app.feature_terms.domain.RepartoDeCortes
 import com.unistack.app.feature_terms.domain.RevisionDeCierre
+import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingCutScheme
+import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -121,8 +123,8 @@ class TermsViewModel @Inject constructor(
 
     private val extras = combine(notesRepository.notes, expensesRepository.expenses) { notes, expenses -> notes to expenses }
 
-    val uiState: StateFlow<TermsUiState> = combine(base, clases, extras) { b, c, e ->
-        construir(b, c, e.first, e.second)
+    val uiState: StateFlow<TermsUiState> = combine(base, clases, extras, HistoricoDeMuestra.datos) { b, c, e, muestra ->
+        if (muestra != null) construirDeMuestra(muestra, b.profile) else construir(b, c, e.first, e.second)
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TermsUiState())
@@ -134,8 +136,9 @@ class TermsViewModel @Inject constructor(
     private val ignoradas = MutableStateFlow<Set<String>>(emptySet())
 
     val pendientes: StateFlow<List<PendienteDeCierre>> = combine(uiState, ignoradas) { estado, fuera ->
-        val activo = estado.historial?.activo ?: return@combine emptyList<PendienteDeCierre>()
-        RevisionDeCierre.pendientes(activo, estado.tasks, LocalDate.now(), fuera)
+        val historial = estado.historial ?: return@combine emptyList<PendienteDeCierre>()
+        val activo = historial.activo ?: return@combine emptyList<PendienteDeCierre>()
+        RevisionDeCierre.pendientes(activo, estado.tasks, historial.hoy, fuera)
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -175,6 +178,50 @@ class TermsViewModel @Inject constructor(
         )
     }
 
+    /**
+     * El estado con la simulación del banco de pruebas puesta.
+     *
+     * Se quedan del perfil real los avisos y los módulos; lo académico es el de la simulación
+     * —escala de 0 a 5, aprobado en 3.0, cortes al 30/30/40 y el tope de faltas en 8, que es lo
+     * que daba «7 permitidas» sobre 36 clases— para que las cifras sean las mismas. Las tres
+     * casillas de «Mientras tanto» también son las suyas.
+     */
+    private fun construirDeMuestra(muestra: DatosDeMuestra, perfilReal: UserProfile?): TermsUiState {
+        val historial = CalculoDelHistorico.build(
+            terms = muestra.terms,
+            subjects = muestra.subjects,
+            sessions = muestra.sessions,
+            occurrences = muestra.occurrences,
+            breaks = emptyList(),
+            tasks = muestra.tasks,
+            esquemaActual = muestra.esquema,
+            notaMaxima = 5.0,
+            aprobado = 3.0,
+            hoy = muestra.hoy,
+            ahora = muestra.ahora
+        )
+        return TermsUiState(
+            loaded = true,
+            historial = historial,
+            propuesta = PropuestaDelSiguientePeriodo.build(muestra.terms, muestra.hoy),
+            profile = perfilReal?.copy(
+                gradingScale = GradingScale.ZERO_TO_FIVE,
+                passingGrade = 3.0,
+                targetAverage = 4.0,
+                absenceLimit = 8,
+                gradingCutScheme = muestra.esquema,
+                enabledModules = perfilReal.enabledModules + AppModule.TASKS + AppModule.EXPENSES
+            ),
+            tasks = muestra.tasks,
+            tareasPendientes = 2,
+            notasRapidas = 14,
+            gastosDelMes = 214_000
+        )
+    }
+
+    /** Las materias de donde se esté leyendo: la simulación si está puesta, si no las reales. */
+    private fun materias(): List<Subject> = HistoricoDeMuestra.datos.value?.subjects ?: gradesRepository.subjects.value
+
     // ================================================================== cerrar
 
     /** Empieza una revisión de cierre desde cero. */
@@ -196,6 +243,11 @@ class TermsViewModel @Inject constructor(
         val activo = historial.activo ?: return
         val acumulado = historial.acumuladoAlCerrar(activo)
         val esquema = estado.profile?.gradingCutScheme ?: GradingCutScheme.default()
+        if (HistoricoDeMuestra.enMarcha) {
+            HistoricoDeMuestra.cerrar(activo.id, esquema)
+            onDone(activo.id, activo.nombre, acumulado)
+            return
+        }
         viewModelScope.launch {
             gradesRepository.stampTerm(activo.id)
             termRepository.close(activo.id, LocalDate.now(), esquema)
@@ -207,6 +259,11 @@ class TermsViewModel @Inject constructor(
     }
 
     fun deshacerCierre(termId: String, nombre: String) {
+        if (HistoricoDeMuestra.enMarcha) {
+            HistoricoDeMuestra.reabrir(termId)
+            MensajesDelHistorico.publicar(Textos.get(R.string.hist_vuelve_en_curso, nombre))
+            return
+        }
         viewModelScope.launch {
             termRepository.reopen(termId)
                 .onSuccess { MensajesDelHistorico.publicar(Textos.get(R.string.hist_vuelve_en_curso, nombre)) }
@@ -218,11 +275,11 @@ class TermsViewModel @Inject constructor(
 
     /** La nota de un corte que faltaba, como resultado oficial del corte. */
     fun ponerNotaDeCorte(subjectId: String, cutId: String, valor: Double) {
-        val materia = gradesRepository.subjects.value.firstOrNull { it.id == subjectId } ?: return
+        val materia = materias().firstOrNull { it.id == subjectId } ?: return
         val esquema = uiState.value.profile?.gradingCutScheme ?: GradingCutScheme.default()
         val corte = esquema.cuts.firstOrNull { it.id == cutId } ?: return
         val nota = notaOficial(corte.name, cutId, valor)
-        gradesRepository.addGrade(subjectId, nota)
+        if (HistoricoDeMuestra.enMarcha) HistoricoDeMuestra.ponerNota(subjectId, nota) else gradesRepository.addGrade(subjectId, nota)
         val final = finalCon(materia.copy(grades = materia.grades + nota))
         val numero = esquema.cuts.sortedBy { it.order }.indexOfFirst { it.id == cutId } + 1
         _resueltos.value = _resueltos.value + ResueltoEnElCierre(
@@ -233,9 +290,13 @@ class TermsViewModel @Inject constructor(
     }
 
     fun marcarClases(subjectId: String, marcas: Map<ClaseDelPeriodo, ClassAttendanceStatus>) {
-        val materia = gradesRepository.subjects.value.firstOrNull { it.id == subjectId } ?: return
+        val materia = materias().firstOrNull { it.id == subjectId } ?: return
         val ahora = System.currentTimeMillis()
         marcas.forEach { (clase, estado) ->
+            if (HistoricoDeMuestra.enMarcha) {
+                HistoricoDeMuestra.marcar(clase, estado)
+                return@forEach
+            }
             val dia = clase.date.toEpochDay()
             val existente = scheduleRepository.occurrences.value.firstOrNull {
                 it.sessionId == clase.sessionId && it.dateEpochDay == dia
@@ -261,7 +322,11 @@ class TermsViewModel @Inject constructor(
 
     fun resolverTarea(pendiente: PendienteDeCierre.Tarea, entregada: Boolean) {
         if (entregada) {
-            tasksRepository.setTaskCompleted(pendiente.tarea.id, true)
+            if (HistoricoDeMuestra.enMarcha) {
+                HistoricoDeMuestra.completarTarea(pendiente.tarea.id)
+            } else {
+                tasksRepository.setTaskCompleted(pendiente.tarea.id, true)
+            }
         } else {
             ignoradas.value = ignoradas.value + pendiente.clave
         }
@@ -291,7 +356,11 @@ class TermsViewModel @Inject constructor(
             val valor = valores[nota.id] ?: return@forEach
             if (valor != nota.value) {
                 val cambiada = nota.copy(value = valor)
-                gradesRepository.updateGrade(subjectId, cambiada)
+                if (HistoricoDeMuestra.enMarcha) {
+                    HistoricoDeMuestra.cambiarNota(subjectId, cambiada)
+                } else {
+                    gradesRepository.updateGrade(subjectId, cambiada)
+                }
                 nuevas += cambiada
             } else {
                 nuevas += nota
@@ -301,7 +370,7 @@ class TermsViewModel @Inject constructor(
         nuevasDeCorte.forEach { (cutId, valor) ->
             val corte = esquema.cuts.firstOrNull { it.id == cutId } ?: return@forEach
             val nota = notaOficial(corte.name, cutId, valor)
-            gradesRepository.addGrade(subjectId, nota)
+            if (HistoricoDeMuestra.enMarcha) HistoricoDeMuestra.ponerNota(subjectId, nota) else gradesRepository.addGrade(subjectId, nota)
             nuevas += nota
         }
         val finalAntes = materia.final
@@ -368,6 +437,18 @@ class TermsViewModel @Inject constructor(
     ) {
         val estado = uiState.value
         val propuesta = estado.propuesta ?: return
+        if (HistoricoDeMuestra.enMarcha) {
+            val cortes = estado.profile?.gradingCutScheme?.cuts?.size ?: 3
+            HistoricoDeMuestra.crear(
+                nombre = nombre.trim(),
+                tipo = propuesta.tipo,
+                inicio = inicio,
+                finPrevisto = propuesta.finPara(inicio, semanas),
+                cierres = semanasPorCorte?.takeIf { it.size == cortes }?.let { RepartoDeCortes.cierres(inicio, it) },
+                repetir = repetir
+            )?.let(onDone)
+            return
+        }
         viewModelScope.launch {
             termRepository.create(nombre.trim(), propuesta.tipo, inicio, propuesta.finPara(inicio, semanas))
                 .onSuccess { periodo ->

@@ -193,7 +193,7 @@ class HistorialAcademicoTest {
     }
 
     @Test
-    fun `los pendientes de cierre van primero las notas y respetan los cortes desconocidos`() {
+    fun `los pendientes de cierre van materia por materia y respetan los cortes desconocidos`() {
         val desconocida = materia("desconocida", "2026-2", listOf(null, 4.0, 4.0)).copy(unknownCutIds = setOf("period-1"))
         val sinNota = materia("sin nota", "2026-2", listOf(4.0, 4.0, null))
         val tarea = StudentTask(
