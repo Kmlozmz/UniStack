@@ -2,6 +2,12 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.feature_terms.presentation.AvisosDelPeriodoEnConfiguracion
+import com.unistack.app.feature_terms.presentation.HojaDelAvisoParaEmpezar
+import com.unistack.app.feature_terms.presentation.TermsViewModel
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsRow
@@ -72,8 +78,12 @@ fun AcademicSettingsScreen(
     onBreaksClick: () -> Unit,
     onTermClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = hiltViewModel()
+    onNewTermClick: () -> Unit = {},
+    viewModel: ProfileViewModel = hiltViewModel(),
+    termsViewModel: TermsViewModel = hiltViewModel()
 ) {
+    val termsState by termsViewModel.uiState.collectAsStateWithLifecycle()
+    var eligiendoDia by rememberSaveable { mutableStateOf(false) }
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val breaks by viewModel.academicBreaks.collectAsStateWithLifecycle()
     val activeTerm by viewModel.activeTerm.collectAsStateWithLifecycle()
@@ -156,6 +166,39 @@ fun AcademicSettingsScreen(
                 )
             }
         }
+        if (activeTerm == null) {
+            item {
+                SettingsGroup(label = stringResource(R.string.hist_tu_periodo), rowCount = 1) {
+                    SettingsRow(
+                        icon = Icons.Rounded.CalendarMonth,
+                        title = stringResource(R.string.hist_sin_periodo_activo_titulo),
+                        subtitle = termsState.lastClosed?.let { stringResource(R.string.hist_el_ultimo_fue, it.nombre) }
+                            ?: stringResource(R.string.hist_empezar_uno),
+                        iconColor = sections.schedule,
+                        onClick = onNewTermClick
+                    )
+                }
+            }
+        }
+        item {
+            AcademicGroupLabel(stringResource(R.string.hist_avisos_del_periodo))
+            AvisosDelPeriodoEnConfiguracion(
+                estado = termsState,
+                onAlAcabar = termsViewModel::setAvisoAlAcabar,
+                onParaEmpezar = termsViewModel::setAvisoParaEmpezar,
+                onElegirDia = { eligiendoDia = true }
+            )
+        }
+    }
+
+    if (eligiendoDia) {
+        HojaDelAvisoParaEmpezar(
+            estado = termsState,
+            onDismiss = { eligiendoDia = false },
+            onActivo = termsViewModel::setAvisoParaEmpezar,
+            onOpcion = termsViewModel::setDiaDelAviso,
+            onAbrirConfiguracion = null
+        )
     }
 }
 

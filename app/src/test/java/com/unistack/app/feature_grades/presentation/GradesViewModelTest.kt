@@ -483,6 +483,7 @@ private class FakeTermRepositoryParaMaterias : AcademicTermRepository {
         plannedEnd: LocalDate?
     ): Result<AcademicTerm> = Result.failure(UnsupportedOperationException())
     override suspend fun update(term: AcademicTerm): Result<Unit> = Result.success(Unit)
-    override suspend fun close(termId: String, closedOn: LocalDate): Result<Unit> = Result.success(Unit)
+    override suspend fun close(termId: String, closedOn: LocalDate, cutScheme: com.unistack.app.feature_user.domain.GradingCutScheme?): Result<Unit> = Result.success(Unit)
+    override suspend fun reopen(termId: String): Result<Unit> = Result.success(Unit)
     override suspend fun delete(termId: String): Result<Unit> = Result.success(Unit)
 }

@@ -91,6 +91,9 @@ class UserPreferencesDataSource(private val context: Context) {
         val DAILY_DIGEST_ENABLED = booleanPreferencesKey("daily_digest_enabled")
         val DAILY_DIGEST_HOUR = intPreferencesKey("daily_digest_hour")
         val DAILY_DIGEST_MINUTE = intPreferencesKey("daily_digest_minute")
+        val TERM_END_REMINDER_ENABLED = booleanPreferencesKey("term_end_reminder_enabled")
+        val NEXT_TERM_REMINDER_ENABLED = booleanPreferencesKey("next_term_reminder_enabled")
+        val NEXT_TERM_REMINDER_OFFSET = intPreferencesKey("next_term_reminder_offset")
         val QUIET_HOURS_ENABLED = booleanPreferencesKey("quiet_hours_enabled")
         val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
         val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
@@ -194,6 +197,9 @@ class UserPreferencesDataSource(private val context: Context) {
                 ),
             dailyDigestHour = prefs[Keys.DAILY_DIGEST_HOUR]?.takeIf { it in 0..23 } ?: 7,
             dailyDigestMinute = prefs[Keys.DAILY_DIGEST_MINUTE]?.takeIf { it in 0..59 } ?: 30,
+            termEndReminderEnabled = prefs[Keys.TERM_END_REMINDER_ENABLED] ?: true,
+            nextTermReminderEnabled = prefs[Keys.NEXT_TERM_REMINDER_ENABLED] ?: true,
+            nextTermReminderOffset = prefs[Keys.NEXT_TERM_REMINDER_OFFSET]?.takeIf { it in 0..2 } ?: 0,
             quietHoursEnabled = prefs[Keys.QUIET_HOURS_ENABLED] ?: false,
             quietHoursStartHour = prefs[Keys.QUIET_HOURS_START]?.takeIf { it in 0..23 },
             quietHoursEndHour = prefs[Keys.QUIET_HOURS_END]?.takeIf { it in 0..23 },
@@ -267,6 +273,9 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.DAILY_DIGEST_ENABLED] = profile.dailyDigestEnabled
             prefs[Keys.DAILY_DIGEST_HOUR] = profile.dailyDigestHour
             prefs[Keys.DAILY_DIGEST_MINUTE] = profile.dailyDigestMinute
+            prefs[Keys.TERM_END_REMINDER_ENABLED] = profile.termEndReminderEnabled
+            prefs[Keys.NEXT_TERM_REMINDER_ENABLED] = profile.nextTermReminderEnabled
+            prefs[Keys.NEXT_TERM_REMINDER_OFFSET] = profile.nextTermReminderOffset
             prefs[Keys.QUIET_HOURS_ENABLED] = profile.quietHoursEnabled
             if (profile.quietHoursStartHour != null) {
                 prefs[Keys.QUIET_HOURS_START] = profile.quietHoursStartHour
@@ -648,55 +657,10 @@ class UserPreferencesDataSource(private val context: Context) {
         return array.toString()
     }
 
-    private fun parseGradingCutScheme(json: String?): GradingCutScheme {
-        if (json.isNullOrBlank()) return GradingCutScheme.default()
-        return runCatching {
-            val root = JSONObject(json)
-            val array = root.optJSONArray("periods") ?: JSONArray()
-            val cuts = buildList {
-                for (index in 0 until array.length()) {
-                    val item = array.optJSONObject(index) ?: continue
-                    val order = item.optInt("order", index + 1)
-                    val weight = item.optDouble("weight", 0.0)
-                    if (weight > 0.0) {
-                        add(
-                            GradingCut(
-                                id = item.optString("id", "period-$order"),
-                                name = item.optString("name", "${Corte.Singular} $order"),
-                                weight = weight,
-                                order = order,
-                                endEpochDay = if (item.has("endEpochDay") && !item.isNull("endEpochDay")) {
-                                    item.optLong("endEpochDay")
-                                } else {
-                                    null
-                                }
-                            )
-                        )
-                    }
-                }
-            }.sortedBy { it.order }
-            GradingCutScheme(cuts = cuts)
-                .takeIf { it.isValid }
-                ?: GradingCutScheme.default()
-        }.getOrDefault(GradingCutScheme.default())
-    }
+    private fun parseGradingCutScheme(json: String?): GradingCutScheme =
+        GradingCutSchemeJson.decode(json) ?: GradingCutScheme.default()
 
-    private fun GradingCutScheme.toJsonString(): String {
-        val array = JSONArray()
-        cuts.sortedBy { it.order }.forEach { cut ->
-            array.put(
-                JSONObject()
-                    .put("id", cut.id)
-                    .put("name", cut.name)
-                    .put("weight", cut.weight)
-                    .put("order", cut.order)
-                    .put("endEpochDay", cut.endEpochDay)
-            )
-        }
-        return JSONObject()
-            .put("periods", array)
-            .toString()
-    }
+    private fun GradingCutScheme.toJsonString(): String = GradingCutSchemeJson.encode(this)
 
     private fun String.toGradingScaleOrNull(): GradingScale? {
         return when (this) {

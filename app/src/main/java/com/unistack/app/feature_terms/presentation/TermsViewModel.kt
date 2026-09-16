@@ -2,106 +2,84 @@ package com.unistack.app.feature_terms.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unistack.app.R
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.feature_expenses.domain.Expense
+import com.unistack.app.feature_expenses.domain.ExpensesRepository
+import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_notes.domain.NotesRepository
+import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
-import com.unistack.app.feature_schedule.domain.SubjectAttendanceHistory
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_terms.domain.AcademicBreakRepository
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_terms.domain.AcademicTermRepository
-import com.unistack.app.feature_terms.domain.AcademicTermType
-import com.unistack.app.feature_terms.domain.TermCloseCheck
-import com.unistack.app.feature_terms.domain.TermCloseReport
+import com.unistack.app.feature_terms.domain.CalculoDelHistorico
+import com.unistack.app.feature_terms.domain.ClaseDelPeriodo
+import com.unistack.app.feature_terms.domain.HistorialAcademico
+import com.unistack.app.feature_terms.domain.PendienteDeCierre
+import com.unistack.app.feature_terms.domain.PeriodoDelHistorico
+import com.unistack.app.feature_terms.domain.PropuestaDePeriodo
+import com.unistack.app.feature_terms.domain.PropuestaDelSiguientePeriodo
+import com.unistack.app.feature_terms.domain.RepartoDeCortes
+import com.unistack.app.feature_terms.domain.RevisionDeCierre
 import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.unistack.app.core.utils.Textos
-import com.unistack.app.R
-
-/**
- * Un periodo con lo que se puede decir de él sin abrirlo.
- *
- * [average] en nulo es «no hay nada evaluado», no un cero, y [attendanceRate] en nulo es «no
- * hay clases marcadas». Ninguno de los dos se rellena con un número inventado: un periodo
- * cerrado sin datos es un hecho, y decir 0% sería otra cosa.
- */
-data class TermSummary(
-    val term: AcademicTerm,
-    val subjectCount: Int,
-    val average: Double?,
-    val failedCount: Int,
-    val attendanceRate: Int?,
-    val subjects: List<SubjectInTerm> = emptyList(),
-    /**
-     * Desde cuándo cuenta la asistencia de este periodo.
-     *
-     * Si el periodo empezó el 1 de agosto y la app se instaló el 20 de septiembre, hay siete
-     * semanas que nadie va a marcar hacia atrás. Contarlas daría un porcentaje bajo para
-     * siempre e ignorarlas en silencio sería otra cifra inventada: se dice el alcance.
-     */
-    val attendanceSince: LocalDate? = null
-)
-
-/** Una materia dentro de un periodo, con lo que se enseña de ella en el histórico. */
-data class SubjectInTerm(
-    val id: String,
-    val name: String,
-    val average: Double?,
-    val attendanceRate: Int?,
-    /** Nulo mientras no haya notas suficientes para afirmar nada. */
-    val passed: Boolean?
-)
-
-/**
- * Lo que el periodo nuevo trae del anterior sin preguntar.
- *
- * Se hereda lo que no cambia de un semestre a otro —la escala, el aprobado, los cortes y su
- * reparto— y no se hereda lo que cambia siempre: las fechas, las materias y el horario. Verlo
- * escrito antes de empezar es lo que hace que empezar no dé pereza.
- */
-data class TermInheritance(
-    val scaleLabel: String,
-    val passingLabel: String,
-    val cutCount: Int,
-    val cutWeights: List<Int>,
-    val type: AcademicTermType
-)
 
 data class TermsUiState(
-    val activeTerm: AcademicTerm? = null,
-    val summaries: List<TermSummary> = emptyList(),
-    /** Lo que le falta al periodo activo, o nulo si no hay periodo. */
-    val report: TermCloseReport? = null,
-    val cumulativeAverage: Double? = null,
-    val closedCount: Int = 0,
-    val subjectsInHistory: Int = 0,
-    val inheritance: TermInheritance? = null,
-    val loaded: Boolean = false
+    val loaded: Boolean = false,
+    val historial: HistorialAcademico? = null,
+    val propuesta: PropuestaDePeriodo? = null,
+    val profile: UserProfile? = null,
+    val tasks: List<StudentTask> = emptyList(),
+    /** Lo que sigue funcionando sin periodo: tareas por hacer, notas y gastos del mes. */
+    val tareasPendientes: Int = 0,
+    val notasRapidas: Int = 0,
+    val gastosDelMes: Int = 0
 ) {
-    /** El último que se cerró, que es el que se resume cuando no hay ninguno activo. */
-    val lastClosed: TermSummary?
-        get() = summaries.firstOrNull { !it.term.isActive }
+    val activeTerm: AcademicTerm? get() = historial?.activo?.term
+
+    /** El último cerrado, que es lo que resume Inicio mientras no hay periodo. */
+    val lastClosed: PeriodoDelHistorico? get() = historial?.cerrados?.firstOrNull()
 }
+
+/** Una línea de «Resuelto ahora» en el cierre. */
+data class ResueltoEnElCierre(val titulo: String, val detalle: String)
+
+data class VistaPreviaDeNotas(
+    val cortes: List<Double?>,
+    val final: Double?,
+    val promedioAntes: Double?,
+    val promedioDespues: Double?
+)
 
 @HiltViewModel
 class TermsViewModel @Inject constructor(
@@ -110,242 +88,306 @@ class TermsViewModel @Inject constructor(
     private val tasksRepository: TasksRepository,
     private val scheduleRepository: ScheduleRepository,
     private val breakRepository: AcademicBreakRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val notesRepository: NotesRepository,
+    private val expensesRepository: ExpensesRepository
 ) : ViewModel() {
 
-    /** Los datos del horario van juntos porque `combine` no da para tantos por separado. */
-    private data class DatosDeClase(
+    private data class Base(
+        val terms: List<AcademicTerm>,
+        val subjects: List<Subject>,
+        val tasks: List<StudentTask>,
+        val profile: UserProfile?
+    )
+
+    private data class Clases(
         val sessions: List<ClassSession>,
         val occurrences: List<ClassOccurrence>,
         val breaks: List<AcademicBreak>
     )
 
-    private val datosDeClase = combine(
-        scheduleRepository.sessions,
-        scheduleRepository.occurrences,
-        breakRepository.breaks
-    ) { sessions, occurrences, breaks -> DatosDeClase(sessions, occurrences, breaks) }
-
-    private val _message = MutableStateFlow<String?>(null)
-    val message: StateFlow<String?> = _message
-
-    fun consumeMessage() {
-        _message.value = null
-    }
-
-    val uiState: StateFlow<TermsUiState> = combine(
+    private val base = combine(
         termRepository.terms,
         gradesRepository.subjects,
         tasksRepository.tasks,
-        userRepository.userProfile,
-        datosDeClase
-    ) { terms, subjects, tasks, profile, clases ->
-        construir(terms, subjects, tasks, profile, clases)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TermsUiState())
+        userRepository.userProfile
+    ) { terms, subjects, tasks, profile -> Base(terms, subjects, tasks, profile) }
 
-    private fun construir(
-        terms: List<AcademicTerm>,
-        subjects: List<Subject>,
-        tasks: List<StudentTask>,
-        profile: UserProfile?,
-        clases: DatosDeClase
-    ): TermsUiState {
+    private val clases = combine(
+        scheduleRepository.sessions,
+        scheduleRepository.occurrences,
+        breakRepository.breaks
+    ) { sessions, occurrences, breaks -> Clases(sessions, occurrences, breaks) }
+
+    private val extras = combine(notesRepository.notes, expensesRepository.expenses) { notes, expenses -> notes to expenses }
+
+    val uiState: StateFlow<TermsUiState> = combine(base, clases, extras) { b, c, e ->
+        construir(b, c, e.first, e.second)
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TermsUiState())
+
+    private val _resueltos = MutableStateFlow<List<ResueltoEnElCierre>>(emptyList())
+    val resueltos: StateFlow<List<ResueltoEnElCierre>> = _resueltos.asStateFlow()
+
+    /** Lo que se contestó en el cierre sin cambiar ningún dato: «No la entregué». */
+    private val ignoradas = MutableStateFlow<Set<String>>(emptySet())
+
+    val pendientes: StateFlow<List<PendienteDeCierre>> = combine(uiState, ignoradas) { estado, fuera ->
+        val activo = estado.historial?.activo ?: return@combine emptyList<PendienteDeCierre>()
+        RevisionDeCierre.pendientes(activo, estado.tasks, LocalDate.now(), fuera)
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private fun construir(b: Base, c: Clases, notes: List<QuickNote>, expenses: List<Expense>): TermsUiState {
         val hoy = LocalDate.now()
-        val activo = terms.firstOrNull { it.isActive }
-        val esquema = profile?.gradingCutScheme ?: GradingCutScheme.default()
-
-        /*
-         * Cada periodo se resume con sus propias materias.
-         *
-         * Las que no tienen periodo —de antes de que existieran— se cuentan en el activo: es
-         * donde el usuario las está viendo, y dejarlas fuera haría que el resumen del periodo
-         * en curso no cuadrara con la lista de materias que tiene delante.
-         */
-        val resumenes = terms
-            .sortedByDescending { it.startEpochDay }
-            .map { periodo ->
-                val suyas = subjects.filter { materia ->
-                    materia.termId == periodo.id || (materia.termId == null && periodo.id == activo?.id)
-                }
-                resumir(periodo, suyas, esquema, profile, clases, hoy)
-            }
-
-        val cerrados = resumenes.filter { !it.term.isActive }
-        val promediosCerrados = cerrados.mapNotNull { it.average }
-
+        val perfil = b.profile
+        val maxima = perfil?.let { GradingScaleUtils.maxGradeFor(it) } ?: 5.0
+        val historial = CalculoDelHistorico.build(
+            terms = b.terms,
+            subjects = b.subjects,
+            sessions = c.sessions,
+            occurrences = c.occurrences,
+            breaks = c.breaks.map { it.range },
+            tasks = b.tasks,
+            esquemaActual = perfil?.gradingCutScheme ?: GradingCutScheme.default(),
+            notaMaxima = maxima,
+            aprobado = perfil?.passingGrade ?: maxima * 0.6,
+            hoy = hoy,
+            ahora = LocalDateTime.now()
+        )
+        val zona = ZoneId.systemDefault()
         return TermsUiState(
-            activeTerm = activo,
-            summaries = resumenes,
-            report = activo?.let {
-                val suyas = subjects.filter { materia ->
-                    materia.termId == it.id || materia.termId == null
+            loaded = true,
+            historial = historial,
+            propuesta = PropuestaDelSiguientePeriodo.build(b.terms, hoy),
+            profile = perfil,
+            tasks = b.tasks,
+            tareasPendientes = b.tasks.count { !it.completed },
+            notasRapidas = notes.count { !it.archived && it.deletedAt == null },
+            gastosDelMes = expenses
+                .filter {
+                    val dia = Instant.ofEpochMilli(it.dateMillis).atZone(zona).toLocalDate()
+                    dia.year == hoy.year && dia.month == hoy.month
                 }
-                TermCloseCheck.build(
-                    subjects = suyas,
-                    cutScheme = esquema,
-                    closedCutIds = TermCloseCheck.allCuts(esquema),
-                    unmarkedClasses = sinMarcarPorMateria(suyas, clases, it, hoy),
-                    tasks = tasks,
-                    passingGrade = profile?.passingGrade ?: 3.0,
-                    today = hoy
-                )
-            },
-            cumulativeAverage = promediosCerrados.takeIf { it.isNotEmpty() }?.let { lista ->
-                Math.round(lista.average() * 10.0) / 10.0
-            },
-            closedCount = cerrados.size,
-            subjectsInHistory = cerrados.sumOf { it.subjectCount },
-            inheritance = profile?.let { perfil ->
-                TermInheritance(
-                    scaleLabel = "0 a " + GradingScaleUtils.formatGrade(
-                        GradingScaleUtils.maxGradeFor(perfil.gradingScale),
-                        perfil.gradingScale
-                    ),
-                    passingLabel = GradingScaleUtils.formatGrade(perfil.passingGrade, perfil.gradingScale),
-                    cutCount = esquema.cuts.size,
-                    cutWeights = esquema.cuts.sortedBy { it.order }
-                        .map { Math.round(it.weight * 100.0).toInt() },
-                    // El tipo del ultimo periodo: la universidad no cambia de calendario.
-                    type = terms.maxByOrNull { it.startEpochDay }?.type ?: AcademicTermType.SEMESTER
-                )
-            },
-            loaded = true
+                .sumOf { it.amount }
         )
     }
 
-    private fun resumir(
-        term: AcademicTerm,
-        suyas: List<Subject>,
-        esquema: GradingCutScheme,
-        profile: UserProfile?,
-        clases: DatosDeClase,
-        hoy: LocalDate
-    ): TermSummary {
-        val cortes = esquema.cuts.sortedBy { it.order }
-        val promedios = suyas.mapNotNull {
-            GradeCalculator.calculateCurrentAverageByCuts(it.grades, cortes)
-        }
-        val aprobado = profile?.passingGrade ?: 3.0
-        val hasta = if (term.isActive) hoy else term.endFor(hoy)
-        val entradas = SubjectAttendanceHistory.build(
-            sessions = clases.sessions.filter { sesion -> suyas.any { it.id == sesion.subjectId } },
-            occurrences = clases.occurrences,
-            today = hasta,
-            termStart = term.start,
-            termEnd = term.plannedEnd,
-            breaks = clases.breaks.map { it.range }
-        )
-        val marcadas = entradas.filter { it.status != ClassAttendanceStatus.PENDING }
-        return TermSummary(
-            term = term,
-            subjectCount = suyas.size,
-            average = promedios.takeIf { it.isNotEmpty() }?.let { lista ->
-                Math.round(lista.average() * 10.0) / 10.0
-            },
-            failedCount = promedios.count { it < aprobado },
-            attendanceRate = SubjectAttendanceHistory.summarize(entradas).rate,
-            subjects = suyas.map { materia ->
-                val propias = SubjectAttendanceHistory.build(
-                    sessions = clases.sessions.filter { it.subjectId == materia.id },
-                    occurrences = clases.occurrences,
-                    today = hasta,
-                    termStart = term.start,
-                    termEnd = term.plannedEnd,
-                    breaks = clases.breaks.map { it.range }
-                )
-                val promedio = GradeCalculator.calculateCurrentAverageByCuts(materia.grades, cortes)
-                SubjectInTerm(
-                    id = materia.id,
-                    name = materia.name,
-                    average = promedio,
-                    attendanceRate = SubjectAttendanceHistory.summarize(propias).rate,
-                    passed = promedio?.let { it >= aprobado }
-                )
-            },
-            // La primera clase marcada es desde cuándo la cifra tiene apoyo real.
-            attendanceSince = marcadas.minByOrNull { it.date }?.date
-        )
+    // ================================================================== cerrar
+
+    /** Empieza una revisión de cierre desde cero. */
+    fun empezarRevision() {
+        _resueltos.value = emptyList()
+        ignoradas.value = emptySet()
     }
 
     /**
-     * Cuántas clases se quedaron sin marcar, materia a materia.
-     *
-     * Con las mismas reglas del historial —periodo, días sin clase y la ventana— para que un
-     * festivo no aparezca aquí como una clase que alguien olvidó.
-     */
-    private fun sinMarcarPorMateria(
-        subjects: List<Subject>,
-        clases: DatosDeClase,
-        term: AcademicTerm,
-        hoy: LocalDate
-    ): Map<String, Int> {
-        val ahora = LocalDateTime.now()
-        return subjects.associate { materia ->
-            val suyas = clases.sessions.filter { it.subjectId == materia.id }
-            val entradas = SubjectAttendanceHistory.build(
-                sessions = suyas,
-                occurrences = clases.occurrences,
-                today = hoy,
-                termStart = term.start,
-                termEnd = term.plannedEnd,
-                breaks = clases.breaks.map { it.range }
-            )
-            // Sin tope: aquí interesa cuántas son, no cuántas caben en una lista.
-            materia.id to SubjectAttendanceHistory.pendingToCatchUp(
-                entries = entradas,
-                now = ahora,
-                limit = Int.MAX_VALUE
-            ).size
-        }.filterValues { it > 0 }
-    }
-
-    /**
-     * Cierra el periodo activo.
+     * Cierra el periodo activo y guarda con él sus cortes.
      *
      * Antes estampa el periodo en las materias que no lo llevan: son las de antes de que
-     * existieran los periodos, y si se quedaran sin él el histórico las perdería justo en el
-     * momento en que empieza a haber histórico.
+     * existieran los periodos, y si se quedaran sin él el histórico las perdería justo cuando
+     * empieza a haber histórico.
      */
-    fun closeActiveTerm(closedOn: LocalDate = LocalDate.now(), onDone: () -> Unit = {}) {
-        val activo = uiState.value.activeTerm ?: return
+    fun cerrarPeriodo(onDone: (termId: String, nombre: String, acumulado: Double?) -> Unit) {
+        val estado = uiState.value
+        val historial = estado.historial ?: return
+        val activo = historial.activo ?: return
+        val acumulado = historial.acumuladoAlCerrar(activo)
+        val esquema = estado.profile?.gradingCutScheme ?: GradingCutScheme.default()
         viewModelScope.launch {
             gradesRepository.stampTerm(activo.id)
-            termRepository.close(activo.id, closedOn)
-                .onSuccess {
-                    _message.value = Textos.get(R.string.terms_closed_named, activo.name)
-                    onDone()
-                }
+            termRepository.close(activo.id, LocalDate.now(), esquema)
+                .onSuccess { onDone(activo.id, activo.nombre, acumulado) }
                 .onFailure { error ->
-                    _message.value = error.message ?: Textos.get(R.string.terms_close_failed)
+                    MensajesDelHistorico.publicar(error.message ?: Textos.get(R.string.terms_close_failed))
                 }
         }
     }
 
-    /**
-     * Empieza el siguiente, heredando de lo anterior lo que no cambia.
-     *
-     * [repeatSubjectIds] son las materias que se traen para repetirlas. Se crean **vacías**:
-     * sin notas y sin el horario del periodo anterior. Repetir es cursarla otra vez, no
-     * arrastrar lo que salió mal —y las clases cambian de hora entre semestres, así que
-     * copiarlas dejaría un horario falso el primer día—.
-     */
-    fun startTerm(
-        name: String,
-        type: AcademicTermType,
-        start: LocalDate,
-        plannedEnd: LocalDate?,
-        repeatSubjectIds: Set<String> = emptySet(),
-        onDone: () -> Unit = {}
-    ) {
+    fun deshacerCierre(termId: String, nombre: String) {
         viewModelScope.launch {
-            termRepository.create(name, type, start, plannedEnd)
+            termRepository.reopen(termId)
+                .onSuccess { MensajesDelHistorico.publicar(Textos.get(R.string.hist_vuelve_en_curso, nombre)) }
+                .onFailure { error ->
+                    MensajesDelHistorico.publicar(error.message ?: Textos.get(R.string.terms_close_failed))
+                }
+        }
+    }
+
+    /** La nota de un corte que faltaba, como resultado oficial del corte. */
+    fun ponerNotaDeCorte(subjectId: String, cutId: String, valor: Double) {
+        val materia = gradesRepository.subjects.value.firstOrNull { it.id == subjectId } ?: return
+        val esquema = uiState.value.profile?.gradingCutScheme ?: GradingCutScheme.default()
+        val corte = esquema.cuts.firstOrNull { it.id == cutId } ?: return
+        val nota = notaOficial(corte.name, cutId, valor)
+        gradesRepository.addGrade(subjectId, nota)
+        val final = finalCon(materia.copy(grades = materia.grades + nota))
+        val numero = esquema.cuts.sortedBy { it.order }.indexOfFirst { it.id == cutId } + 1
+        _resueltos.value = _resueltos.value + ResueltoEnElCierre(
+            titulo = materia.name,
+            detalle = Textos.get(R.string.hist_resuelto_corte, numero, formatoNota(valor), formatoNota(final))
+        )
+        MensajesDelHistorico.publicar(Textos.get(R.string.hist_mensaje_final, materia.name, formatoNota(final)))
+    }
+
+    fun marcarClases(subjectId: String, marcas: Map<ClaseDelPeriodo, ClassAttendanceStatus>) {
+        val materia = gradesRepository.subjects.value.firstOrNull { it.id == subjectId } ?: return
+        val ahora = System.currentTimeMillis()
+        marcas.forEach { (clase, estado) ->
+            val dia = clase.date.toEpochDay()
+            val existente = scheduleRepository.occurrences.value.firstOrNull {
+                it.sessionId == clase.sessionId && it.dateEpochDay == dia
+            }
+            scheduleRepository.saveOccurrence(
+                (existente ?: ClassOccurrence(
+                    id = "occurrence-${clase.sessionId}-$dia",
+                    sessionId = clase.sessionId,
+                    dateEpochDay = dia,
+                    updatedAt = ahora
+                )).copy(status = estado, updatedAt = ahora)
+            )
+        }
+        val fui = marcas.values.count { it == ClassAttendanceStatus.ATTENDED }
+        val periodo = uiState.value.historial?.materia(subjectId)?.second
+        val clasesDespues = periodo?.asistencia?.clases?.map { clase -> marcas[clase]?.let { clase.copy(status = it) } ?: clase }
+        val porcentaje = clasesDespues?.let { CalculoDelHistorico.asistencia(it).porcentaje }
+        _resueltos.value = _resueltos.value + ResueltoEnElCierre(
+            titulo = materia.name,
+            detalle = Textos.get(R.string.hist_resuelto_clases, fui, marcas.size, formatoPorcentaje(porcentaje))
+        )
+    }
+
+    fun resolverTarea(pendiente: PendienteDeCierre.Tarea, entregada: Boolean) {
+        if (entregada) {
+            tasksRepository.setTaskCompleted(pendiente.tarea.id, true)
+        } else {
+            ignoradas.value = ignoradas.value + pendiente.clave
+        }
+        _resueltos.value = _resueltos.value + ResueltoEnElCierre(
+            titulo = pendiente.materia?.nombre ?: pendiente.tarea.title,
+            detalle = Textos.get(
+                if (entregada) R.string.hist_resuelto_tarea_si else R.string.hist_resuelto_tarea_no,
+                pendiente.tarea.title
+            )
+        )
+    }
+
+    // ================================================================== notas
+
+    /**
+     * Guarda lo corregido de una materia: notas que cambian y notas de corte nuevas.
+     *
+     * Devuelve el texto del aviso con cuánto se movió el promedio del periodo, calculado con
+     * las notas ya puestas y no esperando a que la base conteste.
+     */
+    fun guardarNotas(subjectId: String, valores: Map<String, Double>, nuevasDeCorte: Map<String, Double>) {
+        val estado = uiState.value
+        val (periodo, materia) = estado.historial?.materia(subjectId) ?: return
+        val esquema = periodo.esquema
+        val nuevas = mutableListOf<GradeItem>()
+        materia.subject.grades.forEach { nota ->
+            val valor = valores[nota.id] ?: return@forEach
+            if (valor != nota.value) {
+                val cambiada = nota.copy(value = valor)
+                gradesRepository.updateGrade(subjectId, cambiada)
+                nuevas += cambiada
+            } else {
+                nuevas += nota
+            }
+        }
+        val sinCambiar = materia.subject.grades.filter { it.id !in valores.keys }
+        nuevasDeCorte.forEach { (cutId, valor) ->
+            val corte = esquema.cuts.firstOrNull { it.id == cutId } ?: return@forEach
+            val nota = notaOficial(corte.name, cutId, valor)
+            gradesRepository.addGrade(subjectId, nota)
+            nuevas += nota
+        }
+        val finalAntes = materia.final
+        val finalDespues = finalCon(materia.subject.copy(grades = sinCambiar + nuevas), esquema)
+        val antes = periodo.promedio
+        val despues = periodo.materias
+            .mapNotNull { if (it.id == subjectId) finalDespues else it.final }
+            .takeIf { it.isNotEmpty() }
+            ?.average()
+        val mensaje = if (antes != null && despues != null && kotlin.math.abs(despues - antes) >= 0.0005) {
+            val detalle = if (finalAntes != finalDespues) {
+                Textos.get(R.string.hist_guardado_detalle, materia.nombre, formatoNota(finalAntes), formatoNota(finalDespues))
+            } else {
+                ""
+            }
+            Textos.get(R.string.hist_guardado_movio, periodo.nombre, formatoPromedio(antes), formatoPromedio(despues)) + detalle
+        } else {
+            Textos.get(R.string.hist_guardado_igual, materia.nombre, formatoNota(finalDespues))
+        }
+        MensajesDelHistorico.publicar(mensaje)
+    }
+
+    /**
+     * Cómo quedarían los cortes, la final y el promedio del periodo con lo que se está escribiendo.
+     *
+     * Es lo que el formulario enseña mientras se edita; no guarda nada.
+     */
+    fun vistaPrevia(subjectId: String, valores: Map<String, Double>, nuevasDeCorte: Map<String, Double>): VistaPreviaDeNotas? {
+        val (periodo, materia) = uiState.value.historial?.materia(subjectId) ?: return null
+        val esquema = periodo.esquema
+        val notas = materia.subject.grades.map { nota -> valores[nota.id]?.let { nota.copy(value = it) } ?: nota } +
+            nuevasDeCorte.mapNotNull { (cutId, valor) ->
+                esquema.cuts.firstOrNull { it.id == cutId }?.let { notaOficial(it.name, cutId, valor) }
+            }
+        val final = finalCon(materia.subject.copy(grades = notas), esquema)
+        return VistaPreviaDeNotas(
+            cortes = esquema.cuts.sortedBy { it.order }.map { corte ->
+                GradeCalculator.calculateCut(notas.filter { it.cutId == corte.id }).let { if (it.isComplete) it.average else null }
+            },
+            final = final,
+            promedioAntes = periodo.promedio,
+            promedioDespues = periodo.materias
+                .mapNotNull { if (it.id == subjectId) final else it.final }
+                .takeIf { it.isNotEmpty() }
+                ?.average()
+        )
+    }
+
+    // ================================================================== periodo nuevo
+
+    /**
+     * Crea el periodo con lo elegido y le pone las fechas de corte.
+     *
+     * Las materias perdidas se traen **vacías**: sin notas y sin el horario del anterior.
+     * Repetir es cursarla otra vez, no arrastrar lo que salió mal.
+     */
+    fun crearPeriodo(
+        nombre: String,
+        inicio: LocalDate,
+        semanas: Int,
+        semanasPorCorte: List<Int>?,
+        repetir: Set<String>,
+        onDone: (AcademicTerm) -> Unit
+    ) {
+        val estado = uiState.value
+        val propuesta = estado.propuesta ?: return
+        viewModelScope.launch {
+            termRepository.create(nombre.trim(), propuesta.tipo, inicio, propuesta.finPara(inicio, semanas))
                 .onSuccess { periodo ->
-                    repetirMaterias(repeatSubjectIds, periodo.id)
-                    _message.value = Textos.get(R.string.terms_started_named, periodo.name)
-                    onDone()
+                    estado.profile?.let { perfil ->
+                        val cortes = perfil.gradingCutScheme.cuts.sortedBy { it.order }
+                        val cierres = semanasPorCorte
+                            ?.takeIf { it.size == cortes.size }
+                            ?.let { RepartoDeCortes.cierres(inicio, it) }
+                        val esquema = GradingCutScheme(cortes.mapIndexed { i, corte -> corte.copy(endEpochDay = cierres?.get(i)) })
+                        if (esquema.isValid && esquema != perfil.gradingCutScheme) {
+                            userRepository.saveUserProfile(
+                                perfil.copy(gradingCutScheme = esquema, updatedAt = System.currentTimeMillis())
+                            )
+                        }
+                    }
+                    repetirMaterias(repetir, periodo.id)
+                    onDone(periodo)
                 }
                 .onFailure { error ->
-                    _message.value = error.message ?: Textos.get(R.string.terms_create_failed)
+                    MensajesDelHistorico.publicar(error.message ?: Textos.get(R.string.terms_create_failed))
                 }
         }
     }
@@ -364,9 +406,90 @@ class TermsViewModel @Inject constructor(
                     // El corte elegido y lo que se dio por perdido eran del intento anterior.
                     activeCutId = "",
                     unknownCutIds = emptySet(),
+                    closedCutIds = emptySet(),
                     historyPromptStatus = PriorHistoryPromptStatus.NOT_SHOWN
                 )
             )
         }
     }
+
+    // ================================================================== avisos
+
+    fun setAvisoAlAcabar(activo: Boolean) = guardarPerfil { it.copy(termEndReminderEnabled = activo) }
+
+    fun setAvisoParaEmpezar(activo: Boolean) = guardarPerfil { it.copy(nextTermReminderEnabled = activo) }
+
+    fun setDiaDelAviso(opcion: Int) = guardarPerfil { it.copy(nextTermReminderOffset = opcion.coerceIn(0, 2)) }
+
+    private fun guardarPerfil(cambio: (UserProfile) -> UserProfile) {
+        val perfil = userRepository.userProfile.value ?: return
+        userRepository.saveUserProfile(cambio(perfil).copy(updatedAt = System.currentTimeMillis()))
+    }
+
+    // ================================================================== ayudas
+
+    private fun notaOficial(nombreDelCorte: String, cutId: String, valor: Double) = GradeItem(
+        id = "grade-${UUID.randomUUID()}",
+        name = Textos.get(R.string.grade_final_result, nombreDelCorte),
+        value = valor,
+        percentage = 1.0,
+        cutId = cutId,
+        source = GradeSource.PERIOD_FINAL,
+        recordedAt = System.currentTimeMillis()
+    )
+
+    private fun finalCon(subject: Subject, esquema: GradingCutScheme? = null): Double? {
+        val perfil = uiState.value.profile
+        val maxima = perfil?.let { GradingScaleUtils.maxGradeFor(it) } ?: 5.0
+        val cortes = (esquema ?: perfil?.gradingCutScheme ?: GradingCutScheme.default()).cuts.sortedBy { it.order }
+        val calculo = GradeCalculator.calculateSubject(
+            grades = subject.grades,
+            cuts = cortes,
+            targetAverage = subject.targetAverage,
+            maxGrade = maxima,
+            passingGrade = perfil?.passingGrade
+        )
+        return if (calculo.isFinished) calculo.guaranteedMinimum else null
+    }
+
+    private fun formatoNota(valor: Double?): String =
+        GradingScaleUtils.formatGrade(valor, uiState.value.profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)
+
+    private fun formatoPromedio(valor: Double?): String =
+        formatoDePromedio(valor, uiState.value.historial?.notaMaxima ?: 5.0)
+
+    private fun formatoPorcentaje(valor: Double?): String =
+        valor?.let { "${Math.round(it)}%" } ?: com.unistack.app.core.utils.NO_DATA
+}
+
+/**
+ * Los avisos del histórico, de una pantalla a otra.
+ *
+ * Cada destino tiene su propio ViewModel, así que el que guarda las notas o cierra el periodo ya
+ * no existe cuando se enseña el aviso. El mensaje espera aquí a la pantalla que lo pinte.
+ */
+object MensajesDelHistorico {
+    data class Mensaje(
+        val texto: String,
+        /** Si trae «Deshacer», el periodo que se acaba de cerrar. */
+        val deshacerCierre: Pair<String, String>? = null,
+        val id: Long = System.nanoTime()
+    )
+
+    private val _mensaje = MutableStateFlow<Mensaje?>(null)
+    val mensaje: StateFlow<Mensaje?> = _mensaje.asStateFlow()
+
+    fun publicar(texto: String, deshacerCierre: Pair<String, String>? = null) {
+        _mensaje.value = Mensaje(texto, deshacerCierre)
+    }
+
+    fun consumir(id: Long) {
+        if (_mensaje.value?.id == id) _mensaje.value = null
+    }
+}
+
+/** Dos decimales en la escala de 0 a 5 y uno en las de cien, que es lo que se lee. */
+internal fun formatoDePromedio(valor: Double?, notaMaxima: Double): String {
+    if (valor == null) return com.unistack.app.core.utils.NO_DATA
+    return String.format(java.util.Locale.US, if (notaMaxima <= 10.0) "%.2f" else "%.1f", valor)
 }

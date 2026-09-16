@@ -22,7 +22,8 @@ private data class ScheduleSnapshot(
     val sessions: List<com.unistack.app.feature_schedule.domain.ClassSession>,
     val occurrences: List<ClassOccurrence>,
     val agendaEvents: List<com.unistack.app.feature_schedule.domain.AgendaEvent>,
-    val notes: List<com.unistack.app.feature_notes.domain.QuickNote>
+    val notes: List<com.unistack.app.feature_notes.domain.QuickNote>,
+    val terms: List<com.unistack.app.feature_terms.domain.AcademicTerm>
 )
 
 object ReminderCoordinator {
@@ -77,7 +78,8 @@ object ReminderCoordinator {
         tasksRepository: TasksRepository,
         academicWorksRepository: AcademicWorksRepository,
         scheduleRepository: ScheduleRepository,
-        notesRepository: NotesRepository
+        notesRepository: NotesRepository,
+        termRepository: com.unistack.app.feature_terms.domain.AcademicTermRepository
     ) {
         if (job != null) return
         val scheduler = LocalReminderScheduler(context.applicationContext)
@@ -103,7 +105,8 @@ object ReminderCoordinator {
                 classSessions = scheduleRepository.sessions.value,
                 classOccurrences = scheduleRepository.occurrences.value,
                 agendaEvents = scheduleRepository.agendaEvents.value,
-                notes = notesRepository.notes.value
+                notes = notesRepository.notes.value,
+                terms = termRepository.terms.value
             )
         }
         job = CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
@@ -117,9 +120,10 @@ object ReminderCoordinator {
                 scheduleRepository.sessions,
                 scheduleRepository.occurrences,
                 scheduleRepository.agendaEvents,
-                notesRepository.notes
-            ) { sessions, occurrences, agendaEvents, notes ->
-                ScheduleSnapshot(sessions, occurrences, agendaEvents, notes)
+                notesRepository.notes,
+                termRepository.terms
+            ) { sessions, occurrences, agendaEvents, notes, terms ->
+                ScheduleSnapshot(sessions, occurrences, agendaEvents, notes, terms)
             }
             combine(
                 userRepository.userProfile,
@@ -136,7 +140,8 @@ object ReminderCoordinator {
                     classSessions = schedule.sessions,
                     classOccurrences = schedule.occurrences,
                     agendaEvents = schedule.agendaEvents,
-                    notes = schedule.notes
+                    notes = schedule.notes,
+                    terms = schedule.terms
                 )
                 if (profile != null || userRepository.didLoad) {
                     firstSchedule.complete(Unit)

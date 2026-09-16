@@ -48,7 +48,7 @@ import com.unistack.app.feature_tasks.data.local.TaskSubtaskEntity
         NoteAttachmentEntity::class,
         TaskAttachmentEntity::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -519,6 +519,18 @@ abstract class UniStackDatabase : RoomDatabase() {
          * `taskId` en vez de `noteId`; misma razón: un adjunto tiene datos propios y borrar uno
          * no debe reescribir la tarea entera.
          */
+        /**
+         * El periodo cerrado guarda sus cortes.
+         *
+         * Columna nula y sin valor por defecto: los que ya estaban cerrados no tienen copia, y
+         * inventarla con el esquema de hoy sería justo el error que viene a quitar.
+         */
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE academic_terms ADD COLUMN cutSchemeJson TEXT")
+            }
+        }
+
         val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -578,7 +590,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_19_20,
             MIGRATION_20_21,
             MIGRATION_21_22,
-            MIGRATION_22_23
+            MIGRATION_22_23,
+            MIGRATION_23_24
         )
     }
 }

@@ -1,5 +1,7 @@
 package com.unistack.app.feature_terms.domain
 
+import com.unistack.app.feature_user.domain.GradingCutScheme
+
 import java.time.LocalDate
 import kotlinx.coroutines.flow.StateFlow
 
@@ -31,7 +33,15 @@ interface AcademicTermRepository {
      * Irreversible en un sentido concreto: **nunca vuelve a ser el activo**. Sus notas siguen
      * editándose desde el histórico, porque llegan tarde y los profesores corrigen.
      */
-    suspend fun close(termId: String, closedOn: LocalDate): Result<Unit>
+    suspend fun close(termId: String, closedOn: LocalDate, cutScheme: GradingCutScheme? = null): Result<Unit>
+
+    /**
+     * Deshace un cierre recién hecho.
+     *
+     * Existe para el «Deshacer» de los segundos siguientes al cierre, no como una opción del
+     * histórico: pasado ese momento, cerrado sigue siendo cerrado.
+     */
+    suspend fun reopen(termId: String): Result<Unit>
 
     suspend fun delete(termId: String): Result<Unit>
 }

@@ -44,6 +44,10 @@ object AppRoutes {
     const val TermClose = "term_close"
     const val NewTerm = "new_term"
     const val ClosedTerm = "closed_term"
+    const val TermDetail = "term_detail"
+    const val TermSubject = "term_subject"
+    const val TermEditGrades = "term_edit_grades"
+    const val TermBulletin = "term_bulletin"
     const val ModuleSettings = "module_settings"
     const val NotificationSettings = "notification_settings"
     const val DataSettings = "data_settings"
@@ -129,6 +133,10 @@ object AppRoutes {
     fun newNote(start: String, subjectId: String? = null) =
         "$NewNote?$NewNoteStartArg=$start".let { if (subjectId == null) it else "$it&$NewNoteSubjectArg=$subjectId" }
     fun closedTerm(termId: String) = "$ClosedTerm/$termId"
+    fun termDetail(termId: String) = "$TermDetail/$termId"
+    fun termSubject(subjectId: String) = "$TermSubject/$subjectId"
+    fun termEditGrades(subjectId: String) = "$TermEditGrades/$subjectId"
+    fun termBulletin(termId: String) = "$TermBulletin/$termId"
     fun subjectCutDetail(subjectId: String, cutId: String) = "$SubjectCutDetail/$subjectId/$cutId"
     fun subjectStats(subjectId: String) = "$SubjectStats/$subjectId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"

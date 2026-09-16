@@ -25,5 +25,7 @@ data class AcademicTermEntity(
     val closedEpochDay: Long?,
     val status: String,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /** El esquema de cortes con que se cerró, en el formato de las preferencias. */
+    val cutSchemeJson: String? = null
 )

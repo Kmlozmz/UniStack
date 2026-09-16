@@ -250,6 +250,9 @@ class LocalJsonBackupRepository(
             .put("dailyDigestEnabled", profile?.dailyDigestEnabled ?: true)
             .put("dailyDigestHour", profile?.dailyDigestHour ?: 7)
             .put("dailyDigestMinute", profile?.dailyDigestMinute ?: 30)
+            .put("termEndReminderEnabled", profile?.termEndReminderEnabled ?: true)
+            .put("nextTermReminderEnabled", profile?.nextTermReminderEnabled ?: true)
+            .put("nextTermReminderOffset", profile?.nextTermReminderOffset ?: 0)
             .put("quietHoursEnabled", profile?.quietHoursEnabled ?: false)
             .put("quietHoursStartHour", profile?.quietHoursStartHour)
             .put("quietHoursEndHour", profile?.quietHoursEndHour)
@@ -327,6 +330,18 @@ class LocalJsonBackupRepository(
                     "dailyDigestMinute",
                     current.dailyDigestMinute
                 ),
+                termEndReminderEnabled = profileJson.optBoolean(
+                    "termEndReminderEnabled",
+                    current.termEndReminderEnabled
+                ),
+                nextTermReminderEnabled = profileJson.optBoolean(
+                    "nextTermReminderEnabled",
+                    current.nextTermReminderEnabled
+                ),
+                nextTermReminderOffset = profileJson.optInt(
+                    "nextTermReminderOffset",
+                    current.nextTermReminderOffset
+                ).coerceIn(0, 2),
                 quietHoursEnabled = profileJson.optBoolean("quietHoursEnabled", current.quietHoursEnabled),
                 quietHoursStartHour = if (profileJson.has("quietHoursStartHour")) {
                     profileJson.optIntOrNull("quietHoursStartHour")

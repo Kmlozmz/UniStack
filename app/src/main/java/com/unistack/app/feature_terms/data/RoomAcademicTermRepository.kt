@@ -1,5 +1,8 @@
 package com.unistack.app.feature_terms.data
 
+import com.unistack.app.core.datastore.GradingCutSchemeJson
+import com.unistack.app.feature_user.domain.GradingCutScheme
+
 import com.unistack.app.feature_terms.data.local.AcademicTermDao
 import com.unistack.app.feature_terms.data.local.toDomain
 import com.unistack.app.feature_terms.data.local.toEntity
@@ -85,7 +88,7 @@ class RoomAcademicTermRepository(
         dao.upsert(term.copy(updatedAt = System.currentTimeMillis()).toEntity())
     }
 
-    override suspend fun close(termId: String, closedOn: LocalDate): Result<Unit> = runCatching {
+    override suspend fun close(termId: String, closedOn: LocalDate, cutScheme: GradingCutScheme?): Result<Unit> = runCatching {
         val term = dao.byId(termId, userIds)?.toDomain()
             ?: error(Textos.get(R.string.term_err_missing))
         check(term.isActive) { Textos.get(R.string.term_err_closed) }
@@ -96,10 +99,16 @@ class RoomAcademicTermRepository(
             termId = termId,
             closedEpochDay = closedOn.toEpochDay(),
             updatedAt = System.currentTimeMillis(),
+            cutSchemeJson = cutScheme?.let(GradingCutSchemeJson::encode),
             userIds = userIds
         )
         // Cero filas significa que alguien lo cerro entremedias; la primera fecha es la buena.
         check(cambiadas > 0) { Textos.get(R.string.term_err_closed) }
+    }
+
+    override suspend fun reopen(termId: String): Result<Unit> = runCatching {
+        val cambiadas = dao.reopen(termId = termId, updatedAt = System.currentTimeMillis(), userIds = userIds)
+        check(cambiadas > 0) { Textos.get(R.string.term_err_already_active) }
     }
 
     override suspend fun delete(termId: String): Result<Unit> = runCatching {

@@ -1,6 +1,7 @@
 package com.unistack.app.feature_terms.domain
 
 import java.time.LocalDate
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
 
@@ -87,7 +88,15 @@ data class AcademicTerm(
     val closedEpochDay: Long?,
     val status: AcademicTermStatus,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /**
+     * Los cortes con los que se cerró, o nulo mientras está en curso.
+     *
+     * El esquema vive en las preferencias y cada periodo nuevo le pone sus fechas. Sin esta
+     * copia, cambiar el reparto o las fechas el semestre que viene reescribía en silencio las
+     * notas finales y los cortes de todos los cerrados.
+     */
+    val cutScheme: GradingCutScheme? = null
 ) {
     val isActive: Boolean get() = status == AcademicTermStatus.ACTIVE
 

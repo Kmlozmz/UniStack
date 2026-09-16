@@ -1,255 +1,549 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
-
 package com.unistack.app.feature_terms.presentation
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.automirrored.rounded.TrendingDown
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.AssignmentTurnedIn
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.ui.res.stringResource
-import com.unistack.app.R
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.LargeTitleScaffold
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
-import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.core.design.theme.LocalSectionColors
-import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.feature_terms.domain.TermGap
-import com.unistack.app.feature_terms.domain.detail
-import com.unistack.app.feature_terms.domain.summaryLine
-import com.unistack.app.feature_terms.domain.title
-import java.time.LocalDate
-
-/** La palabra que hay que escribir cuando quedan cosas a medias. */
-private const val PALABRA_DE_CIERRE = "CERRAR"
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.presentation.AttendanceAbsent
+import com.unistack.app.feature_schedule.presentation.AttendanceAttended
+import com.unistack.app.feature_terms.domain.HistorialAcademico
+import com.unistack.app.feature_terms.domain.PendienteDeCierre
+import com.unistack.app.feature_terms.domain.PeriodoDelHistorico
+import com.unistack.app.feature_user.domain.GradingScale
 
 /**
- * Antes de cerrar: lo que el periodo deja a medias.
+ * Cerrar el periodo en tres pasos: revisar, ver cómo te fue y cerrar.
  *
- * No impide cerrar —cerrar es del usuario— sino cerrar **a ciegas**, que es lo único malo de
- * una acción irreversible. Y la fricción se gana: con todo en orden basta una confirmación;
- * con cosas sin terminar hay que escribir la palabra, porque un botón rojo se pulsa sin leer
- * y lo que hay que hacer aquí es mirar la lista.
+ * Lo que falta se arregla aquí mismo, cada cosa en su hoja, y el anillo avanza. Se puede cerrar
+ * con cosas a medias. La confirmación es deslizar: un toque suelto no cierra nada. Después viene
+ * la celebración y a Inicio, con unos segundos para deshacer.
  */
 @Composable
 fun TermCloseScreen(
     onBackClick: () -> Unit,
-    onGoComplete: () -> Unit,
     onClosed: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TermsViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val spacing = LocalInterfaceSpacing.current
-    val colores = LocalSectionColors.current
-    val term = state.activeTerm
-    val report = state.report
+    val estado by viewModel.uiState.collectAsStateWithLifecycle()
+    val pendientes by viewModel.pendientes.collectAsStateWithLifecycle()
+    val resueltos by viewModel.resueltos.collectAsStateWithLifecycle()
+    val historial = estado.historial
+    val escala = estado.profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+    var paso by rememberSaveable { mutableStateOf(1) }
+    var hoja by rememberSaveable { mutableStateOf<String?>(null) }
+    var celebracion by remember { mutableStateOf<Triple<String, String, String>?>(null) }
 
-    var confirmando by rememberSaveable { mutableStateOf(false) }
-    var escrito by rememberSaveable { mutableStateOf("") }
+    val atras: () -> Unit = { if (paso > 1) paso-- else onBackClick() }
+    BackHandler(enabled = paso > 1 && celebracion == null) { paso-- }
 
-    val isEn = java.util.Locale.getDefault().language == "en"
-    LargeTitleScaffold(
-        title = stringResource(R.string.terms_close_screen_title),
-        subtitle = term?.let { "${it.name} · " + stringResource(R.string.terms_attendance_since, it.start.diaMes()) },
-        onBackClick = onBackClick,
-        modifier = modifier,
-        horizontalPadding = spacing.screenHorizontal,
-        topPadding = 8.dp,
-        bottomPadding = scrollBottomRoom,
-        itemSpacing = 10.dp
-    ) {
-        if (term == null) {
-            item { TermEmptyNote(stringResource(R.string.terms_close_empty_term)) }
-        } else if (report == null) {
-            item { TermEmptyNote(stringResource(R.string.terms_close_reviewing)) }
-        } else {
-            item {
-                TermCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = report.gaps.summaryLine(),
-                            color = if (report.isClean) colores.onTrack else MaterialTheme.colorScheme.onSurface,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                        Text(
-                            text = if (report.isClean) {
-                                stringResource(R.string.terms_close_clean_msg)
-                            } else {
-                                stringResource(R.string.terms_close_unclean_msg)
-                            },
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.5.sp,
-                            lineHeight = 17.sp
-                        )
-                    }
-                }
+    celebracion?.let { (termId, nombre, subtitulo) ->
+        CelebracionDelHistorico(
+            titulo = stringResource(R.string.hist_cerraste, nombre),
+            subtitulo = subtitulo,
+            onTerminada = {
+                MensajesDelHistorico.publicar(Textos.get(R.string.hist_cerraste, nombre), deshacerCierre = termId to nombre)
+                onClosed()
             }
+        )
+        return
+    }
 
-            if (report.gaps.isNotEmpty()) {
-                item { TermLabel(stringResource(R.string.terms_section_missing), Modifier.padding(start = 4.dp, top = 6.dp)) }
-                items(report.gaps.size) { indice ->
-                    val hueco: TermGap = report.gaps[indice]
-                    TermGapRow(title = hueco.title(), detail = hueco.detail())
-                }
+    val periodo = historial?.activo?.takeIf { !it.porEmpezar }
+    Box(modifier = modifier.fillMaxSize().background(Paleta.fondo)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 132.dp)
+        ) {
+            CabeceraDelHistorico(onBack = atras)
+            if (historial == null || periodo == null) return@Column
+            val nombres = listOf(R.string.hist_paso_revisar, R.string.hist_paso_tu_periodo, R.string.hist_paso_cerrar)
+            TituloDelHistorico(
+                titulo = stringResource(R.string.hist_cerrar_titulo, periodo.nombre),
+                subtitulo = stringResource(R.string.hist_paso_de, paso, 3, stringResource(nombres[paso - 1]))
+            )
+            PasosDelFlujo(paso, 3)
+            when (paso) {
+                1 -> PasoRevisar(periodo, pendientes, resueltos, onResolver = { hoja = it.clave })
+                2 -> PasoTuPeriodo(periodo, historial, escala)
+                else -> PasoCerrar(periodo, historial, pendientes.size, onRevisar = { paso = 1 })
             }
-
-            item { TermLabel(stringResource(R.string.terms_section_complete), Modifier.padding(start = 4.dp, top = 6.dp)) }
-            item {
-                TermCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val subText = if (report.subjectsTotal == 1) stringResource(R.string.terms_subjects_count_single) else stringResource(R.string.terms_subjects_count_multiple, report.subjectsTotal)
-                        TermDoneRow(
-                            stringResource(R.string.terms_done_subjects_notes, report.subjectsWithEverything, report.subjectsTotal, subText)
-                        )
-                        report.average?.let { promedio ->
-                            TermDoneRow(stringResource(R.string.terms_done_average, promedio))
-                        }
-                        if (report.failed.isNotEmpty()) {
-                            val failLabel = if (report.failed.size == 1) stringResource(R.string.terms_stat_failed_single) else stringResource(R.string.terms_stat_failed_multiple)
-                            TermDoneRow(
-                                "${report.failed.size} $failLabel: " +
-                                    report.failed.joinToString { it.name }
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
-                Column(
-                    modifier = Modifier.padding(top = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (report.gaps.isNotEmpty()) {
-                        UniStackButton(
-                            text = stringResource(R.string.terms_btn_go_complete),
-                            onClick = onGoComplete,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    UniStackButton(
-                        text = if (report.isClean) stringResource(R.string.terms_btn_close_term) else stringResource(R.string.terms_btn_close_anyway),
-                        onClick = {
-                            escrito = ""
-                            confirmando = true
-                        },
-                        // Con cosas a medias es la accion secundaria: la principal es ir a
-                        // terminarlas, y el relleno se lo lleva esa.
-                        variant = if (report.isClean) {
-                            UniStackButtonVariant.Filled
-                        } else {
-                            UniStackButtonVariant.Outlined
-                        },
+        }
+        if (historial != null && periodo != null) {
+            Muelle {
+                when (paso) {
+                    1 -> UniStackButton(
+                        text = stringResource(if (pendientes.isEmpty()) R.string.hist_continuar else R.string.hist_seguir_con_lo_que_falta),
+                        onClick = { paso = 2 },
                         modifier = Modifier.fillMaxWidth()
+                    )
+                    2 -> UniStackButton(
+                        text = stringResource(R.string.hist_continuar),
+                        onClick = { paso = 3 },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    else -> {
+                        val quedara = historial.acumuladoAlCerrar(periodo)
+                        DeslizarParaConfirmar(
+                            texto = stringResource(R.string.hist_desliza_para_cerrar, periodo.nombre),
+                            onConfirmado = {
+                                viewModel.cerrarPeriodo { id, nombre, acumulado ->
+                                    celebracion = Triple(
+                                        id,
+                                        nombre,
+                                        (acumulado ?: quedara)?.let {
+                                            Textos.get(R.string.hist_acumulado_queda_en, Formato.promedio(it, historial.notaMaxima))
+                                        } ?: Textos.get(R.string.hist_pasa_al_historico)
+                                    )
+                                }
+                            }
+                        )
+                        NotaDelMuelle(stringResource(R.string.hist_sueltalo_antes))
+                    }
+                }
+            }
+        }
+        AvisosDelHistorico(margenAbajo = 104.dp)
+    }
+
+    val abierta = hoja?.let { clave -> pendientes.firstOrNull { it.clave == clave } }
+    when (abierta) {
+        is PendienteDeCierre.Nota -> HojaDeNota(abierta, historial, escala, viewModel, onCerrar = { hoja = null })
+        is PendienteDeCierre.Clases -> HojaDeClases(abierta, viewModel, onCerrar = { hoja = null })
+        is PendienteDeCierre.Tarea -> HojaDeTarea(abierta, viewModel, onCerrar = { hoja = null })
+        null -> Unit
+    }
+}
+
+// ================================================================== paso 1
+
+@Composable
+private fun PasoRevisar(
+    periodo: PeriodoDelHistorico,
+    pendientes: List<PendienteDeCierre>,
+    resueltos: List<ResueltoEnElCierre>,
+    onResolver: (PendienteDeCierre) -> Unit
+) {
+    Pila {
+        val total = periodo.materias.size
+        val hechas = periodo.completas
+        Tarjeta(color = Paleta.acentoContenedor) {
+            Fila(separacion = 16.dp) {
+                AnilloDeProgreso(hechas, total)
+                Columna(
+                    titulo = if (total > 0 && hechas >= total) stringResource(R.string.hist_todo_completo) else stringResource(R.string.hist_materias_completas, hechas, total),
+                    sub = stringResource(if (pendientes.isEmpty()) R.string.hist_al_dia else R.string.hist_arreglalo_aqui),
+                    estiloTitulo = Letra.nombre
+                )
+            }
+        }
+        if (pendientes.isNotEmpty()) {
+            Rotulo(stringResource(R.string.hist_lo_que_falta))
+            Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+                pendientes.forEachIndexed { i, pendiente ->
+                    Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 12.dp), separacion = 12.dp) {
+                        when (pendiente) {
+                            is PendienteDeCierre.Nota -> {
+                                Azulejo(Icons.Rounded.EditNote, Tono.Ambar)
+                                Columna(
+                                    titulo = pendiente.materia.nombre,
+                                    sub = if (pendiente.corte.evaluado <= 0.0) {
+                                        stringResource(R.string.hist_falta_el_corte, pendiente.corte.numero, pendiente.corte.pesoPorcentaje)
+                                    } else {
+                                        stringResource(R.string.hist_al_corte_le_falta, pendiente.corte.numero, Math.round((1 - pendiente.corte.evaluado) * 100))
+                                    }
+                                )
+                                MiniBoton(stringResource(R.string.hist_poner_nota), onClick = { onResolver(pendiente) })
+                            }
+                            is PendienteDeCierre.Clases -> {
+                                Azulejo(Icons.Rounded.CalendarMonth, Tono.Ambar)
+                                val fechas = pendiente.clases.map { Formato.corta(it.date) }
+                                val lista = if (fechas.size > 4) {
+                                    Formato.lista(fechas.take(3) + stringResource(R.string.hist_n_mas, fechas.size - 3))
+                                } else {
+                                    Formato.lista(fechas)
+                                }
+                                Columna(
+                                    titulo = pendiente.materia.nombre,
+                                    sub = cuenta(pendiente.clases.size, R.string.hist_clase_sin_marcar_una, R.string.hist_clase_sin_marcar_varias) + ": " + lista
+                                )
+                                MiniBoton(stringResource(R.string.hist_marcar), onClick = { onResolver(pendiente) })
+                            }
+                            is PendienteDeCierre.Tarea -> {
+                                Azulejo(Icons.Rounded.AssignmentTurnedIn, Tono.Ambar)
+                                Columna(
+                                    titulo = pendiente.materia?.nombre ?: pendiente.tarea.title,
+                                    sub = stringResource(R.string.hist_vencio_el, pendiente.tarea.title, Formato.corta(pendiente.vence))
+                                )
+                                MiniBoton(stringResource(R.string.hist_resolver), onClick = { onResolver(pendiente) })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (resueltos.isNotEmpty()) {
+            Rotulo(stringResource(R.string.hist_resuelto_ahora))
+            Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+                resueltos.forEachIndexed { i, resuelto ->
+                    Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 12.dp), separacion = 12.dp) {
+                        Azulejo(Icons.Rounded.Check, Tono.Ok)
+                        Columna(titulo = resuelto.titulo, sub = resuelto.detalle)
+                    }
+                }
+            }
+        }
+        val conPendientes = pendientes.flatMap {
+            when (it) {
+                is PendienteDeCierre.Nota -> listOf(it.materia.id)
+                is PendienteDeCierre.Clases -> listOf(it.materia.id)
+                is PendienteDeCierre.Tarea -> listOfNotNull(it.materia?.id)
+            }
+        }.toSet()
+        val bien = periodo.materias.filter { it.completa && it.id !in conPendientes && resueltos.none { r -> r.titulo == it.nombre } }
+        if (bien.isNotEmpty()) {
+            Rotulo(stringResource(R.string.hist_ya_estaba_completo))
+            Tarjeta {
+                Fila(separacion = 12.dp) {
+                    Azulejo(Icons.Rounded.EventAvailable, Tono.Ok)
+                    Text(
+                        stringResource(R.string.hist_al_dia_lista, Formato.lista(bien.map { it.nombre })),
+                        style = Letra.sub,
+                        color = Paleta.apagado,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
         }
     }
+}
 
-    if (confirmando && term != null) {
-        val limpio = report?.isClean != false
-        val closeTargetWord = if (isEn) "CLOSE" else PALABRA_DE_CIERRE
-        val puedeCerrar = limpio || escrito.trim().equals(PALABRA_DE_CIERRE, ignoreCase = true) || escrito.trim().equals("CLOSE", ignoreCase = true)
-        AlertDialog(
-            onDismissRequest = { confirmando = false },
-            title = { Text(stringResource(R.string.terms_dialog_close_title, term.name)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    /*
-                     * Lo que se pierde es exactamente una cosa, y hay que decir cuál.
-                     *
-                     * «Irreversible» a secas se lee como «pierdes los datos», y no es eso: las
-                     * notas siguen editándose desde el histórico porque llegan tarde y los
-                     * profesores corrigen. Lo que no vuelve es que sea el periodo activo.
-                     */
-                    Text(
-                        text = if (limpio) {
-                            stringResource(R.string.terms_dialog_clean_desc)
-                        } else {
-                            stringResource(R.string.terms_dialog_unclean_desc, report?.gaps?.size ?: 0)
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        TermDoneRow(stringResource(R.string.terms_dialog_row_edit_grades))
-                        TermDoneRow(stringResource(R.string.terms_dialog_row_view_stats))
-                        Row {
-                            Text(
-                                text = stringResource(R.string.terms_dialog_row_cannot_reactivate),
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+// ================================================================== paso 2
+
+@Composable
+private fun PasoTuPeriodo(periodo: PeriodoDelHistorico, historial: HistorialAcademico, escala: GradingScale) {
+    val anterior = historial.anteriorA(periodo)
+    val antes = historial.acumulado
+    val despues = historial.acumuladoAlCerrar(periodo)
+    val sinFinal = periodo.materias.filter { it.final == null }
+    val mejor = periodo.materias.filter { it.final != null }.maxByOrNull { it.final ?: 0.0 }
+    val mejorAsistencia = periodo.materias.filter { it.asistencia.porcentaje != null }.maxByOrNull { it.asistencia.porcentaje ?: 0.0 }
+    val mejorRacha = periodo.materias.maxByOrNull { it.asistencia.racha }?.takeIf { it.asistencia.racha > 0 }
+    Pila {
+        Tarjeta(color = Paleta.acentoContenedor) {
+            Fila(separacion = 16.dp) {
+                GalletaConCifra(88.dp, Paleta.acento, Formato.promedio(periodo.promedio, historial.notaMaxima), Paleta.sobreAcento, 22f)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Rotulo(stringResource(R.string.hist_promedio_de, periodo.nombre), conMargen = false)
+                    if (anterior != null) PastillaDeDiferencia(periodo.promedio, anterior.promedio, anterior.nombre, historial.notaMaxima)
+                    if (sinFinal.isNotEmpty()) {
+                        Text(stringResource(R.string.hist_sin_le_falta_nota, Formato.lista(sinFinal.map { it.nombre })), style = Letra.sub, color = Paleta.apagado)
                     }
-                    if (!limpio) {
-                        OutlinedTextField(
-                            value = escrito,
-                            onValueChange = { escrito = it.take(10) },
-                            label = { Text(stringResource(R.string.terms_dialog_type_prompt, closeTargetWord)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Characters
-                            ),
-                            modifier = Modifier.fillMaxWidth()
+                }
+            }
+        }
+        FilaDeMetricas {
+            Metrica(Icons.Rounded.EventAvailable, Formato.porcentaje(periodo.asistencia), stringResource(R.string.hist_asistencia), Modifier.weight(1f).fillMaxHeight())
+            Metrica(Icons.AutoMirrored.Rounded.MenuBook, periodo.materias.size.toString(), stringResource(R.string.hist_materias), Modifier.weight(1f).fillMaxHeight())
+            Metrica(Icons.Rounded.Cancel, periodo.perdidas.size.toString(), cuentaSinNumero(periodo.perdidas.size, R.string.hist_perdida_etiqueta_una, R.string.hist_perdidas), Modifier.weight(1f).fillMaxHeight())
+        }
+        if (mejor != null || mejorAsistencia != null || mejorRacha != null) {
+            Rotulo(stringResource(R.string.hist_lo_mejor))
+            Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+                var indice = 0
+                mejor?.let {
+                    FilaDeLoMejor(indice++ > 0, Icons.Rounded.Star, Tono.Acento, stringResource(R.string.hist_mejor_nota), it.nombre, Formato.nota(it.final, escala))
+                }
+                mejorAsistencia?.let {
+                    FilaDeLoMejor(indice++ > 0, Icons.Rounded.EventAvailable, Tono.Ok, stringResource(R.string.hist_donde_mas_fuiste), it.nombre, Formato.porcentaje(it.asistencia.porcentaje))
+                }
+                mejorRacha?.let {
+                    FilaDeLoMejor(indice++ > 0, Icons.Rounded.LocalFireDepartment, Tono.Ambar, stringResource(R.string.hist_tu_racha), it.nombre, cuenta(it.asistencia.racha, R.string.hist_clase_una, R.string.hist_clase_varias))
+                }
+            }
+        }
+        if (periodo.perdidas.isNotEmpty()) {
+            Rotulo(stringResource(R.string.hist_perdiste))
+            Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+                periodo.perdidas.forEachIndexed { i, materia ->
+                    Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 12.dp), separacion = 12.dp) {
+                        Azulejo(Icons.Rounded.Replay, Tono.Mal)
+                        Columna(titulo = materia.nombre, sub = stringResource(R.string.hist_la_podras_traer))
+                        Text(Formato.nota(materia.final, escala), style = Letra.numero(18f), color = Paleta.tinta)
+                    }
+                }
+            }
+        }
+        Rotulo(stringResource(R.string.hist_tu_acumulado))
+        val sube = antes == null || despues == null || despues >= antes
+        Tarjeta {
+            Fila(separacion = 12.dp) {
+                Azulejo(if (sube) Icons.AutoMirrored.Rounded.TrendingUp else Icons.AutoMirrored.Rounded.TrendingDown, if (sube) Tono.Ok else Tono.Mal)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(stringResource(R.string.hist_ahora), style = Letra.sub, color = Paleta.apagado)
+                    Text(Formato.promedio(antes, historial.notaMaxima), style = Letra.numero(22f), color = Paleta.tinta)
+                }
+                Text("→", style = estilo(22f, 28f), color = Paleta.apagado)
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(stringResource(R.string.hist_al_cerrar), style = Letra.sub, color = Paleta.apagado)
+                    Text(Formato.promedio(despues, historial.notaMaxima), style = Letra.numero(22f), color = if (sube) AttendanceAttended else AttendanceAbsent)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilaDeLoMejor(conLinea: Boolean, icono: androidx.compose.ui.graphics.vector.ImageVector, tono: Tono, etiqueta: String, nombre: String, valor: String) {
+    Fila(modifier = Modifier.lineaArriba(conLinea).padding(vertical = 12.dp), separacion = 12.dp) {
+        Azulejo(icono, tono)
+        Columna(titulo = nombre, sub = etiqueta, subArriba = true)
+        Text(valor, style = Letra.numero(18f), color = Paleta.tinta)
+    }
+}
+
+/** La etiqueta en singular o plural, sin la cifra: la cifra ya va encima. */
+@Composable
+private fun cuentaSinNumero(n: Int, uno: Int, varios: Int): String = stringResource(if (n == 1) uno else varios)
+
+// ================================================================== paso 3
+
+@Composable
+private fun PasoCerrar(periodo: PeriodoDelHistorico, historial: HistorialAcademico, pendientes: Int, onRevisar: () -> Unit) {
+    Pila {
+        Rotulo(stringResource(R.string.hist_al_cerrar_periodo, periodo.nombre))
+        Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+            listOf(
+                Triple(Icons.Rounded.Archive, Tono.Acento, R.string.hist_pasa_al_historico_con),
+                Triple(Icons.Rounded.Edit, Tono.Acento, R.string.hist_se_siguen_editando),
+                Triple(Icons.Rounded.AssignmentTurnedIn, Tono.Acento, R.string.hist_siguen_igual),
+                Triple(Icons.Rounded.Lock, Tono.Mal, R.string.hist_no_vuelve)
+            ).forEachIndexed { i, (icono, tono, texto) ->
+                Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 12.dp), separacion = 12.dp) {
+                    Azulejo(icono, tono)
+                    Text(stringResource(texto), style = Letra.t15, color = Paleta.tinta, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+        if (pendientes > 0) {
+            val ambar = Tono.Ambar.par()
+            Tarjeta(color = ambar.contenedor) {
+                Fila(separacion = 12.dp) {
+                    Icon(Icons.Rounded.Warning, contentDescription = null, tint = ambar.sobre, modifier = Modifier.size(24.dp))
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(cuenta(pendientes, R.string.hist_cierras_con_una, R.string.hist_cierras_con_varias), style = Letra.t15, color = ambar.sobre)
+                        Text(stringResource(R.string.hist_se_pueden_arreglar), style = Letra.sub, color = ambar.sobre.copy(alpha = 0.85f))
+                    }
+                    MiniBoton(
+                        texto = stringResource(R.string.hist_revisar),
+                        onClick = onRevisar,
+                        fondo = ambar.sobre.copy(alpha = 0.16f),
+                        tinta = ambar.sobre
+                    )
+                }
+            }
+        }
+        Rotulo(stringResource(R.string.hist_justo_despues))
+        Tarjeta {
+            Fila(separacion = 12.dp) {
+                Azulejo(Icons.Rounded.AutoAwesome, Tono.Acento)
+                val siguiente = propuestaDespuesDe(historial)
+                Text(
+                    negrita(stringResource(R.string.hist_inicio_te_ofrece, "\u0000"), siguiente),
+                    style = Letra.sub,
+                    color = Paleta.apagado,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+/** El nombre que tendrá el siguiente, contado como si este ya estuviera cerrado. */
+private fun propuestaDespuesDe(historial: HistorialAcademico): String =
+    com.unistack.app.feature_terms.domain.PropuestaDelSiguientePeriodo.build(historial.periodos.map { it.term }, historial.hoy).nombre
+
+// ================================================================== hojas
+
+@Composable
+private fun HojaDeNota(
+    pendiente: PendienteDeCierre.Nota,
+    historial: HistorialAcademico?,
+    escala: GradingScale,
+    viewModel: TermsViewModel,
+    onCerrar: () -> Unit
+) {
+    val maxima = historial?.notaMaxima ?: 5.0
+    var texto by rememberSaveable { mutableStateOf("") }
+    val valor = leerNota(texto, maxima)
+    val valido = valor != null && !valor.isNaN()
+    val vista = if (valido) viewModel.vistaPrevia(pendiente.materia.id, emptyMap(), mapOf(pendiente.corte.cut.id to valor!!)) else null
+    HojaDelHistorico(onDismiss = onCerrar) {
+        TituloDeHoja(
+            titulo = stringResource(R.string.hist_materia_corte, pendiente.materia.nombre, pendiente.corte.numero),
+            intro = stringResource(R.string.hist_nota_intro, pendiente.corte.pesoPorcentaje)
+        )
+        Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 6.dp)) {
+            pendiente.corte.notas.forEachIndexed { i, nota ->
+                Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 10.dp)) {
+                    Columna(titulo = nota.name, sub = stringResource(R.string.hist_del_corte, Math.round(nota.percentage * 100)))
+                    Text(Formato.nota(nota.value, escala), style = Letra.numero(16f), color = Paleta.tinta)
+                }
+            }
+            Fila(modifier = Modifier.lineaArriba(pendiente.corte.notas.isNotEmpty()).padding(vertical = 10.dp)) {
+                Columna(titulo = stringResource(R.string.hist_nota_del_corte), sub = stringResource(R.string.hist_nota_del_corte_sub))
+                EntradaDeNota(
+                    valor = texto,
+                    onValor = { texto = it },
+                    invalida = valor?.isNaN() == true,
+                    descripcion = stringResource(R.string.hist_nota_del_corte)
+                )
+            }
+        }
+        Fila(modifier = Modifier.padding(horizontal = 4.dp, vertical = 14.dp)) {
+            Text(stringResource(R.string.hist_final_de_la_materia), style = Letra.sub, color = Paleta.apagado, modifier = Modifier.weight(1f))
+            Text(Formato.nota(vista?.final, escala), style = estilo(14f, 20f, androidx.compose.ui.text.font.FontWeight.Bold, cifras = true), color = Paleta.tinta)
+        }
+        UniStackButton(
+            text = stringResource(R.string.hist_guardar),
+            onClick = {
+                viewModel.ponerNotaDeCorte(pendiente.materia.id, pendiente.corte.cut.id, valor!!)
+                onCerrar()
+            },
+            enabled = valido,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun HojaDeClases(pendiente: PendienteDeCierre.Clases, viewModel: TermsViewModel, onCerrar: () -> Unit) {
+    val marcas = remember(pendiente.clave) { mutableStateMapOf<Int, ClassAttendanceStatus>() }
+    val ok = Tono.Ok.par()
+    val mal = Tono.Mal.par()
+    HojaDelHistorico(onDismiss = onCerrar) {
+        TituloDeHoja(titulo = pendiente.materia.nombre, intro = stringResource(R.string.hist_fuiste_a_estas))
+        Column(modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+            Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+                pendiente.clases.forEachIndexed { i, clase ->
+                    Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 12.dp), separacion = 8.dp) {
+                        Text(Formato.conMayuscula(Formato.larga(clase.date)), style = Letra.t15, color = Paleta.tinta, modifier = Modifier.weight(1f))
+                        val marca = marcas[i]
+                        MiniBoton(
+                            texto = stringResource(R.string.hist_fui),
+                            onClick = { marcas[i] = ClassAttendanceStatus.ATTENDED },
+                            fondo = if (marca == ClassAttendanceStatus.ATTENDED) ok.contenedor else Paleta.acentoSuave,
+                            tinta = if (marca == ClassAttendanceStatus.ATTENDED) ok.sobre else Paleta.acento
+                        )
+                        MiniBoton(
+                            texto = stringResource(R.string.hist_falte),
+                            onClick = { marcas[i] = ClassAttendanceStatus.ABSENT },
+                            fondo = if (marca == ClassAttendanceStatus.ABSENT) mal.contenedor else Paleta.acentoSuave,
+                            tinta = if (marca == ClassAttendanceStatus.ABSENT) mal.sobre else Paleta.acento
                         )
                     }
                 }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        UniStackButton(
+            text = stringResource(R.string.hist_guardar),
+            onClick = {
+                viewModel.marcarClases(
+                    pendiente.materia.id,
+                    marcas.mapKeys { (i, _) -> pendiente.clases[i] }
+                )
+                onCerrar()
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmando = false
-                        viewModel.closeActiveTerm(LocalDate.now(), onDone = onClosed)
-                    },
-                    enabled = puedeCerrar
-                ) {
-                    Text(
-                        stringResource(R.string.terms_btn_close_term),
-                        color = if (puedeCerrar) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.outline
-                        },
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmando = false }) {
-                    Text(stringResource(R.string.common_back), fontWeight = FontWeight.Bold)
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.background
+            enabled = marcas.size == pendiente.clases.size,
+            modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+@Composable
+private fun HojaDeTarea(pendiente: PendienteDeCierre.Tarea, viewModel: TermsViewModel, onCerrar: () -> Unit) {
+    HojaDelHistorico(onDismiss = onCerrar) {
+        TituloDeHoja(
+            titulo = pendiente.tarea.title,
+            intro = if (pendiente.materia != null) {
+                stringResource(R.string.hist_tarea_intro_con_materia, pendiente.materia.nombre, Formato.larga(pendiente.vence))
+            } else {
+                stringResource(R.string.hist_tarea_intro, Formato.larga(pendiente.vence))
+            }
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            UniStackButton(
+                text = stringResource(R.string.hist_si_la_entregue),
+                onClick = {
+                    viewModel.resolverTarea(pendiente, entregada = true)
+                    onCerrar()
+                },
+                leadingIcon = Icons.Rounded.Check,
+                modifier = Modifier.fillMaxWidth()
+            )
+            UniStackButton(
+                text = stringResource(R.string.hist_no_la_entregue),
+                onClick = {
+                    viewModel.resolverTarea(pendiente, entregada = false)
+                    onCerrar()
+                },
+                variant = UniStackButtonVariant.Outlined,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }

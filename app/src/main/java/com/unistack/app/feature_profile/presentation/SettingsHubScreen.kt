@@ -70,6 +70,8 @@ fun SettingsHubScreen(
     onDataClick: () -> Unit,
     onUpdatesClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Lo que hay dentro del histórico, dicho en la fila; sin él, el texto de siempre. */
+    academicHistorySubtitle: String? = null,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
@@ -126,7 +128,7 @@ fun SettingsHubScreen(
                 SettingsRow(
                     icon = Icons.Rounded.History,
                     title = stringResource(R.string.settings_academic_history),
-                    subtitle = stringResource(R.string.settings_academic_history_desc),
+                    subtitle = academicHistorySubtitle ?: stringResource(R.string.settings_academic_history_desc),
                     iconColor = sections.onTrack,
                     onClick = onAcademicHistoryClick
                 )

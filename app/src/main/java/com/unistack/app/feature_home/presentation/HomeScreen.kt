@@ -23,8 +23,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import com.unistack.app.feature_terms.presentation.NoActiveTermCard
-import com.unistack.app.feature_terms.presentation.TermSummary
+import com.unistack.app.feature_terms.presentation.AvisosDelHistorico
+import com.unistack.app.feature_terms.presentation.HojaDelAvisoParaEmpezar
+import com.unistack.app.feature_terms.presentation.InicioConPeriodoPorEmpezar
+import com.unistack.app.feature_terms.presentation.InicioSinPeriodo
+import com.unistack.app.feature_terms.presentation.TermsUiState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -151,17 +154,24 @@ fun HomeScreen(
     onLabsClick: () -> Unit = {},
     onDrawerOpenChange: (Boolean) -> Unit = {},
     /**
-     * El último periodo cerrado, **solo cuando no hay ninguno activo**.
+     * Los periodos, para los dos estados en que Inicio cambia de forma.
      *
-     * Nulo es el caso normal: hay periodo en curso, o todavía no ha habido ninguno. Cuando
-     * llega con valor, Inicio abre con el resumen de lo que se acaba de cerrar y una acción
-     * única, porque cerrar no vacía la app: la cambia de estado.
+     * Sin periodo activo y con alguno cerrado, Inicio cuenta cómo te fue y propone el siguiente.
+     * Con uno creado que todavía no empieza, enseña la cuenta atrás. En cualquier otro caso es el
+     * Inicio de siempre: cerrar no vacía la app, la cambia de estado.
      */
-    noActiveTerm: TermSummary? = null,
-    inheritedCutCount: Int = 0,
+    historico: TermsUiState? = null,
     onStartNewTermClick: () -> Unit = {},
-    onOpenHistoryClick: () -> Unit = {}
+    onOpenHistoryClick: () -> Unit = {},
+    onOpenTermClick: (String) -> Unit = {},
+    onAcademicSettingsClick: () -> Unit = {},
+    onNextTermReminderChange: (Boolean) -> Unit = {},
+    onNextTermReminderDayChange: (Int) -> Unit = {},
+    onUndoTermClose: (String, String) -> Unit = { _, _ -> }
 ) {
+    var avisoAbierto by rememberSaveable { mutableStateOf(false) }
+    val sinPeriodo = historico?.historial?.let { it.activo == null && it.cerrados.isNotEmpty() } == true
+    val porEmpezar = historico?.historial?.activo?.porEmpezar == true
     val summary = uiState.summary
     val appearance = LocalAppearancePreferences.current
     val context = LocalContext.current
@@ -218,19 +228,31 @@ fun HomeScreen(
                     )
                 }
 
-                noActiveTerm?.let { ultimo ->
+                if (sinPeriodo && historico != null) {
                     item("sin-periodo") {
-                        NoActiveTermCard(
-                            lastClosed = ultimo,
-                            cutCount = inheritedCutCount,
-                            onStartNewTerm = onStartNewTermClick,
-                            onOpenHistory = onOpenHistoryClick,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
+                        InicioSinPeriodo(
+                            estado = historico,
+                            onVerPeriodo = onOpenTermClick,
+                            onEmpezar = onStartNewTermClick,
+                            onHistorico = onOpenHistoryClick,
+                            onAviso = { avisoAbierto = true },
+                            onAvisoActivo = onNextTermReminderChange,
+                            onTareas = onSeeTasksClick,
+                            onNotas = onQuickNotesClick,
+                            onGastos = onSeeExpensesClick
+                        )
+                    }
+                } else if (porEmpezar && historico != null) {
+                    item("por-empezar") {
+                        InicioConPeriodoPorEmpezar(
+                            estado = historico,
+                            onHorario = onCalendarClick,
+                            onHistorico = onOpenHistoryClick
                         )
                     }
                 }
 
-                if (appearance.showHomeHero) {
+                if (appearance.showHomeHero && !sinPeriodo && !porEmpezar) {
                     item("prioridad") {
                         HomePriorityCard(
                             summary = summary,
@@ -256,7 +278,7 @@ fun HomeScreen(
                     }
                 }
 
-                if (appearance.showHomeAgenda) {
+                if (appearance.showHomeAgenda && !sinPeriodo && !porEmpezar) {
                     item("hoy-cabecera") {
                         HomeSectionHeader(
                             title = todayLabel(),
@@ -275,7 +297,7 @@ fun HomeScreen(
                     }
                 }
 
-                if (appearance.showHomeSnapshot) {
+                if (appearance.showHomeSnapshot && !sinPeriodo && !porEmpezar) {
                     item("cifras") {
                         HomeSnapshotRow(
                             summary = summary,
@@ -307,7 +329,21 @@ fun HomeScreen(
                 showAddExpense = AppModule.EXPENSES in summary.enabledModules,
                 showAddSubject = false
             )
+            AvisosDelHistorico(margenAbajo = 88.dp, onDeshacerCierre = onUndoTermClose)
         }
+    }
+
+    if (avisoAbierto && historico != null) {
+        HojaDelAvisoParaEmpezar(
+            estado = historico,
+            onDismiss = { avisoAbierto = false },
+            onActivo = onNextTermReminderChange,
+            onOpcion = onNextTermReminderDayChange,
+            onAbrirConfiguracion = {
+                avisoAbierto = false
+                onAcademicSettingsClick()
+            }
+        )
     }
 
     if (pickingSubjectForGrade) {

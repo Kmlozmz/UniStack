@@ -205,7 +205,9 @@ private class FakeAcademicTermRepository : AcademicTermRepository {
 
     override suspend fun update(term: AcademicTerm): Result<Unit> = Result.success(Unit)
 
-    override suspend fun close(termId: String, closedOn: LocalDate): Result<Unit> {
+    override suspend fun reopen(termId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun close(termId: String, closedOn: LocalDate, cutScheme: com.unistack.app.feature_user.domain.GradingCutScheme?): Result<Unit> {
         active.value = null
         return Result.success(Unit)
     }

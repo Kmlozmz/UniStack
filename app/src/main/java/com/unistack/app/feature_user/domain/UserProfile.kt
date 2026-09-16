@@ -107,6 +107,12 @@ data class UserProfile(
     val dailyDigestEnabled: Boolean = true,
     val dailyDigestHour: Int = 7,
     val dailyDigestMinute: Int = 30,
+    /** Avisar el dia en que acaba el periodo, para cerrarlo. */
+    val termEndReminderEnabled: Boolean = true,
+    /** Avisar si el periodo siguiente no se ha creado para cierto dia. */
+    val nextTermReminderEnabled: Boolean = true,
+    /** Ese dia, contado desde el inicio sugerido: ver `OpcionesDelAviso`. */
+    val nextTermReminderOffset: Int = 0,
     val quietHoursEnabled: Boolean = false,
     val quietHoursStartHour: Int? = null,
     val quietHoursEndHour: Int? = null,

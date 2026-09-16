@@ -43,6 +43,7 @@ class UniStackApplication : Application(), Configuration.Provider {
     @Inject lateinit var academicWorksRepository: AcademicWorksRepository
     @Inject lateinit var scheduleRepository: ScheduleRepository
     @Inject lateinit var notesRepository: NotesRepository
+    @Inject lateinit var termRepository: com.unistack.app.feature_terms.domain.AcademicTermRepository
     @Inject lateinit var updateRepository: UpdateRepository
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -81,7 +82,8 @@ class UniStackApplication : Application(), Configuration.Provider {
             tasksRepository = tasksRepository,
             academicWorksRepository = academicWorksRepository,
             scheduleRepository = scheduleRepository,
-            notesRepository = notesRepository
+            notesRepository = notesRepository,
+            termRepository = termRepository
         )
         /*
          * **Que falle la comprobacion no puede cerrar la app.**

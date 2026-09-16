@@ -105,7 +105,10 @@ import com.unistack.app.feature_profile.presentation.MotionSettingsScreen
 import com.unistack.app.feature_terms.presentation.NewTermScreen
 import com.unistack.app.feature_terms.presentation.TermsViewModel
 import com.unistack.app.feature_terms.presentation.AcademicHistoryScreen
-import com.unistack.app.feature_terms.presentation.ClosedTermDetailScreen
+import com.unistack.app.feature_terms.presentation.TermBulletinScreen
+import com.unistack.app.feature_terms.presentation.TermDetailScreen
+import com.unistack.app.feature_terms.presentation.TermEditGradesScreen
+import com.unistack.app.feature_terms.presentation.TermSubjectScreen
 import com.unistack.app.feature_terms.presentation.TermCloseScreen
 import com.unistack.app.feature_profile.presentation.AcademicSettingsScreen
 import com.unistack.app.feature_profile.presentation.AcademicScaleScreen
@@ -377,14 +380,14 @@ fun MainNavGraph(
 
                         HomeScreen(
                             uiState = uiState,
-                            noActiveTerm = if (termsState.activeTerm == null) {
-                                termsState.lastClosed
-                            } else {
-                                null
-                            },
-                            inheritedCutCount = termsState.inheritance?.cutCount ?: 0,
+                            historico = termsState,
                             onStartNewTermClick = { navController.go(AppRoutes.NewTerm) },
                             onOpenHistoryClick = { navController.go(AppRoutes.AcademicHistory) },
+                            onOpenTermClick = { id -> navController.go(AppRoutes.termDetail(id)) },
+                            onAcademicSettingsClick = { navController.go(AppRoutes.AcademicSettings) },
+                            onNextTermReminderChange = termsViewModel::setAvisoParaEmpezar,
+                            onNextTermReminderDayChange = termsViewModel::setDiaDelAviso,
+                            onUndoTermClose = termsViewModel::deshacerCierre,
                             onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
                             onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules) },
                             onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabTasks), enabledModules) },
@@ -520,7 +523,12 @@ fun MainNavGraph(
                 )
             }
             screen(AppRoutes.Settings) {
+                val termsViewModel: TermsViewModel = hiltViewModel()
+                val termsState by termsViewModel.uiState.collectAsStateWithLifecycle()
                 SettingsHubScreen(
+                    academicHistorySubtitle = termsState.historial?.let { historial ->
+                        historySubtitle(historial.cerrados.size, historial.acumulado, historial.notaMaxima)
+                    },
                     // Sin flecha: es la raíz de su pestaña, no se vuelve de ella a ningún
                     // sitio. Se llega tocando «Ajustes» abajo y se sale igual.
                     onBackClick = null,
@@ -601,7 +609,8 @@ fun MainNavGraph(
                     onCutsClick = { navController.go(AppRoutes.AcademicCuts) },
                     onAbsenceClick = { navController.go(AppRoutes.AcademicAbsence) },
                     onBreaksClick = { navController.go(AppRoutes.AcademicBreaks) },
-                    onTermClick = { navController.go(AppRoutes.AcademicTerm) }
+                    onTermClick = { navController.go(AppRoutes.AcademicTerm) },
+                    onNewTermClick = { navController.go(AppRoutes.NewTerm) }
                 )
             }
             screen(AppRoutes.ThemeSettings) {
@@ -698,7 +707,13 @@ fun MainNavGraph(
                             navController.go(AppRoutes.Home)
                         }
                     },
-                    onCreated = { navController.go(AppRoutes.Home) }
+                    onCreated = {
+                        navController.navigate(AppRoutes.Home) {
+                            popUpTo(AppRoutes.Home) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onAcademicSettingsClick = { navController.go(AppRoutes.AcademicSettings) }
                 )
             }
             screen(AppRoutes.AcademicHistory) {
@@ -709,13 +724,14 @@ fun MainNavGraph(
                         }
                     },
                     onTermClick = { termId ->
-                        navController.navigate(AppRoutes.closedTerm(termId)) {
+                        navController.navigate(AppRoutes.termDetail(termId)) {
                             launchSingleTop = true
                         }
                     },
                     onCloseTermClick = {
                         navController.navigate(AppRoutes.TermClose) { launchSingleTop = true }
-                    }
+                    },
+                    onScheduleClick = { navController.go(AppRoutes.Calendar) }
                 )
             }
             screen(AppRoutes.TermClose) {
@@ -725,25 +741,68 @@ fun MainNavGraph(
                             navController.go(AppRoutes.AcademicHistory)
                         }
                     },
-                    // Lo que falta se completa en Académico, que es donde estan las notas.
-                    onGoComplete = { navController.go(AppRoutes.Academic) },
-                    // Cerrado el periodo, esta pantalla ya no tiene nada que ensenar.
-                    onClosed = { navController.go(AppRoutes.Home) }
+                    // Cerrado el periodo, esta pantalla ya no tiene nada que enseñar: a Inicio,
+                    // que es donde aparece el «Deshacer» y el periodo siguiente.
+                    onClosed = {
+                        navController.navigate(AppRoutes.Home) {
+                            popUpTo(AppRoutes.Home) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
-            screen("${AppRoutes.ClosedTerm}/{termId}") { backStackEntry ->
-                ClosedTermDetailScreen(
-                    termId = backStackEntry.arguments?.getString("termId").orEmpty(),
+            listOf(AppRoutes.TermDetail, AppRoutes.ClosedTerm).forEach { ruta ->
+                screen("$ruta/{termId}") { backStackEntry ->
+                    TermDetailScreen(
+                        termId = backStackEntry.arguments?.getString("termId").orEmpty(),
+                        onBackClick = {
+                            if (!navController.navigateUp()) {
+                                navController.go(AppRoutes.AcademicHistory)
+                            }
+                        },
+                        onSubjectClick = { subjectId -> navController.go(AppRoutes.termSubject(subjectId)) },
+                        onBulletinClick = { id -> navController.go(AppRoutes.termBulletin(id)) },
+                        onEditGrades = { subjectId -> navController.go(AppRoutes.termEditGrades(subjectId)) },
+                        onCloseTermClick = {
+                            navController.navigate(AppRoutes.TermClose) { launchSingleTop = true }
+                        }
+                    )
+                }
+            }
+            screen("${AppRoutes.TermSubject}/{subjectId}") { backStackEntry ->
+                TermSubjectScreen(
+                    subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty(),
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.AcademicHistory)
                         }
                     },
-                    onSubjectClick = { subjectId ->
-                        navController.navigateIfModuleEnabled(
-                            AppRoutes.subjectDetail(subjectId),
-                            enabledModules
-                        )
+                    onEditGrades = { subjectId -> navController.go(AppRoutes.termEditGrades(subjectId)) },
+                    onSubjectClick = { subjectId -> navController.go(AppRoutes.termSubject(subjectId)) }
+                )
+            }
+            screen("${AppRoutes.TermEditGrades}/{subjectId}") { backStackEntry ->
+                TermEditGradesScreen(
+                    subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty(),
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicHistory)
+                        }
+                    },
+                    onSaved = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicHistory)
+                        }
+                    }
+                )
+            }
+            screen("${AppRoutes.TermBulletin}/{termId}") { backStackEntry ->
+                TermBulletinScreen(
+                    termId = backStackEntry.arguments?.getString("termId").orEmpty(),
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicHistory)
+                        }
                     }
                 )
             }
@@ -1212,7 +1271,12 @@ private val ModalRoutes = setOf(
     AppRoutes.EditTask,
     AppRoutes.TaskDetail,
     AppRoutes.AddExpense,
-    AppRoutes.EditExpense
+    AppRoutes.EditExpense,
+    // Los flujos del histórico llevan su botón anclado abajo, donde iría la barra.
+    AppRoutes.TermClose,
+    AppRoutes.NewTerm,
+    AppRoutes.TermEditGrades,
+    AppRoutes.TermBulletin
 )
 
 /**
@@ -1311,6 +1375,10 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AcademicTerm) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AcademicHistory) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.ClosedTerm) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.TermDetail) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.TermSubject) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.TermEditGrades) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.TermBulletin) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.TermClose) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.NewTerm) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Settings
@@ -1718,5 +1786,23 @@ private fun UniStackBottomBarContent(
         }
             }
         }
+    }
+}
+
+/** «4 periodos cerrados · acumulado 4.02», lo que dice la fila del histórico en Ajustes. */
+private fun historySubtitle(cerrados: Int, acumulado: Double?, notaMaxima: Double): String {
+    val periodos = if (cerrados == 1) {
+        com.unistack.app.core.utils.Textos.get(com.unistack.app.R.string.hist_cerrado_uno)
+    } else {
+        com.unistack.app.core.utils.Textos.get(com.unistack.app.R.string.hist_cerrado_varios, cerrados)
+    }
+    return if (acumulado == null) {
+        periodos
+    } else {
+        com.unistack.app.core.utils.Textos.get(
+            com.unistack.app.R.string.hist_ajustes_subtitulo,
+            periodos,
+            com.unistack.app.feature_terms.presentation.formatoDePromedio(acumulado, notaMaxima)
+        )
     }
 }

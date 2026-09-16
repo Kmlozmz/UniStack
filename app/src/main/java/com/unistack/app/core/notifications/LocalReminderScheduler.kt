@@ -34,6 +34,8 @@ import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.feature_terms.domain.AcademicTerm
+import com.unistack.app.feature_terms.domain.PropuestaDelSiguientePeriodo
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -104,7 +106,8 @@ class LocalReminderScheduler(private val context: Context) {
         classSessions: List<ClassSession> = emptyList(),
         classOccurrences: List<ClassOccurrence> = emptyList(),
         agendaEvents: List<AgendaEvent> = emptyList(),
-        notes: List<QuickNote> = emptyList()
+        notes: List<QuickNote> = emptyList(),
+        terms: List<AcademicTerm> = emptyList()
     ) {
         createChannel()
         cancelPrevious()
@@ -208,6 +211,7 @@ class LocalReminderScheduler(private val context: Context) {
 
         scheduleClassReminders(currentProfile, subjects, classSessions, classOccurrences)
         scheduleAgendaEventReminders(currentProfile, agendaEvents)
+        scheduleTermReminders(currentProfile, terms)
 
         /*
          * El resumen se apaga solo, no arrastrado por los demas.
@@ -622,6 +626,49 @@ class LocalReminderScheduler(private val context: Context) {
      * El titulo del aviso es el de la nota, y si no tiene, su primera linea sin marcas. El cuerpo
      * lleva lo que sigue, que es lo que hace util un aviso a las siete de la manana.
      */
+    /**
+     * Los dos avisos del periodo: el dia en que acaba, para cerrarlo, y el dia elegido para
+     * empezar el siguiente si todavia no existe.
+     *
+     * Salen a las 9:00, como los demas recordatorios de dia. Si la app se abre ese mismo dia mas
+     * tarde, se envian al momento; al dia siguiente ya no. El del siguiente periodo cuenta desde
+     * el inicio previsto y no desde el que se va corriendo con los dias, para que no vuelva a
+     * sonar cada lunes.
+     */
+    private fun scheduleTermReminders(profile: UserProfile, terms: List<AcademicTerm>) {
+        val zona = ZoneId.systemDefault()
+        val activo = terms.firstOrNull { it.isActive }
+        val fin = activo?.plannedEnd
+        if (profile.termEndReminderEnabled && activo != null && fin != null) {
+            scheduleReminder(
+                profile = profile,
+                requestCode = activo.id.stableRequestCode("term-end"),
+                triggerAtMillis = fin.atTime(9, 0).atZone(zona).toInstant().toEpochMilli(),
+                subText = Textos.get(R.string.hist_notif_sub),
+                title = Textos.get(R.string.hist_notif_acabo_titulo, activo.name),
+                body = Textos.get(R.string.hist_notif_acabo_cuerpo),
+                targetRoute = AppRoutes.TermClose,
+                channelId = CHANNEL_ID_DIGEST,
+                eventAtMillis = fin.atTime(23, 59).atZone(zona).toInstant().toEpochMilli()
+            )
+        }
+        if (profile.nextTermReminderEnabled && activo == null && terms.isNotEmpty()) {
+            val propuesta = PropuestaDelSiguientePeriodo.build(terms, LocalDate.now())
+            val dia = propuesta.diaDelAviso(profile.nextTermReminderOffset)
+            scheduleReminder(
+                profile = profile,
+                requestCode = propuesta.nombre.stableRequestCode("term-next"),
+                triggerAtMillis = dia.atTime(9, 0).atZone(zona).toInstant().toEpochMilli(),
+                subText = Textos.get(R.string.hist_notif_sub),
+                title = Textos.get(R.string.hist_notif_empezar_titulo, propuesta.nombre),
+                body = Textos.get(R.string.hist_notif_empezar_cuerpo),
+                targetRoute = AppRoutes.NewTerm,
+                channelId = CHANNEL_ID_DIGEST,
+                eventAtMillis = dia.atTime(23, 59).atZone(zona).toInstant().toEpochMilli()
+            )
+        }
+    }
+
     private fun scheduleNoteReminders(
         profile: UserProfile,
         notes: List<QuickNote>,

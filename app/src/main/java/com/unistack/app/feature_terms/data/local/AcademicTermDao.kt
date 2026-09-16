@@ -38,11 +38,36 @@ interface AcademicTermDao {
     @Query(
         """
         UPDATE academic_terms
-        SET status = 'CLOSED', closedEpochDay = :closedEpochDay, updatedAt = :updatedAt
+        SET status = 'CLOSED', closedEpochDay = :closedEpochDay, updatedAt = :updatedAt,
+            cutSchemeJson = :cutSchemeJson
         WHERE id = :termId AND userId IN (:userIds) AND status = 'ACTIVE'
         """
     )
-    suspend fun close(termId: String, closedEpochDay: Long, updatedAt: Long, userIds: List<String>): Int
+    suspend fun close(
+        termId: String,
+        closedEpochDay: Long,
+        updatedAt: Long,
+        cutSchemeJson: String?,
+        userIds: List<String>
+    ): Int
+
+    /**
+     * Vuelve a poner en curso un periodo recién cerrado: es el «Deshacer» del aviso.
+     *
+     * Solo si está cerrado y no hay otro activo, en la misma sentencia. La copia del esquema se
+     * borra porque el periodo vuelve a leer el de las preferencias.
+     */
+    @Query(
+        """
+        UPDATE academic_terms
+        SET status = 'ACTIVE', closedEpochDay = NULL, cutSchemeJson = NULL, updatedAt = :updatedAt
+        WHERE id = :termId AND userId IN (:userIds) AND status = 'CLOSED'
+          AND NOT EXISTS (
+            SELECT 1 FROM academic_terms WHERE userId IN (:userIds) AND status = 'ACTIVE'
+          )
+        """
+    )
+    suspend fun reopen(termId: String, updatedAt: Long, userIds: List<String>): Int
 
     @Query("DELETE FROM academic_terms WHERE id = :termId AND userId IN (:userIds)")
     suspend fun delete(termId: String, userIds: List<String>)

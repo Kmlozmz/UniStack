@@ -1,5 +1,6 @@
 package com.unistack.app.feature_terms.data.local
 
+import com.unistack.app.core.datastore.GradingCutSchemeJson
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_terms.domain.AcademicTermStatus
 import com.unistack.app.feature_terms.domain.AcademicTermType
@@ -31,7 +32,8 @@ fun AcademicTermEntity.toDomain(): AcademicTerm = AcademicTerm(
      */
     status = if (closedEpochDay != null) AcademicTermStatus.CLOSED else AcademicTermStatus.ACTIVE,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    cutScheme = GradingCutSchemeJson.decode(cutSchemeJson)
 )
 
 fun AcademicTerm.toEntity(): AcademicTermEntity = AcademicTermEntity(
@@ -44,5 +46,6 @@ fun AcademicTerm.toEntity(): AcademicTermEntity = AcademicTermEntity(
     closedEpochDay = closedEpochDay,
     status = status.name,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    cutSchemeJson = cutScheme?.let(GradingCutSchemeJson::encode)
 )
