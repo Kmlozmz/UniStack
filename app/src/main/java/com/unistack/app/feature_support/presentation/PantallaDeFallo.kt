@@ -1,53 +1,82 @@
 package com.unistack.app.feature_support.presentation
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.PriorityHigh
-import androidx.compose.material.icons.rounded.SaveAlt
-import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
-import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.components.UniStackButton
-import com.unistack.app.core.design.components.UniStackButtonVariant
-import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.components.cleanClickable
-import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import com.unistack.app.core.design.theme.mezclaCon
+import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.core.fallos.InformeDeFallo
 import com.unistack.app.core.utils.Textos
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Lo que ve el usuario cuando la app se cierra sola. Una pantalla, dos puertas.
@@ -61,6 +90,10 @@ import com.unistack.app.core.utils.Textos
  * certeza —el fallo puede venir de un aviso en segundo plano, de una corrutina o de tres
  * pantallas atrás— y quedar en ridículo inventándolo es peor que no decirlo. Lo concreto lo
  * pone quien lo vivió, en el campo de texto de la hoja de reporte.
+ *
+ * **Es la réplica aprobada (opción B, «las cuatro fichas») número por número.** Cada medida de
+ * este archivo es un píxel de su CSS, y [AEscalaDeLaReplica] es quien los lleva al tamaño del
+ * teléfono. Si algo de aquí no coincide con la réplica, el fallo está aquí.
  */
 @Composable
 fun PantallaDeFallo(
@@ -73,145 +106,207 @@ fun PantallaDeFallo(
     onSalir: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            // Esta pantalla la abre una Activity suya, sin andamiaje de ninguna clase: si no
-            // se aparta ella de las barras del sistema, no lo hace nadie. Con edge-to-edge
-            // obligatorio desde targetSdk 36, la cabecera acababa debajo del reloj.
-            .statusBarsPadding()
     ) {
-        /*
-         * El aviso en el centro y las acciones abajo del todo.
-         *
-         * Con todo apilado desde arriba, los botones caían a media pantalla y dejaban un
-         * palmo de vacío debajo: el dedo tenía que subir a buscarlos y la pantalla parecía
-         * cortada. Así hay dos zonas con un trabajo cada una — lo que se lee y lo que se
-         * toca— y el hueco sobrante se reparte alrededor de lo que se lee, no al final.
-         *
-         * El centro se desplaza por su cuenta: con la letra grande de Accesibilidad el
-         * informe crece y tiene que poder recorrerse sin empujar los botones fuera.
-         */
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(19.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CabeceraDelFallo(informe = informe, enElActo = enElActo)
-            TarjetaDelInforme(informe = informe, estadoDelArchivo = estadoDelArchivo)
-        }
-
-        /*
-         * Dos en fila y una debajo.
-         *
-         * Los dos de arriba son hermanos —las dos formas de quedarse con el archivo— y el de
-         * abajo es el contrario: irse sin hacer nada. La fila los agrupa como lo que son.
-         *
-         * Las etiquetas son cortas a propósito: el botón de la app recorta a una línea con
-         * puntos suspensivos, y a media anchura, con el icono delante, «Contar qué pasó» no
-         * cabía. Lo largo se dice en la hoja que abre.
-         */
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .bottomActionInsets()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+        AEscalaDeLaReplica(ancho = maxWidth, alto = maxHeight) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // Esta pantalla la abre una Activity suya, sin andamiaje de ninguna clase:
+                    // si no se aparta ella de las barras del sistema, no lo hace nadie.
+                    .statusBarsPadding()
             ) {
-                UniStackButton(
-                    text = Textos.get(R.string.fallo_btn_contar),
-                    onClick = onContar,
-                    leadingIcon = Icons.AutoMirrored.Rounded.Send,
-                    modifier = Modifier.weight(1f)
-                )
-                UniStackButton(
-                    text = Textos.get(R.string.fallo_btn_guardar),
-                    onClick = onGuardar,
-                    variant = UniStackButtonVariant.Tonal,
-                    leadingIcon = Icons.Rounded.SaveAlt,
-                    modifier = Modifier.weight(1f)
-                )
+                /*
+                 * El aviso en el centro y las acciones abajo del todo, como en la réplica.
+                 *
+                 * La tarjeta **cede el alto que falte**. En la réplica no cabe entera: el
+                 * navegador la encoge para que los botones sigan en su sitio, y por eso el
+                 * nombre del archivo queda pegado a su borde de abajo. `weight(fill = false)`
+                 * hace lo mismo —toma lo que sobra y ni un píxel más— y el desplazamiento propio
+                 * de la tarjeta deja al alcance lo que quede debajo.
+                 */
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(13.dp, Alignment.CenterVertically)
+                ) {
+                    CabeceraDelFallo(informe = informe, enElActo = enElActo)
+                    TarjetaDelInforme(
+                        informe = informe,
+                        estadoDelArchivo = estadoDelArchivo,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                }
+
+                /*
+                 * Dos en fila y una debajo.
+                 *
+                 * Los dos de arriba son hermanos —las dos formas de quedarse con el archivo— y el
+                 * de abajo es el contrario: irse sin hacer nada. La fila los agrupa como lo que
+                 * son. Las etiquetas son cortas a propósito: a media anchura, con el icono
+                 * delante, «Contar qué pasó» no cabía. Lo largo se dice en la hoja que abre.
+                 *
+                 * Abajo quedan los 16 px de la réplica hasta el borde, salvo que la barra del
+                 * sistema pida más: `union` se queda con el mayor. Con gestos la píldora cabe
+                 * dentro de ese margen; con los tres botones, manda la barra.
+                 */
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(
+                            WindowInsets.navigationBars.union(WindowInsets(bottom = 16.dp))
+                        )
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                        BotonDelFallo(
+                            texto = Textos.get(R.string.fallo_btn_contar),
+                            onClick = onContar,
+                            tipo = TipoDeBoton.Relleno,
+                            icono = R.drawable.ic_fallo_enviar,
+                            modifier = Modifier.weight(1f)
+                        )
+                        BotonDelFallo(
+                            texto = Textos.get(R.string.fallo_btn_guardar),
+                            onClick = onGuardar,
+                            tipo = TipoDeBoton.Tonal,
+                            icono = R.drawable.ic_fallo_guardar,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    BotonDelFallo(
+                        texto = if (enElActo) {
+                            Textos.get(R.string.fallo_btn_reiniciar)
+                        } else {
+                            Textos.get(R.string.fallo_btn_seguir)
+                        },
+                        onClick = onSalir,
+                        tipo = TipoDeBoton.Contorno,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
-            UniStackButton(
-                text = if (enElActo) {
-                    Textos.get(R.string.fallo_btn_reiniciar)
-                } else {
-                    Textos.get(R.string.fallo_btn_seguir)
-                },
-                onClick = onSalir,
-                variant = UniStackButtonVariant.Outlined
-            )
         }
     }
 }
 
+/** El ancho de la pantalla de la réplica, sin el marco del teléfono: 290 menos 9 por lado. */
+private const val ANCHO_DE_LA_REPLICA = 272f
+
+/** Su alto por debajo de la barra de estado: 602 de pantalla menos los 28,3 de la barra. */
+private const val ALTO_BAJO_LA_BARRA = 573.7f
+
+/** Lo que queda entre el último botón y el borde de abajo. */
+private const val MARGEN_INFERIOR = 16f
+
 /**
- * Las medidas salen del diseño aprobado, **escaladas**, no copiadas.
+ * La pantalla a la escala de la réplica: dentro de esto, un dp mide lo que un píxel suyo.
  *
- * El boceto se dibujó sobre un lienzo de 290 px de ancho y el teléfono ronda los 411 dp, así
- * que un «18 px» de allí son 25 dp aquí. Trasladar los números tal cual —que es lo que se hizo
- * la primera vez— deja la pantalla con todo diminuto y nadando en hueco vacío: se parece al
- * boceto en un pantallazo recortado y no se parece en nada en la mano.
+ * **Copiar sus números como dp fue el primer error.** La réplica se dibujó en un teléfono de
+ * 272 px de ancho y el de verdad ronda los 410 dp: todo salía pequeño y nadando en hueco.
+ * **Multiplicarlos a mano fue el segundo**, porque un factor fijo sólo acierta en un ancho, y
+ * el que se usó partía del marco del teléfono (290) y no de su pantalla (272).
  *
- * El factor es 411/290 ≈ 1,42 y está aplicado a todo lo de esta pantalla: tipos, rellenos,
- * huecos e iconos. Lo único que no se toca son la forma y el alto de las tarjetas y los
- * botones, que salen de Apariencia porque el usuario los elige.
+ * Cambiar la densidad de este árbol resuelve las dos cosas: los tamaños, los rellenos y la letra
+ * guardan la proporción del diseño en cualquier teléfono, y los números del código se leen igual
+ * que los del CSS. Lo que no es del diseño no se toca: las barras del sistema se miden en píxeles
+ * y siguen donde están, y el tamaño de letra que elija el usuario sigue multiplicando encima.
+ *
+ * **Manda la dimensión que antes se acabe**, y el alto se cuenta sin las barras del sistema,
+ * que cambian de un teléfono a otro. Con sólo el ancho, una barra de estado cuatro píxeles más
+ * alta que la de la réplica le robaba ese alto a la tarjeta, y el nombre del archivo perdía la
+ * pata de la «p» contra el borde. La barra de gestos cabe en el margen de abajo; la de tres
+ * botones no, y lo que sobresale también se descuenta. Nunca baja de uno: en horizontal la
+ * réplica no cabe, y ahí lo que toca es desplazarse, no encoger la letra.
  */
 @Composable
+private fun AEscalaDeLaReplica(ancho: Dp, alto: Dp, content: @Composable () -> Unit) {
+    val densidad = LocalDensity.current
+    val barraDeEstado = with(densidad) { WindowInsets.statusBars.getTop(this).toDp() }
+    val barraDeAbajo = with(densidad) { WindowInsets.navigationBars.getBottom(this).toDp() }
+    val util = alto - barraDeEstado
+    val escala = maxOf(
+        1f,
+        minOf(
+            ancho.value / ANCHO_DE_LA_REPLICA,
+            util.value / ALTO_BAJO_LA_BARRA,
+            (util - barraDeAbajo).value / (ALTO_BAJO_LA_BARRA - MARGEN_INFERIOR)
+        )
+    )
+    /*
+     * Los mínimos táctiles se miden con la densidad de aquí dentro, así que se dividen por la
+     * escala: el botón mide lo que dice la réplica y el dedo conserva sus 48 dp de verdad. Sin
+     * esto, Material inflaba los botones a 48 px de réplica y Compose ensanchaba la zona de
+     * toque del nombre del archivo hasta tapar el hueco que hay sobre los botones.
+     */
+    val configuracion = LocalViewConfiguration.current
+    val configuracionEscalada = remember(configuracion, escala) {
+        object : ViewConfiguration by configuracion {
+            override val minimumTouchTargetSize: DpSize
+                get() = configuracion.minimumTouchTargetSize / escala
+        }
+    }
+    CompositionLocalProvider(
+        LocalDensity provides Density(densidad.density * escala, densidad.fontScale),
+        LocalMinimumInteractiveComponentSize provides
+            LocalMinimumInteractiveComponentSize.current / escala,
+        LocalViewConfiguration provides configuracionEscalada,
+        content = content
+    )
+}
+
+@Composable
 private fun CabeceraDelFallo(informe: InformeDeFallo, enElActo: Boolean) {
-    UniCard(
-        color = MaterialTheme.colorScheme.errorContainer,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(26.dp)
+    val colores = coloresDelFallo()
+    val tinta = MaterialTheme.colorScheme.onErrorContainer
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(colores.cabecera)
+            .padding(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(11.dp)
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .clip(RoundedCornerShape(15.dp))
+                .background(colores.sello),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(66.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(MaterialTheme.colorScheme.error),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.PriorityHigh,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.size(38.dp)
-                )
-            }
+            // Un signo y no un icono: en la réplica es una letra, y el icono de Material es
+            // una barra redondeada con su punto que se lee más fino.
             Text(
-                text = if (enElActo) {
-                    Textos.get(R.string.fallo_titulo_en_el_acto)
-                } else {
-                    Textos.get(R.string.fallo_titulo_al_volver)
-                },
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                fontSize = 25.5.sp,
-                lineHeight = 30.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = InformeDeFallo.fechaLegible(informe.fecha),
-                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.75f),
-                fontSize = 15.5.sp,
-                textAlign = TextAlign.Center
+                text = "!",
+                color = colores.tintaDelSello,
+                style = letra(tamano = 25.sp, peso = FontWeight.ExtraBold)
             )
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = if (enElActo) {
+                Textos.get(R.string.fallo_titulo_en_el_acto)
+            } else {
+                Textos.get(R.string.fallo_titulo_al_volver)
+            },
+            color = tinta,
+            textAlign = TextAlign.Center,
+            style = letra(tamano = 18.sp, peso = FontWeight.ExtraBold, espaciado = (-0.01).em)
+        )
+        Text(
+            text = InformeDeFallo.fechaLegible(informe.fecha),
+            color = tinta.copy(alpha = 0.75f),
+            textAlign = TextAlign.Center,
+            style = letra(tamano = 11.sp),
+            modifier = Modifier.padding(top = 2.dp)
+        )
     }
 }
 
@@ -226,38 +321,81 @@ private fun CabeceraDelFallo(informe: InformeDeFallo, enElActo: Boolean) {
  * Fecha y versión se reparten la siguiente, que son cortos; el teléfono vuelve a ancho completo
  * porque no cabe en media.
  *
- * Las medidas van escaladas desde el boceto — ver [CabeceraDelFallo].
+ * Sin `UniCard`: con la superficie «con filete», que es la de por defecto, le pone borde, y la
+ * réplica no lleva ninguno.
  */
 @Composable
-private fun TarjetaDelInforme(informe: InformeDeFallo, estadoDelArchivo: String?) {
+private fun TarjetaDelInforme(
+    informe: InformeDeFallo,
+    estadoDelArchivo: String?,
+    modifier: Modifier = Modifier
+) {
     var abierto by remember { mutableStateOf(false) }
-    val secciones = LocalSectionColors.current
+    val colores = coloresDelFallo()
+    val esquema = MaterialTheme.colorScheme
+    val desplazamiento = rememberScrollState()
     val fecha = InformeDeFallo.fechaLegible(informe.fecha)
+    val giro by animateFloatAsState(
+        targetValue = if (abierto) 180f else 0f,
+        animationSpec = tweenDeMovimiento(baseMs = 200),
+        label = "giroDelDesplegable"
+    )
 
-    UniCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(13.dp)
-        ) {
+    /*
+     * Al desplegar, la tarjeta baja sola hasta el texto.
+     *
+     * Ya va al alto máximo, así que el texto completo aparece por debajo de lo que se ve: sin
+     * esto, tocar el nombre del archivo sólo giraba la flecha. Se sigue al final mientras la
+     * tarjeta crece, y si el usuario sube a mano no se le pelea, porque el final ya no cambia.
+     */
+    LaunchedEffect(abierto) {
+        if (abierto) {
+            snapshotFlow { desplazamiento.maxValue }.collectLatest { final ->
+                desplazamiento.animateScrollTo(final)
+            }
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(colores.tarjeta)
+            .verticalScroll(desplazamiento)
+            .padding(15.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
             Ficha(
                 etiqueta = Textos.get(R.string.fallo_dato_error),
                 valor = informe.tipo,
-                color = MaterialTheme.colorScheme.error,
-                tamano = 17.5.sp,
+                esError = true,
                 modifier = Modifier.fillMaxWidth()
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+            // Las dos del mismo alto, como las celdas de una rejilla: la versión ocupa tres
+            // renglones y la fecha dos.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(11.dp)
+            ) {
                 Ficha(
                     etiqueta = Textos.get(R.string.fallo_dato_fecha),
-                    // Partida en dos renglones: a media anchura, el día y la hora en una sola
-                    // línea se recortaban.
                     valor = fecha.replace(" ", "\n"),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                 )
                 Ficha(
                     etiqueta = Textos.get(R.string.fallo_dato_version),
-                    valor = informe.version + "\n(" + informe.codigoDeVersion + ")",
-                    modifier = Modifier.weight(1f)
+                    // Cortada en el guion a mano, como sale en la réplica. Android no respeta
+                    // que un punto y una cifra van juntos, y por su cuenta dejaba «1.6.2-alpha.»
+                    // arriba y un «4» solo en el renglón siguiente.
+                    valor = informe.version.replaceFirst("-", "-\n") +
+                        "\n(" + informe.codigoDeVersion + ")",
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                 )
             }
             Ficha(
@@ -265,100 +403,97 @@ private fun TarjetaDelInforme(informe: InformeDeFallo, estadoDelArchivo: String?
                 valor = informe.dispositivo + " · " + informe.android,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
 
-            /*
-             * La nota de qué lleva el archivo, como nota al pie y no como franja de color.
-             *
-             * Era un bloque verde saturado a todo lo ancho, justo debajo de una cabecera roja
-             * saturada. Lo que dice no es una alarma, así que no tiene por qué vestirse de
-             * una. El escudo se queda, en su color, del tamaño de lo que es.
-             */
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(11.dp),
-                verticalAlignment = Alignment.Top
+        /*
+         * La nota de qué lleva el archivo, como nota al pie y no como franja de color.
+         *
+         * Era un bloque verde saturado a todo lo ancho, justo debajo de una cabecera roja
+         * saturada. Lo que dice no es una alarma, así que no tiene por qué vestirse de una.
+         */
+        Row(
+            modifier = Modifier.padding(top = 13.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_fallo_escudo),
+                contentDescription = null,
+                tint = colores.escudo,
+                modifier = Modifier
+                    .padding(top = 1.dp)
+                    .size(13.dp)
+            )
+            Text(
+                text = Textos.get(R.string.fallo_no_se_envia_solo),
+                color = esquema.onSurfaceVariant,
+                style = letra(tamano = 10.sp, renglon = 1.45f)
+            )
+        }
+
+        /*
+         * El nombre del archivo es lo que despliega: es justo lo que uno toca cuando quiere ver
+         * qué se va a mandar.
+         *
+         * En reposo va **solo**, una línea y su flecha, como en la réplica. El segundo renglón
+         * aparece únicamente cuando ya se ha hecho algo con el archivo —enviado o guardado—
+         * porque hasta entonces no hay nada que contar.
+         */
+        Row(
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .fillMaxWidth()
+                .cleanClickable(shape = RoundedCornerShape(6.dp)) { abierto = !abierto },
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = nombreDelArchivo(informe),
+                    color = esquema.primary,
+                    style = letra(tamano = 11.5.sp, peso = FontWeight.SemiBold)
+                )
+                if (estadoDelArchivo != null) {
+                    Text(
+                        text = estadoDelArchivo,
+                        color = esquema.onSurfaceVariant,
+                        style = letra(tamano = 10.sp, renglon = 1.45f)
+                    )
+                }
+            }
+            Icon(
+                painter = painterResource(R.drawable.ic_fallo_desplegar),
+                contentDescription = null,
+                tint = esquema.primary,
+                modifier = Modifier
+                    .size(15.dp)
+                    .rotate(giro)
+            )
+        }
+
+        AnimatedVisibility(visible = abierto) {
+            Column(
+                modifier = Modifier
+                    .padding(top = 9.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colores.ficha)
+                    .padding(10.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.VerifiedUser,
-                    contentDescription = null,
-                    tint = secciones.onTrack,
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .size(19.dp)
+                Text(
+                    text = resumenDeLoQuitado(informe),
+                    color = esquema.onSurfaceVariant,
+                    style = letra(tamano = 10.sp, renglon = 1.45f),
+                    modifier = Modifier.padding(bottom = 7.dp)
                 )
                 Text(
-                    text = Textos.get(R.string.fallo_no_se_envia_solo),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.5.sp,
-                    lineHeight = 20.sp
-                )
-            }
-
-            /*
-             * El nombre del archivo es lo que despliega: es justo lo que uno toca cuando
-             * quiere ver qué se va a mandar.
-             *
-             * En reposo va **solo**, una línea y su flecha, como en el diseño. El segundo
-             * renglón aparece únicamente cuando ya se ha hecho algo con el archivo —enviado o
-             * guardado— porque hasta entonces no hay nada que contar: que está listo ya se
-             * entiende por los dos botones de abajo.
-             */
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .cleanClickable(shape = RoundedCornerShape(12.dp)) { abierto = !abierto },
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = nombreDelArchivo(informe),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        lineHeight = 21.sp
-                    )
-                    if (estadoDelArchivo != null) {
-                        Text(
-                            text = estadoDelArchivo,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-                Icon(
-                    imageVector = if (abierto) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-
-            AnimatedVisibility(visible = abierto) {
-                Column(
+                    text = informe.comoTexto(),
+                    color = esquema.onSurfaceVariant,
+                    style = letra(tamano = 8.5.sp, renglon = 1.65f, mono = true),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(17.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        .padding(15.dp)
-                ) {
-                    Text(
-                        text = resumenDeLoQuitado(informe),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp,
-                        lineHeight = 19.sp,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-                    Text(
-                        text = informe.comoTexto(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.5.sp,
-                        lineHeight = 18.sp,
-                        modifier = Modifier
-                            .heightIn(max = 300.dp)
-                            .verticalScroll(rememberScrollState())
-                    )
-                }
+                        .heightIn(max = 150.dp)
+                        .verticalScroll(rememberScrollState())
+                )
             }
         }
     }
@@ -370,32 +505,197 @@ private fun Ficha(
     etiqueta: String,
     valor: String,
     modifier: Modifier = Modifier,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
-    tamano: androidx.compose.ui.unit.TextUnit = 15.sp
+    esError: Boolean = false
 ) {
+    val esquema = MaterialTheme.colorScheme
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .padding(horizontal = 16.dp, vertical = 13.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .background(coloresDelFallo().ficha)
+            .padding(horizontal = 11.dp, vertical = 9.dp)
     ) {
         Text(
             text = etiqueta.uppercase(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
-            letterSpacing = 0.1.em,
-            lineHeight = 16.sp
+            color = esquema.onSurfaceVariant,
+            style = letra(tamano = 8.5.sp, espaciado = 0.1.em, mono = true)
         )
         Text(
             text = valor,
-            color = color,
-            fontFamily = FontFamily.Monospace,
-            fontSize = tamano,
-            lineHeight = 21.sp,
-            modifier = Modifier.padding(top = 3.dp)
+            color = if (esError) esquema.error else esquema.onSurface,
+            style = letra(tamano = if (esError) 12.5.sp else 10.5.sp, renglon = 1.4f, mono = true),
+            modifier = Modifier.padding(top = 2.dp)
         )
     }
+}
+
+private enum class TipoDeBoton { Relleno, Tonal, Contorno }
+
+/**
+ * Los botones de la réplica: píldora, 12 px arriba y abajo y la etiqueta a 12,5 en negrita, con
+ * el icono pegado a ella y los dos centrados juntos.
+ *
+ * **No es `UniStackButton`**, y no por gusto. Ese mide 56 dp y escribe a 16 sp porque es la
+ * acción anclada de un formulario; forzarle el alto de la réplica le recortaba la letra, y su
+ * icono va al borde con la etiqueta centrada en lo que queda, que es justo lo que la réplica no
+ * hace. Por dentro siguen siendo los de Material, con su cambio de forma al pulsar.
+ *
+ * El secundario no es el tonal de Material —que tiñe de acento fondo y letra— sino la ficha
+ * con tinta blanca, y el de contorno escribe en blanco y no en gris.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun BotonDelFallo(
+    texto: String,
+    onClick: () -> Unit,
+    tipo: TipoDeBoton,
+    modifier: Modifier = Modifier,
+    @DrawableRes icono: Int? = null
+) {
+    val colores = coloresDelFallo()
+    val esquema = MaterialTheme.colorScheme
+    val formas = ButtonDefaults.shapes(
+        shape = RoundedCornerShape(percent = 50),
+        pressedShape = ButtonDefaults.pressedShape
+    )
+    val relleno = PaddingValues(horizontal = 10.dp, vertical = 12.dp)
+    val contenido: @Composable RowScope.() -> Unit = {
+        if (icono != null) {
+            Icon(
+                painter = painterResource(icono),
+                contentDescription = null,
+                modifier = Modifier.size(15.dp)
+            )
+            Spacer(modifier = Modifier.width(7.dp))
+        }
+        Text(
+            text = texto,
+            style = letra(tamano = 12.5.sp, renglon = 1.2f, peso = FontWeight.Bold),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+
+    when (tipo) {
+        TipoDeBoton.Relleno -> Button(
+            onClick = onClick,
+            shapes = formas,
+            modifier = modifier.heightIn(min = 39.dp),
+            contentPadding = relleno,
+            content = contenido
+        )
+
+        TipoDeBoton.Tonal -> Button(
+            onClick = onClick,
+            shapes = formas,
+            modifier = modifier.heightIn(min = 39.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colores.ficha,
+                contentColor = esquema.onSurface
+            ),
+            contentPadding = relleno,
+            content = contenido
+        )
+
+        // Dos píxeles más que los otros: en la réplica el borde suma por fuera, y en Material
+        // se pinta por dentro.
+        TipoDeBoton.Contorno -> OutlinedButton(
+            onClick = onClick,
+            shapes = formas,
+            modifier = modifier.heightIn(min = 41.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = esquema.onSurface),
+            border = BorderStroke(1.dp, colores.filete),
+            contentPadding = relleno,
+            content = contenido
+        )
+    }
+}
+
+/**
+ * Un tipo de letra medido como lo mide el navegador.
+ *
+ * Cada texto de la réplica hereda un renglón de 1,55 veces su tamaño con el aire repartido
+ * arriba y abajo, y sin espaciado entre letras. Los estilos de Material traen el suyo —el
+ * cuerpo, 24 sp de renglón y medio punto entre letras—, así que partir de ellos descuadraba
+ * todas las alturas. Aquí se parte de cero; de la tipografía sólo se toma la familia, para que
+ * la letra elegida en Apariencia se siga respetando.
+ */
+@Composable
+private fun letra(
+    tamano: TextUnit,
+    renglon: Float = 1.55f,
+    peso: FontWeight = FontWeight.Normal,
+    espaciado: TextUnit = 0.sp,
+    mono: Boolean = false
+): TextStyle = TextStyle(
+    fontFamily = if (mono) {
+        FontFamily.Monospace
+    } else {
+        MaterialTheme.typography.bodyLarge.fontFamily ?: FontFamily.SansSerif
+    },
+    fontSize = tamano,
+    fontWeight = peso,
+    lineHeight = renglon.em,
+    letterSpacing = espaciado,
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.None
+    )
+)
+
+/** Los colores de la pantalla, ya resueltos para el tema y el modo de ahora. */
+private data class ColoresDelFallo(
+    val cabecera: Color,
+    val sello: Color,
+    val tintaDelSello: Color,
+    val tarjeta: Color,
+    val ficha: Color,
+    val filete: Color,
+    val escudo: Color
+)
+
+/*
+ * design-tokens-ok-begin: los tres colores de la réplica aprobada que no tienen rol en el esquema
+ *
+ * En oscuro la réplica se aparta de Material: la cabecera es un rojo teja más apagado que el
+ * contenedor de error, y el sello lleva ese contenedor de fondo con el signo en blanco. En claro
+ * coincide con los roles de siempre y no hace falta nada propio. El verde del escudo es el suyo,
+ * más suave que el de «al día», que pegado a la cabecera roja volvía a gritar.
+ */
+private val CabeceraEnOscuro = Color(0xFF8C2F28)
+private val EscudoEnOscuro = Color(0xFF5FC98F)
+private val EscudoEnClaro = Color(0xFF1F8B58)
+private val SignoDelSello = Color(0xFFFFFFFF)
+// design-tokens-ok-end
+
+/**
+ * Los colores de la réplica, sacados del tema siempre que el tema los tiene.
+ *
+ * La tarjeta es la superficie de tarjeta del tema tal cual. La ficha y el filete salen de mezclas:
+ * con el tema de UniStack dan los #20242F y #262B38 de la réplica en oscuro, y sus #ECEAF7 y
+ * #E4E2EE en claro, donde la ficha no es gris sino fondo teñido de acento. Con cualquier otro tema
+ * guardan la misma relación con su fondo, en vez de pegar grises de UniStack sobre un Dracula.
+ */
+@Composable
+private fun coloresDelFallo(): ColoresDelFallo {
+    val esquema = MaterialTheme.colorScheme
+    val oscuro = LocalIsDarkTheme.current
+    return ColoresDelFallo(
+        cabecera = if (oscuro) CabeceraEnOscuro else esquema.errorContainer,
+        sello = if (oscuro) esquema.errorContainer else esquema.error,
+        tintaDelSello = SignoDelSello,
+        tarjeta = esquema.surfaceVariant,
+        ficha = if (oscuro) {
+            esquema.surfaceVariant.mezclaCon(esquema.onSurface, 0.037f)
+        } else {
+            esquema.background.mezclaCon(esquema.primary, 0.057f)
+        },
+        filete = if (oscuro) {
+            esquema.surfaceVariant.mezclaCon(esquema.onSurface, 0.07f)
+        } else {
+            esquema.background.mezclaCon(esquema.onSurface, 0.07f)
+        },
+        escudo = if (oscuro) EscudoEnOscuro else EscudoEnClaro
+    )
 }
 
 /**

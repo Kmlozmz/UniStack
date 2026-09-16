@@ -2,9 +2,14 @@ package com.unistack.app.core.fallos
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.unistack.app.MainActivity
 import com.unistack.app.core.design.theme.UniStackTheme
@@ -39,6 +44,23 @@ class PantallaDeFalloActivity : ComponentActivity() {
             // dejarle mirando una pantalla vacía.
             volverALaApp()
             return
+        }
+        /*
+         * Barras transparentes y con los iconos del color del modo, como hace MainActivity.
+         *
+         * Sin esto la ventana se quedaba con los iconos oscuros de su tema claro de base, y en
+         * modo oscuro la hora y la batería salían negro sobre negro encima de la cabecera.
+         */
+        val oscuro = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        val barras = if (oscuro) {
+            SystemBarStyle.dark(Color.TRANSPARENT)
+        } else {
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(statusBarStyle = barras, navigationBarStyle = barras)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
         }
         setContent {
             UniStackTheme(darkTheme = isSystemInDarkTheme()) {
