@@ -20,3 +20,12 @@ COMPILAR.md
 
 # Configuracion local del agente (launch.json apunta a rutas de esta maquina)
 .claude/
+
+# Solo se versiona lo que construye la app. Documentación interna, reglas y habilidades de los
+# agentes, histórico de cambios, configuración de editor y scripts sueltos se quedan en local.
+AGENTS.md
+.agents/
+.editorconfig
+UniStack development/
+docs/
+scripts/
