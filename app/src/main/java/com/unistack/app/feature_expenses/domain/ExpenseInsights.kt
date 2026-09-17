@@ -16,7 +16,6 @@ import java.time.YearMonth
  * proyección que se calcula sola el día 11 no se puede juzgar mirando la pantalla en otro día.
  */
 object ExpenseInsights {
-
     // ---------------------------------------------------------------- comparar
 
     /** Lo gastado en una categoría ahora y en el periodo anterior. */
@@ -174,8 +173,6 @@ object ExpenseInsights {
         val huecosIniciales: Int
     ) {
         val total: Int get() = dias.sumOf { it.total }
-
-        val diaMasCaro: DiaDelMes? get() = dias.filter { it.total > 0 }.maxByOrNull { it.total }
     }
 
     fun calendarioDelMes(

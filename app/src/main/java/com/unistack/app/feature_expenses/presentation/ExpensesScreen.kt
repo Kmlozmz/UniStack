@@ -73,7 +73,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.material3.MaterialShapes
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.geometry.Offset
@@ -1170,7 +1169,6 @@ private fun CategoryFilterMenu(
     }
 }
 
-
 @Composable
 private fun PeriodSegmentedControl(
     selectedPeriod: ExpensePeriodFilter,
@@ -1334,8 +1332,6 @@ private fun ExpenseCategorySheetOption(
         }
     }
 }
-
-
 
 /**
  * Un color por categoría, sacado de los tonos del tema.
@@ -2010,24 +2006,14 @@ private fun compactAmount(monto: Int, currency: CurrencyPreference = CurrencyPre
     else -> CurrencyFormatter.format(monto, currency)
 }
 
-private fun compactCop(monto: Int): String = compactAmount(monto, CurrencyPreference.COP)
-
 @Composable
 private fun recordCountLabel(count: Int): String =
     if (count == 1) stringResource(R.string.expenses_record_single) else stringResource(R.string.expenses_record_multiple, count)
 
-/**
- * El tramo que suman la cifra, el grafico y la lista.
- *
- * «Hoy» es el que sale al abrir, y no «Todo»: lo primero que se viene a mirar es cuanto
- * llevas gastado hoy, no el acumulado historico, que solo crece y nunca dice nada nuevo.
- */
-private val ExpenseChipLocale: java.util.Locale get() = java.util.Locale.getDefault()
-
 private enum class ExpensePeriodFilter(
-    @StringRes val labelRes: Int,
-    @StringRes val heroLabelRes: Int,
-    @StringRes val emptySuffixRes: Int
+    @param:StringRes val labelRes: Int,
+    @param:StringRes val heroLabelRes: Int,
+    @param:StringRes val emptySuffixRes: Int
 ) {
     TODAY(R.string.expenses_period_today, R.string.expenses_hero_today, R.string.expenses_empty_suffix_today),
     WEEK(R.string.expenses_period_week, R.string.expenses_hero_week, R.string.expenses_empty_suffix_week),

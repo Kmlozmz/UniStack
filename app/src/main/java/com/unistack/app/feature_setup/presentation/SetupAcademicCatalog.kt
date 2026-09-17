@@ -1,7 +1,6 @@
 package com.unistack.app.feature_setup.presentation
 
 import com.unistack.app.feature_user.domain.StudyArea
-import java.util.Locale
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
 

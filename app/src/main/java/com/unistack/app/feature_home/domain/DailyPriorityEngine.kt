@@ -11,7 +11,6 @@ import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.UserProfile
-import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
@@ -273,7 +272,6 @@ object DailyPriorityEngine {
             days == 1L -> Textos.get(R.string.home_es_manana, title)
             else -> Textos.get(R.string.home_es_lo_siguiente, title)
         }
-        val actionVerb = if (isExamLike) (Textos.get(R.string.home_repasar)) else (Textos.get(R.string.home_avanzar))
         return HomePrioritySummary(
             title = titleText,
             shortDescription = when {
@@ -331,14 +329,6 @@ object DailyPriorityEngine {
             0 -> Textos.get(R.string.settings_backup_now)
             1 -> Textos.get(R.string.home_luego)
             else -> Textos.get(R.string.home_si_tienes_30_min)
-        }
-    }
-
-    private fun heroActionPrefix(): String {
-        return when (LocalTime.now().hour) {
-            in 5..11 -> Textos.get(R.string.home_arranca_con)
-            in 18..23 -> Textos.get(R.string.home_deja_listo)
-            else -> Textos.get(R.string.notif_next_step)
         }
     }
 

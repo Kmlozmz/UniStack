@@ -132,7 +132,6 @@ object AppRoutes {
     fun noteEditor(noteId: String) = "$NoteEditor/$noteId"
     fun newNote(start: String, subjectId: String? = null) =
         "$NewNote?$NewNoteStartArg=$start".let { if (subjectId == null) it else "$it&$NewNoteSubjectArg=$subjectId" }
-    fun closedTerm(termId: String) = "$ClosedTerm/$termId"
     fun termDetail(termId: String) = "$TermDetail/$termId"
     fun termSubject(subjectId: String) = "$TermSubject/$subjectId"
     fun termEditGrades(subjectId: String) = "$TermEditGrades/$subjectId"

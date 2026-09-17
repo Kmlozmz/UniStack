@@ -60,7 +60,6 @@ class BancoDePruebasViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val taskAttachmentStore: TaskAttachmentStore
 ) : ViewModel() {
-
     private companion object {
         /** Lo que distingue lo fabricado de lo real. Nada se borra sin esto delante. */
         const val MARCA = "prueba-"
@@ -567,9 +566,6 @@ class BancoDePruebasViewModel @Inject constructor(
     fun recogerNotificaciones(context: Context) {
         NotificationHistoryStore.removeSeeded(context)
     }
-
-    fun cuantasNotificacionesDePrueba(context: Context): Int =
-        NotificationHistoryStore.countSeeded(context)
 
     // ------------------------------------------------------------------ preferencias
 

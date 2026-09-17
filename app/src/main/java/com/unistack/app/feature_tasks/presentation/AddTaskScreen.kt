@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccessTime
@@ -57,10 +56,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Grade
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.TaskAlt
@@ -70,7 +66,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -95,7 +90,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -568,7 +562,6 @@ private fun AddTaskContent(
     }
     val attachController = rememberTaskAttachController(attachTargetId, viewModel) { attachError = it }
     val attachmentOpener = rememberTaskAttachmentOpener(viewModel)
-    val attachContext = androidx.compose.ui.platform.LocalContext.current
     val headerContext = listOfNotNull(
         selectedSubject?.name,
         linkedGradeValue?.let { stringResource(R.string.tasks_grade_prefix, it) }
@@ -1015,14 +1008,6 @@ private fun CompactInfoAction(
 }
 
 @Composable
-private fun FormDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(start = 64.dp),
-        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.13f)
-    )
-}
-
-@Composable
 private fun TaskNameRow(
     value: String,
     onValueChange: (String) -> Unit,
@@ -1155,8 +1140,6 @@ private fun BasicInfoRowShell(
         )
     }
 }
-
-
 
 @Composable
 private fun LinkedGradeCard(
@@ -1479,7 +1462,7 @@ private fun SubtasksCard(
     }
 }
 
-private enum class TaskGradingChoice(@StringRes val labelRes: Int) {
+private enum class TaskGradingChoice(@param:StringRes val labelRes: Int) {
     YES(R.string.tasks_gradeable),
     NO(R.string.tasks_ungraded),
     UNSURE(R.string.tasks_grade_undecided);
@@ -1496,7 +1479,6 @@ private fun TaskGradingChoice?.toInitialGradingStatus(): TaskGradingStatus {
         null -> TaskGradingStatus.UNDECIDED
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -2124,7 +2106,7 @@ private fun PrioritySegmentedControl(
     UniSegmentedControl(
         selected = selected,
         options = TaskDifficulty.entries.map {
-            UniSegmentedOption(value = it, label = it.label(), dotColor = it.color())
+            UniSegmentedOption(value = it, label = it.shortLabel(), dotColor = it.color())
         },
         onSelected = onSelected,
         modifier = Modifier.fillMaxWidth()
@@ -2186,13 +2168,4 @@ private val SubjectSheetText: Color
     @Composable get() = MaterialTheme.colorScheme.onSurface
 private val SubjectSheetMuted: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-
-@Composable
-private fun TaskDifficulty.label(): String {
-    return when (this) {
-        TaskDifficulty.EASY -> stringResource(R.string.tasks_priority_low)
-        TaskDifficulty.MEDIUM -> stringResource(R.string.tasks_priority_medium)
-        TaskDifficulty.HARD -> stringResource(R.string.tasks_priority_high)
-    }
-}
 

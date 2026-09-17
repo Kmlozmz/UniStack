@@ -10,20 +10,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.SectionLabelStyle
@@ -43,50 +38,10 @@ import com.unistack.app.feature_user.domain.SettingsIconStyle
  * Las piezas con las que están hechas las nueve pantallas de ajustes.
  *
  * Viven aquí y no dentro de una pantalla porque las usan todas: el centro, Apariencia,
- * Accesibilidad, los tres modos de perfil y Actualizaciones. Cuando el encabezado o la fila
- * cambian, cambian en las nueve a la vez, que es justo lo que no pasaba cuando cada pantalla
+ * Accesibilidad, los tres modos de perfil y Actualizaciones. Cuando la fila
+ * cambia, cambia en las nueve a la vez, que es justo lo que no pasaba cuando cada pantalla
  * traía su propia versión.
  */
-
-/**
- * El encabezado de una pantalla de ajustes: título grande, apoyo, y la flecha si procede.
- */
-@Composable
-fun SettingsHeader(
-    title: String,
-    subtitle: String,
-    onBackClick: (() -> Unit)?,
-    /** Lo que va a la derecha del título, si esa pantalla tiene algo que ofrecer ahí. */
-    action: (@Composable () -> Unit)? = null
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Sin flecha cuando la pantalla es raíz de pestaña: una flecha que no lleva a
-        // ninguna parte es peor que no tenerla.
-        if (onBackClick != null) {
-            UniBackButton(onClick = onBackClick)
-            Spacer(Modifier.width(8.dp))
-        } else {
-            Spacer(Modifier.width(4.dp))
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        action?.invoke()
-    }
-}
 
 /**
  * Dónde vive una fila dentro de su grupo.

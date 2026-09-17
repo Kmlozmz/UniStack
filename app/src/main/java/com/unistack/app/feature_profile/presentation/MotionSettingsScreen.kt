@@ -14,30 +14,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.FormatLineSpacing
-import androidx.compose.material.icons.rounded.Numbers
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material.icons.rounded.SwipeLeft
-import androidx.compose.material.icons.rounded.TouchApp
-import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,7 +64,6 @@ import com.unistack.app.feature_user.domain.MotionChoice
 import com.unistack.app.feature_user.domain.MotionGesture
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.MotionPreferences
-import com.unistack.app.feature_user.domain.MotionToggle
 import com.unistack.app.core.utils.Textos
 
 /**
@@ -414,7 +402,6 @@ private fun CajaDeVariante(
     }
 }
 
-
 /**
  * El demo que se abre al pulsar, como el «▶ Ver» del diseño.
  *
@@ -563,11 +550,11 @@ private fun iconoDe(id: String): ImageVector = when (id) {
 
 /** Los colores del diseño, uno por ajuste. Son los que hacen la lista legible de un vistazo. */
 private fun colorDe(id: String): Color = when (id) {
-    "velocidad" -> Color(0xFFE8693A)
-    "carga", "celebracion" -> Color(0xFFE0A63C)
-    "transicion", "sello" -> Color(0xFF3F8FE0)
-    "listas", "claseAhora" -> Color(0xFF5FC96E)
-    else -> Color(0xFF7F77DD)
+    "velocidad" -> Color(0xFFE8693A) // design-tokens-ok: color fijo de cada ajuste de la lista
+    "carga", "celebracion" -> Color(0xFFE0A63C) // design-tokens-ok: color fijo de cada ajuste de la lista
+    "transicion", "sello" -> Color(0xFF3F8FE0) // design-tokens-ok: color fijo de cada ajuste de la lista
+    "listas", "claseAhora" -> Color(0xFF5FC96E) // design-tokens-ok: color fijo de cada ajuste de la lista
+    else -> Color(0xFF7F77DD) // design-tokens-ok: color fijo de cada ajuste de la lista
 }
 
 /**
@@ -606,5 +593,4 @@ private fun MotionPreference.etiqueta(): String {
 }
 
 private fun motionGroupDisplay(group: String): String = Textos.get(MotionCatalog.groupNameRes(group))
-
 

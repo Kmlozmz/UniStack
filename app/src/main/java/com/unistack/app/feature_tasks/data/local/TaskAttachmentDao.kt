@@ -23,9 +23,6 @@ interface TaskAttachmentDao {
     @Query("SELECT storedName FROM task_attachments WHERE id = :attachmentId AND userId IN (:userIds)")
     suspend fun storedNameOf(attachmentId: String, userIds: List<String>): String?
 
-    @Query("SELECT storedName FROM task_attachments WHERE taskId = :taskId AND userId IN (:userIds)")
-    suspend fun storedNamesOfTask(taskId: String, userIds: List<String>): List<String>
-
     @Query("DELETE FROM task_attachments WHERE id = :attachmentId AND userId IN (:userIds)")
     suspend fun deleteAttachmentById(attachmentId: String, userIds: List<String>)
 

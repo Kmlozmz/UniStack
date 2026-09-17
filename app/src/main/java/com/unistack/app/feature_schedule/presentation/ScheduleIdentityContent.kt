@@ -55,7 +55,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -1790,30 +1789,6 @@ private fun findUpcomingClass(
             .minByOrNull(ClassSession::startMinute)
             ?.let { date to it }
     }.firstOrNull()
-}
-
-/**
- * «Tienes N clases sin marcar», con el atajo para resolverlas juntas.
- */
-/**
- * Los pares de clases que se pisan en un mismo dia.
- *
- * Dos tramos se cruzan si uno empieza antes de que el otro acabe: basta con ordenarlos por hora
- * de inicio y mirar cada uno con el siguiente que le quede solapado. Se devuelven los pares y no
- * un `true`, porque el aviso dice **cuales** son.
- */
-private fun crucesDelDia(sesiones: List<ClassSession>): List<Pair<ClassSession, ClassSession>> {
-    val ordenadas = sesiones.sortedBy { it.startMinute }
-    val pares = mutableListOf<Pair<ClassSession, ClassSession>>()
-    for (i in ordenadas.indices) {
-        for (j in i + 1 until ordenadas.size) {
-            // Ordenadas por inicio: en cuanto una empieza despues del final de la de fuera,
-            // las siguientes tambien, y no hace falta seguir mirando.
-            if (ordenadas[j].startMinute >= ordenadas[i].endMinute) break
-            pares += ordenadas[i] to ordenadas[j]
-        }
-    }
-    return pares
 }
 
 /** El aviso de que hay clases pisandose, con el mismo aire que el de «sin marcar». */

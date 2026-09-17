@@ -44,12 +44,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Palette
@@ -113,11 +111,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniBackButton
-import com.unistack.app.core.design.components.UniIconButton
-import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_notes.domain.AttachmentKind
@@ -137,11 +132,7 @@ import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NoteTextEdits
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
 import com.unistack.app.core.utils.Textos
 
 /**
@@ -204,7 +195,6 @@ fun NoteEditorScreen(
     val portapapeles = LocalClipboardManager.current
     val avisos = remember { SnackbarHostState() }
     val alcance = rememberCoroutineScope()
-    var pendingDate by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val body = value.text
     // Las marcas se ven solo si alguien lo pidió en el menú. Es una preferencia de cómo se

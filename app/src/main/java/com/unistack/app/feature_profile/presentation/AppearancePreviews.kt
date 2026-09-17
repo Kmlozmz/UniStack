@@ -14,16 +14,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -415,50 +412,6 @@ fun VistaPreviaDeInterruptores(modifier: Modifier = Modifier) {
                     }
                 }
             }
-        }
-    }
-}
-
-/**
- * Una clase de Horario con su hora: donde se ve el primer día de la semana en contexto.
- *
- * La tira de siete letras sola no decía nada; con la fila de la clase debajo se entiende que
- * lo que cambia es por dónde empieza a contarse la semana en Horario y en Gastos.
- */
-@Composable
-fun VistaPreviaDeSemana(letras: List<String>, indiceDeHoy: Int, modifier: Modifier = Modifier) {
-    val esquema = MaterialTheme.colorScheme
-    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_schedule), modifier = modifier) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            letras.forEachIndexed { indice, dia ->
-                val hoy = indice == indiceDeHoy
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(if (hoy) esquema.primary else esquema.surfaceContainerHighest),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        dia,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (hoy) FontWeight.ExtraBold else FontWeight.Normal,
-                        color = if (hoy) esquema.onPrimary else esquema.onSurface
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(
-                Icons.Rounded.CalendarMonth,
-                contentDescription = null,
-                tint = esquema.primary,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(stringResource(R.string.preview_calculus) + " · 10:00", style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.weight(1f))
-            Text("103F", style = MaterialTheme.typography.labelMedium, color = esquema.onSurfaceVariant)
         }
     }
 }

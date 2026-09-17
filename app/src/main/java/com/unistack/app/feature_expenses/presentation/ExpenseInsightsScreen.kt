@@ -17,15 +17,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.toShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,18 +51,14 @@ import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
-import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.formatCurrency
 import com.unistack.app.core.utils.DayLabels
-import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_expenses.domain.ExpenseInsights
-import java.time.LocalDate
 import java.time.YearMonth
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
@@ -76,7 +69,7 @@ import com.unistack.app.core.navigation.transicionEntreVistas
 import com.unistack.app.core.design.components.galletaViva
 
 /** Las tres maneras de leer lo mismo. */
-private enum class InsightView(@StringRes val labelRes: Int) {
+private enum class InsightView(@param:StringRes val labelRes: Int) {
     COMPARAR(R.string.insights_tab_compare),
     RITMO(R.string.insights_tab_pace),
     CALENDARIO(R.string.insights_tab_calendar);

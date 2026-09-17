@@ -10,9 +10,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Surface
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
@@ -20,13 +18,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import java.time.Instant
 import java.time.LocalDate
@@ -127,81 +123,6 @@ fun UniDatePickerDialog(
                             enabled = state.selectedDateMillis != null
                         ) { Text(stringResource(R.string.action_accept)) }
                     }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Elegir dos días: el desde y el hasta.
- *
- * Lo pide el filtro de Gastos. «Esta semana» y «Este mes» cubren la pregunta de todos los días,
- * pero no la del corte de un semestre o la de un viaje concreto, y para eso no había forma de
- * preguntar.
- */
-@Composable
-fun UniDateRangePickerDialog(
-    startDate: LocalDate?,
-    endDate: LocalDate?,
-    onRangeSelected: (start: LocalDate, end: LocalDate) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = startDate?.toUtcMillis(),
-        initialSelectedEndDateMillis = endDate?.toUtcMillis()
-    )
-
-    /*
-     * A pantalla completa, no en un diálogo.
-     *
-     * `DateRangePicker` no enseña un mes: enseña todos, uno debajo de otro, para poder arrastrar
-     * de agosto a diciembre sin cambiar de vista. Metido en un `DatePickerDialog` eso no cabe:
-     * la lista se comía los botones, el titular quedaba cortado por arriba y «Aceptar» se salía
-     * por abajo. Material lo dibuja a pantalla completa por este motivo, y aquí se hace igual.
-     */
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surfaceContainerLow
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    // El titular se metía debajo del reloj y la señal: a pantalla completa no
-                    // hay diálogo que aparte el contenido de la barra de estado, hay que
-                    // apartarlo aquí.
-                    .statusBarsPadding()
-            ) {
-                DateRangePicker(
-                    state = state,
-                    modifier = Modifier.weight(1f),
-                    showModeToggle = true
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-                    TextButton(
-                        onClick = {
-                            val from = state.selectedStartDateMillis
-                            val to = state.selectedEndDateMillis
-                            if (from != null && to != null) {
-                                onRangeSelected(from.toLocalDate(), to.toLocalDate())
-                            }
-                            onDismiss()
-                        },
-                        // Con un solo extremo marcado el periodo no existe todavía.
-                        enabled = state.selectedStartDateMillis != null &&
-                            state.selectedEndDateMillis != null
-                    ) { Text(stringResource(R.string.action_accept)) }
                 }
             }
         }

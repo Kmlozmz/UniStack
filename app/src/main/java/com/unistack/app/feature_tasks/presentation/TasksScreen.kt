@@ -3,7 +3,6 @@
 package com.unistack.app.feature_tasks.presentation
 
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -13,7 +12,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.unistack.app.core.utils.performSafely
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,23 +34,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.DoNotDisturbOn
@@ -60,10 +50,8 @@ import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.HourglassEmpty
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.toPath
@@ -77,9 +65,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -96,7 +82,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -117,7 +102,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -150,8 +134,6 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.core.utils.GradeCalculator
-import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -161,16 +143,12 @@ import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
-import com.unistack.app.feature_tasks.domain.isGradable
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
-import com.unistack.app.feature_tasks.domain.formatTaskDueText
-import com.unistack.app.feature_tasks.domain.formatTaskDate
 import com.unistack.app.feature_tasks.domain.formatTaskTime
 import com.unistack.app.feature_user.domain.GradingScale
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
@@ -184,8 +162,6 @@ import kotlin.math.sin
  *
  * Combina:
  * - El resumen tonal de la semana con el anillo de progreso ondulado animado ([OutcomeWaveRing]).
- * - La tira de 7 días ([SemanaTira]) con puntos de actividad por día y filtro directo al pulsar.
- * - El riel de materias ([RielMaterias]) con conteo por materia y punto de color.
  * - Agrupación por días (Ayer, Hoy, Mañana, fechas próximas, Más adelante y Hechas) con «Entregadas sin nota» fijada arriba.
  * - Fila ligera de tarea ([FilaTarea]) con casilla de esquinas suaves, tachado, metadata, progreso de subtareas y arrastre para borrar.
  * - Hoja de detalle ([HojaTarea]) con pospuesto en 1 toque ([Mañana | Próx. lunes | Elegir día]), fila de materia con salto directo a su detalle, checklist interactiva de subtareas y selector de evaluación.
@@ -336,7 +312,6 @@ fun TasksScreen(
     val weekPending = weekTasks.filterNot { it.completed }
     val weekDone = weekTasks.filter { it.completed }
     val weekOverdue = weekPending.filter { TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today) }
-    val weekEstimatedMinutes = weekPending.sumOf { it.estimatedMinutes }
 
     val awaitingGradeTasks = filteredTasks.filter {
         it.completed && it.gradingStatus == TaskGradingStatus.AWAITING_GRADE
@@ -1244,9 +1219,6 @@ fun OutcomeWaveRing(
     }
 }
 
-
-
-
 /**
  * Fila de tarea de la Propuesta D envuelta en [FilaDeslizable] para borrar.
  * Si es «Entregadas sin nota» renderiza [TarjetaAwaitingGrade] (tarjetaA con acento-c y píldora blanca).
@@ -1801,7 +1773,6 @@ private fun FilaTarea(
     }
 }
 
-
 /**
  * La tarea que se acaba de cerrar, con el visto y la marca de su materia.
  *
@@ -2331,12 +2302,6 @@ private fun TasksFilterBottomSheet(
         (if (selectedSubjectId != null) 1 else 0) +
         (if (selectedPriority != null) 1 else 0) +
         (if (sortOrder != TaskSortOrder.DUE_DATE) 1 else 0)
-
-    val filteredCount = tasks.count { task ->
-        selectedStatus.matches(task) &&
-            (selectedSubjectId == null || task.subjectId == selectedSubjectId) &&
-            (selectedPriority == null || task.difficulty == selectedPriority)
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -2878,16 +2843,6 @@ private fun List<StudentTask>.sortFor(
     }
 }
 
-@Composable
-private fun formatDueDayTitle(date: LocalDate, today: LocalDate): String {
-    return when (date) {
-        today -> stringResource(R.string.tasks_group_today)
-        today.plusDays(1) -> stringResource(R.string.tasks_group_tomorrow)
-        today.minusDays(1) -> stringResource(R.string.tasks_group_yesterday)
-        else -> date.format(DateTimeFormatter.ofPattern("EEEE d", Locale.getDefault())).replaceFirstChar { it.uppercase() }
-    }
-}
-
 private fun formatFutureDayTitle(date: LocalDate): String {
     return date.format(DateTimeFormatter.ofPattern("EEEE d", Locale.getDefault())).replaceFirstChar { it.uppercase() }
 }
@@ -2975,14 +2930,6 @@ internal fun taskTypeIcon(type: TaskType): ImageVector = when (type) {
     TaskType.ESSAY, TaskType.READING -> Icons.AutoMirrored.Rounded.MenuBook
     else -> Icons.AutoMirrored.Rounded.MenuBook
 }
-
-
-private val visibleStatusFilters = listOf(
-    TaskListFilter.ALL,
-    TaskListFilter.PENDING,
-    TaskListFilter.COMPLETED,
-    TaskListFilter.OVERDUE
-)
 
 private enum class TaskListFilter(@StringRes val labelRes: Int) {
     ALL(R.string.tasks_status_all),

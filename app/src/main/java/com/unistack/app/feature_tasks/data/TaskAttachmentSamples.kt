@@ -11,6 +11,7 @@ import java.util.UUID
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.sin
+import com.unistack.app.core.utils.cabeceraWav
 
 /**
  * Adjuntos de mentira para el banco de pruebas, calcados de `NoteSamples`.
@@ -20,7 +21,6 @@ import kotlin.math.sin
  * sin tener que fotografiar nada a mano cada vez que se prueba la pantalla.
  */
 object TaskAttachmentSamples {
-
     fun pizarra(store: TaskAttachmentStore, taskId: String, variante: Int = 0): TaskAttachment? = runCatching {
         val ancho = 1200
         val alto = 800
@@ -147,37 +147,4 @@ object TaskAttachmentSamples {
         durationMillis = durationMillis,
         createdAt = System.currentTimeMillis()
     )
-
-    private fun cabeceraWav(datos: Int, muestreo: Int): ByteArray {
-        val bytesPorSegundo = muestreo * 2
-        val cabecera = ByteArray(44)
-        fun texto(pos: Int, valor: String) {
-            valor.forEachIndexed { i, c -> cabecera[pos + i] = c.code.toByte() }
-        }
-        fun entero(pos: Int, valor: Int) {
-            cabecera[pos] = (valor and 0xFF).toByte()
-            cabecera[pos + 1] = ((valor shr 8) and 0xFF).toByte()
-            cabecera[pos + 2] = ((valor shr 16) and 0xFF).toByte()
-            cabecera[pos + 3] = ((valor shr 24) and 0xFF).toByte()
-        }
-        fun corto(pos: Int, valor: Int) {
-            cabecera[pos] = (valor and 0xFF).toByte()
-            cabecera[pos + 1] = ((valor shr 8) and 0xFF).toByte()
-        }
-
-        texto(0, "RIFF")
-        entero(4, 36 + datos)
-        texto(8, "WAVE")
-        texto(12, "fmt ")
-        entero(16, 16)
-        corto(20, 1)
-        corto(22, 1)
-        entero(24, muestreo)
-        entero(28, bytesPorSegundo)
-        corto(32, 2)
-        corto(34, 16)
-        texto(36, "data")
-        entero(40, datos)
-        return cabecera
-    }
 }

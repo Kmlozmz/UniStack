@@ -48,19 +48,6 @@ fun UniStackLogoMark(
     )
 }
 
-/** La misma marca recortada en blanco, para fondos de color. */
-@Composable
-fun UniStackLogoMarkWhite(
-    modifier: Modifier = Modifier,
-    size: Dp = 32.dp
-) {
-    Image(
-        painter = painterResource(id = R.drawable.unistack_option_a_symbol_white),
-        contentDescription = "UniStack",
-        modifier = modifier.size(size)
-    )
-}
-
 /**
  * El nombre de la marca: «Uni» en el color del texto y «Stack» en el morado de la app.
  *

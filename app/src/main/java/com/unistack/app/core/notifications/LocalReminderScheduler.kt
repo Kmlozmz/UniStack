@@ -474,15 +474,6 @@ class LocalReminderScheduler(private val context: Context) {
             }
     }
 
-    fun cancelScheduled(requestCode: Int) {
-        cancel(requestCode)
-        scheduledRequestCodes.remove(requestCode)
-        val remaining = storedScheduledRequestCodes() - requestCode
-        prefs.edit {
-            putStringSet(REQUEST_CODE_SET, remaining.map(Int::toString).toSet())
-        }
-    }
-
     private fun scheduleSubjectInsights(profile: UserProfile, subjects: List<Subject>) {
         gradeNotificationHints(profile, subjects)
             .take(MAX_SMART_SUBJECT_REMINDERS)

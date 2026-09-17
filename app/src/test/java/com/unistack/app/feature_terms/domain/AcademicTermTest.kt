@@ -16,7 +16,6 @@ import org.junit.Before
  * antes de que nada se apoye en él.
  */
 class AcademicTermTest {
-
     @Before
     fun instalarTextos() {
         TextosDePrueba.instalar()
@@ -137,13 +136,6 @@ class AcademicTermTest {
         assertEquals("2026-1", AcademicTerm.suggestedName(AcademicTermType.SEMESTER, dia("2026-02-01")))
         // El anual no lleva ordinal: solo hay uno.
         assertEquals("2026", AcademicTerm.suggestedName(AcademicTermType.ANNUAL, dia("2026-08-10")))
-    }
-
-    @Test
-    fun `el fin sugerido cuenta las semanas de esa forma de periodo`() {
-        val inicio = dia("2026-08-10")
-        assertEquals(inicio.plusWeeks(16), AcademicTerm.suggestedPlannedEnd(AcademicTermType.SEMESTER, inicio))
-        assertEquals(inicio.plusWeeks(11), AcademicTerm.suggestedPlannedEnd(AcademicTermType.TRIMESTER, inicio))
     }
 
     @Test

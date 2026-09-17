@@ -50,7 +50,7 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 
-private enum class AcademicTab(@StringRes val labelRes: Int) {
+private enum class AcademicTab(@param:StringRes val labelRes: Int) {
     SUBJECTS(R.string.academic_tab_subjects),
     TASKS(R.string.academic_tab_tasks);
 

@@ -3,7 +3,6 @@ package com.unistack.app.feature_notes.presentation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -56,7 +55,6 @@ class NoteVisualTransformation(
     private val format: NoteFormat,
     private val palette: NotePalette
 ) : VisualTransformation {
-
     override fun filter(text: AnnotatedString): TransformedText {
         val crudo = text.text
         if (crudo.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
@@ -147,13 +145,4 @@ fun estiloDe(style: NoteStyle, p: NotePalette): SpanStyle = when (style) {
     NoteStyle.LINEA -> SpanStyle(color = p.tenue)
     NoteStyle.ENLACE -> SpanStyle(color = p.acento, textDecoration = TextDecoration.Underline)
     NoteStyle.TABLA -> SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 13.5.sp, color = p.suave)
-}
-
-/** El mismo formateo, para un texto que solo se lee (la ayuda, las tarjetas de ejemplo). */
-@Composable
-fun noteAnnotated(text: String, format: NoteFormat, palette: NotePalette): AnnotatedString {
-    val transformation = remember(format, palette) { NoteVisualTransformation(format, palette) }
-    return remember(text, transformation) {
-        transformation.filter(AnnotatedString(text)).text
-    }
 }

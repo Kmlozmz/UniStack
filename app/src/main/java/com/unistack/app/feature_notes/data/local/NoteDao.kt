@@ -96,7 +96,4 @@ interface NoteDao {
     /** Los identificadores de lo que lleva demasiado en la papelera. */
     @Query("SELECT id FROM notes WHERE userId IN (:userIds) AND deletedAt IS NOT NULL AND deletedAt < :before")
     suspend fun expiredInTrash(userIds: List<String>, before: Long): List<String>
-
-    @Query("SELECT COUNT(*) FROM notes WHERE userId IN (:userIds)")
-    suspend fun countNotesForUsers(userIds: List<String>): Int
 }

@@ -8,13 +8,6 @@ import java.util.Locale
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
 
-/** Un día del cuaderno: su fecha, cómo se llama en la cabecera y lo que se escribió ese día. */
-data class NoteDay(
-    val date: LocalDate,
-    val label: String,
-    val notes: List<QuickNote>
-)
-
 /**
  * Cómo se reparten las notas en la lista.
  *
@@ -23,7 +16,6 @@ data class NoteDay(
  * teléfono.
  */
 object NoteGrouping {
-
     /**
      * Las fijadas, que se salen del orden del tiempo.
      *
@@ -41,29 +33,6 @@ object NoteGrouping {
         NotesSort.MODIFICADA -> notes.sortedByDescending { it.updatedAt }
         NotesSort.CREADA -> notes.sortedByDescending { it.createdAt }
     }
-
-    /** El resto, por días y de lo más reciente a lo más viejo. */
-    fun byDay(
-        notes: List<QuickNote>,
-        today: LocalDate,
-        zone: ZoneId = ZoneId.systemDefault()
-    ): List<NoteDay> {
-        return notes.asSequence()
-            .filterNot { it.pinned }
-            .groupBy { dateOf(it, zone) }
-            .toList()
-            .sortedByDescending { (date, _) -> date }
-            .map { (date, sameDay) ->
-                NoteDay(
-                    date = date,
-                    label = dayLabel(date, today),
-                    notes = sameDay.sortedByDescending { it.updatedAt }
-                )
-            }
-    }
-
-    fun dateOf(note: QuickNote, zone: ZoneId = ZoneId.systemDefault()): LocalDate =
-        Instant.ofEpochMilli(note.updatedAt).atZone(zone).toLocalDate()
 
     /**
      * Cómo se llama un día en la cabecera.

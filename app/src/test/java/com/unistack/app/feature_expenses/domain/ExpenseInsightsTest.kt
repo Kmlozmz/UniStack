@@ -14,7 +14,6 @@ import java.time.YearMonth
  * una proyeccion hecha el dia 11 de un mes de 30 no se puede juzgar el dia 25.
  */
 class ExpenseInsightsTest {
-
     private val lunes = LocalDate.of(2026, 9, 7)
 
     private fun gasto(fecha: LocalDate, monto: Int, categoria: ExpenseCategory = ExpenseCategory.FOOD) =
@@ -168,7 +167,6 @@ class ExpenseInsightsTest {
         val cuarto = c.dias.first { it.fecha == dia }
         assertEquals(12_000, cuarto.total)
         assertEquals(listOf(9_000, 3_000), cuarto.gastos.map { it.amount })
-        assertEquals(dia, c.diaMasCaro?.fecha)
     }
 
     @Test

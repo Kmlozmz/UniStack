@@ -4,12 +4,8 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
@@ -42,45 +38,6 @@ fun Modifier.expressiveSelection(
         scaleX = scale
         scaleY = scale
     }
-}
-
-/**
- * Pulsación expresiva: el elemento se comprime mientras se mantiene pulsado y vuelve con
- * rebote al soltar, el mismo gesto que ya hace el botón principal.
- *
- * Existe porque hay superficies que se tocan y no daban ninguna señal de haberlo notado:
- * usaban un clic sin indicación, pensado para no meter el resalte gris de Material, y al
- * quitarlo se quedaron sin ninguna respuesta. Esto devuelve la respuesta sin ese resalte.
- *
- * Devuelve el modificador ya con el clic puesto para que quien lo use no pueda olvidarse de
- * conectar la fuente de interacción, que es de donde sale el estado de pulsado.
- */
-@Composable
-fun Modifier.expressivePress(
-    pressedScale: Float = 0.97f,
-    onClick: () -> Unit
-): Modifier {
-    val motionEnabled = LocalMotionDurationScale.current > 0f
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && motionEnabled) pressedScale else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "expressive-press-scale"
-    )
-    return this
-        .graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        }
-        .clickable(
-            interactionSource = interactionSource,
-            indication = null,
-            onClick = onClick
-        )
 }
 
 /**

@@ -1,7 +1,6 @@
 package com.unistack.app.core.design.theme
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.annotation.StringRes
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
@@ -46,21 +45,17 @@ data class AppTheme(
     val dark: ThemePalette,
     val light: ThemePalette,
     /** El nombre traducible de los temas propios; cero en las paletas publicadas. */
-    @StringRes private val nameRes: Int = 0
+    @param:StringRes private val nameRes: Int = 0
 ) {
     val name: String get() = if (nameRes != 0) Textos.get(nameRes) else fixedName
 
     fun palette(oscuro: Boolean): ThemePalette = if (oscuro) dark else light
-
-    /** Con qué cara nació el tema, que es la que se enseña en el carrusel. */
-    val naceOscuro: Boolean get() = dark.background.luminance() <= 0.5f
 }
 
 private fun paleta(accent: Long, background: Long, surface: Long, ink: Long, onAccent: Long) =
     ThemePalette(Color(accent), Color(background), Color(surface), Color(ink), Color(onAccent))
 
 object AppThemes {
-
     /** El de siempre, y el que se usa cuando el guardado ya no existe. */
     const val DEFAULT_ID = "unistack"
 

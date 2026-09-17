@@ -3,14 +3,9 @@ package com.unistack.app.core.navigation
 import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.ime
 import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,7 +53,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.unistack.app.core.utils.performSafely
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -153,8 +147,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import com.unistack.app.R
 
-private const val MAIN_TRANSITION_MILLIS = 220
-private const val MAIN_EXIT_MILLIS = 150
 private val DefaultEnabledModules = setOf(AppModule.GRADES, AppModule.TASKS)
 
 @Composable
@@ -1449,21 +1441,12 @@ internal fun moduleForRoute(route: String?): AppModule? {
     }
 }
 
-internal fun shouldRestoreBottomRouteState(currentRoute: String?, targetRoute: String): Boolean {
-    return targetRoute != AppRoutes.Home && bottomRouteFor(currentRoute) != targetRoute
-}
-
-internal fun shouldPopSelectedBottomRoute(currentRoute: String?, targetRoute: String): Boolean {
-    return currentRoute != targetRoute && bottomRouteFor(currentRoute) == targetRoute
-}
-
 internal fun isForwardNavigation(initialRoute: String?, targetRoute: String?): Boolean {
     val initialRank = routeRank(initialRoute)
     val targetRank = routeRank(targetRoute)
     if (initialRank != targetRank) return targetRank > initialRank
     return routeDepth(targetRoute) >= routeDepth(initialRoute)
 }
-
 
 private fun routeRank(route: String?): Int {
     return when (bottomRouteFor(route)) {
@@ -1484,9 +1467,9 @@ private fun routeRank(route: String?): Int {
  * revés de lo que cuenta: en vez de una hoja nueva tapando a la anterior, parecía que la
  * anterior se apartaba para dejar ver algo que ya estaba puesto debajo.
  *
- * El orden lo decide la profundidad de la ruta: lo que está más adentro se pinta por encima de
- * lo que está más afuera. Al entrar a un detalle, el detalle tapa; al volver, el detalle sigue
- * encima mientras se va, que es lo que hace que se lea como retirar una hoja.
+ * El orden de las capas lo pone el propio `NavHost`: al entrar, la nueva se pinta encima; al
+ * volver, la que se va sigue encima mientras se retira, que es lo que hace que se lea como
+ * retirar una hoja. Lo que falta para que eso se vea es el fondo opaco de aquí.
  */
 private fun NavGraphBuilder.screen(
     route: String,

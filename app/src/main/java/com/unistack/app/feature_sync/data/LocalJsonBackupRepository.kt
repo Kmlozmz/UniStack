@@ -61,6 +61,7 @@ import org.json.JSONObject
 import java.io.File
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
+import com.unistack.app.feature_user.domain.toGradingScaleOrNull
 
 class LocalJsonBackupRepository(
     private val userRepository: UserRepository,
@@ -71,7 +72,6 @@ class LocalJsonBackupRepository(
     private val scheduleRepository: ScheduleRepository,
     private val notesRepository: NotesRepository
 ) : LocalBackupRepository {
-
     override fun exportBackupJson(): String {
         return JSONObject()
             .put("schemaVersion", SCHEMA_VERSION)
@@ -203,7 +203,6 @@ class LocalJsonBackupRepository(
         document.close()
         file.absolutePath
     }
-
 
     override fun exportTasksCsv(): String {
         return buildCsv(
@@ -529,14 +528,6 @@ class LocalJsonBackupRepository(
             }
             .sortedBy { it.order }
         return GradingCutScheme(cuts = cuts).takeIf { it.isValid }
-    }
-
-    private fun String.toGradingScaleOrNull(): GradingScale? {
-        return when (this) {
-            "ZERO_TO_ONE_HUNDRED" -> GradingScale.ZERO_TO_HUNDRED
-            "ZERO_TO_TEN", "LETTERS" -> GradingScale.CUSTOM
-            else -> runCatching { GradingScale.valueOf(this) }.getOrNull()
-        }
     }
 
     private fun subjectJson(subject: Subject): JSONObject = JSONObject()

@@ -84,9 +84,3 @@ internal fun AppearancePreferences.interfaceSpacing(): InterfaceSpacing = when (
         controlHeight = 56.dp
     )
 }
-
-internal fun CornerStyle.cardRadius(): Dp = when (this) {
-    CornerStyle.COMPACT -> 8.dp
-    CornerStyle.BALANCED -> 16.dp
-    CornerStyle.SOFT -> 24.dp
-}

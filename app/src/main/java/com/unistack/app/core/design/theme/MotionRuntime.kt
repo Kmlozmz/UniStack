@@ -8,7 +8,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.unit.IntOffset
 import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
@@ -17,7 +16,6 @@ import com.unistack.app.feature_user.domain.LoadingStyle
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.MotionSpeed
-import com.unistack.app.feature_user.domain.PressEffect
 import com.unistack.app.feature_user.domain.RefreshStyle
 import com.unistack.app.feature_user.domain.ScreenTransition
 import com.unistack.app.feature_user.domain.SpringBounce
@@ -60,13 +58,11 @@ fun motionActual(): MotionPreferences {
             bounce = SpringBounce.SUAVE,
             screenTransition = ScreenTransition.FUNDIDO,
             listEntry = ListEntry.FUNDIDO,
-            celebration = CelebrationMotion.NINGUNA,
-            press = PressEffect.ONDA
+            celebration = CelebrationMotion.NINGUNA
         )
         MotionPreference.NONE -> MotionPreferences(
             speed = MotionSpeed.INSTANTANEA,
             bounce = SpringBounce.SUAVE,
-            press = PressEffect.NINGUNA,
             loading = LoadingStyle.CIRCULO,
             screenTransition = ScreenTransition.NINGUNA,
             listEntry = ListEntry.NINGUNA,
@@ -131,16 +127,4 @@ fun <T> muelleDeMovimiento(rigidez: Float = Spring.StiffnessMediumLow): Animatio
     val prefs = motionActual()
     if (prefs.speed == MotionSpeed.INSTANTANEA) return tween(1)
     return spring(dampingRatio = prefs.bounce.damping, stiffness = rigidez / prefs.speed.factor.coerceAtLeast(0.2f))
-}
-
-/** El mismo muelle, para lo que se mide en píxeles enteros: posiciones y tamaños. */
-@Composable
-fun muelleDeDesplazamiento(): AnimationSpec<IntOffset> {
-    val prefs = motionActual()
-    if (prefs.speed == MotionSpeed.INSTANTANEA) return tween(1)
-    return spring(
-        dampingRatio = prefs.bounce.damping,
-        stiffness = Spring.StiffnessMediumLow,
-        visibilityThreshold = IntOffset(1, 1)
-    )
 }

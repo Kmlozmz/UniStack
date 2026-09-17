@@ -7,10 +7,6 @@ import com.unistack.app.feature_user.domain.CurrencyPreference
 import java.util.Locale
 
 object CurrencyFormatter {
-    fun formatCop(value: Int): String {
-        return format(value, CurrencyPreference.COP, includeCode = true)
-    }
-
     /**
      * Formatea un valor numérico según la divisa seleccionada, añadiendo el código ISO
      * (p. ej. "$ 50.000 COP", "$ 50 USD", "50 € EUR") para que la moneda seleccionada

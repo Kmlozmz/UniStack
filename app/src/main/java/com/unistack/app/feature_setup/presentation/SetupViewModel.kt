@@ -208,10 +208,6 @@ class SetupViewModel @Inject constructor(
         cutEndDates = cortesVacios()
     }
 
-    fun updateTermName(value: String) {
-        termName = value.take(40)
-    }
-
     fun clearCutEndDates() {
         cutEndDates = cortesVacios()
     }
@@ -426,7 +422,6 @@ class SetupViewModel @Inject constructor(
             }
         )
     }
-
 }
 
 private fun suggestedAcademicWeights(count: Int): List<String> {

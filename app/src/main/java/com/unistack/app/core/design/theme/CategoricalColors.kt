@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * Colores de acento para los tipos visuales de materia que el tema no cubre.
- * Se emparejan con [CategoricalSubjectBackgrounds] por el mismo índice conceptual.
  */
 internal object CategoricalSubjectAccents {
     val Rose = Color(0xFFE84A8A)
@@ -22,16 +21,6 @@ internal object CategoricalSubjectAccents {
     val Cyan = Color(0xFF00A6D6)
     val Lime = Color(0xFF7CB342)
     val Slate = Color(0xFF607D8B)
-}
-
-/** Fondos suaves emparejados con [CategoricalSubjectAccents], por tema claro y oscuro. */
-internal object CategoricalSubjectBackgrounds {
-    fun rose(dark: Boolean) = if (dark) Color(0xFF3B1F2D) else Color(0xFFFFE4EF)
-    fun indigo(dark: Boolean) = if (dark) Color(0xFF20274A) else Color(0xFFE5E8FF)
-    fun orange(dark: Boolean) = if (dark) Color(0xFF3D2817) else Color(0xFFFFE8D3)
-    fun cyan(dark: Boolean) = if (dark) Color(0xFF123444) else Color(0xFFDDF7FF)
-    fun lime(dark: Boolean) = if (dark) Color(0xFF243719) else Color(0xFFEAF7D7)
-    fun slate(dark: Boolean) = if (dark) Color(0xFF25313A) else Color(0xFFE8EEF2)
 }
 
 /**

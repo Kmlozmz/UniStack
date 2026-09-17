@@ -54,7 +54,6 @@ data class NoteMarkup(
  * tablas. Fuera quedan las imagenes por URL, el HTML crudo y las notas al pie.
  */
 object NoteMarkdown {
-
     private val TITULO = Regex("""^(#{1,6})[ \t]+""")
     private val CITA = Regex("""^>[ \t]?""")
     private val CASILLA_RE = Regex("""^[-*+][ \t]+\[([ xX])][ \t]+""")
@@ -283,21 +282,6 @@ object NoteMarkdown {
             linea.substring(dentro + 1)
 
         return lineas.toMutableList().also { it[lineIndex] = nuevaLinea }.joinToString("\n")
-    }
-
-    /**
-     * Si la nota lleva algo que la barra de sencillo no sabe poner ni quitar.
-     *
-     * Titulos, tablas y bloques de codigo se escriben con marcas y no hay boton para ellos: en
-     * sencillo se seguirian viendo formateados, pero sin manera de deshacerlos. Es lo unico que
-     * hay que avisar al cambiar de una manera a la otra.
-     */
-    fun hasRichBlocks(text: String): Boolean = parse(text).spans.any { span ->
-        span.style == NoteStyle.TITULO1 ||
-            span.style == NoteStyle.TITULO2 ||
-            span.style == NoteStyle.TITULO3 ||
-            span.style == NoteStyle.TABLA ||
-            span.style == NoteStyle.BLOQUE_CODIGO
     }
 
     /**

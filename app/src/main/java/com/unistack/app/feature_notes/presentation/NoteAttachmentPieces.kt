@@ -19,10 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material.icons.rounded.Description
@@ -54,6 +52,7 @@ import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.Attachments
 import java.io.File
+import com.unistack.app.core.design.components.AttachmentRemoveBadge
 
 /**
  * Lo que cuelga de una nota, debajo del texto.
@@ -155,7 +154,7 @@ private fun PhotoCarousel(
                     .fillMaxHeight()
                     .align(Alignment.Center)
             )
-            RemoveBadge(
+            AttachmentRemoveBadge(
                 onRemove = { onRemove(foto) },
                 modifier = Modifier.align(Alignment.TopEnd).padding(7.dp)
             )
@@ -225,7 +224,7 @@ private fun ImageAttachment(
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         )
-        RemoveBadge(
+        AttachmentRemoveBadge(
             onRemove = onRemove,
             modifier = Modifier.align(Alignment.TopEnd).padding(7.dp)
         )
@@ -282,7 +281,7 @@ private fun FileAttachment(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            RemoveBadge(onRemove = onRemove)
+            AttachmentRemoveBadge(onRemove = onRemove)
         }
     }
 }
@@ -362,7 +361,7 @@ private fun AudioAttachment(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            RemoveBadge(onRemove = onRemove)
+            AttachmentRemoveBadge(onRemove = onRemove)
         }
     }
 }
@@ -406,25 +405,8 @@ private fun MissingAttachmentRow(attachment: NoteAttachment, onRemove: () -> Uni
                 )
             }
             Spacer(Modifier.width(8.dp))
-            RemoveBadge(onRemove = onRemove)
+            AttachmentRemoveBadge(onRemove = onRemove)
         }
-    }
-}
-
-@Composable
-private fun RemoveBadge(onRemove: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onRemove,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier
-    ) {
-        Icon(
-            Icons.Rounded.Close,
-            contentDescription = stringResource(R.string.notes_attachment_remove),
-            modifier = Modifier.padding(5.dp).size(15.dp)
-        )
     }
 }
 

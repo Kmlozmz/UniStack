@@ -135,14 +135,6 @@ class ExpensesViewModel @Inject constructor(
         return true
     }
 
-    fun monthlyExpenses(): List<Expense> {
-        val today = ExpenseDateUtils.today()
-        return expenses.value.filter { expense ->
-            val date = ExpenseDateUtils.fromMillis(expense.dateMillis)
-            date.month == today.month && date.year == today.year
-        }
-    }
-
     fun previousWeekTotal(): Int {
         val start = ExpenseDateUtils.startOfWeek()
         val previousStart = start.minusDays(7)

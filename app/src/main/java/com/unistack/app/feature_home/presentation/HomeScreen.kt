@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -88,7 +87,6 @@ import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.components.SaludoAnimado
 import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.utils.greetingForNow
-import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.formatCurrency
 import kotlin.math.abs
 import kotlin.math.sin
@@ -228,7 +226,7 @@ fun HomeScreen(
                     )
                 }
 
-                if (sinPeriodo && historico != null) {
+                if (sinPeriodo) {
                     item("sin-periodo") {
                         InicioSinPeriodo(
                             estado = historico,
@@ -242,7 +240,7 @@ fun HomeScreen(
                             onGastos = onSeeExpensesClick
                         )
                     }
-                } else if (porEmpezar && historico != null) {
+                } else if (porEmpezar) {
                     item("por-empezar") {
                         InicioConPeriodoPorEmpezar(
                             estado = historico,

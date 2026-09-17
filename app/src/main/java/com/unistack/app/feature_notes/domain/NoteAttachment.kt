@@ -40,7 +40,6 @@ data class NoteAttachment(
 )
 
 object Attachments {
-
     /** Lo que aguanta un adjunto antes de que copiarlo deje de tener sentido. */
     const val MAX_BYTES = 25L * 1024 * 1024
 
@@ -74,7 +73,7 @@ object Attachments {
         return when {
             bytes < 1024 -> "$bytes B"
             bytes < mb -> "${(bytes / kb).toInt()} KB"
-            else -> String.format(Locale("es"), "%.1f MB", bytes / mb)
+            else -> String.format(Locale.forLanguageTag("es"), "%.1f MB", bytes / mb)
         }
     }
 
@@ -83,7 +82,7 @@ object Attachments {
         val total = (millis / 1000).coerceAtLeast(0)
         val minutos = total / 60
         val segundos = total % 60
-        return String.format(Locale("es"), "%d:%02d", minutos, segundos)
+        return String.format(Locale.forLanguageTag("es"), "%d:%02d", minutos, segundos)
     }
 
     /**

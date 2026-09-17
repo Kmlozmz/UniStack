@@ -23,7 +23,6 @@ import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_tasks.domain.TaskSubtask
-import com.unistack.app.feature_tasks.domain.isGradable
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
@@ -433,17 +432,6 @@ class TasksViewModel @Inject constructor(
         return true
     }
 
-    fun markTaskAsDone(taskId: String, willBeGraded: Boolean) {
-        val task = taskById(taskId) ?: return
-        val nextStatus = when {
-            task.gradingStatus == TaskGradingStatus.NOT_GRADED -> TaskGradingStatus.NOT_GRADED
-            willBeGraded -> TaskGradingStatus.AWAITING_GRADE
-            else -> TaskGradingStatus.NOT_GRADED
-        }
-        tasksRepository.setTaskCompleted(taskId, true)
-        tasksRepository.setGradingStatus(taskId, nextStatus)
-    }
-
     fun toggleSubtask(taskId: String, subtaskId: String, completed: Boolean? = null) {
         val task = taskById(taskId)
         val targetSub = task?.subtasks?.firstOrNull { it.id == subtaskId }
@@ -521,25 +509,6 @@ class TasksViewModel @Inject constructor(
             )
         )
         return true
-    }
-
-    fun markTaskCompletedWithEvaluation(task: StudentTask, onlyDone: Boolean = false): TaskGradingStatus {
-        val now = System.currentTimeMillis()
-        val shouldAwaitGrade = !onlyDone && task.type.isGradable() && task.subjectId != null && task.gradingStatus != TaskGradingStatus.NOT_GRADED
-        val nextStatus = if (shouldAwaitGrade) {
-            TaskGradingStatus.AWAITING_GRADE
-        } else {
-            TaskGradingStatus.NOT_GRADED
-        }
-        tasksRepository.updateTask(
-            task.copy(
-                completed = true,
-                completedAt = now,
-                gradingStatus = nextStatus,
-                updatedAt = now
-            )
-        )
-        return nextStatus
     }
 
     fun setTaskGradingDecision(taskId: String, onlyDone: Boolean): Boolean {

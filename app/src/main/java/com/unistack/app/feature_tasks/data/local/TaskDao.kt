@@ -30,15 +30,6 @@ interface TaskDao {
     )
     fun observeTasksWithSubtasks(userIds: List<String>): Flow<List<TaskWithSubtasks>>
 
-    @Query(
-        """
-        SELECT * FROM tasks
-        WHERE userId IN (:userIds)
-        ORDER BY completed ASC, dueDateMillis ASC, createdAt DESC
-        """
-    )
-    fun observeTasksForUsers(userIds: List<String>): Flow<List<TaskEntity>>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskEntity)
 

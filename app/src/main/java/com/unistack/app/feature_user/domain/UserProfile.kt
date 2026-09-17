@@ -291,6 +291,19 @@ enum class GradingScale {
     CUSTOM
 }
 
+/**
+ * La escala guardada con su nombre, también los de versiones anteriores.
+ *
+ * «ZERO_TO_ONE_HUNDRED» es como se llamó la de cien, y «ZERO_TO_TEN» y «LETTERS» se retiraron y
+ * pasan a la personalizada. La leen las preferencias y la copia de seguridad; estaba escrita dos
+ * veces, una en cada una.
+ */
+internal fun String.toGradingScaleOrNull(): GradingScale? = when (this) {
+    "ZERO_TO_ONE_HUNDRED" -> GradingScale.ZERO_TO_HUNDRED
+    "ZERO_TO_TEN", "LETTERS" -> GradingScale.CUSTOM
+    else -> runCatching { GradingScale.valueOf(this) }.getOrNull()
+}
+
 enum class StudyArea {
     ENGINEERING_TECHNOLOGY,
     ECONOMICS_BUSINESS,

@@ -614,14 +614,6 @@ internal object HomeSummaryFactory {
 
     private fun Double.roundPercent(): String = "%.0f".format(this)
 
-    private fun heroActionPrefix(): String {
-        return when (LocalTime.now().hour) {
-            in 5..11 -> Textos.get(R.string.home_arranca_con)
-            in 18..23 -> Textos.get(R.string.home_deja_listo)
-            else -> Textos.get(R.string.notif_next_step)
-        }
-    }
-
     /**
      * Las proximas paradas, de mañana en adelante.
      *

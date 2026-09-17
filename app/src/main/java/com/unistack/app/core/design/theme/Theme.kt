@@ -1,23 +1,18 @@
 package com.unistack.app.core.design.theme
 
-import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import com.unistack.app.feature_user.domain.AccentStyle
 import com.unistack.app.feature_user.domain.HapticStrength
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.core.utils.HapticRuntime
@@ -180,8 +175,6 @@ fun UniStackTheme(
  * 14dp y el pequeño se queda en 12dp, un botón dentro de una tarjeta se ve más redondo que la
  * tarjeta que lo contiene.
  */
-internal val ExpressiveShapeScale = escalaDeFormas(CornerStyle.BALANCED)
-
 internal fun escalaDeFormas(estilo: CornerStyle): Shapes = when (estilo) {
     CornerStyle.COMPACT -> Shapes(
         extraSmall = RoundedCornerShape(4.dp),
@@ -329,7 +322,7 @@ internal fun Color.compuestoSobre(fondo: Color): Color = Color(
 internal fun AccentIntensity.aplicarA(color: Color): Color = when (this) {
     // Los recorridos son amplios a proposito: con un 15% el cambio existia pero no se veia,
     // que para el caso es lo mismo que no hacer nada.
-    AccentIntensity.SOFT -> color.mezclaCon(Color.White, 0.42f)
+    AccentIntensity.SOFT -> color.mezclaCon(Color.White, 0.42f) // design-tokens-ok: matemática de color del tema
     AccentIntensity.BALANCED -> color
     AccentIntensity.VIBRANT -> color.saturado(0.55f)
 }
@@ -420,7 +413,7 @@ internal fun ColorScheme.conContraste(
     // tener que volver a elegirlo.
     val efectivo = if (altoContrasteViejo && nivel == ContrastLevel.ESTANDAR) ContrastLevel.ALTO else nivel
     if (efectivo == ContrastLevel.ESTANDAR) return this
-    val extremo = if (oscuro) Color.White else Color.Black
+    val extremo = if (oscuro) Color.White else Color.Black // design-tokens-ok: matemática de color del tema
     val fuerza = if (efectivo == ContrastLevel.ALTO) 0.45f else 1f
     return copy(
         onSurface = onSurface.mezclaCon(extremo, fuerza),

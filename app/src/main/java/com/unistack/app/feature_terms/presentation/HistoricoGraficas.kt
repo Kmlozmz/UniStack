@@ -78,8 +78,6 @@ private fun DrawScope.escribir(
 private fun estiloDeGrafica(tamano: Float, color: Color, peso: FontWeight = FontWeight.Normal) =
     TextStyle(fontSize = tamano.sp, color = color, fontWeight = peso, fontFeatureSettings = "tnum")
 
-private val raya33 = PathEffect.dashPathEffect(floatArrayOf(3f, 3f))
-
 private fun rayas(u: Float, a: Float, b: Float) = PathEffect.dashPathEffect(floatArrayOf(a * u, b * u))
 
 /** Divisiones redondas entre dos valores: medios puntos en la escala de 5, decenas en la de 100. */

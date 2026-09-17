@@ -31,7 +31,6 @@ data class MotionPreferences(
     // ------------------------------------------------------------------ base
     val speed: MotionSpeed = MotionSpeed.NORMAL,
     val bounce: SpringBounce = SpringBounce.VIVO,
-    val press: PressEffect = PressEffect.ONDA,
     val loading: LoadingStyle = LoadingStyle.FORMAS,
 
     // ------------------------------------------------------------------ transiciones
@@ -41,7 +40,6 @@ data class MotionPreferences(
 
     // ------------------------------------------------------------------ momentos
     val cutSeal: CutSealMotion = CutSealMotion.TINTA,
-    val termClose: TermCloseMotion = TermCloseMotion.APILADO,
     val celebration: CelebrationMotion = CelebrationMotion.CONFETI,
     val undo: UndoMotion = UndoMotion.REBOTA,
     val classNow: ClassNowMotion = ClassNowMotion.RESPIRA,
@@ -88,11 +86,6 @@ enum class SpringBounce(override val id: String, override val labelRes: Int, val
     /** Sin rebote visible: llega y se para. */
     SUAVE("suave", R.string.motion_v_soft, 1f),
     VIVO("vivo", R.string.motion_v_vivid, 0.45f)
-}
-
-enum class PressEffect(override val id: String, override val labelRes: Int) : MotionChoice {
-    NINGUNA("ninguna", R.string.motion_v_none),
-    ONDA("onda", R.string.motion_v_wave)
 }
 
 enum class LoadingStyle(override val id: String, override val labelRes: Int) : MotionChoice {
@@ -166,13 +159,6 @@ enum class CutSealMotion(override val id: String, override val labelRes: Int) : 
     ESTAMPA("estampa", R.string.motion_v_stamp),
     TINTA("tinta", R.string.motion_v_ink),
     CINTA("cinta", R.string.motion_v_tape)
-}
-
-enum class TermCloseMotion(override val id: String, override val labelRes: Int) : MotionChoice {
-    ENTERO("entero", R.string.motion_v_whole),
-    PIEZA("pieza", R.string.motion_v_piece_by_piece),
-    CORTINA("cortina", R.string.motion_v_curtain),
-    APILADO("apilado", R.string.motion_v_stacked)
 }
 
 enum class CelebrationMotion(override val id: String, override val labelRes: Int) : MotionChoice {

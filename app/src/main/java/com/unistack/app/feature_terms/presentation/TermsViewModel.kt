@@ -94,7 +94,6 @@ class TermsViewModel @Inject constructor(
     private val notesRepository: NotesRepository,
     private val expensesRepository: ExpensesRepository
 ) : ViewModel() {
-
     private data class Base(
         val terms: List<AcademicTerm>,
         val subjects: List<Subject>,
@@ -223,12 +222,6 @@ class TermsViewModel @Inject constructor(
     private fun materias(): List<Subject> = HistoricoDeMuestra.datos.value?.subjects ?: gradesRepository.subjects.value
 
     // ================================================================== cerrar
-
-    /** Empieza una revisión de cierre desde cero. */
-    fun empezarRevision() {
-        _resueltos.value = emptyList()
-        ignoradas.value = emptySet()
-    }
 
     /**
      * Cierra el periodo activo y guarda con él sus cortes.

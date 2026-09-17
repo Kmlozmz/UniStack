@@ -12,9 +12,6 @@ interface SubjectDao {
     @Query("SELECT * FROM subjects WHERE userId IN (:userIds) ORDER BY createdAt DESC")
     fun observeSubjectsForUsers(userIds: List<String>): Flow<List<SubjectEntity>>
 
-    @Query("SELECT * FROM subjects WHERE id = :subjectId")
-    fun getSubjectById(subjectId: String): Flow<SubjectEntity?>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubject(subject: SubjectEntity)
 

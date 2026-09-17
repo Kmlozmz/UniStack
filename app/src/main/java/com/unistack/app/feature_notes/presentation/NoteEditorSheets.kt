@@ -28,7 +28,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FormatBold
 import androidx.compose.material.icons.rounded.FormatClear
 import androidx.compose.material.icons.rounded.FormatItalic
-import androidx.compose.material.icons.rounded.FormatListBulleted
+import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
 import androidx.compose.material.icons.rounded.FormatListNumbered
 import androidx.compose.material.icons.rounded.FormatStrikethrough
 import androidx.compose.material.icons.rounded.Image
@@ -311,7 +311,7 @@ fun NoteFormatToolbar(
         IconButtonSmall(Icons.Rounded.FormatItalic, NoteAction.CURSIVA, onAction)
         IconButtonSmall(Icons.Rounded.FormatStrikethrough, NoteAction.TACHADO, onAction)
         Divider()
-        IconButtonSmall(Icons.Rounded.FormatListBulleted, NoteAction.VINETA, onAction)
+        IconButtonSmall(Icons.AutoMirrored.Rounded.FormatListBulleted, NoteAction.VINETA, onAction)
         IconButtonSmall(Icons.Rounded.FormatListNumbered, NoteAction.NUMERADA, onAction)
         IconButtonSmall(Icons.Rounded.CheckBox, NoteAction.CASILLA, onAction)
         Divider()

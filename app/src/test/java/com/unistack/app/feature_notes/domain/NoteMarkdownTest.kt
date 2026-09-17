@@ -14,7 +14,6 @@ import org.junit.Test
  * cursor salta o cuando media palabra se queda en negrita.
  */
 class NoteMarkdownTest {
-
     private fun estilos(text: String): List<NoteStyle> =
         NoteMarkdown.parse(text).spans.map { it.style }
 
@@ -130,16 +129,6 @@ class NoteMarkdownTest {
     @Test
     fun quitarLasMarcasNoPierdeLosSaltosDeLinea() {
         assertEquals("Parcial 2\n• martes\n• jueves", NoteMarkdown.strip("# Parcial 2\n- martes\n- jueves"))
-    }
-
-    /** El aviso al pasar a sencillo se dispara con lo que la barra no sabe poner ni quitar. */
-    @Test
-    fun soloAvisaCuandoHayTitulosTablasOBloques() {
-        assertTrue(NoteMarkdown.hasRichBlocks("## Parcial"))
-        assertTrue(NoteMarkdown.hasRichBlocks("| Corte | Peso |\n| 1 | 30 |"))
-        assertTrue(NoteMarkdown.hasRichBlocks("```\ncodigo\n```"))
-        assertFalse(NoteMarkdown.hasRichBlocks("**negrita** y - lista"))
-        assertFalse(NoteMarkdown.hasRichBlocks("- [ ] taller"))
     }
 
     @Test

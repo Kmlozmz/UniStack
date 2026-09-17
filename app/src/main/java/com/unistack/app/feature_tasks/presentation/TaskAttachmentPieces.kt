@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,7 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
@@ -68,6 +67,7 @@ import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_tasks.domain.TaskAttachment
 import java.io.File
+import com.unistack.app.core.design.components.AttachmentRemoveBadge
 
 /**
  * Lo que cuelga de una tarea, calcado de `NoteAttachmentStrip` pero tipado a [TaskAttachment].
@@ -182,7 +182,7 @@ fun TaskAttachmentViewer(
                 Text(
                     text = attachment.displayName,
                     modifier = Modifier.weight(1f),
-                    color = Color.White,
+                    color = Color.White, // design-tokens-ok: va sobre el negro del visor
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -190,7 +190,7 @@ fun TaskAttachmentViewer(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 VisorBoton(
-                    icon = Icons.Rounded.OpenInNew,
+                    icon = Icons.AutoMirrored.Rounded.OpenInNew,
                     description = stringResource(R.string.notes_attachment_open),
                     onClick = onOpenExternally
                 )
@@ -210,7 +210,7 @@ private fun VisorBoton(
         shape = CircleShape,
         // design-tokens-ok: va sobre el negro del visor, no sobre una superficie del tema.
         color = Color.White.copy(alpha = 0.16f),
-        contentColor = Color.White,
+        contentColor = Color.White, // design-tokens-ok: va sobre el negro del visor
         modifier = Modifier.size(40.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -251,7 +251,7 @@ private fun TaskPhotoCarousel(
                     .fillMaxHeight()
                     .align(Alignment.Center)
             )
-            TaskAttachmentRemoveBadge(
+            AttachmentRemoveBadge(
                 onRemove = { onRemove(foto) },
                 modifier = Modifier.align(Alignment.TopEnd).padding(7.dp)
             )
@@ -312,7 +312,7 @@ private fun TaskImageAttachment(
                 .heightIn(max = 260.dp)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         )
-        TaskAttachmentRemoveBadge(
+        AttachmentRemoveBadge(
             onRemove = onRemove,
             modifier = Modifier.align(Alignment.TopEnd).padding(7.dp)
         )
@@ -355,7 +355,7 @@ private fun TaskFileAttachment(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            TaskAttachmentRemoveBadge(onRemove = onRemove)
+            AttachmentRemoveBadge(onRemove = onRemove)
         }
     }
 }
@@ -429,7 +429,7 @@ private fun TaskAudioAttachment(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            TaskAttachmentRemoveBadge(onRemove = onRemove)
+            AttachmentRemoveBadge(onRemove = onRemove)
         }
     }
 }
@@ -466,61 +466,7 @@ private fun MissingTaskAttachmentRow(attachment: TaskAttachment, onRemove: () ->
                 )
             }
             Spacer(Modifier.width(8.dp))
-            TaskAttachmentRemoveBadge(onRemove = onRemove)
-        }
-    }
-}
-
-@Composable
-private fun TaskAttachmentRemoveBadge(onRemove: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onRemove,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier
-    ) {
-        Icon(
-            Icons.Rounded.Close,
-            contentDescription = stringResource(R.string.notes_attachment_remove),
-            modifier = Modifier.padding(5.dp).size(15.dp)
-        )
-    }
-}
-
-/**
- * Miniatura cuadrada para usar como icono compacto (fila de tarea, chip de formulario).
- */
-@Composable
-fun TaskAttachmentThumb(attachment: TaskAttachment, path: String, modifier: Modifier = Modifier) {
-    if (attachment.kind == AttachmentKind.IMAGE) {
-        AsyncImage(
-            model = File(path),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(9.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-        )
-    } else {
-        Box(
-            modifier = modifier
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(9.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (attachment.kind == AttachmentKind.AUDIO) {
-                    androidx.compose.material.icons.Icons.Rounded.PlayArrow
-                } else {
-                    Icons.Rounded.Description
-                },
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(15.dp)
-            )
+            AttachmentRemoveBadge(onRemove = onRemove)
         }
     }
 }

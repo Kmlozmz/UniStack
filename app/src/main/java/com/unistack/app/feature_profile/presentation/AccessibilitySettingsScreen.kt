@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Animation
@@ -44,7 +43,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -74,7 +72,6 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.SettingsCustomRow
 import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsRow
@@ -86,7 +83,6 @@ import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.components.duracionDeDeshacer
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
-import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_user.domain.AppLanguage
 import com.unistack.app.feature_user.domain.ColorBlindPalette
@@ -661,8 +657,8 @@ private fun MuestraDePaleta(paleta: ColorBlindPalette) {
     val secciones = LocalSectionColors.current
     val colores = when (paleta) {
         ColorBlindPalette.NINGUNA -> listOf(secciones.onTrack, secciones.atRisk, MaterialTheme.colorScheme.error)
-        ColorBlindPalette.DEUTERANOPIA -> listOf(Color(0xFF3A7DE0), Color(0xFFE0A63C), Color(0xFF8C4BD1))
-        ColorBlindPalette.TRITANOPIA -> listOf(Color(0xFF12B0A0), Color(0xFFE0567F), Color(0xFF7A2E4C))
+        ColorBlindPalette.DEUTERANOPIA -> listOf(Color(0xFF3A7DE0), Color(0xFFE0A63C), Color(0xFF8C4BD1)) // design-tokens-ok: muestra de la paleta para daltonismo
+        ColorBlindPalette.TRITANOPIA -> listOf(Color(0xFF12B0A0), Color(0xFFE0567F), Color(0xFF7A2E4C)) // design-tokens-ok: muestra de la paleta para daltonismo
     }
     val formas = listOf(CircleShape, CutCornerShape(percent = 50), RoundedCornerShape(4.dp))
     val nombres = listOf(stringResource(R.string.settings_a11y_status_on_track), stringResource(R.string.settings_a11y_status_at_risk), stringResource(R.string.settings_a11y_status_failing))

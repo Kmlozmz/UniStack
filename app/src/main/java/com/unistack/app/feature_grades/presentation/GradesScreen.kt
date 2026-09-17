@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -107,7 +106,6 @@ fun GradesScreen(
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
     val averages = subjects.mapNotNull(viewModel::currentAverage)
     val generalAverage = averages.takeIf { it.isNotEmpty() }?.average()
-    val evaluatedSubjects = subjects.count { it.grades.isNotEmpty() }
 
     Box(
         modifier = modifier
@@ -359,14 +357,6 @@ fun GradesScreen(
     }
 }
 
-
-
-private data class SubjectTone(
-    val color: Color,
-    val label: String
-)
-
-
 @Composable
 private fun EmptyGradesCard() {
     UniCard(
@@ -457,9 +447,8 @@ fun subjectAccent(subject: Subject): Color {
     return subject.customColor?.let { Color(it) } ?: subjectAccent(subject.visualType)
 }
 
-
 /** Los tres estados por los que se filtra la lista de materias. */
-private enum class SubjectFilter(@StringRes val labelRes: Int) {
+private enum class SubjectFilter(@param:StringRes val labelRes: Int) {
     ACTIVE(R.string.grades_filter_ongoing),
     AT_RISK(R.string.grades_filter_at_risk),
     CLOSED(R.string.grades_filter_closed);

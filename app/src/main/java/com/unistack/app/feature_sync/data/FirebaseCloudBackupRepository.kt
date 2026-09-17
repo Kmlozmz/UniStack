@@ -18,7 +18,6 @@ import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
 import com.unistack.app.feature_sync.domain.CloudBackupState
 import com.unistack.app.feature_notes.domain.NoteFormat
-import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_tasks.domain.StudentTask
@@ -60,7 +59,6 @@ class FirebaseCloudBackupRepository(
     private val scheduleRepository: ScheduleRepository,
     private val notesRepository: NotesRepository
 ) : CloudBackupRepository {
-
     private val _state = MutableStateFlow(CloudBackupState())
     override val state: StateFlow<CloudBackupState> = _state
 

@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -62,7 +60,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -94,7 +91,6 @@ import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.MotionSpeed
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
-import com.unistack.app.feature_user.domain.TermCloseMotion
 import com.unistack.app.feature_user.domain.UndoMotion
 import kotlinx.coroutines.delay
 import kotlin.math.PI
@@ -224,7 +220,7 @@ fun Modifier.selloDeCorte(
          */
         val asentado = EaseInOutCubic.transform(((t - 0.62f) / 0.38f).coerceIn(0f, 1f))
         val vida = 1f - 0.78f * asentado
-        val verde = Color(0xFF11C045)
+        val verde = Color(0xFF11C045) // design-tokens-ok: color propio del efecto, igual en todos los temas
 
         fun palabra(tono: Color, tamano: Float, espacio: Float): TextLayoutResult = medidor.measure(
             leyenda,
@@ -390,7 +386,7 @@ fun Modifier.selloDeCorte(
                         drawPath(tirita, color = verde.copy(alpha = 0.88f * vida))
                         if (largo > corte) {
                             drawLine(
-                                color = Color.White.copy(alpha = 0.22f * vida),
+                                color = Color.White.copy(alpha = 0.22f * vida), // design-tokens-ok: color propio del efecto, igual en todos los temas
                                 start = Offset(x0 + corte * 0.6f, y0 + grosor * 0.27f),
                                 end = Offset(x0 + largo - corte * 0.6f, y0 + grosor * 0.27f),
                                 strokeWidth = grosor * 0.06f,
@@ -398,7 +394,7 @@ fun Modifier.selloDeCorte(
                             )
                         }
                         clipRect(right = x0 + largo - corte) {
-                            centrada(palabra(Color.White.copy(alpha = vida), grosor * 0.42f, grosor * 0.07f))
+                            centrada(palabra(Color.White.copy(alpha = vida), grosor * 0.42f, grosor * 0.07f)) // design-tokens-ok: color propio del efecto, igual en todos los temas
                         }
                     }
                 }
@@ -530,8 +526,8 @@ fun Modifier.celebracionDelDia(
     val confeti = remember { List(100) { indice -> Particula.sortear(indice) } }
     val chispas = remember { List(34) { indice -> Chispa.sortear(indice) } }
     val acento = MaterialTheme.colorScheme.primary
-    val verde = Color(0xFF11C045)
-    val ambar = Color(0xFFE0A400)
+    val verde = Color(0xFF11C045) // design-tokens-ok: color propio del efecto, igual en todos los temas
+    val ambar = Color(0xFFE0A400) // design-tokens-ok: color propio del efecto, igual en todos los temas
     val fondo = MaterialTheme.colorScheme.surface
     val medidor = rememberTextMeasurer()
     val tipoDelMensaje = TextStyle(
@@ -561,8 +557,8 @@ fun Modifier.celebracionDelDia(
                     listOf(Offset(w * 0.08f, h), Offset(w * 0.92f, h)).forEach { boca ->
                         drawCircle(
                             brush = Brush.radialGradient(
-                                0f to Color.White.copy(alpha = 0.35f * fogonazo),
-                                1f to Color.White.copy(alpha = 0f),
+                                0f to Color.White.copy(alpha = 0.35f * fogonazo), // design-tokens-ok: color propio del efecto, igual en todos los temas
+                                1f to Color.White.copy(alpha = 0f), // design-tokens-ok: color propio del efecto, igual en todos los temas
                                 center = boca,
                                 radius = 140.dp.toPx()
                             ),
@@ -733,7 +729,7 @@ fun Modifier.celebracionDelDia(
          */
         if (mensaje != null && estilo != CelebrationMotion.NINGUNA) {
             val (desde, color, y) = when (estilo) {
-                CelebrationMotion.SELLO -> Triple(0.32f, Color(0xFFE8EBF3), centro.y + 56.dp.toPx() + 28.dp.toPx())
+                CelebrationMotion.SELLO -> Triple(0.32f, Color(0xFFE8EBF3), centro.y + 56.dp.toPx() + 28.dp.toPx()) // design-tokens-ok: color propio del efecto, igual en todos los temas
                 CelebrationMotion.DESTELLO -> Triple(0f, ambar, centro.y)
                 else -> Triple(0f, acento, centro.y)
             }
@@ -749,7 +745,7 @@ fun Modifier.celebracionDelDia(
                     // Un halo del fondo detrás de la letra, para que se lea sobre el confeti
                     // y los rayos sin taparlos y con contraste perfecto.
                     drawRoundRect(
-                        color = Color(0xFF0A0C11).copy(alpha = 0.78f * vida * entra.coerceAtMost(1f)),
+                        color = Color(0xFF0A0C11).copy(alpha = 0.78f * vida * entra.coerceAtMost(1f)), // design-tokens-ok: color propio del efecto, igual en todos los temas
                         topLeft = Offset(punto.x - medida.size.width / 2f - 16.dp.toPx(), punto.y - medida.size.height / 2f - 6.dp.toPx()),
                         size = Size(medida.size.width + 32.dp.toPx(), medida.size.height + 12.dp.toPx()),
                         cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
@@ -818,7 +814,7 @@ private class Chispa(
                 retraso = azar.nextFloat() * 0.6f,
                 tamano = 10f + azar.nextFloat() * 16f,
                 giro = azar.nextFloat() * 90f,
-                color = if (azar.nextFloat() < 0.7f) Color(0xFFFFD34D) else Color.White
+                color = if (azar.nextFloat() < 0.7f) Color(0xFFFFD34D) else Color.White // design-tokens-ok: color propio del efecto, igual en todos los temas
             )
         }
     }
@@ -826,7 +822,7 @@ private class Chispa(
 
 /** Los colores del confeti. Fijos a propósito: una celebración no cambia con el tema. */
 private val paletaDeConfeti = listOf(
-    Color(0xFF7F77DD), Color(0xFFE8693A), Color(0xFF5FC96E), Color(0xFFE0A63C), Color(0xFF3FC7B4)
+    Color(0xFF7F77DD), Color(0xFFE8693A), Color(0xFF5FC96E), Color(0xFFE0A63C), Color(0xFF3FC7B4) // design-tokens-ok: color propio del efecto, igual en todos los temas
 )
 
 // ------------------------------------------------------------------ marcar asistencia
@@ -881,7 +877,7 @@ fun Modifier.barridoDeRecuperacion(recuperada: Boolean): Modifier {
                 brush = Brush.horizontalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color.White.copy(alpha = 0.75f),
+                        Color.White.copy(alpha = 0.75f), // design-tokens-ok: color propio del efecto, igual en todos los temas
                         Color.Transparent
                     ),
                     startX = x,
@@ -939,13 +935,13 @@ fun AvisoDePresupuestoArriba(pasado: Boolean, modifier: Modifier = Modifier) {
             Icon(
                 imageVector = Icons.Rounded.WarningAmber,
                 contentDescription = null,
-                tint = Color.White,
+                tint = Color.White, // design-tokens-ok: color propio del efecto, igual en todos los temas
                 modifier = Modifier.size(18.dp)
             )
             Spacer(Modifier.width(9.dp))
             Text(
                 text = stringResource(R.string.expenses_over_budget_banner),
-                color = Color.White,
+                color = Color.White, // design-tokens-ok: color propio del efecto, igual en todos los temas
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -1132,7 +1128,6 @@ fun AvisoDeGuardado(marca: Int, modifier: Modifier = Modifier) {
 
 // ------------------------------------------------------------------ pasarse del presupuesto
 
-
 /**
  * El pincel del cometa que da la vuelta a un contorno.
  *
@@ -1318,85 +1313,7 @@ fun rememberDesplazamientoDeLista(): DesplazamientoDeLista = remember { Desplaza
 
 // ------------------------------------------------------------------ cierre de semestre
 
-/**
- * Cómo aparece el resumen de un periodo cerrado.
- *
- * Recibe el índice de la pieza para poder escalonarlas: «pieza a pieza» y «apilado» necesitan
- * saber cuál va antes, y las otras dos lo ignoran. Se dispara una vez al abrir la pantalla,
- * porque un resumen que se rearma al desplazarse cansa a la tercera vez.
- */
-@Composable
-fun Modifier.resumenDePeriodo(indice: Int): Modifier {
-    val estilo = motionActual().termClose
-    if (!hayMovimiento()) return this
-
-    var dentro by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { dentro = true }
-    val retardo = when (estilo) {
-        TermCloseMotion.PIEZA -> indice * 90
-        TermCloseMotion.APILADO -> indice * 70
-        else -> 0
-    }
-    val avance by animateFloatAsState(
-        targetValue = if (dentro) 1f else 0f,
-        animationSpec = if (estilo == TermCloseMotion.APILADO) {
-            muelleDeMovimiento()
-        } else {
-            tweenDeMovimiento(baseMs = 420, retrasoMs = retardo)
-        },
-        label = "periodo$indice"
-    )
-
-    return when (estilo) {
-        TermCloseMotion.ENTERO -> this.alpha(avance)
-        TermCloseMotion.PIEZA -> this.graphicsLayer {
-            alpha = avance
-            translationY = 18f * (1f - avance)
-        }
-        // La cortina revela de arriba abajo: nada se mueve, lo que baja es el corte.
-        TermCloseMotion.CORTINA -> this.graphicsLayer {
-            alpha = if (avance > 0f) 1f else 0f
-            clip = true
-            scaleY = avance
-            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
-        }
-        // Apilado: llegan desde abajo, una sobre otra, y se reparten al llegar.
-        TermCloseMotion.APILADO -> this.graphicsLayer {
-            alpha = avance
-            translationY = 90f * (1f - avance) * (indice + 1)
-        }
-    }
-}
-
 // ------------------------------------------------------------------ registrar una nota
-
-/**
- * Cómo entra una nota recién registrada en la lista de su corte.
- *
- * `esNueva` lo decide quien pinta la lista comparando con lo que había: una nota es nueva
- * mientras sea la última añadida y la pantalla no se haya vuelto a abrir. Sin esa condición,
- * todas las notas entrarían animadas cada vez que se abre la materia, y entonces la entrada
- * deja de significar «acaba de pasar algo».
- */
-@Composable
-fun Modifier.notaRecienRegistrada(esNueva: Boolean): Modifier {
-    if (!esNueva || !hayMovimiento()) return this
-
-    var dentro by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { dentro = true }
-    val avance by animateFloatAsState(
-        targetValue = if (dentro) 1f else 0f,
-        animationSpec = tweenDeMovimiento(baseMs = 460),
-        label = "notaNueva"
-    )
-
-    // Cae desde arriba y empuja: las de abajo se apartan con ella. Es la unica que quedo de
-    // las seis; las demas no decian «entro una nota» tan claro como esta.
-    return this.graphicsLayer {
-        alpha = avance
-        translationY = -34f * (1f - avance)
-    }
-}
 
 // ------------------------------------------------------------------ nota que sube
 
@@ -1447,7 +1364,7 @@ fun Modifier.filaRestaurada(restaurada: Boolean): Modifier {
             .drawWithContent {
                 drawContent()
                 if (avance > 0.8f) {
-                    drawRect(color = Color.White.copy(alpha = 0.4f * (1f - (avance - 0.8f) / 0.2f)))
+                    drawRect(color = Color.White.copy(alpha = 0.4f * (1f - (avance - 0.8f) / 0.2f))) // design-tokens-ok: color propio del efecto, igual en todos los temas
                 }
             }
     }

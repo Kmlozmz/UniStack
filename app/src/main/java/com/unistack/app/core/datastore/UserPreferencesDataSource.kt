@@ -25,12 +25,9 @@ import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppLanguage
 import com.unistack.app.feature_user.domain.DateFormatPreference
 import com.unistack.app.feature_user.domain.CurrencyPreference
-import com.unistack.app.feature_user.domain.GradingCut
-import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
-import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.LinkedAccount
 import com.unistack.app.feature_user.domain.MotionPreference
@@ -49,11 +46,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
+import com.unistack.app.feature_user.domain.toGradingScaleOrNull
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
 class UserPreferencesDataSource(private val context: Context) {
-
     private object Keys {
         val USER_ID = stringPreferencesKey("user_id")
         val PREFERRED_NAME = stringPreferencesKey("preferred_name")
@@ -666,12 +663,4 @@ class UserPreferencesDataSource(private val context: Context) {
         GradingCutSchemeJson.decode(json) ?: GradingCutScheme.default()
 
     private fun GradingCutScheme.toJsonString(): String = GradingCutSchemeJson.encode(this)
-
-    private fun String.toGradingScaleOrNull(): GradingScale? {
-        return when (this) {
-            "ZERO_TO_ONE_HUNDRED" -> GradingScale.ZERO_TO_HUNDRED
-            "ZERO_TO_TEN", "LETTERS" -> GradingScale.CUSTOM
-            else -> runCatching { GradingScale.valueOf(this) }.getOrNull()
-        }
-    }
 }

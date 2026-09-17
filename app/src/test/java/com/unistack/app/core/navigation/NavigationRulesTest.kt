@@ -9,7 +9,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NavigationRulesTest {
-
     @Test
     fun bottomRouteForMapsNestedRoutesToTheirTab() {
         assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.SubjectDetail}/subject-1"))
@@ -127,20 +126,6 @@ class NavigationRulesTest {
         assertEquals(AppModule.EXPENSES, moduleForRoute("${AppRoutes.EditExpense}/expense-1"))
         assertEquals(AppModule.ACADEMIC_TEMPLATES, moduleForRoute(AppRoutes.AcademicTemplates))
         assertNull(moduleForRoute(AppRoutes.Profile))
-    }
-
-    @Test
-    fun bottomNavigationDoesNotRestoreHomeChildRoutes() {
-        assertFalse(shouldRestoreBottomRouteState(AppRoutes.AddTask, AppRoutes.Home))
-        assertFalse(shouldRestoreBottomRouteState(AppRoutes.AcademicTemplates, AppRoutes.Home))
-        assertTrue(shouldRestoreBottomRouteState(AppRoutes.Home, AppRoutes.Academic))
-    }
-
-    @Test
-    fun selectedBottomRoutePopsToItsRoot() {
-        assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AddTask, AppRoutes.Academic))
-        assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AcademicTemplates, AppRoutes.Home))
-        assertFalse(shouldPopSelectedBottomRoute(AppRoutes.Home, AppRoutes.Home))
     }
 
     @Test

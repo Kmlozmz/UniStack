@@ -53,7 +53,6 @@ class NotesViewModel @Inject constructor(
     private val tasksRepository: TasksRepository,
     private val attachmentStore: NoteAttachmentStore
 ) : ViewModel() {
-
     val notes: StateFlow<List<QuickNote>> = notesRepository.notes
     val attachments: StateFlow<List<NoteAttachment>> = notesRepository.attachments
     val subjects: StateFlow<List<Subject>> = gradesRepository.subjects
@@ -358,9 +357,6 @@ class NotesViewModel @Inject constructor(
      */
     val canSeedSamples: Boolean = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
 
-    val hasSamples: Boolean
-        get() = notes.value.any { NoteSamples.isSample(it.id) }
-
     /**
      * Una nota de cada tipo, con todo lo que una nota sabe hacer puesto en alguna de ellas.
      *
@@ -401,26 +397,6 @@ class NotesViewModel @Inject constructor(
         if (profile.notesLayout == layout) return
         userRepository.saveUserProfile(
             profile.copy(notesLayout = layout, updatedAt = System.currentTimeMillis())
-        )
-    }
-
-    /**
-     * Si las marcas de Markdown se ven mientras se escribe.
-     *
-     * Ya no es una propiedad de cada nota ni una pregunta que se haga al crearla: **todas** las
-     * notas son lo mismo por dentro. Los botones ponen las marcas y la app las esconde, que era
-     * lo que él pidió —«del markdown que se encargue la app»—. Esto solo destapa las marcas para
-     * quien quiera escribirlas a mano.
-     */
-    fun markdownVisible(): Boolean =
-        userProfile.value?.noteFormatDefault == NoteFormat.MARKDOWN
-
-    fun setMarkdownVisible(visible: Boolean) {
-        val profile = userProfile.value ?: return
-        val destino = if (visible) NoteFormat.MARKDOWN else NoteFormat.PLAIN
-        if (profile.noteFormatDefault == destino) return
-        userRepository.saveUserProfile(
-            profile.copy(noteFormatDefault = destino, updatedAt = System.currentTimeMillis())
         )
     }
 }

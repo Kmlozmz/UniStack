@@ -2,7 +2,6 @@
 
 package com.unistack.app.feature_expenses.presentation
 
-
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -28,20 +27,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.Celebration
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
-import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,7 +45,6 @@ import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,7 +58,6 @@ import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.UniStackTheme
-import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.formatCurrency
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
@@ -509,7 +497,7 @@ private fun ExpenseCategoryOption(
     // La elegida se rellena con el color de su categoria, el mismo que lleva despues en la
     // lista. Antes eran seis contornos iguales y la marca era un tinte del 10 % que apenas
     // se distinguia de las otras cinco.
-    val tone = category.expenseFormTone()
+    val tone = category.expenseTone()
     Surface(
         modifier = modifier
             .height(56.dp)
@@ -526,7 +514,7 @@ private fun ExpenseCategoryOption(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Icon(
-                imageVector = category.icon(),
+                imageVector = category.expenseSheetIcon(),
                 contentDescription = null,
                 tint = content,
                 modifier = Modifier.size(22.dp)
@@ -579,7 +567,7 @@ private fun ExpensePreviewCard(
                     Icon(
                         // Sin categoría elegida la vista previa no se inventa una: enseña
                         // un hueco, que es exactamente lo que falta por decidir.
-                        imageVector = category?.icon() ?: Icons.AutoMirrored.Rounded.HelpOutline,
+                        imageVector = category?.expenseSheetIcon() ?: Icons.AutoMirrored.Rounded.HelpOutline,
                         contentDescription = null,
                         tint = if (category != null) ExpenseFormCoral else ExpenseFormMuted,
                         modifier = Modifier.size(22.dp)
@@ -656,31 +644,6 @@ private fun PremiumFieldContainer(
         }
     }
 }
-
-/** El mismo color que lleva la categoria en la lista de gastos. */
-@Composable
-private fun ExpenseCategory.expenseFormTone(): Color = when (this) {
-    ExpenseCategory.TRANSPORT -> LocalSectionColors.current.schedule
-    ExpenseCategory.FOOD -> LocalSectionColors.current.expenses
-    ExpenseCategory.COPIES -> LocalSectionColors.current.atRisk
-    ExpenseCategory.MATERIALS -> MaterialTheme.colorScheme.tertiary
-    ExpenseCategory.OUTINGS -> LocalSectionColors.current.onTrack
-    ExpenseCategory.OTHER -> MaterialTheme.colorScheme.outline
-}
-
-@Composable
-private fun ExpenseCategory.icon(): ImageVector {
-    return when (this) {
-        ExpenseCategory.TRANSPORT -> Icons.Rounded.DirectionsBus
-        ExpenseCategory.FOOD -> Icons.Rounded.Restaurant
-        ExpenseCategory.COPIES -> Icons.Rounded.ContentCopy
-        ExpenseCategory.MATERIALS -> Icons.AutoMirrored.Rounded.MenuBook
-        ExpenseCategory.OUTINGS -> Icons.Rounded.Celebration
-        ExpenseCategory.OTHER -> Icons.Rounded.MoreHoriz
-    }
-}
-
-
 
 @Composable
 fun ExpenseCategory.label(): String = stringResource(labelRes())

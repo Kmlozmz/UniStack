@@ -67,7 +67,6 @@ import com.unistack.app.core.design.components.UniFilterChipRow
 import com.unistack.app.core.design.components.UniFilterOption
 import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.TaskDateUtils

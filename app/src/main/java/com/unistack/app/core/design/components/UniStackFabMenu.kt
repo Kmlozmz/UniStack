@@ -6,7 +6,7 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.StickyNote2
+import androidx.compose.material.icons.automirrored.rounded.StickyNote2
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -72,7 +72,7 @@ fun UniStackFabMenu(
          * que las dos entradas del mismo menu signifiquen cosas distintas con la misma
          * palabra.
          */
-        if (showAddNote) add(Triple(stringResource(R.string.shortcut_note_short), Icons.Rounded.StickyNote2, onAddNoteClick))
+        if (showAddNote) add(Triple(stringResource(R.string.shortcut_note_short), Icons.AutoMirrored.Rounded.StickyNote2, onAddNoteClick))
         if (showAddTask) add(Triple(stringResource(R.string.fab_task), Icons.Rounded.TaskAlt, onAddTaskClick))
         if (showAddExpense) add(Triple(stringResource(R.string.fab_expense), Icons.Rounded.AccountBalanceWallet, onAddExpenseClick))
         if (showAddSubject) add(Triple(stringResource(R.string.schedule_identity_subject), Icons.AutoMirrored.Rounded.MenuBook, onAddSubjectClick))

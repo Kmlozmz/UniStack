@@ -145,9 +145,5 @@ data class AcademicTerm(
             if (type == AcademicTermType.ANNUAL) return start.year.toString()
             return "${start.year}-${type.blockFor(start)}"
         }
-
-        /** El fin que se propone, contando las semanas típicas de esa forma de periodo. */
-        fun suggestedPlannedEnd(type: AcademicTermType, start: LocalDate): LocalDate =
-            start.plusWeeks(type.weeks.toLong())
     }
 }

@@ -2,12 +2,12 @@ package com.unistack.app.feature_tasks.data
 
 import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
 import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.Attachments
 import java.io.File
 import java.util.UUID
+import com.unistack.app.core.utils.nombreVisibleDe
 
 /** Lo que queda de un archivo después de copiarlo dentro. Igual que `StoredFile` de Notas. */
 data class TaskStoredFile(
@@ -26,7 +26,6 @@ data class TaskStoredFile(
  * para no mezclar los archivos de una feature con los de otra.
  */
 class TaskAttachmentStore(private val context: Context) {
-
     private val root: File
         get() = File(context.filesDir, CARPETA).apply { if (!exists()) mkdirs() }
 
@@ -37,7 +36,7 @@ class TaskAttachmentStore(private val context: Context) {
     fun import(uri: Uri, hintName: String? = null): TaskStoredFile? {
         val resolver = context.contentResolver
         val mime = resolver.getType(uri).orEmpty().ifBlank { "application/octet-stream" }
-        val nombre = hintName ?: queryDisplayName(uri)
+        val nombre = hintName ?: context.nombreVisibleDe(uri)
         val kind = Attachments.kindFor(mime)
         val storedName = newStoredName(Attachments.extensionFor(mime, nombre))
         val destino = File(root, storedName)
@@ -96,14 +95,6 @@ class TaskAttachmentStore(private val context: Context) {
     }
 
     private fun newStoredName(extension: String): String = "task-" + UUID.randomUUID() + "." + extension
-
-    private fun queryDisplayName(uri: Uri): String? = runCatching {
-        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-            ?.use { cursor ->
-                val indice = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (indice >= 0 && cursor.moveToFirst()) cursor.getString(indice) else null
-            }
-    }.getOrNull()
 
     private companion object {
         const val CARPETA = "task_attachments"

@@ -13,6 +13,7 @@ import java.util.UUID
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.sin
+import com.unistack.app.core.utils.cabeceraWav
 
 /** Una nota de ejemplo con lo que haga falta colgarle. */
 data class SampleNote(val note: QuickNote, val attachments: List<NoteAttachment>)
@@ -40,7 +41,6 @@ data class SampleNote(val note: QuickNote, val attachments: List<NoteAttachment>
  * Solo se ofrece en las compilaciones que pueden abrir lo que está a medio hacer.
  */
 object NoteSamples {
-
     private const val DIA = 24L * 60 * 60 * 1000
 
     private val GALERIA_CUERPO = """
@@ -535,43 +535,6 @@ object NoteSamples {
         }
         Triple(nombre, archivo.length(), duracionMs)
     }.getOrNull()
-
-    private fun cabeceraWav(datos: Int, muestreo: Int): ByteArray {
-        val bytesPorSegundo = muestreo * 2
-        val cabecera = ByteArray(44)
-        fun texto(pos: Int, valor: String) {
-            valor.forEachIndexed { i, c -> cabecera[pos + i] = c.code.toByte() }
-        }
-        fun entero(pos: Int, valor: Int) {
-            cabecera[pos] = (valor and 0xFF).toByte()
-            cabecera[pos + 1] = ((valor shr 8) and 0xFF).toByte()
-            cabecera[pos + 2] = ((valor shr 16) and 0xFF).toByte()
-            cabecera[pos + 3] = ((valor shr 24) and 0xFF).toByte()
-        }
-        fun corto(pos: Int, valor: Int) {
-            cabecera[pos] = (valor and 0xFF).toByte()
-            cabecera[pos + 1] = ((valor shr 8) and 0xFF).toByte()
-        }
-
-        texto(0, "RIFF")
-        entero(4, 36 + datos)
-        texto(8, "WAVE")
-        texto(12, "fmt ")
-        entero(16, 16)
-        corto(20, 1)
-        corto(22, 1)
-        entero(24, muestreo)
-        entero(28, bytesPorSegundo)
-        corto(32, 2)
-        corto(34, 16)
-        texto(36, "data")
-        entero(40, datos)
-        return cabecera
-    }
-
-    /** Los archivos que dejó una tanda de ejemplos, para poder borrarlos con ellas. */
-    fun storedNamesOf(muestras: List<SampleNote>): List<String> =
-        muestras.flatMap { it.attachments }.map { it.storedName }
 
     /** Si un archivo pertenece a una nota de ejemplo. */
     fun isSample(noteId: String): Boolean = noteId.startsWith("sample-")

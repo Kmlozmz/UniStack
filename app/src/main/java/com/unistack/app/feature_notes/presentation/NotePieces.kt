@@ -8,7 +8,6 @@ package com.unistack.app.feature_notes.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +15,11 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,7 +29,6 @@ import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
@@ -550,71 +546,6 @@ fun NoteDayHeader(label: String, count: Int, modifier: Modifier = Modifier) {
             text = count.toString(),
             color = MaterialTheme.colorScheme.outline,
             style = MaterialTheme.typography.labelSmall
-        )
-    }
-}
-
-/**
- * La fila de filtros: «Todas» y una pastilla por materia.
- *
- * Solo salen las materias que tienen alguna nota. Una fila con las nueve del semestre obliga a
- * recorrerlas enteras para descubrir que siete están vacías.
- */
-@Composable
-fun NoteSubjectFilters(
-    subjects: List<Subject>,
-    selectedSubjectId: String?,
-    onSelect: (String?) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        FilterPill(
-            label = stringResource(R.string.notes_filter_all),
-            selected = selectedSubjectId == null,
-            accent = MaterialTheme.colorScheme.primary,
-            onClick = { onSelect(null) }
-        )
-        subjects.forEach { subject ->
-            FilterPill(
-                label = subject.name,
-                selected = selectedSubjectId == subject.id,
-                accent = subjectAccent(subject),
-                onClick = { onSelect(subject.id) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterPill(
-    label: String,
-    selected: Boolean,
-    accent: Color,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(9.dp),
-        color = if (selected) accent.copy(alpha = 0.14f) else Color.Transparent,
-        contentColor = if (selected) accent else MaterialTheme.colorScheme.onSurfaceVariant,
-        border = if (selected) {
-            null
-        } else {
-            androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-        }
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            maxLines = 1,
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)
         )
     }
 }

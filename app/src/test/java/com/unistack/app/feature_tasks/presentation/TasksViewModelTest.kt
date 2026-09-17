@@ -8,7 +8,6 @@ import com.unistack.app.feature_grades.data.InMemoryGradesRepository
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_tasks.data.InMemoryTasksRepository
 import com.unistack.app.feature_tasks.data.TaskAttachmentStore
-import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
@@ -29,7 +28,6 @@ import java.time.LocalDate
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [34])
 class TasksViewModelTest {
-
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
@@ -272,26 +270,6 @@ class TasksViewModelTest {
         val newDue = viewModel.postponeTaskToTomorrow(taskId)
         assertNotNull(newDue)
         assertTrue(newDue!! > originalDue)
-    }
-
-    @Test
-    fun `markTaskAsDone sets completion and grading status`() {
-        viewModel.addTask(
-            title = "Examen",
-            description = "",
-            subjectId = null,
-            type = TaskType.EXAM,
-            dueDateInput = tomorrowInput,
-            dueTimeInput = "",
-            estimatedMinutesInput = "90",
-            difficulty = TaskDifficulty.HARD
-        )
-        val taskId = viewModel.tasks.value.first().id
-
-        viewModel.markTaskAsDone(taskId, willBeGraded = true)
-        val task = viewModel.tasks.value.first()
-        assertTrue(task.completed)
-        assertEquals(TaskGradingStatus.AWAITING_GRADE, task.gradingStatus)
     }
 
     @Test

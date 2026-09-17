@@ -7,7 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -292,7 +289,7 @@ private fun AccentRow(
                             Icon(
                                 Icons.Rounded.Check,
                                 contentDescription = null,
-                                tint = if (real.luminancia() > 0.5f) Color.Black else Color.White,
+                                tint = if (real.luminancia() > 0.5f) Color.Black else Color.White, // design-tokens-ok: paleta de acentos y su contraste
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -308,9 +305,9 @@ private fun Color.luminancia(): Float = 0.299f * red + 0.587f * green + 0.114f *
 
 /** Once tonos que funcionan sobre fondo claro y oscuro sin cambiar de valor. */
 private val Acentos = listOf(
-    Color(0xFF7F77DD), Color(0xFF3F8FE0), Color(0xFF2FB4C9), Color(0xFF4FBFA6), Color(0xFF5FC96E),
-    Color(0xFFE0A63C), Color(0xFFE8693A), Color(0xFFE2564F), Color(0xFFE062A8), Color(0xFFC08BE0),
-    Color(0xFF8C93A8)
+    Color(0xFF7F77DD), Color(0xFF3F8FE0), Color(0xFF2FB4C9), Color(0xFF4FBFA6), Color(0xFF5FC96E), // design-tokens-ok: paleta de acentos y su contraste
+    Color(0xFFE0A63C), Color(0xFFE8693A), Color(0xFFE2564F), Color(0xFFE062A8), Color(0xFFC08BE0), // design-tokens-ok: paleta de acentos y su contraste
+    Color(0xFF8C93A8) // design-tokens-ok: paleta de acentos y su contraste
 )
 
 /**

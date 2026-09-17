@@ -36,7 +36,6 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -59,14 +58,7 @@ import androidx.compose.runtime.remember
 import java.time.LocalDate
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.unistack.app.core.design.components.UniCard
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import com.unistack.app.core.design.components.EvaluationBar
-import com.unistack.app.core.design.components.UniDivider
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -102,7 +94,6 @@ import com.unistack.app.feature_user.domain.GradingScale
 
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.material3.Button
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -282,7 +273,7 @@ private fun formFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
 )
 
-private data class ActivityTypeItem(@StringRes val labelRes: Int, val type: GradeType)
+private data class ActivityTypeItem(@param:StringRes val labelRes: Int, val type: GradeType)
 
 private val ActivityTypeItems = listOf(
     ActivityTypeItem(R.string.grade_type_workshop, GradeType.WORKSHOP),
@@ -979,7 +970,6 @@ fun AddGradeScreen(
                         }
                     }
                 }
-
             }
 
             error?.let {
@@ -1107,12 +1097,10 @@ fun AddGradeScreen(
                     color = if (botonActivo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
             }
         }
     }
     }
-
 
     if (showHistorySuggestion) {
         AlertDialog(

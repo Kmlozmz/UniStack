@@ -59,27 +59,23 @@ import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.unistack.app.core.design.components.barridoDeRecuperacion
 import com.unistack.app.core.design.components.celebracionDelDia
 import com.unistack.app.core.design.components.selloDeCorte
 import com.unistack.app.core.design.components.numeroQueCuenta
-import com.unistack.app.core.design.components.notaRecienRegistrada
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
-import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -127,12 +123,9 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.draw.rotate
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.muelleDeMovimiento
@@ -140,9 +133,7 @@ import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.duracion
 import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.SubjectGradeCalculation
@@ -155,7 +146,6 @@ import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.GradingCutScheme
-import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
 import com.unistack.app.feature_user.domain.GradingScale
 import java.util.Locale
 import kotlin.math.round
@@ -519,7 +509,6 @@ fun SubjectDetailScreen(
                 }
             }
         }
-
     }
 
     cortePorReabrir?.let { cutId ->
@@ -862,7 +851,6 @@ fun SubjectCutDetailScreen(
                 )
             }
         }
-
     }
 
     if (confirmarCierre) {
@@ -1175,7 +1163,6 @@ internal fun CutHeader(title: String, subtitle: String, onBackClick: () -> Unit)
         Box(modifier = Modifier.size(48.dp))
     }
 }
-
 
 /**
  * Profesor, aula y horario de la materia.
@@ -1667,32 +1654,6 @@ private fun OutcomeRangeBar(
                 modifier = Modifier.padding(start = (ancho * donde - 11.dp).coerceIn(0.dp, ancho - 22.dp))
             )
         }
-    }
-}
-
-@Composable
-private fun RangeLegend(label: String, value: String, valueColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
-        Text(value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
-    }
-}
-
-@Composable
-private fun EvaluationValue(evaluated: Double) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            "${formatPercent(evaluated)}%",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-        Text(
-            stringResource(R.string.subject_evaluated_label),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Medium
-        )
     }
 }
 
@@ -2749,8 +2710,6 @@ private fun CutCard(
     }
 }
 
-
-
 /**
  * El resumen del corte: qué nota lleva, en qué estado está y cuánto de su peso está repartido.
  *
@@ -2913,7 +2872,6 @@ private fun EmptyCutNotesInline() {
     }
 }
 
-
 @Composable
 private fun StatusBadge(status: CutStatus) {
     val statusColor = status.color
@@ -2954,7 +2912,7 @@ private data class CutSummary(
     val status: CutStatus
 )
 
-private enum class CutStatus(@StringRes val labelRes: Int) {
+private enum class CutStatus(@param:StringRes val labelRes: Int) {
     COMPLETED(R.string.subject_status_completed),
     IN_PROGRESS(R.string.subject_status_ongoing),
     PENDING(R.string.subject_status_pending);

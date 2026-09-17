@@ -30,7 +30,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -76,7 +75,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
-import java.util.Locale
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
@@ -121,8 +119,6 @@ import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_notes.domain.NoteAttachment
-import com.unistack.app.feature_notes.domain.NoteDay
-import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteGrouping
 import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteReminders
@@ -1345,90 +1341,6 @@ private fun SubjectFilterRow(
                     modifier = Modifier.size(18.dp)
                 )
             }
-        }
-    }
-}
-
-/** Lo que hay detrás de una nota al dejar el dedo puesto. */
-@Composable
-private fun NoteActionsSheet(
-    enPapelera: Boolean,
-    pinned: Boolean,
-    archived: Boolean,
-    onPin: () -> Unit,
-    onArchive: () -> Unit,
-    onRestore: () -> Unit,
-    onDelete: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
-        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(bottom = 18.dp)
-        ) {
-            if (enPapelera) {
-                ActionRow(
-                    icon = Icons.Rounded.Restore,
-                    label = stringResource(R.string.notes_restore_action),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    onClick = onRestore
-                )
-                ActionRow(
-                    icon = Icons.Rounded.DeleteForever,
-                    label = stringResource(R.string.notes_perm_delete_action),
-                    tint = MaterialTheme.colorScheme.error,
-                    onClick = onDelete
-                )
-            } else {
-                ActionRow(
-                    icon = Icons.Rounded.PushPin,
-                    label = if (pinned) stringResource(R.string.notes_unpin) else stringResource(R.string.notes_pin),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    onClick = onPin
-                )
-                ActionRow(
-                    icon = if (archived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                    label = if (archived) stringResource(R.string.notes_unarchive) else stringResource(R.string.notes_archive),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    onClick = onArchive
-                )
-                ActionRow(
-                    icon = Icons.Rounded.DeleteOutline,
-                    label = stringResource(R.string.notes_move_to_trash),
-                    tint = MaterialTheme.colorScheme.error,
-                    onClick = onDelete
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActionRow(
-    icon: ImageVector,
-    label: String,
-    tint: Color,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        color = Color.Transparent,
-        contentColor = tint,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 15.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(19.dp))
-            Spacer(Modifier.width(14.dp))
-            Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
         }
     }
 }

@@ -5,16 +5,12 @@ package com.unistack.app.feature_profile.presentation
 import androidx.compose.foundation.layout.Arrangement
 import com.unistack.app.core.design.theme.tonosDeAjustes
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.Home
@@ -59,7 +55,6 @@ import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
-import com.unistack.app.feature_user.domain.portraitUrl
 import com.unistack.app.core.utils.Textos
 
 /**

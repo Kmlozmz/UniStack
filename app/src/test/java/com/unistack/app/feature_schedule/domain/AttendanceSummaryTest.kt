@@ -16,7 +16,6 @@ import java.time.LocalDate
  * porcentaje y las faltas restantes digan «no sé» en vez de inventarse un número.
  */
 class AttendanceSummaryTest {
-
     private val hoy: LocalDate = LocalDate.of(2026, 8, 27)
     private val martes = sesion(DayOfWeek.TUESDAY)
 
@@ -125,18 +124,6 @@ class AttendanceSummaryTest {
 
         assertEquals(1, resumen.decided)
         assertEquals(100, resumen.rate)
-    }
-
-    @Test
-    fun `un porcentaje sobre pocas clases se marca como poco fiable`() {
-        val entradas = construir(
-            occurrences = listOf(marcada(hoy.minusDays(2), ClassAttendanceStatus.ATTENDED))
-        )
-
-        val resumen = SubjectAttendanceHistory.summarize(entradas)
-
-        assertEquals(100, resumen.rate)
-        assertTrue(resumen.tooFewToTrust)
     }
 
     // ---------- el tope de faltas ----------

@@ -42,7 +42,6 @@ data class AttendanceHistoryEntry(
  * antes: es lo único que se puede hacer sin el dato, y no empeora nada.
  */
 object SubjectAttendanceHistory {
-
     /** Hasta dónde se mira hacia atrás cuando no hay periodo que acote. */
     const val LOOKBACK_DAYS = 120L
 
@@ -261,11 +260,4 @@ data class AttendanceSummary(
 
     /** Si queda una sola: el momento en que este dato cambia lo que haces. */
     val oneLeft: Boolean get() = remainingAbsences == 1
-
-    /**
-     * Si el porcentaje se apoya en tan pocas clases que decirlo a secas engaña.
-     *
-     * «100 %» sobre una clase es ruido con formato de dato.
-     */
-    val tooFewToTrust: Boolean get() = decided in 1..3
 }

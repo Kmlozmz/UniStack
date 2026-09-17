@@ -15,22 +15,12 @@ data class CutGradeCalculation(
     val recordedGradeCount: Int,
     /**
      * Suma real de los pesos, sin recortar a 1.0. Solo difiere de [evaluatedFraction]
-     * cuando el corte está sobreasignado, que es justo lo que detecta [isOverAllocated].
+     * cuando el corte está sobreasignado: sus pesos suman más del 100 %.
      */
     val allocatedFraction: Double = evaluatedFraction
 ) {
     val isComplete: Boolean
         get() = evaluatedFraction >= 0.9999
-
-    val isProvisional: Boolean
-        get() = average != null && (!isComplete || unknownWeightCount > 0)
-
-    /**
-     * Los pesos del corte suman más del 100%. El promedio sigue siendo correcto —es una
-     * media ponderada— pero los datos no lo son, y merece avisarse en pantalla.
-     */
-    val isOverAllocated: Boolean
-        get() = allocatedFraction > 1.0001
 
     /**
      * Lo que este corte aporta a la nota final, ya escalado a la fracción que cubre.
@@ -123,14 +113,6 @@ object GradeCalculator {
         return calculateCut(grades).average
     }
 
-    fun calculateEvaluatedPercentage(grades: List<GradeItem>): Double {
-        return roundToOneDecimal(calculateCut(grades).evaluatedFraction * 100.0)
-    }
-
-    fun calculateWeightedPoints(grades: List<GradeItem>): Double {
-        return calculateCut(grades).weightedPoints
-    }
-
     fun calculateCutAverage(grades: List<GradeItem>): Double? = calculateCut(grades).average
 
     fun calculateCut(grades: List<GradeItem>): CutGradeCalculation {
@@ -204,15 +186,6 @@ object GradeCalculator {
         if (evaluatedWeight <= 0.0) return null
         return roundToOneDecimal(calculateWeightedPointsByCuts(grades, cuts) / evaluatedWeight)
     }
-
-    /**
-     * Margen para dar por «rozando» la meta: un 10% de la escala.
-     *
-     * Estaba escrito como 0.5 fijo en la lista de materias. En la escala de 0 a 5 eso es el
-     * 10%, pero en la de 0 a 100 es medio punto: el estado de aviso solo aparecía entre 79.5
-     * y 80, así que en la práctica se saltaba de «sobre meta» a «revisar» de golpe.
-     */
-    fun closeToTargetMargin(maxGrade: Double): Double = maxGrade * 0.1
 
     fun calculateEvaluatedSemesterPercentage(
         grades: List<GradeItem>,

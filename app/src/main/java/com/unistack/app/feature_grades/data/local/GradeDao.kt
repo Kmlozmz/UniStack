@@ -8,9 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GradeDao {
-    @Query("SELECT * FROM grades WHERE subjectId = :subjectId ORDER BY createdAt DESC")
-    fun observeGradesForSubject(subjectId: String): Flow<List<GradeEntity>>
-
     @Query("SELECT * FROM grades ORDER BY createdAt DESC")
     fun observeAllGrades(): Flow<List<GradeEntity>>
 

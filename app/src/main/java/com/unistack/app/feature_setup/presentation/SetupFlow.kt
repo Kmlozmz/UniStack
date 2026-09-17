@@ -8,10 +8,6 @@ import com.unistack.app.core.design.components.CutBalanceNotice
 import com.unistack.app.core.design.components.CutCountSection
 import com.unistack.app.core.design.components.SetupEvenSplitAction
 import com.unistack.app.core.design.components.gradeValueOf
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -20,7 +16,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -1750,9 +1745,6 @@ private fun ConfirmedScaleRangeRow(
     }
 }
 
-
-
-
 @Composable
 fun SetupGradingCutsScreen(
     weights: List<String>,
@@ -1871,11 +1863,6 @@ private fun GradingCutsBottomActions(
         )
     }
 }
-
-private data class CutCountOption(
-    val count: Int?,
-    val label: String
-)
 
 @Composable
 private fun CustomGradeRangeSelector(
@@ -2362,8 +2349,6 @@ private fun SetupModulesInfoCard() {
     }
 }
 
-
-
 /** El sello del cierre, del mismo ancho que el de la animación que viene detrás. */
 private val FinishMarkWidth = 108.dp
 
@@ -2794,12 +2779,6 @@ private data class ModuleOption(
     val module: AppModule,
     val label: String,
     val description: String,
-    val icon: ImageVector
-)
-
-private data class SetupCardOption<T>(
-    val value: T,
-    val label: String,
     val icon: ImageVector
 )
 

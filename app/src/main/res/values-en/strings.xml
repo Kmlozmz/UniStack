@@ -10,9 +10,7 @@
     <string name="nav_schedule">Schedule</string>
     <string name="nav_expenses">Expenses</string>
     <string name="nav_settings">Settings</string>
-    <string name="nav_grades">Grades</string>
     <string name="nav_tasks">Tasks</string>
-    <string name="nav_notes">Notes</string>
     <string name="nav_profile">Profile</string>
 
     
@@ -21,21 +19,16 @@
     <string name="action_delete">Delete</string>
     <string name="action_edit">Edit</string>
     <string name="action_close">Close</string>
-    <string name="action_confirm">Confirm</string>
     <string name="action_back">Back</string>
     <string name="action_apply">Apply</string>
     <string name="action_apply_format">Apply format</string>
     <string name="action_create">Create</string>
-    <string name="action_add">Add</string>
-    <string name="action_search">Search</string>
     <string name="action_accept">Accept</string>
     <string name="action_undo">Undo</string>
-    <string name="action_retry">Retry</string>
 
     
     <string name="a11y_title">Accessibility</string>
     <string name="a11y_subtitle">Vision, interaction, assistance and system</string>
-    <string name="a11y_preview_title">PREVIEW</string>
     <string name="a11y_section_vision">VISION AND READING</string>
     <string name="a11y_section_interaction">INTERACTION AND CONTROL</string>
     <string name="a11y_section_formats">FORMATS AND LANGUAGE</string>
@@ -152,12 +145,8 @@
     <string name="tasks_tab_pending">Pending</string>
     <string name="tasks_tab_completed">Completed</string>
     <string name="tasks_tab_overdue">Overdue</string>
-    <string name="tasks_upcoming">Upcoming</string>
-    <string name="tasks_today">Today</string>
-    <string name="tasks_tomorrow">Tomorrow</string>
     <string name="tasks_new_task">New task</string>
     <string name="tasks_edit_task">Edit task</string>
-    <string name="tasks_search_placeholder">Search tasks…</string>
 
     
     <string name="expense_cat_transport">Transport</string>
@@ -169,7 +158,6 @@
 
     <string name="expenses_header_title">Expenses</string>
     <string name="expenses_header_subtitle">Track personal and academic expenses.</string>
-    <string name="expenses_hero_title">THIS WEEK</string>
     <string name="expenses_add_expense">Add expense</string>
     <string name="expenses_edit_expense">Edit expense</string>
     <string name="expenses_edit_expense_desc">Category, amount, and date</string>
@@ -177,12 +165,9 @@
     <string name="expenses_delete_expense_desc">Removes it from history and totals</string>
     <string name="expenses_delete_dialog_title">Delete expense?</string>
     <string name="expenses_delete_dialog_body">This action cannot be undone.</string>
-    <string name="expenses_budget">Budget</string>
     <string name="expenses_no_budget">No budget</string>
     <string name="expenses_category">Category</string>
-    <string name="expenses_amount">Amount</string>
     <string name="expenses_date">Date</string>
-    <string name="expenses_insights">Insights</string>
     <string name="expenses_no_expenses">No expenses</string>
     <string name="expenses_period_today">Today</string>
     <string name="expenses_period_week">Week</string>
@@ -237,7 +222,6 @@
     
     <string name="date_today">Today</string>
     <string name="date_yesterday">Yesterday</string>
-    <string name="date_tomorrow">Tomorrow</string>
 
     
     <string name="academic_header_title">Academic</string>
@@ -245,36 +229,18 @@
     <string name="academic_search_placeholder">Search among your subjects</string>
     <string name="academic_search_close">Close search</string>
     <string name="academic_search_open">Search subjects</string>
-    <string name="grades_header_title">Grades</string>
-    <string name="grades_average">Average</string>
     <string name="grades_subjects">Subjects</string>
-    <string name="grades_cuts">Periods</string>
     <string name="grades_add_subject">Add subject</string>
 
     
-    <string name="schedule_header_title">Schedule</string>
-    <string name="schedule_today">Today</string>
-    <string name="schedule_classes">Classes</string>
-    <string name="schedule_no_classes">No scheduled classes</string>
-    <string name="schedule_status_pending">Pending</string>
     <string name="schedule_status_attended">Attended</string>
     <string name="schedule_status_absent">Absent</string>
-    <string name="schedule_status_cancelled">Cancelled</string>
     <string name="schedule_status_rescheduled">Rescheduled</string>
 
     
-    <string name="notes_header_title">Notes</string>
     <string name="notes_new_note">New note</string>
-    <string name="notes_search_placeholder">Search notes…</string>
-    <string name="notes_pinned">Pinned</string>
-    <string name="notes_trash">Trash</string>
-    <string name="notes_view_notes">Notes</string>
-    <string name="notes_view_reminders">Reminders</string>
-    <string name="notes_view_archive">Archive</string>
-    <string name="notes_view_trash">Trash</string>
 
     
-    <string name="action_clear">Clear</string>
     <string name="action_clear_selection">Clear selection</string>
     <string name="dialog_leave_title">Discard unsaved changes?</string>
     <string name="dialog_leave_message">What you wrote will be lost.</string>
@@ -306,7 +272,6 @@
     <string name="insights_pace_today">today, day %1$d</string>
     <string name="insights_pace_day_n">day %1$d</string>
     <string name="insights_to_not_exceed">TO STAY WITHIN BUDGET</string>
-    <string name="insights_per_day">%1$s per day</string>
     <string name="insights_per_day_suffix">per day</string>
     <string name="insights_now">now</string>
     <string name="insights_before">before</string>
@@ -338,21 +303,16 @@
     <string name="grades_delete_desc_multiple">All their grades will also be deleted. This cannot be undone.</string>
 
     
-    <string name="tasks_header_subtitle">Organize your deadlines and activities</string>
-    <string name="tasks_later">Later</string>
     <string name="tasks_empty_title">You have no tasks yet.</string>
     <string name="tasks_empty_subtitle">Create your first task to track due dates, subjects, and priorities.</string>
     <string name="tasks_empty_filtered_title">No tasks match these filters.</string>
     <string name="tasks_empty_filtered_subtitle">Adjust status, subject, or priority to view other pending items.</string>
-    <string name="tasks_empty_group">Nothing here. When tasks enter this group, they will appear here.</string>
     <string name="tasks_change_filters">Change filters</string>
     <string name="tasks_all_subjects">All subjects</string>
     <string name="tasks_no_subject">No subject</string>
     <string name="tasks_filter_title">Filters</string>
-    <string name="tasks_filter_apply">Show results</string>
     <string name="tasks_status_title">Status</string>
     <string name="tasks_priority_title">Priority</string>
-    <string name="tasks_sort_title">Sort by</string>
     <string name="tasks_sort_due_date">Due date</string>
     <string name="tasks_sort_priority">Priority</string>
     <string name="tasks_sort_subject">Subject</string>
@@ -372,19 +332,12 @@
     <string name="tasks_type_reading">Reading</string>
     <string name="tasks_type_other">Other</string>
     <string name="tasks_status_all">All</string>
-    <string name="tasks_pending_result_single">1 pending result</string>
-    <string name="tasks_pending_result_multiple">%1$d pending results</string>
-    <string name="tasks_pending_result_hint">Tap to record or dismiss results</string>
-    <string name="tasks_hide">Hide</string>
     <string name="tasks_review">Review</string>
-    <string name="tasks_more_options">More options</string>
     <string name="tasks_action_record">Record</string>
     <string name="tasks_action_unlink_grade">Unlink grade</string>
     <string name="tasks_action_duplicate">Duplicate</string>
     <string name="tasks_action_mark_completed">Mark completed</string>
-    <string name="tasks_delivered_waiting_grade">DELIVERED · AWAITING GRADE</string>
     <string name="tasks_record_grade_title">Record result</string>
-    <string name="tasks_record_grade_question">Did you receive a grade for “%1$s”?</string>
     <string name="tasks_record_grade_yes">Yes, record grade</string>
     <string name="tasks_record_grade_not_yet">Not yet</string>
     <string name="tasks_record_grade_never">This task does not receive a grade</string>
@@ -419,69 +372,29 @@
     <string name="tasks_unsaved_leave_edit">Changes to this task will be lost.</string>
 
     
-    <string name="schedule_view_month">Month</string>
-    <string name="schedule_view_agenda">Agenda</string>
-    <string name="schedule_view_list">List</string>
-    <string name="schedule_history">HISTORY</string>
-    <string name="schedule_history_view">View history</string>
-    <string name="schedule_history_view_desc">Your attendance record for this subject</string>
     <string name="schedule_edit_class">Edit class</string>
     <string name="schedule_edit_class_desc">Days, time, room, and professor</string>
     <string name="schedule_delete_class">Delete class</string>
     <string name="schedule_delete_class_desc">Removed from schedule; subject remains in Academic</string>
     <string name="schedule_add_class">Add class</string>
-    <string name="schedule_add_class_desc">Add schedule to an existing subject, or create a new one.</string>
-    <string name="schedule_no_schedule_yet">NO SCHEDULE YET</string>
-    <string name="schedule_no_schedule_desc">Already in Academic; missing days and time</string>
-    <string name="schedule_start_fresh">OR START FROM SCRATCH</string>
     <string name="schedule_new_subject">New subject</string>
     <string name="schedule_new_subject_desc">Create subject and schedule together</string>
-    <string name="schedule_record_attendance">RECORD ATTENDANCE</string>
     <string name="schedule_room">Room</string>
-    <string name="schedule_no_room">No room</string>
-    <string name="schedule_professor">Professor</string>
-    <string name="schedule_no_professor">No professor</string>
     <string name="schedule_recurrence">Recurrence</string>
-    <string name="schedule_reminder">Reminder</string>
-    <string name="schedule_no_reminder">No reminder</string>
-    <string name="schedule_duration">Duration</string>
-    <string name="schedule_empty_history">No classes in history yet</string>
-    <string name="schedule_all_up_to_date">All caught up</string>
-    <string name="schedule_catch_up">Catch up · %1$d unmarked</string>
 
     
     <string name="notes_empty_archive_title">Archive is empty</string>
     <string name="notes_empty_archive_desc">Notes you no longer use but don\'t want to lose go here. Archive them from the note itself.</string>
     <string name="notes_empty_trash_title">Trash is empty</string>
     <string name="notes_empty_trash_desc">Items you delete stay here for %1$d days before being permanently removed.</string>
-    <string name="notes_empty_all_title">Nothing written yet</string>
-    <string name="notes_empty_all_desc">Class notes, exam dates, room numbers. Write them here and choose their subject later.</string>
     <string name="notes_empty_search_title">No matches found</string>
     <string name="notes_empty_subject_title">Nothing for this subject</string>
     <string name="notes_empty_subject_desc">You haven\'t written anything in this subject yet.</string>
-    <string name="notes_dialog_trash_one">Move this note to trash?</string>
-    <string name="notes_dialog_trash_multiple">Move these %1$d notes to trash?</string>
-    <string name="notes_dialog_trash_desc">It stays in the trash for %1$d days in case you change your mind, then gets deleted permanently.</string>
-    <string name="notes_dialog_trash_desc_plural">They stay in the trash for %1$d days in case you change your mind, then get deleted permanently.</string>
-    <string name="notes_dialog_delete_permanent_title">Delete permanently?</string>
-    <string name="notes_dialog_delete_permanent_desc">It will be deleted along with all its contents, and cannot be undone.</string>
-    <string name="notes_action_move_trash">Move to trash</string>
-    <string name="notes_action_restore">Restore</string>
-    <string name="notes_action_delete_permanent">Delete permanently</string>
-    <string name="notes_action_pin">Pin to top</string>
-    <string name="notes_action_unpin">Unpin</string>
-    <string name="notes_action_archive">Archive</string>
-    <string name="notes_action_unarchive">Unarchive</string>
     <string name="notes_empty_trash_action">Empty trash</string>
-    <string name="notes_sort_and_filter">Sort and filter</string>
-    <string name="notes_sort_by">SORT BY</string>
-    <string name="notes_sort_updated">Last modified</string>
     <string name="notes_sort_created">Creation date</string>
     <string name="notes_all_notes">All notes</string>
     <string name="notes_section_pinned">Pinned</string>
     <string name="notes_section_others">Others</string>
-    <string name="notes_moved_to_trash_single">Moved to trash</string>
-    <string name="notes_moved_to_trash_multiple">%1$d notes moved to trash</string>
     <string name="subject_row_mark">Select subject</string>
     <string name="subject_row_marked">Selected</string>
     <string name="subject_goal_unreachable">goal is no longer reachable</string>
@@ -516,16 +429,11 @@
     <string name="subject_reopen_cut_title">Reopen the cut?</string>
     <string name="subject_reopen_cut_message">It takes grades again and its result stops being locked in.</string>
     <string name="subject_cut_closed_hint">Cut closed · the grades are locked in.</string>
-    <string name="subject_close_cut">Close %1$s</string>
     <string name="subject_completed_cuts">Completed</string>
     <string name="subject_reopen_cut">Reopen</string>
-    <string name="subject_add_grade_to">Add grade to %1$s</string>
-    <string name="subject_all_cuts_completed">All cuts are complete</string>
-    <string name="subject_choose_cut_for_grades">Choose a cut to add grades</string>
     <string name="subject_delete_title">Delete subject?</string>
     <string name="subject_delete_message">Its cuts and grades will also be deleted.</string>
     <string name="subject_cut_weight_of_subject">%1$s · %2$s%% of subject</string>
-    <string name="subject_cut_grades">Cut grades</string>
     <string name="subject_delete_grade_title">Delete grade?</string>
     <string name="subject_delete_grade_message">This action cannot be undone.</string>
     <string name="subject_not_found">Subject not found</string>
@@ -544,12 +452,8 @@
     <string name="subject_hero_ceiling_label">The most you can still reach</string>
     <string name="subject_evaluated_average">Evaluated average</string>
     <string name="subject_unevaluated">Unevaluated</string>
-    <string name="subject_first_grade_prompt">Record your first grade to see your possible final range.</string>
-    <string name="subject_nothing_left_to_evaluate">Nothing left to evaluate: this is the final grade.</string>
-    <string name="subject_you_are_at_value">You are at %1$s</string>
     <string name="subject_mark_goal">goal %1$s</string>
     <string name="subject_mark_you">you have %1$s</string>
-    <string name="subject_you_are_at">You are at</string>
     <string name="subject_stats_worst_cut">You lost the most in %1$s, and it weighs %2$s%%.</string>
     <string name="subject_stats_trend_down">Three grades trending down: from %1$s to %2$s.</string>
     <string name="subject_stats_trend_up">Holding steady or rising: from %1$s to %2$s.</string>
@@ -570,27 +474,14 @@
     <string name="subject_stats_what_if_hint">Drag the grade you would get in the remaining %1$s%%.</string>
     <string name="subject_stats_you_would_end">you would finish the subject with this</string>
     <string name="subject_stats_if_you_get">getting</string>
-    <string name="subject_stats_need_two">Not enough grades to compare yet.</string>
-    <string name="subject_stats_nothing_yet">Nothing evaluated yet.</string>
     <string name="subject_see_detail">See detail</string>
-    <string name="subject_where_you_can_end">Where you can finish</string>
-    <string name="subject_stat_minimum">Minimum</string>
     <string name="subject_stat_target">Goal</string>
-    <string name="subject_stat_maximum">Maximum</string>
-    <string name="subject_evaluated_label">evaluated</string>
     <string name="subject_approval">Passing</string>
     <string name="subject_you_carry">You have</string>
     <string name="subject_no_data_short">—</string>
-    <string name="subject_target">Target</string>
     <string name="subject_to_evaluate">To evaluate</string>
     <string name="subject_insights_prompt">Record grades in your cuts to see what you need for your goal.</string>
-    <string name="subject_closed_with">Subject closed with %1$s</string>
-    <string name="subject_goal_met">: you met your goal of %1$s.</string>
-    <string name="subject_goal_secured_msg">Your goal of %1$s is secured: even with 0 in the rest, you finish with %2$s.</string>
-    <string name="subject_above_goal_msg">You are above your goal of %1$s. You only need %2$s in the remaining %3$s%% to stay there.</string>
-    <string name="subject_need_grade_msg">You need %1$s in the remaining %2$s%% to reach your goal of %3$s.</string>
     <string name="subject_closed_below_goal">, below your goal of %1$s.</string>
-    <string name="subject_goal_unreachable_msg">Your goal of %1$s is no longer reachable: even with %2$s in the rest, you would finish with %3$s.</string>
     <string name="subject_current_cut_badge">" · Current cut"</string>
     <string name="subject_percent_evaluated">%1$s%% evaluated</string>
     <string name="subject_cut_grade_header">CUT GRADE</string>
@@ -663,10 +554,6 @@
     <string name="grade_form_edit_title">Edit grade</string>
     <string name="grade_form_new_title">New grade</string>
     <string name="grade_what_recording">What to record</string>
-    <string name="grade_an_activity">An assignment</string>
-    <string name="grade_final_cut_grade">Final cut grade</string>
-    <string name="grade_final_cut_grade_desc">Replaces the cut calculation with the grade given by the professor.</string>
-    <string name="grade_activity_desc">Combines with other activities according to its weight within the cut.</string>
     <string name="grade_goes_to">Goes to</string>
     <string name="grade_chosen_today_hint">Selected based on today\'s date.</string>
     <string name="grade_change_cut">Change cut</string>
@@ -725,7 +612,6 @@
     <string name="subject_unreachable_mid">"%1$s in the rest, you would finish with "</string>
     <string name="subject_weight_of_subject_simple">%1$s%% of subject</string>
     <string name="subject_color_select_accessibility">Select color %1$s</string>
-    <string name="subject_color_desc_accessibility">Color %1$s, %2$s</string>
     <string name="schedule_reminder_min">Reminder %1$d min</string>
     <string name="schedule_start_hour_label">Start time</string>
     <string name="schedule_end_hour_label">End time</string>
@@ -752,32 +638,16 @@
     <string name="tasks_history_prompt_title">Your history can improve the projection</string>
     <string name="tasks_history_prompt_desc_1">You recorded the first grade of %1$s in an advanced cut.</string>
     <string name="tasks_history_prompt_desc_2">You can add grades from prior cuts now or do it later.</string>
-    <string name="tasks_history_prompt_complete">Complete history</string>
-    <string name="tasks_history_prompt_later">Later</string>
     <string name="tasks_completed_title">Task completed</string>
     <string name="tasks_unknown_weight_hint">The grade will be saved without affecting the projection.</string>
     <string name="tasks_validation_error">Check the grade and percentage.</string>
     <string name="tasks_save_error">Could not save. Check the range and accumulated weight.</string>
     <string name="tasks_search_field_placeholder">Search task, subject, or type</string>
-    <string name="tasks_filter_today_title">Today\'s tasks</string>
-    <string name="tasks_filter_today_subtitle">Due today and still unchecked.</string>
-    <string name="tasks_week">Week</string>
-    <string name="tasks_filter_week_title">This week\'s tasks</string>
-    <string name="tasks_filter_week_subtitle">Due between today and the next six days.</string>
-    <string name="tasks_filter_overdue_title">Overdue tasks</string>
-    <string name="tasks_filter_overdue_subtitle">Past deadline and still pending.</string>
     <string name="tasks_open_filters">Open filters</string>
-    <string name="tasks_hide_pending_results">Hide pending results</string>
-    <string name="tasks_view_pending_results">View pending results</string>
-    <string name="tasks_action_delete">Delete</string>
-    <string name="tasks_action_edit">Edit</string>
     <string name="tasks_record_grade_button">Record the grade</string>
     <string name="tasks_grade_prefix">Grade %1$s</string>
     <string name="tasks_grade_recorded">Grade recorded</string>
-    <string name="tasks_more_options_for">More options for %1$s</string>
     <string name="tasks_filter_clear">Clear</string>
-    <string name="tasks_filter_subject_all">Subject: All</string>
-    <string name="tasks_filters_active">Filters: %1$s</string>
     <string name="tasks_chip_all_by_date">All · by date</string>
     <string name="tasks_no_time">No time</string>
     <string name="tasks_weight_pending">Pending percentage</string>
@@ -788,7 +658,6 @@
     <string name="tasks_unlink_grade_message">The grade will remain saved in the subject, but will no longer be associated with this task.</string>
     <string name="tasks_action_unlink">Unlink</string>
     <string name="tasks_form_subtitle">Organize activity details</string>
-    <string name="tasks_add_description">Add description</string>
     <string name="tasks_save_changes">Save changes</string>
     <string name="tasks_more_actions">More actions</string>
     <string name="tasks_select_date">Select</string>
@@ -796,8 +665,6 @@
     <string name="tasks_linked_grade">Linked grade</string>
     <string name="tasks_linked_grade_hint">Saving will also update the linked grade.</string>
     <string name="tasks_edit_linked_grade">Edit grade</string>
-    <string name="tasks_will_have_grade">Will this task be graded?</string>
-    <string name="tasks_will_have_grade_hint">This lets us know whether to ask for the grade upon completion.</string>
     <string name="tasks_select_subject_for_grade_hint">Select a subject to be able to record a grade.</string>
     <string name="tasks_gradeable">Graded</string>
     <string name="tasks_ungraded">Ungraded</string>
@@ -822,10 +689,8 @@
     <string name="tasks_hero_week_closed">week completed</string>
     <string name="tasks_hero_hechas">done</string>
     <string name="tasks_hero_awaiting_grade">%1$d awaiting grade</string>
-    <string name="tasks_hero_estimated_time">%1$s estimated</string>
     <string name="tasks_hero_due_today">%1$d due today</string>
     <string name="tasks_hero_today_clear">All clear today</string>
-    <string name="tasks_rail_all">All</string>
     <string name="tasks_group_submitted_waiting">Submitted without grade</string>
     <string name="tasks_group_overdue">Overdue</string>
     <string name="tasks_group_yesterday">Yesterday</string>
@@ -833,7 +698,6 @@
     <string name="tasks_group_tomorrow">Tomorrow</string>
     <string name="tasks_group_later">Later</string>
     <string name="tasks_group_done">Done</string>
-    <string name="tasks_group_completed">Completed</string>
     <string name="tasks_filter_all">All</string>
     <string name="tasks_filter_pending">Pending</string>
     <string name="tasks_filter_done">Done</string>
@@ -844,11 +708,7 @@
     <string name="tasks_order_due_date">By due date</string>
     <string name="tasks_order_priority">By priority</string>
     <string name="tasks_order_subject">By subject</string>
-    <string name="tasks_filter_chip_format">%1$s · %2$s</string>
     <string name="tasks_due_today">Today</string>
-    <string name="tasks_due_tomorrow">Tomorrow</string>
-    <string name="tasks_due_yesterday">Due yesterday</string>
-    <string name="tasks_due_overdue_days">Due %1$d days ago</string>
     <string name="tasks_pill_awaiting_grade">Awaiting grade</string>
     <string name="tasks_pill_done">Done</string>
     <string name="tasks_detail_open_full">Open full</string>
@@ -861,7 +721,6 @@
     <string name="tasks_detail_anytime_today">Anytime today</string>
     <string name="tasks_detail_in_days">In %1$d days · %2$s</string>
     <string name="tasks_detail_overdue_desc">Was due on %1$s and is still pending</string>
-    <string name="tasks_detail_graded_desc">Submitted on %1$s · grade is already in the subject</string>
     <string name="tasks_detail_awaiting_desc">Submitted on %2$s %1$d · enter it here when you receive it</string>
     <string name="tasks_detail_awaiting_title">Waiting for grade</string>
     <string name="tasks_detail_awaiting_hint">awaiting grade</string>
@@ -897,7 +756,6 @@
     <string name="tasks_field_attachments">Attachments</string>
     <string name="tasks_eval_switch_title">Will it be graded?</string>
     <string name="tasks_attachment_add">Attach</string>
-    <string name="tasks_eval_title">When marking</string>
     <string name="tasks_eval_awaiting_grade">Submitted, awaiting grade</string>
     <string name="tasks_eval_only_done">Done only</string>
     <string name="tasks_eval_not_gradable_desc">%1$s is not graded: marking it sets it as done without asking anything.</string>
@@ -906,7 +764,6 @@
     <string name="tasks_action_revert_pending">Revert to pending</string>
     <string name="tasks_subtasks_title">Subtasks</string>
     <string name="tasks_subtasks_count">%1$d of %2$d</string>
-    <string name="tasks_subtasks_none">none</string>
     <string name="tasks_subtasks_add_step">Add a step</string>
     <string name="tasks_subtasks_enable_desc">Break down into steps or checklist</string>
     <string name="tasks_subtasks_disable_confirm_title">Disable subtasks?</string>
@@ -920,18 +777,8 @@
     <string name="tasks_grade_cut_hint">The cut matching the due date is preselected. Weight within the cut is distributed as configured in the subject.</string>
     <string name="tasks_snackbar_submitted_waiting">%1$s submitted · awaiting grade</string>
     <string name="tasks_snackbar_action_no_grade">Not graded</string>
-    <string name="tasks_snackbar_done">%1$s done</string>
-    <string name="tasks_snackbar_postponed">Now due %1$s</string>
     <string name="tasks_snackbar_duplicated">Duplicated as “%1$s”</string>
-    <string name="tasks_snackbar_deleted">Task deleted</string>
-    <string name="tasks_snackbar_grade_saved_named">Grade %1$s recorded in %2$s</string>
-    <string name="tasks_celebration_all_done">All done!</string>
-    <string name="tasks_empty_filter">Nothing matches this filter</string>
-    <string name="tasks_empty_filter_desc">Try another subject, another day, or remove the filter.</string>
-    <string name="tasks_empty_pending">Nothing pending</string>
-    <string name="tasks_empty_pending_desc">Completed tasks stay at the bottom in case you need to record a grade.</string>
     <string name="subject_tasks_section_title">Tasks for this subject</string>
-    <string name="subject_tasks_empty">No tasks yet for this subject</string>
     <string name="schedule_absence_limit_title">How many absences are allowed?</string>
     <string name="schedule_absence_limit_desc">The threshold at which you fail a subject. Check your university regulations; it applies to all your subjects.</string>
     <string name="schedule_absence_limit_decrease">One less</string>
@@ -994,7 +841,6 @@
     <string name="attendance_reason_transport">Transport</string>
     <string name="attendance_reason_personal">Personal</string>
     <string name="attendance_reason_other_class">Another class</string>
-    <string name="attendance_reason_other">Other</string>
     <string name="attendance_modality_presential">In-person</string>
     <string name="attendance_modality_virtual">Online</string>
     <string name="attendance_modality_hybrid">Hybrid</string>
@@ -1026,32 +872,17 @@
     <string name="attendance_history_state_is_enough">The state is enough. The detail is optional and comes after.</string>
     <string name="attendance_history_tap_to_fix">Tap one to mark or fix it</string>
     <string name="attendance_history_upcoming_section">Upcoming classes</string>
-    <string name="attendance_history_term">the term</string>
     <string name="attendance_history_you_have_left">You have left</string>
     <string name="attendance_history_attendance">Attendance</string>
     <string name="attendance_history_of_absences">of %1$d absences</string>
     <string name="attendance_history_set_limit">Set absence limit</string>
-    <string name="attendance_history_change_limit">Change limit · %1$s</string>
-    <string name="attendance_history_by_week">%1$s · by week</string>
-    <string name="attendance_history_view_by_weeks">View %1$s by weeks</string>
     <string name="attendance_history_whole_term">Whole term</string>
     <string name="attendance_history_empty">Mark your classes and they will appear here.</string>
-    <string name="attendance_history_none_left">You have none left. %1$d absences of %2$d.</string>
-    <string name="attendance_history_one_left">You have one left. %1$d absences of %2$d.</string>
-    <string name="attendance_history_held_summary">%1$d absences · %2$d attended · %3$d classes held</string>
-    <string name="attendance_history_too_few">Over %1$d %2$s. Still too few to be reliable.</string>
-    <string name="attendance_history_simple_summary">%1$d attended · %2$d absences</string>
-    <string name="schedule_tab_month">Month</string>
-    <string name="schedule_tab_agenda">Agenda</string>
-    <string name="schedule_tab_list">List</string>
     <string name="schedule_from_date">"From "</string>
     <string name="schedule_to_date">"To "</string>
     <string name="schedule_how_to_read">How to read this screen</string>
-    <string name="schedule_section_history">HISTORY</string>
     <string name="schedule_history_empty">No classes in history yet</string>
     <string name="schedule_history_empty_scope">"No classes fall in this "</string>
-    <string name="schedule_catch_up_unmarked">Catch up · %1$d unmarked</string>
-    <string name="schedule_mark_date">Mark %1$s class</string>
     <string name="schedule_all_caught_up">All caught up</string>
     <string name="schedule_detail_class">Class</string>
     <string name="schedule_detail_time">Schedule</string>
@@ -1062,7 +893,6 @@
     <string name="schedule_detail_no_professor">No professor</string>
     <string name="schedule_detail_repetition">Repeat</string>
     <string name="schedule_detail_reminder">Reminder</string>
-    <string name="schedule_log_attendance_action">LOG ATTENDANCE</string>
     <string name="schedule_class_now">CLASS IN PROGRESS</string>
     <string name="schedule_view_history">View history</string>
     <string name="schedule_view_history_desc">Your attendance record for this subject</string>
@@ -1074,9 +904,7 @@
     <string name="schedule_status_moved">Moved</string>
     <string name="schedule_status_unmarked">Unmarked</string>
     <string name="schedule_repeat_every_week">Every week</string>
-    <string name="schedule_repeat_every_n_weeks">Every %1$d weeks</string>
     <string name="schedule_reminder_none">No reminder</string>
-    <string name="schedule_reminder_hours_before">%1$d h before</string>
     <string name="catch_up_unmarked_count">%1$d unmarked</string>
     <string name="catch_up_days_ago">%1$d days ago</string>
     <string name="catch_up_empty_title">You have no pending classes.</string>
@@ -1124,12 +952,8 @@
     <string name="schedule_identity_prev_month">Previous month</string>
     <string name="schedule_identity_next_month">Next month</string>
     <string name="schedule_identity_no_events_day">No events for this day.</string>
-    <string name="schedule_identity_type_class">CLASS</string>
-    <string name="schedule_identity_type_exam">EXAM</string>
-    <string name="schedule_identity_type_due">DUE DATE</string>
     <string name="schedule_identity_type_evaluation">Assessment</string>
     <string name="schedule_identity_type_assignment">Assignment</string>
-    <string name="schedule_identity_more_events">+%1$d more events</string>
     <string name="schedule_identity_tag_event">EVENT</string>
     <string name="schedule_identity_tag_meeting">MEETING</string>
     <string name="schedule_identity_tag_notice">NOTICE</string>
@@ -1150,9 +974,6 @@
     <string name="notes_checklist_marked_plural">checked</string>
     <string name="notes_checklist_move">Reorder</string>
     <string name="notes_checklist_remove">Remove</string>
-    <string name="notes_error_photo_save_limit">Could not save photo. It may exceed %1$s</string>
-    <string name="notes_error_file_save_limit">Could not save file. It may exceed %1$s</string>
-    <string name="notes_attachment_photo_label">Photo</string>
     <string name="notes_error_photo_save">Could not save photo.</string>
     <string name="notes_error_camera_prep">Could not initialize camera.</string>
     <string name="notes_share_title">Share note</string>
@@ -1177,7 +998,6 @@
     <string name="notes_field_title">Title</string>
     <string name="notes_field_note">Note</string>
     <string name="notes_link_subject_hint">to link to a subject</string>
-    <string name="notes_attachment_recording_label">Recording</string>
     <string name="notes_error_recording_save">Could not save recording.</string>
     <string name="notes_error_attach_failed">Could not attach file</string>
     <string name="notes_trash_dialog_title">Move this note to trash?</string>
@@ -1205,7 +1025,6 @@
     <string name="notes_badge_expired">Overdue</string>
     <string name="notes_badge_reminder">Reminder</string>
     <string name="notes_badge_file">File</string>
-    <string name="notes_filter_all">All</string>
     <string name="notes_recorder_title_recording">Recording</string>
     <string name="notes_recorder_title_idle">Record a voice note</string>
     <string name="notes_recorder_permission_desc">Microphone permission is required to record. Grant it in system settings under UniStack permissions.</string>
@@ -1220,18 +1039,12 @@
     <string name="notes_tab_reminders">Reminders</string>
     <string name="notes_tab_archive">Archive</string>
     <string name="notes_tab_trash">Trash</string>
-    <string name="notes_kind_text">text</string>
-    <string name="notes_kind_list">list</string>
-    <string name="notes_kind_photo">photo</string>
-    <string name="notes_kind_audio">audio</string>
-    <string name="notes_kind_file">file</string>
     <string name="notes_empty_notes_title">Nothing noted down yet</string>
     <string name="notes_empty_notes_desc">Things mentioned in class, exam dates, room numbers. Jot them down here and link them to a subject later.</string>
     <string name="notes_empty_search_desc">No notes contain «%1$s»</string>
     <string name="notes_trash_multiple_title">Move these %1$d notes to trash?</string>
     <string name="notes_trash_multiple_desc">They will stay in the trash for %1$d days in case you change your mind, then be deleted automatically.</string>
     <string name="notes_snack_moved_to_trash">Moved to trash</string>
-    <string name="notes_snack_moved_multiple_to_trash">%1$d notes moved to trash</string>
     <string name="notes_permanently_delete_title">Delete permanently?</string>
     <string name="notes_permanently_delete_desc">«%1$s» and all its contents will be deleted permanently. This cannot be undone.</string>
     <string name="notes_permanently_delete_confirm">Delete</string>
@@ -1302,81 +1115,8 @@
     <string name="home_nav_section_account_app">Your account &amp; app</string>
     <string name="home_which_subject_title">Which subject?</string>
     <string name="home_which_subject_subtitle">Grades are recorded within a subject.</string>
-    <string name="terms_history_title">Academic history</string>
-    <string name="terms_history_subtitle">Your terms, one by one</string>
-    <string name="terms_empty_history">No terms yet. The first one is created during setup and appears here once it exists.</string>
-    <string name="terms_stat_cum_average">Cumulative GPA</string>
-    <string name="terms_cum_average_placeholder">Appears when you close your first term</string>
-    <string name="terms_closed_count_single">1 closed term</string>
-    <string name="terms_closed_count_multiple">%1$d closed terms</string>
-    <string name="terms_subjects_count_single">1 subject</string>
-    <string name="terms_subjects_count_multiple">%1$d subjects</string>
-    <string name="terms_active_section">CURRENT</string>
-    <string name="terms_btn_close_term">Close term</string>
-    <string name="terms_closed_section">CLOSED</string>
-    <string name="terms_closed_note">A closed term remains editable: grades arrive late and teachers make corrections. It just will not be the active term anymore.</string>
-    <string name="terms_row_in_progress">in progress</string>
-    <string name="terms_stat_average">Average</string>
-    <string name="terms_stat_attendance">Attendance</string>
-    <string name="terms_stat_failed_single">Failed</string>
-    <string name="terms_stat_failed_multiple">Failed</string>
-    <string name="terms_state_active">Current</string>
-    <string name="terms_state_closed">Closed</string>
-    <string name="terms_detail_default_title">Term</string>
-    <string name="terms_detail_default_subtitle">History</string>
-    <string name="terms_term_not_found">This term no longer exists.</string>
-    <string name="terms_loading">Loading term…</string>
-    <string name="terms_attendance_since">since %1$s</string>
-    <string name="terms_subjects_header_single">1 SUBJECT</string>
-    <string name="terms_subjects_header_multiple">%1$d SUBJECTS</string>
-    <string name="terms_active_explainer">This is the current term: what you see here keeps updating.</string>
-    <string name="terms_closed_explainer">You can edit grades for this term from each subject. It is closed, but closed does not mean locked.</string>
-    <string name="terms_attendance_rate">Attendance %1$d%%</string>
-    <string name="terms_no_classes_marked">No classes marked</string>
-    <string name="terms_new_title">New term</string>
-    <string name="terms_new_subtitle_inherit">Inherited from %1$s</string>
-    <string name="terms_new_subtitle_fresh">Start your term</string>
-    <string name="terms_section_retained">RETAINED</string>
-    <string name="terms_retain_scale">Scale %1$s · passing is %2$s</string>
-    <string name="terms_retain_setting_hint">Change this in Settings › Academic settings whenever you want.</string>
-    <string name="terms_section_required">REQUIRED</string>
-    <string name="terms_field_starts">Starts</string>
     <string name="terms_field_choose">Choose</string>
-    <string name="terms_field_ends_planned">Ends (expected)</string>
-    <string name="terms_field_name">Term name</string>
-    <string name="terms_planned_end_hint">The end date is just an estimate to notify you when it arrives. The term does not close automatically on that day: it closes when you close it.</string>
-    <string name="terms_failed_subjects_section">FAILED SUBJECTS</string>
-    <string name="terms_failed_closed_at">Closed at %1$s · below passing</string>
     <string name="terms_btn_remove">Remove</string>
-    <string name="terms_btn_bring">Add to term</string>
-    <string name="terms_failed_empty_note">They are created empty, without the grades or schedule from the previous term.</string>
-    <string name="terms_btn_create">Create term</string>
-    <string name="terms_no_active_term">No active term</string>
-    <string name="terms_closed_on_date">You closed %1$s on %2$s.</string>
-    <string name="terms_closed_fallback">You closed %1$s.</string>
-    <string name="terms_stat_subjects">Subjects</string>
-    <string name="terms_started_new_term_q">Started a new term?</string>
-    <string name="terms_inherit_config_desc">Inheriting your setup from %1$s: scale, passing grade, and your %2$d grading periods. You only need to verify the dates.</string>
-    <string name="terms_btn_start_new">Start new term</string>
-    <string name="terms_btn_view_history">View history</string>
-    <string name="terms_close_screen_title">Before closing</string>
-    <string name="terms_close_empty_term">No active term to close.</string>
-    <string name="terms_close_reviewing">Reviewing term…</string>
-    <string name="terms_close_clean_msg">The term is complete. You can close it whenever you are ready.</string>
-    <string name="terms_close_unclean_msg">You can close anyway. This is just to make sure there are no surprises later.</string>
-    <string name="terms_section_missing">PENDING ITEMS</string>
-    <string name="terms_section_complete">COMPLETED ITEMS</string>
-    <string name="terms_done_subjects_notes">%1$d of %2$d %3$s with all grades</string>
-    <string name="terms_done_average">Term average: %1$s</string>
-    <string name="terms_btn_go_complete">Go complete them</string>
-    <string name="terms_btn_close_anyway">Close anyway</string>
-    <string name="terms_dialog_close_title">Close %1$s</string>
-    <string name="terms_dialog_clean_desc">The term will move to history and can no longer be active.</string>
-    <string name="terms_dialog_unclean_desc">You are closing with %1$d unfinished items. The term will move to history and can no longer be active.</string>
-    <string name="terms_dialog_row_edit_grades">Edit grades from history</string>
-    <string name="terms_dialog_row_view_stats">View attendance and averages</string>
-    <string name="terms_dialog_row_cannot_reactivate">✕  Reactivate it — this cannot be undone</string>
-    <string name="terms_dialog_type_prompt">Type %1$s</string>
     <string name="notif_tab_all">All</string>
     <string name="notif_tab_actions">Action</string>
     <string name="notif_tab_academic">Academic</string>
@@ -1396,7 +1136,6 @@
     <string name="notif_history_desc_1">Everything that was sent to you stays here.</string>
     <string name="notif_history_desc_2">Tap one to view what triggered it.</string>
     <string name="notif_with_action_count">%1$d requiring action</string>
-    <string name="notif_requires_action">Requires action</string>
     <string name="notif_detail_title">Notice details</string>
     <string name="notif_reviewed_badge">Reviewed notice</string>
     <string name="notif_new_badge">New notice</string>
@@ -1421,15 +1160,9 @@
     <string name="notif_unavailable">This notice is no longer available.</string>
     <string name="notif_back">Back</string>
     <string name="notif_cat_summary">Summary</string>
-    <string name="notif_cat_summary_desc">Check your schedule and decide the next move of the day.</string>
     <string name="notif_cat_class">Class</string>
-    <string name="notif_cat_class_desc">Record attendance, location, or changes to keep your schedule up to date.</string>
     <string name="notif_cat_delivery">Assignment</string>
-    <string name="notif_cat_delivery_desc">Open the activity to update status, deadline, or grade received.</string>
-    <string name="notif_cat_academic">Academic</string>
-    <string name="notif_cat_academic_desc">Complete grades, weights, or past periods to improve projections.</string>
     <string name="notif_cat_notice">Notice</string>
-    <string name="notif_cat_notice_desc">Keeping your data up to date helps UniStack prioritize better.</string>
     <string name="notif_time_today">Today</string>
     <string name="notif_time_yesterday">Yesterday</string>
     <string name="common_back">Back</string>
@@ -1470,7 +1203,6 @@
     <string name="settings_data_repeat_setup_dialog_title">Repeat initial setup?</string>
     <string name="settings_data_repeat_setup_dialog_msg">You will return to the initial setup flow to configure your details. Your local subjects, tasks, and expenses will not be deleted.</string>
     <string name="settings_data_repeat_setup_confirm">Repeat</string>
-    <string name="settings_data_failed">Failed</string>
     <string name="settings_a11y_preview">PREVIEW</string>
     <string name="settings_a11y_status_on_track">On track</string>
     <string name="settings_a11y_status_at_risk">At risk</string>
@@ -1491,7 +1223,6 @@
     <string name="settings_appearance_reset">Reset appearance</string>
     <string name="settings_appearance_home_4_on">All 4 blocks turned on</string>
     <string name="settings_appearance_home_0_on">No blocks: logo only</string>
-    <string name="settings_appearance_home_x_on">%d of 4 blocks</string>
     <string name="settings_appearance_grade_sample_0">grades like 3</string>
     <string name="settings_appearance_grade_sample_1">grades like 3.5</string>
     <string name="settings_appearance_grade_sample_2">grades like 3.50</string>
@@ -1521,7 +1252,6 @@
     <string name="settings_typo_sample_title">Calculus III</string>
     <string name="settings_typo_sample_sub">Average 4.25 · 3 terms · 128 hrs</string>
     <string name="settings_typo_sample_desc">With 3.10 in the third term you finish at 4.00. The second term is weighted at 35%.</string>
-    <string name="settings_typo_scale_label">At %d%%. Applies across the entire app, not just this screen.</string>
     <string name="settings_components_title">Components</string>
     <string name="settings_components_subtitle">Sizes, bar, icons, progress, and switches</string>
     <string name="settings_components_sec_button_size">BUTTON SIZE</string>
@@ -1561,27 +1291,9 @@
     <string name="settings_motion_how_much">How much motion</string>
     <string name="settings_motion_master_active">Rules over the %d gestures below.</string>
     <string name="settings_motion_master_paused">Gestures below remain saved, but paused.</string>
-    <string name="settings_motion_group_base">BASE</string>
-    <string name="settings_motion_settings_count">%d settings</string>
-    <string name="settings_motion_gestures_variants">%1$d gestures · %2$d variants</string>
     <string name="settings_motion_see">View</string>
     <string name="settings_motion_hide">Hide</string>
     <string name="settings_motion_in_app">IN THE APP</string>
-    <string name="settings_motion_press_me">Tap me</string>
-    <string name="settings_motion_press_none">none · button does not respond to touch</string>
-    <string name="settings_motion_press_many">%s · tap several times</string>
-    <string name="settings_motion_list_none">none · row appears instantly without transition</string>
-    <string name="settings_motion_list_speed">%1$d ms · %2$s</string>
-    <string name="settings_motion_with_anim">WITH ANIMATION</string>
-    <string name="settings_motion_without_anim">WITHOUT ANIMATION</string>
-    <string name="settings_motion_current_setting">current setting: %s</string>
-    <string name="settings_motion_counting">COUNTING</string>
-    <string name="settings_motion_direct">DIRECT</string>
-    <string name="settings_motion_with_gesture">WITH GESTURE</string>
-    <string name="settings_motion_without_gesture">WITHOUT IT</string>
-    <string name="settings_motion_swipe_enabled">swipe enabled</string>
-    <string name="settings_motion_swipe_disabled">swipe disabled</string>
-    <string name="settings_motion_demo_delete">Delete</string>
     <string name="settings_motion_demo_task">Workshop 2</string>
     <string name="settings_notif_title">Notifications</string>
     <string name="settings_notif_subtitle">Alerts, permissions, and quiet hours</string>
@@ -1613,17 +1325,11 @@
     <string name="settings_notif_dnd_inactive_desc">Alerts sound at any hour</string>
     <string name="settings_notif_dnd_range">From %1$s to %2$s. Alerts during this time arrive when finished.</string>
     <string name="settings_notif_dnd_turn_on">Turn on to choose hours</string>
-    <string name="settings_notif_hour">Hour</string>
-    <string name="settings_notif_minutes">Minutes</string>
-    <string name="settings_notif_from">From</string>
-    <string name="settings_notif_to">To</string>
     <string name="settings_notif_perm_enabled">Notifications are enabled</string>
     <string name="settings_notif_perm_disabled">Notifications are disabled</string>
     <string name="settings_notif_perm_msg_enabled">UniStack will notify you about updates.</string>
     <string name="settings_notif_perm_msg_disabled">Without permission we cannot send notifications.</string>
-    <string name="settings_notif_hours_before">%d hours before</string>
     <string name="settings_notif_one_day_before">one day before</string>
-    <string name="settings_notif_days_before">%d days before</string>
     <string name="settings_account_title">Account &amp; profile</string>
     <string name="settings_account_subtitle">Name, photo, and sync</string>
     <string name="settings_account_sec_study">WHAT YOU STUDY</string>
@@ -1648,7 +1354,6 @@
     <string name="settings_account_field_area">Study area</string>
     <string name="settings_account_field_area_label">Area name</string>
     <string name="settings_account_field_area_hint">E.g.: Sports Science</string>
-    <string name="settings_account_field_program">Program or degree</string>
     <string name="settings_account_field_program_label">Type your program</string>
     <string name="settings_account_field_program_hint">E.g.: Biomedical Engineering</string>
     <string name="settings_account_field_institution">Institution</string>
@@ -1768,7 +1473,6 @@
     <string name="settings_term_choose">Choose</string>
     <string name="settings_term_end_explanation">End date is projected to notify you. Term closes only when you manually close it from history.</string>
     <string name="settings_term_updated">Term updated.</string>
-    <string name="settings_term_review">Review name and dates.</string>
     <string name="settings_breaks_desc">Holidays, strikes, and recess weeks. Classes on these days do not count as absences.</string>
     <string name="settings_breaks_days_count">%d days</string>
     <string name="settings_breaks_remove">Remove %s</string>
@@ -1862,7 +1566,6 @@
     <string name="templates_ref_generator">Reference generator</string>
     <string name="templates_ref_format">Author | Year | Title | Medium</string>
     <string name="templates_btn_copy_references">Copy references</string>
-    <string name="templates_no_due_date">No date</string>
     <string name="templates_status_idea">Idea</string>
     <string name="templates_status_draft">Draft</string>
     <string name="templates_status_review">Review</string>
@@ -1966,8 +1669,6 @@
     <string name="support_feedback_sent_success">You know the rest: long press in the Telegram field, paste, and send.</string>
     <string name="support_feedback_sent_fallback">Your message was copied, but Telegram could not be opened. Find group @%1$s, paste and send.</string>
     <string name="setup_welcome_badge">WELCOME</string>
-    <string name="setup_welcome_hero_title">Your semester,
-your way</string>
     <string name="setup_welcome_hero_desc">A few quick questions and UniStack will be ready to organize your academic life.</string>
     <string name="setup_welcome_feature1_title">Organize courses</string>
     <string name="setup_welcome_feature1_desc">Log each course with its color, instructor, and schedule. This powers your grades, tasks, and reminders.</string>
@@ -1985,7 +1686,6 @@ your way</string>
     <string name="setup_btn_select">Select</string>
     <string name="setup_btn_skip_later">I\'d rather do this later</string>
     <string name="setup_step_counter">Step %1$d of %2$d</string>
-    <string name="setup_name_title">What is your name?</string>
     <string name="setup_name_desc">UniStack will use your name to greet you\nand personalize your dashboard.</string>
     <string name="setup_name_label">Name</string>
     <string name="setup_name_hint">Enter your name</string>
@@ -1995,7 +1695,6 @@ your way</string>
     <string name="setup_career_program_label">Program or major</string>
     <string name="setup_career_university_label">University</string>
     <string name="setup_career_university_hint">Name of your university</string>
-    <string name="setup_career_title">What are you\nstudying?</string>
     <string name="setup_career_desc">We use your major to prepare
 your course catalog.</string>
     <string name="setup_career_not_found">Can\'t find your major?</string>
@@ -2025,7 +1724,6 @@ your course catalog.</string>
     <string name="setup_modules_desc">Enable the modules you need.\nYou can change this anytime in Settings.</string>
     <string name="setup_modules_status_active">Active</string>
     <string name="setup_modules_status_inactive">Inactive</string>
-    <string name="setup_modules_footer">You can always enable or disable modules\nfrom Settings later.</string>
     <string name="setup_modules_skip_warning">Without grades, GPA and term cuts will be skipped.</string>
     <string name="setup_term_title">Your term</string>
     <string name="setup_term_subtitle">How your university calendar is organized.</string>
@@ -2059,7 +1757,6 @@ your course catalog.</string>
     <string name="setup_cuts_range_header">Your term runs from %1$s to %2$s. Set the last day of each %3$s.</string>
     <string name="setup_cuts_no_range_header">Set the last day of each %1$s.</string>
     <string name="setup_cuts_only_last_day">Only the last day. Each %1$s starts the day after the previous one, and the last ends with the term.</string>
-    <string name="setup_perm_title">Should I notify you\nof upcoming events?</string>
     <string name="setup_perm_desc">Switch the example below to see how each looks.</string>
     <string name="setup_perm_btn_enable">Enable notifications</string>
     <string name="setup_perm_btn_not_now">Not now</string>
@@ -2068,10 +1765,6 @@ your course catalog.</string>
     <string name="setup_perm_offline_info">Everything works offline. You will continue to receive notifications even without an internet connection.</string>
     <string name="setup_perm_settings_hint">Android won\'t ask again. You can enable them anytime from system settings.</string>
     <string name="setup_perm_example_header">EXAMPLE</string>
-    <string name="setup_perm_tab_classes">Classes</string>
-    <string name="setup_perm_tab_deliveries">Deadlines</string>
-    <string name="setup_perm_tab_grades">Grades</string>
-    <string name="setup_done_ready">All set, %1$s.</string>
     <string name="setup_done_btn_first_subject">Create my first course</string>
     <string name="setup_done_btn_home">Go to Home</string>
     <string name="setup_done_footer_with_subjects">UniStack is all yours. Start with a course and everything falls into place.</string>
@@ -2079,8 +1772,6 @@ your course catalog.</string>
     <string name="setup_finish_best_wishes">Wishing you great success in your studies</string>
 
     <string name="common_soon">SOON</string>
-    <string name="support_ticket_bug">Bug</string>
-    <string name="support_ticket_idea">Suggestion</string>
     <string name="support_ticket_other">Other</string>
     <string name="tool_assistant_title">UniStack AI</string>
     <string name="tool_assistant_subtitle">Your academic assistant</string>
@@ -2099,10 +1790,6 @@ your course catalog.</string>
     <string name="tool_under_construction">Under construction</string>
     <string name="tool_what_it_will_bring">What it will bring</string>
     <string name="calculator_title">Calculator</string>
-    <string name="calculator_subtitle">Quick calculations without affecting your grades</string>
-    <string name="calculator_tab_subject">Course</string>
-    <string name="calculator_tab_semester">Semester</string>
-    <string name="calculator_tab_target">Target</string>
     <string name="calculator_how_it_works">How this tab works</string>
     <string name="calculator_delete_digit">Delete digit</string>
     <string name="calculator_next_data">Next field</string>
@@ -2118,7 +1805,6 @@ your course catalog.</string>
     <string name="calculator_all_distributed_final">100% is distributed: this is the final grade.</string>
     <string name="calculator_progress_summary">You have evaluated %1$s%%. %2$s%% remains unassigned.</string>
     <string name="calculator_instructions_course">Enter the grade, tap the arrow, enter its weight, and tap plus.</string>
-    <string name="calculator_course_row_default">Course %1$d</string>
     <string name="calculator_max_credits_limit">At most 40 credits per course.</string>
     <string name="calculator_total_credits">%1$s credits</string>
     <string name="calculator_one_missing_credits">One course doesn\'t count yet: credits are missing.</string>
@@ -2135,7 +1821,6 @@ your course catalog.</string>
     <string name="calculator_target_all_evaluated">With 100% evaluated, no grades remain: your current grade is final.</string>
     <string name="calculator_target_already_achieved">You\'ve got it: even with zero on what remains, you hit or exceed your goal.</string>
     <string name="calculator_target_impossible">You\'d need more than %1$s, which isn\'t possible. Lower your target or prepare to miss it.</string>
-    <string name="calculator_target_needed_in_remaining">in the remaining %1$s%%.</string>
     <string name="calculator_weight_badge">worth %1$s%% of the course</string>
     <string name="calculator_sheet_course_desc">To see your standing in a single course, where each grade has a distinct weight.</string>
     <string name="calculator_sheet_semester_desc">For your semester GPA, where each course is weighted by credits. Works for your courses or anyone else\'s.</string>
@@ -2156,21 +1841,9 @@ your course catalog.</string>
     <string name="calculator_picker_credits_hint">You specify credits: the app does not store credits per course.</string>
 
     <string name="setup_perm_perk_classes">Classes, reminders, deadlines, everything that needs attention</string>
-    <string name="setup_perm_ex_class_title">Calculus III starts in 15 minutes</string>
-    <string name="setup_perm_ex_class_body">Room 302 · until 11:40</string>
-    <string name="setup_perm_ex_task_title">Ethics essay due today</string>
-    <string name="setup_perm_ex_task_body">Before 18:00 · 10 h remaining</string>
-    <string name="setup_perm_ex_grade_title">Your Networks GPA increased to 4.1</string>
-    <string name="setup_perm_ex_grade_body">From the quiz you just recorded</string>
     <string name="setup_perm_ex_date">Thursday, August 20</string>
-    <string name="setup_perm_ex_now">now</string>
-    <string name="setup_mod_grades_title">Grades &amp; courses</string>
-    <string name="setup_mod_grades_desc">GPA, percentages, and targets.</string>
     <string name="setup_mod_tasks_title">Tasks</string>
-    <string name="setup_mod_tasks_desc">Deadlines, dates, and pending items.</string>
     <string name="setup_mod_expenses_title">Expenses</string>
-    <string name="setup_mod_expenses_desc">Quick logs and weekly summary.</string>
-    <string name="setup_mod_works_desc">Checklist, essays, and APA format.</string>
     <string name="setup_term_month_january">January</string>
     <string name="setup_term_month_december">December</string>
     <string name="setup_term_choose">Choose</string>
@@ -2199,8 +1872,6 @@ your course catalog.</string>
     <string name="home_vence_hoy">%1$s is due today</string>
     <string name="home_es_manana">%1$s is tomorrow</string>
     <string name="home_es_lo_siguiente">%1$s is next</string>
-    <string name="home_repasar">review</string>
-    <string name="home_avanzar">make progress</string>
     <string name="home_cierra_esta_pendiente_antes_de_abrir">Close this pending task before opening more fronts.</string>
     <string name="home_atiendela_hoy_para_mantener_el_dia">Handle it today to keep the day under control.</string>
     <string name="home_reserva_un_bloque_corto_antes_de">Reserve a short block before it gets closer.</string>
@@ -2209,8 +1880,6 @@ your course catalog.</string>
     <string name="home_dale_prioridad_antes_de_sumar_nuevas">Give it priority before adding new tasks.</string>
     <string name="home_avanza_un_poco_antes_de_que">Make some progress before it piles up.</string>
     <string name="home_si_tienes_30_min">If you have 30 min</string>
-    <string name="home_arranca_con">Start with</string>
-    <string name="home_deja_listo">Wrap up</string>
     <string name="home_prepara_tu_semestre">Prepare your semester</string>
     <string name="home_agrega_tus_materias_para_activar_prioridades">Add your subjects to activate real priorities.</string>
     <string name="home_espera_su_nota">%1$s awaits grade</string>
@@ -2361,7 +2030,6 @@ your course catalog.</string>
     <string name="appearance_medias">Medium</string>
     <string name="appearance_suaves">Soft</string>
     <string name="backup_archivo_elegido">Chosen file</string>
-    <string name="motion_toca_varias_veces">tap several times</string>
     <string name="motion_gira_y_cambia_de_forma">morphs while spinning</string>
     <string name="motion_la_onda_de_m3e_girando">M3E wave, spinning</string>
     <string name="motion_tres_puntos_por_turnos">three rotating dots</string>
@@ -2444,16 +2112,6 @@ your course catalog.</string>
     <string name="works_medio_o_editorial_pendiente">Medium or publisher pending.</string>
     <string name="works_titulo_pendiente">Title pending.</string>
     <string name="works_s_f">n.d.</string>
-    <string name="term_falta_el">%1$s — missing %2$s</string>
-    <string name="term_sin_entregar">%1$s — not submitted</string>
-    <string name="term_de_la_nota_sin_registrar">%1$s%% of grade unrecorded</string>
-    <string name="term_la_asistencia_queda_incompleta">Attendance remains incomplete</string>
-    <string name="term_vencio_el_de">Due on %2$s %1$s</string>
-    <string name="term_no_falta_nada_por_terminar">Nothing left to complete</string>
-    <string name="term_hay_1_cosa_sin_terminar">1 thing left to finish</string>
-    <string name="term_hay_cosas_sin_terminar">%1$s things left to finish</string>
-    <string name="term_texto">%2$s %1$s</string>
-    <string name="term_texto_2">%2$s %1$s, %3$s</string>
 
     <!-- Avisos y actualizaciones: salian siempre en espanol -->
     <string name="notif_sub_task">Task</string>
@@ -2652,8 +2310,6 @@ your course catalog.</string>
     <string name="home_overdue_many_first">There are %1$s overdue tasks best closed first.</string>
     <string name="home_small_progress_saves_pressure">A little progress on %1$s today can save pressure later.</string>
     <string name="home_title_verb_separator"> is </string>
-    <string name="term_gap_unmarked_one">%1$s — 1 class unmarked</string>
-    <string name="term_gap_unmarked_many">%1$s — %2$s classes unmarked</string>
     <string name="setup_other_option">Other</string>
 
     <!-- Bloque C: el horario y las piezas de core -->
@@ -2663,7 +2319,6 @@ your course catalog.</string>
     <string name="schedule_identity_class_count_many">%1$s classes</string>
     <string name="schedule_identity_week_range_same_month">%3$s %1$s - %2$s</string>
     <string name="schedule_identity_week_range_two_months">%2$s %1$s - %4$s %3$s</string>
-    <string name="common_replay_animation">Replay animation</string>
     <string name="common_clear_search">Clear the search</string>
     <string name="common_press_again_to_exit">Press again to exit</string>
     <string name="fab_task">Task</string>
@@ -2819,10 +2474,6 @@ your course catalog.</string>
     <string name="motion_v_stamp">Stamp</string>
     <string name="motion_v_ink">Ink</string>
     <string name="motion_v_tape">Tape</string>
-    <string name="motion_v_whole">Whole</string>
-    <string name="motion_v_piece_by_piece">Piece by piece</string>
-    <string name="motion_v_curtain">Curtain</string>
-    <string name="motion_v_stacked">Stacked</string>
     <string name="motion_v_confetti">Confetti</string>
     <string name="motion_v_expanding_wave">Expanding wave</string>
     <string name="motion_v_seal">Seal</string>
@@ -2869,9 +2520,7 @@ your course catalog.</string>
     <string name="notes_day_pattern_other_year">MMMM d, yyyy</string>
     <string name="reminder_day_pattern_same_year">MMMM d</string>
     <string name="term_type_blocks">Blocks</string>
-    <string name="terms_closed_named">You closed %1$s.</string>
     <string name="terms_close_failed">The period could not be closed.</string>
-    <string name="terms_started_named">You started %1$s.</string>
     <string name="terms_create_failed">The period could not be created.</string>
     <string name="terms_needs_name">The period needs a name.</string>
     <string name="terms_ends_before_start">The period cannot end before it starts.</string>
@@ -2975,7 +2624,6 @@ your course catalog.</string>
     <string name="preview_win_tasks">TASKS</string>
     <string name="preview_win_new_subject">CREATE A COURSE</string>
     <string name="preview_win_settings">SETTINGS</string>
-    <string name="preview_win_schedule">SCHEDULE</string>
     <string name="preview_calculus">Calculus III</string>
     <string name="preview_grade_line">You\'re at 4.25 · you need 3.1 in the third cut</string>
     <string name="preview_subject_name">Course name</string>
@@ -3031,7 +2679,6 @@ your course catalog.</string>
     <string name="fallo_limpio_correo_varios">%1$d emails</string>
     <string name="fallo_limpio_texto_uno">1 quoted text</string>
     <string name="fallo_limpio_texto_varios">%1$d quoted texts</string>
-    <string name="fallo_ver_texto">See the full text</string>
     <string name="fallo_no_se_envia_solo">It carries the version, the phone and where it broke.</string>
     <string name="fallo_btn_contar">Report</string>
     <string name="fallo_btn_guardar">Save it</string>

@@ -94,11 +94,6 @@ object NotificationHistoryStore {
         update(context.applicationContext) { current -> current.filterNot { it.id >= TEST_ID_BASE } }
     }
 
-    fun countSeeded(context: Context): Int {
-        ensureLoaded(context.applicationContext)
-        return itemsFlow.value.count { it.id >= TEST_ID_BASE }
-    }
-
     /** Desde aquí arriba, lo que hay es de mentira. */
     const val TEST_ID_BASE = 900_000
 

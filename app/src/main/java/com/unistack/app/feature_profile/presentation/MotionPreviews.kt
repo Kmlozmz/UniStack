@@ -38,7 +38,6 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.exp
-import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 import com.unistack.app.core.utils.Textos
@@ -973,7 +972,7 @@ private fun DrawScope.sello(v: String, t: Float, c: TintaDemo) {
                 drawPath(camino, c.verde.copy(alpha = 0.9f * vida))
                 if (largo > corte) {
                     drawLine(
-                        color = Color.White.copy(alpha = 0.22f * vida),
+                        color = Color.White.copy(alpha = 0.22f * vida), // design-tokens-ok: brillo del efecto en la muestra
                         start = Offset(x0 + corte * 0.6f, y0 + grosor * 0.27f),
                         end = Offset(x0 + largo - corte * 0.6f, y0 + grosor * 0.27f),
                         strokeWidth = 0.9f
@@ -1280,16 +1279,6 @@ private fun DrawScope.deshacer(v: String, t: Float, c: TintaDemo) {
     texto(Textos.get(R.string.action_undo), 12f, 58f, c, c.acento.copy(alpha = 0.9f), tamano = 7.5f)
 }
 
-private fun DrawScope.triangulo(centro: Offset, radio: Float, color: Color) {
-    val camino = Path().apply {
-        moveTo(centro.x, centro.y - radio)
-        lineTo(centro.x + radio, centro.y + radio * 0.8f)
-        lineTo(centro.x - radio, centro.y + radio * 0.8f)
-        close()
-    }
-    drawPath(camino, color)
-}
-
 private fun DrawScope.claseAhora(v: String, t: Float, c: TintaDemo) {
     /*
      * **La clase con su nombre, su hora y su «AHORA».**
@@ -1506,120 +1495,8 @@ private fun DrawScope.haptica(v: String, t: Float, c: TintaDemo) {
 
 // ---------------------------------------------------------------------- utilidad
 
-/** Dos colores mezclados, para lo que viaja de un tono a otro. */
-private fun mezclar(desde: Color, hasta: Color, fraccion: Float): Color {
-    val f = fraccion.coerceIn(0f, 1f)
-    return Color(
-        red = desde.red + (hasta.red - desde.red) * f,
-        green = desde.green + (hasta.green - desde.green) * f,
-        blue = desde.blue + (hasta.blue - desde.blue) * f,
-        alpha = desde.alpha + (hasta.alpha - desde.alpha) * f
-    )
-}
-
 /** Sin uso directo aún; queda por si una variante necesita línea discontinua. */
 internal val guiones: PathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))
 
 // ---------------------------------------------------------------------- los cuatro de «otros»
-
-/**
- * Los cuatro interruptores del final tambien se ven.
- *
- * Eran los unicos de la pantalla sin nada que mirar: un «Parallax en carruseles» encendido o
- * apagado no dice que hace el parallax. Cada uno pinta las dos caras a la vez —encendido a la
- * izquierda, apagado a la derecha— porque lo que hay que juzgar aqui no es una variante entre
- * varias sino la diferencia entre tenerlo y no tenerlo.
- */
-internal fun DrawScope.pintarInterruptor(id: String, encendido: Boolean, t: Float, c: TintaDemo) {
-    when (id) {
-        "barraAnim" -> barraAnimada(encendido, t, c)
-        "gestos" -> deslizarEnLista(encendido, t, c)
-        "numeros" -> numerosQueCuentan(encendido, t, c)
-    }
-}
-
-/** La pastilla del activo saltando entre tres pestanas, deslizandose o apareciendo de golpe. */
-private fun DrawScope.barraAnimada(encendido: Boolean, t: Float, c: TintaDemo) {
-    val paso = (t * 3f)
-    val destino = paso.toInt().coerceIn(0, 2)
-    val fraccion = suave((paso - destino).coerceIn(0f, 1f) * 2.2f)
-    val anterior = if (destino == 0) 2 else destino - 1
-    val posicion = if (encendido) {
-        anterior + (destino - anterior) * fraccion
-    } else {
-        // Apagada, la pastilla no viaja: esta en una pestana o en la otra.
-        destino.toFloat()
-    }
-    val ancho = 26f
-    val hueco = 30f
-    val inicio = 10f
-    drawRoundRect(
-        color = c.acento,
-        topLeft = Offset(inicio + posicion * hueco, 24f),
-        size = Size(ancho, 16f),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
-    )
-    repeat(3) { indice ->
-        val cx = inicio + indice * hueco + ancho / 2f
-        drawCircle(
-            color = if (indice == destino) c.fondo else c.pieza,
-            radius = 4f,
-            center = Offset(cx, 32f)
-        )
-        drawRoundRect(
-            color = if (indice == destino) c.fondo else c.pieza,
-            topLeft = Offset(cx - 7f, 40f),
-            size = Size(14f, 3f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f, 1.5f)
-        )
-    }
-}
-
-/** Una fila que se arrastra dejando ver el fondo de borrar, o que no se mueve. */
-private fun DrawScope.deslizarEnLista(encendido: Boolean, t: Float, c: TintaDemo) {
-    fila(12f, c.pieza)
-    fila(42f, c.pieza)
-    val avance = if (!encendido) 0f else {
-        val ida = tramo(t, 0.15f, 0.5f)
-        val vuelta = tramo(t, 0.62f, 0.9f)
-        suave(ida) - suave(vuelta)
-    }
-    if (avance > 0.02f) {
-        // El fondo rojo que asoma por detras: es lo que dice para que sirve el gesto.
-        drawRoundRect(
-            color = c.rojo,
-            topLeft = Offset(12f, 27f),
-            size = Size(76f, 11f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.5f, 3.5f)
-        )
-        drawCircle(color = c.fondo, radius = 3f, center = Offset(80f, 32.5f))
-    }
-    translate(left = -52f * avance) { fila(27f, c.acento) }
-}
-
-/** Una cifra subiendo desde cero, o puesta de golpe. */
-private fun DrawScope.numerosQueCuentan(encendido: Boolean, t: Float, c: TintaDemo) {
-    val objetivo = 0.82f
-    val valor = if (!encendido) {
-        if (t < 0.12f) 0f else objetivo
-    } else {
-        objetivo * suave(tramo(t, 0.1f, 0.7f))
-    }
-    // El importe, como barra de digitos que crece: cuantos mas «digitos», mas alto el numero.
-    val digitos = (valor * 5f).toInt().coerceAtLeast(1)
-    repeat(digitos) { indice ->
-        drawRoundRect(
-            color = c.acento,
-            topLeft = Offset(16f + indice * 13f, 22f),
-            size = Size(10f, 20f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.5f, 2.5f)
-        )
-    }
-    drawRoundRect(
-        color = c.pieza,
-        topLeft = Offset(16f, 46f),
-        size = Size(64f, 4f),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
-    )
-}
 

@@ -1,6 +1,5 @@
 package com.unistack.app
 
-import java.util.Locale
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration

@@ -41,18 +41,15 @@ class UniReorderState internal constructor() {
     internal var heldHandleKey by mutableStateOf<Any?>(null)
     private val heights = mutableStateMapOf<Any, Int>()
 
-    /** Si hay algo levantado ahora mismo. Sirve para apagar el toque mientras dura. */
-    val isDragging: Boolean get() = draggedKey != null
-
     /**
      * Si el dedo está sobre el asa de esta fila, **desde que la toca** y no desde que la
      * levanta.
      *
-     * Existe porque [isDragging] llega tarde. Una fila que se puede mantener pulsada para
+     * Existe porque preguntar si ya se está arrastrando llega tarde. Una fila que se puede mantener pulsada para
      * marcarla y que lleva un asa dentro tiene dos detectores de pulsación larga corriendo a la
      * vez sobre el mismo dedo, y los dos arrancan su cuenta atrás en el mismo instante. Cuál de
      * los dos despierta primero al cumplirse el plazo no está decidido por nada: son dos
-     * corrutinas esperando el mismo tiempo. Se intentó preguntar por [isDragging] dentro del
+     * corrutinas esperando el mismo tiempo. Se intentó preguntar si ya se arrastraba dentro del
      * `onLongClick` de la fila, y falla justo la mitad de las veces —cuando gana la fila, el
      * arrastre aún no ha empezado y la marca se quita—.
      *

@@ -17,7 +17,6 @@ import java.io.File
  * la app.
  */
 object AlmacenDeFallos {
-
     private const val NOMBRE = "fallo-pendiente.json"
 
     private fun archivo(context: Context) = File(context.applicationContext.filesDir, NOMBRE)
@@ -31,9 +30,6 @@ object AlmacenDeFallos {
         if (!f.exists()) return null
         InformeDeFallo.deJson(f.readText())
     }.getOrNull()
-
-    fun hayPendiente(context: Context): Boolean = runCatching { archivo(context).exists() }
-        .getOrDefault(false)
 
     /**
      * Se llama cuando el usuario ya vio la pantalla, decida lo que decida.

@@ -377,7 +377,7 @@ private fun relativeLuminance(color: Color): Float {
  * porque cambie el fondo, y así una barra se lee igual en los dos.
  *
  * **No se pone texto pequeño encima de ellos.** Para un número corto y en negrita sobre el
- * relleno, [onVivid] tiene contraste de sobra; para un párrafo, no los uses.
+ * relleno, [inkOn] tiene contraste de sobra; para un párrafo, no los uses.
  */
 @androidx.compose.runtime.Immutable
 data class VividAccents(
