@@ -109,7 +109,9 @@ internal fun AgendaCreateMenuSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        // El fondo de la app, como el resto de hojas: sobre el tono de tarjeta, las tarjetas de
+        // dentro —tipos, fecha, interruptor— quedaban del mismo color que la hoja.
+        containerColor = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
@@ -304,7 +306,9 @@ internal fun AgendaComposerSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        // El fondo de la app, como el resto de hojas: sobre el tono de tarjeta, las tarjetas de
+        // dentro —tipos, fecha, interruptor— quedaban del mismo color que la hoja.
+        containerColor = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
