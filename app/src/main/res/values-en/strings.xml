@@ -1411,6 +1411,8 @@
     <string name="settings_backup_expenses">Expenses</string>
     <string name="settings_backup_works">Academic works</string>
     <string name="settings_backup_events">Events</string>
+    <string name="settings_backup_terms">Periods</string>
+    <string name="settings_backup_notes">Notes</string>
     <string name="settings_backup_warning">Replaces everything, does not merge, and cannot be undone. When in doubt, back up first.</string>
     <string name="settings_backup_now">Now</string>
     <string name="settings_backup_would_be">Would be</string>
@@ -2107,6 +2109,8 @@ your course catalog.</string>
     <string name="backup_eventos">events</string>
     <string name="backup_apunte">note</string>
     <string name="backup_apuntes">notes</string>
+    <string name="backup_periodo">period</string>
+    <string name="backup_periodos">periods</string>
     <string name="backup_todavia_no_has_registrado_nada">You haven\'t recorded anything yet</string>
     <string name="tasks_copia">%1$s (copy)</string>
     <string name="works_medio_o_editorial_pendiente">Medium or publisher pending.</string>

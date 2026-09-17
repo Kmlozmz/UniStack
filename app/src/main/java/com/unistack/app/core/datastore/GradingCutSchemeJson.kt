@@ -15,7 +15,10 @@ import org.json.JSONObject
  */
 object GradingCutSchemeJson {
 
-    fun encode(scheme: GradingCutScheme): String {
+    fun encode(scheme: GradingCutScheme): String = toJson(scheme).toString()
+
+    /** El mismo esquema como objeto, para ir dentro de otro JSON: el de la copia de seguridad. */
+    fun toJson(scheme: GradingCutScheme): JSONObject {
         val array = JSONArray()
         scheme.cuts.sortedBy { it.order }.forEach { cut ->
             array.put(
@@ -27,16 +30,19 @@ object GradingCutSchemeJson {
                     .put("endEpochDay", cut.endEpochDay)
             )
         }
-        return JSONObject()
-            .put("periods", array)
-            .toString()
+        return JSONObject().put("periods", array)
     }
 
     /** Nulo si no hay texto o no se puede leer un esquema válido. */
     fun decode(json: String?): GradingCutScheme? {
         if (json.isNullOrBlank()) return null
+        return runCatching { fromJson(JSONObject(json)) }.getOrNull()
+    }
+
+    /** Nulo si no hay objeto o no trae un esquema válido. */
+    fun fromJson(root: JSONObject?): GradingCutScheme? {
+        if (root == null) return null
         return runCatching {
-            val root = JSONObject(json)
             val array = root.optJSONArray("periods") ?: JSONArray()
             val cuts = buildList {
                 for (index in 0 until array.length()) {

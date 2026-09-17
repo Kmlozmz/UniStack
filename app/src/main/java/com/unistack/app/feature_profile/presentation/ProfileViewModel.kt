@@ -1,6 +1,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import android.content.Context
+import android.net.Uri
 import java.io.File
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -39,6 +40,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
 
@@ -617,25 +620,44 @@ class ProfileViewModel @Inject constructor(
             )
     }
 
-    fun restoreLocalBackup(json: String): Boolean {
-        return localBackupRepository.restoreBackupJson(json)
-            .onSuccess { preview ->
-                _actionState.update {
-                    it.copy(
-                        message = Textos.get(R.string.profile_backup_local_restaurado, preview.summary()),
-                        errorMessage = null
-                    )
-                }
+    /**
+     * Restaura la copia elegida: primero los archivos que traiga dentro, luego los datos.
+     *
+     * Los archivos van antes para que, cuando aparezcan las notas, sus fotos ya estén en su
+     * sitio. Todo ocurre fuera del hilo de la pantalla y el resultado llega por [onDone]: la
+     * copia restaurada, o nulo si no se pudo.
+     */
+    fun restoreLocalBackup(
+        context: Context,
+        archivo: Uri,
+        json: String,
+        onDone: (LocalBackupPreview?) -> Unit
+    ) {
+        val app = context.applicationContext
+        viewModelScope.launch {
+            val resultado = withContext(Dispatchers.IO) {
+                val retrato = BackupArchive.restoreFiles(app, archivo, json)
+                localBackupRepository.restoreBackupJson(json, localPhotoUri = retrato)
             }
-            .onFailure { throwable ->
-                _actionState.update {
-                    it.copy(
-                        message = null,
-                        errorMessage = throwable.message ?: (Textos.get(R.string.profile_no_se_pudo_restaurar_el_backup))
-                    )
+            resultado
+                .onSuccess { preview ->
+                    _actionState.update {
+                        it.copy(
+                            message = Textos.get(R.string.profile_backup_local_restaurado, preview.summary()),
+                            errorMessage = null
+                        )
+                    }
                 }
-            }
-            .isSuccess
+                .onFailure { throwable ->
+                    _actionState.update {
+                        it.copy(
+                            message = null,
+                            errorMessage = throwable.message ?: (Textos.get(R.string.profile_no_se_pudo_restaurar_el_backup))
+                        )
+                    }
+                }
+            onDone(resultado.getOrNull())
+        }
     }
 
     private fun save(profile: UserProfile) {

@@ -66,11 +66,19 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import android.app.Activity
+import android.net.Uri
+import com.unistack.app.core.utils.LocaleHelper
 import com.unistack.app.core.utils.Textos
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 private val BackupLocale = Locale.forLanguageTag("es")
 
 /** Lo que se ha elegido restaurar, mientras se decide. */
 private data class PendingRestore(
+    val uri: Uri,
     val name: String,
     val json: String,
     val incoming: LocalBackupPreview?,
@@ -97,38 +105,47 @@ internal fun BackupSection(
     onFeedback: (String, Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    // Con los adjuntos dentro, la copia puede pesar varios megas: se escribe y se lee fuera
+    // del hilo de la pantalla para que no se congele mientras tanto.
+    val scope = rememberCoroutineScope()
     var lastBackup by remember { mutableStateOf(BackupFiles.lastBackupAt(context)) }
     var pendingRestore by remember { mutableStateOf<PendingRestore?>(null) }
 
     val saveBackup = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
+        ActivityResultContracts.CreateDocument(BackupArchive.MIME)
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        BackupFiles.writeText(context, uri, viewModel.exportLocalBackup())
-            .onSuccess {
-                BackupFiles.rememberBackupDone(context)
-                lastBackup = BackupFiles.lastBackupAt(context)
-                onFeedback(Textos.get(R.string.backup_saved), false)
-            }
-            .onFailure { onFeedback(Textos.get(R.string.backup_save_failed), true) }
+        val json = viewModel.exportLocalBackup()
+        scope.launch {
+            withContext(Dispatchers.IO) { BackupArchive.write(context, uri, json) }
+                .onSuccess {
+                    BackupFiles.rememberBackupDone(context)
+                    lastBackup = BackupFiles.lastBackupAt(context)
+                    onFeedback(Textos.get(R.string.backup_saved), false)
+                }
+                .onFailure { onFeedback(Textos.get(R.string.backup_save_failed), true) }
+        }
     }
 
     val openBackup = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        BackupFiles.readText(context, uri)
-            .onSuccess { json ->
-                // Se lee y se enseña qué trae antes de tocar nada: restaurar reemplaza lo que
-                // hay, y esa es una puerta de una sola dirección.
-                pendingRestore = PendingRestore(
-                    name = BackupFiles.displayName(context, uri),
-                    json = json,
-                    incoming = viewModel.inspectLocalBackup(json),
-                    current = viewModel.currentContents()
-                )
-            }
-            .onFailure { onFeedback(Textos.get(R.string.backup_read_failed), true) }
+        scope.launch {
+            withContext(Dispatchers.IO) { BackupArchive.readJson(context, uri) }
+                .onSuccess { json ->
+                    // Se lee y se enseña qué trae antes de tocar nada: restaurar reemplaza lo que
+                    // hay, y esa es una puerta de una sola dirección.
+                    pendingRestore = PendingRestore(
+                        uri = uri,
+                        name = BackupFiles.displayName(context, uri),
+                        json = json,
+                        incoming = viewModel.inspectLocalBackup(json),
+                        current = viewModel.currentContents()
+                    )
+                }
+                .onFailure { onFeedback(Textos.get(R.string.backup_read_failed), true) }
+        }
     }
 
     val saveTasksCsv = rememberLauncherForActivityResult(
@@ -200,7 +217,7 @@ internal fun BackupSection(
                     horizontalArrangement = Arrangement.spacedBy(9.dp)
                 ) {
                     Surface(
-                        onClick = { saveBackup.launch(BackupFiles.suggestedName("unistack-copia", "json")) },
+                        onClick = { saveBackup.launch(BackupFiles.suggestedName(BackupArchive.PREFIX, BackupArchive.EXTENSION)) },
                         shape = CircleShape,
                         color = LocalSectionColors.current.schedule,
                         contentColor = LocalSectionColors.current.scheduleContainer
@@ -214,17 +231,16 @@ internal fun BackupSection(
                     }
                     Surface(
                         onClick = {
-                            BackupFiles.shareText(
-                                context = context,
-                                fileName = BackupFiles.suggestedName("unistack-copia", "json"),
-                                mimeType = "application/json",
-                                text = viewModel.exportLocalBackup()
-                            )
-                                .onSuccess {
-                                    BackupFiles.rememberBackupDone(context)
-                                    lastBackup = BackupFiles.lastBackupAt(context)
-                                }
-                                .onFailure { onFeedback(Textos.get(R.string.backup_share_failed), true) }
+                            val json = viewModel.exportLocalBackup()
+                            scope.launch {
+                                withContext(Dispatchers.IO) { BackupArchive.writeForSharing(context, json) }
+                                    .mapCatching { file -> BackupFiles.shareFile(context, file, BackupArchive.MIME).getOrThrow() }
+                                    .onSuccess {
+                                        BackupFiles.rememberBackupDone(context)
+                                        lastBackup = BackupFiles.lastBackupAt(context)
+                                    }
+                                    .onFailure { onFeedback(Textos.get(R.string.backup_share_failed), true) }
+                            }
                         },
                         shape = CircleShape,
                         color = Color.Transparent
@@ -246,7 +262,7 @@ internal fun BackupSection(
                 title = stringResource(R.string.settings_backup_restore_title),
                 subtitle = stringResource(R.string.settings_backup_restore_subtitle),
                 iconColor = tonosDeAjustes.cian,
-                onClick = { openBackup.launch(arrayOf("application/json", "text/plain", "*/*")) }
+                onClick = { openBackup.launch(arrayOf(BackupArchive.MIME, "application/json", "text/plain", "*/*")) }
             )
             SettingsRow(
                 icon = Icons.AutoMirrored.Rounded.ListAlt,
@@ -420,12 +436,14 @@ internal fun BackupSection(
                         )
                         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             RestoreComparisonHeader()
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_terms), pending.current?.terms, incoming.terms)
                             RestoreComparisonRow(stringResource(R.string.settings_backup_subjects), pending.current?.subjects, incoming.subjects)
                             RestoreComparisonRow(stringResource(R.string.settings_backup_grades), pending.current?.grades, incoming.grades)
                             RestoreComparisonRow(stringResource(R.string.settings_backup_tasks), pending.current?.tasks, incoming.tasks)
                             RestoreComparisonRow(stringResource(R.string.settings_backup_expenses), pending.current?.expenses, incoming.expenses)
                             RestoreComparisonRow(stringResource(R.string.settings_backup_works), pending.current?.academicWorks, incoming.academicWorks)
                             RestoreComparisonRow(stringResource(R.string.settings_backup_events), pending.current?.agendaEvents, incoming.agendaEvents)
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_notes), pending.current?.notes, incoming.notes)
                         }
                         Text(
                             stringResource(R.string.settings_backup_warning),
@@ -440,9 +458,24 @@ internal fun BackupSection(
                 if (incoming != null) {
                     TextButton(
                         onClick = {
-                            val restored = viewModel.restoreLocalBackup(pending.json)
                             pendingRestore = null
-                            onFeedback(if (restored) Textos.get(R.string.backup_restored) else Textos.get(R.string.backup_restore_failed), !restored)
+                            viewModel.restoreLocalBackup(context, pending.uri, pending.json) { restaurada ->
+                                onFeedback(
+                                    if (restaurada != null) Textos.get(R.string.backup_restored) else Textos.get(R.string.backup_restore_failed),
+                                    restaurada == null
+                                )
+                                /*
+                                 * El idioma se guarda en dos sitios: en el perfil y en el que lee
+                                 * la app al arrancar, antes de que el perfil esté cargado. Si la
+                                 * copia trae otro, hay que apuntarlo también allí y volver a
+                                 * abrir la pantalla, igual que al cambiarlo en Accesibilidad.
+                                 */
+                                val idioma = restaurada?.appLanguage
+                                if (idioma != null && idioma != LocaleHelper.getPersistedLanguage(context)) {
+                                    LocaleHelper.persistLanguage(context, idioma)
+                                    (context as? Activity)?.recreate()
+                                }
+                            }
                         }
                     ) {
                         Text(stringResource(R.string.settings_backup_btn_restore), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)

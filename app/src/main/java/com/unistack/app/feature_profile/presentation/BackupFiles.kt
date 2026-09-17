@@ -1,5 +1,6 @@
 package com.unistack.app.feature_profile.presentation
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -38,12 +39,6 @@ object BackupFiles {
         } ?: error(Textos.get(R.string.backup_write_failed))
     }
 
-    fun readText(context: Context, uri: Uri): Result<String> = runCatching {
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            input.bufferedReader().readText()
-        } ?: error(Textos.get(R.string.backup_read_failed))
-    }
-
     /** Deja el texto en un archivo de la caché y abre el selector para compartirlo. */
     fun shareText(context: Context, fileName: String, mimeType: String, text: String): Result<Unit> =
         runCatching {
@@ -57,9 +52,16 @@ object BackupFiles {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = mimeType
             putExtra(Intent.EXTRA_STREAM, uri)
+            // La dirección va también en el ClipData para que la hoja de compartir pueda leer el
+            // archivo: solo con el extra sale sin vista previa, y en algunos teléfonos ni se abre.
+            // Es lo que le pasaba al boletín del histórico.
+            clipData = ClipData.newRawUri(file.name, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, Textos.get(R.string.settings_backup_btn_share)))
+        context.startActivity(
+            Intent.createChooser(intent, Textos.get(R.string.settings_backup_btn_share))
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        )
     }
 
     /** El nombre del archivo elegido, para que se vea cuál se va a restaurar. */

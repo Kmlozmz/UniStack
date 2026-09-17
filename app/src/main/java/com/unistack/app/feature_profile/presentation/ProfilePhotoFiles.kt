@@ -136,6 +136,9 @@ internal object ProfilePhotoFiles {
         return if (copia.exists()) Uri.fromFile(copia) else null
     }
 
+    /** Si [name] es un recorte escrito por aquí: es lo único que la copia de seguridad devuelve. */
+    fun isCropName(name: String): Boolean = name.startsWith(CROP) && name.endsWith(SUFFIX)
+
     /** Borra los retratos guardados, menos el del sello que se acaba de escribir. */
     fun clear(context: Context, keep: Long? = null) {
         val vivos = setOfNotNull(

@@ -168,21 +168,11 @@ object RepositoriesModule {
     fun provideCloudBackupRepository(
         @ApplicationContext context: Context,
         userRepository: UserRepository,
-        gradesRepository: GradesRepository,
-        tasksRepository: TasksRepository,
-        expensesRepository: ExpensesRepository,
-        academicWorksRepository: AcademicWorksRepository,
-        scheduleRepository: ScheduleRepository,
-        notesRepository: NotesRepository
+        localBackupRepository: LocalBackupRepository
     ): CloudBackupRepository = FirebaseCloudBackupRepository(
         context = context,
         userRepository = userRepository,
-        gradesRepository = gradesRepository,
-        tasksRepository = tasksRepository,
-        expensesRepository = expensesRepository,
-        academicWorksRepository = academicWorksRepository,
-        scheduleRepository = scheduleRepository,
-        notesRepository = notesRepository
+        localBackupRepository = localBackupRepository
     )
 
     @Provides
@@ -194,7 +184,9 @@ object RepositoriesModule {
         expensesRepository: ExpensesRepository,
         academicWorksRepository: AcademicWorksRepository,
         scheduleRepository: ScheduleRepository,
-        notesRepository: NotesRepository
+        notesRepository: NotesRepository,
+        termRepository: AcademicTermRepository,
+        breakRepository: AcademicBreakRepository
     ): LocalBackupRepository = LocalJsonBackupRepository(
         userRepository = userRepository,
         gradesRepository = gradesRepository,
@@ -202,6 +194,8 @@ object RepositoriesModule {
         expensesRepository = expensesRepository,
         academicWorksRepository = academicWorksRepository,
         scheduleRepository = scheduleRepository,
-        notesRepository = notesRepository
+        notesRepository = notesRepository,
+        termRepository = termRepository,
+        breakRepository = breakRepository
     )
 }

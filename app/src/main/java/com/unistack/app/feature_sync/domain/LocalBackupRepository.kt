@@ -3,11 +3,22 @@ package com.unistack.app.feature_sync.domain
 import android.content.Context
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.R
+import com.unistack.app.feature_user.domain.AppLanguage
 
 interface LocalBackupRepository {
     fun exportBackupJson(): String
     fun previewBackupJson(json: String): Result<LocalBackupPreview>
-    fun restoreBackupJson(json: String): Result<LocalBackupPreview>
+
+    /**
+     * Deja la app como estaba en la copia.
+     *
+     * Reemplaza, no mezcla, que es lo que promete el diálogo antes de restaurar: de cada cosa
+     * que trae la copia se borra lo que no estaba en ella y se escribe lo que sí. Lo que una
+     * copia antigua no trae, porque su versión no lo guardaba, se deja como está.
+     *
+     * @param localPhotoUri el retrato ya sacado del archivo de la copia, si traía uno.
+     */
+    suspend fun restoreBackupJson(json: String, localPhotoUri: String? = null): Result<LocalBackupPreview>
     fun exportAcademicReport(): String
     fun exportAcademicPdf(context: Context): Result<String>
     fun exportTasksCsv(): String
@@ -22,7 +33,10 @@ data class LocalBackupPreview(
     val expenses: Int,
     val academicWorks: Int,
     val agendaEvents: Int = 0,
-    val notes: Int = 0
+    val notes: Int = 0,
+    val terms: Int = 0,
+    /** El idioma que trae, que además de guardarse hay que aplicarlo; nulo si no trae ninguno. */
+    val appLanguage: AppLanguage? = null
 ) {
     /**
      * Lo que hay dentro, contado en cristiano.
@@ -38,6 +52,7 @@ data class LocalBackupPreview(
      */
     fun summary(): String {
         val partes = listOfNotNull(
+            cuenta(terms, Textos.get(R.string.backup_periodo), Textos.get(R.string.backup_periodos)),
             cuenta(subjects, Textos.get(R.string.backup_materia), Textos.get(R.string.backup_materias)),
             cuenta(grades, Textos.get(R.string.backup_nota), Textos.get(R.string.backup_notas)),
             cuenta(tasks, Textos.get(R.string.backup_tarea), Textos.get(R.string.backup_tareas)),

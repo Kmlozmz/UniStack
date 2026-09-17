@@ -14,27 +14,14 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppearancePreferences
-import com.unistack.app.feature_user.domain.ColorBlindPalette
-import com.unistack.app.feature_user.domain.ContrastLevel
-import com.unistack.app.feature_user.domain.ReadingFont
-import com.unistack.app.feature_user.domain.TouchTargetSize
-import com.unistack.app.feature_user.domain.UndoDuration
-import com.unistack.app.feature_user.domain.MotionCatalog
-import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
-import com.unistack.app.feature_user.domain.AppLanguage
-import com.unistack.app.feature_user.domain.DateFormatPreference
-import com.unistack.app.feature_user.domain.CurrencyPreference
 import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
-import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.LinkedAccount
-import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.SavedGradeScenario
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.SyncStatus
-import com.unistack.app.feature_user.domain.TextScalePreference
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesSort
@@ -353,221 +340,24 @@ class UserPreferencesDataSource(private val context: Context) {
         }
     }
 
-    private fun AppearancePreferences.toJsonString(): String = JSONObject()
-        .put("themeId", themeId)
-        .put("backgroundStyle", backgroundStyle.name)
-        .put("customBackgroundColor", customBackgroundColor)
-        .put("customThemeBase", customThemeBase.name)
-        .put("accentStyle", accentStyle.name)
-        .put("customAccentColor", customAccentColor)
-        .put("accentIntensity", accentIntensity.name)
-        .put("surfaceStyle", surfaceStyle.name)
-        .put("shadowIntensity", shadowIntensity.name)
-        .put("outlineWeight", outlineWeight.name)
-        .put("cornerStyle", cornerStyle.name)
-        .put("interfaceDensity", interfaceDensity.name)
-        .put("motionPreference", motionPreference.name)
-        .put("motion", motion.toJson())
-        .put("textScale", textScale.name)
-        .put("typographyStyle", typographyStyle.name)
-        .put("textScalePercent", textScalePercent)
-        .put("lineHeightStyle", lineHeightStyle.name)
-        .put("decimalPlaces", decimalPlaces)
-        .put("bottomBarStyle", bottomBarStyle.name)
-        .put("buttonShapeV2", buttonShape.name)
-        .put("buttonSize", buttonSize.name)
-        .put("textFieldStyle", textFieldStyle.name)
-        .put("chipStyle", chipStyle.name)
-        .put("iconStyle", iconStyle.name)
-        .put("settingsIconStyle", settingsIconStyle.name)
-        .put("badgeShape", badgeShape.name)
-        .put("listDividers", listDividers)
-        .put("firstDayOfWeek", firstDayOfWeek.name)
-        .put("sectionColorsEnabled", sectionColorsEnabled)
-        .put("academicIndicatorStyle", academicIndicatorStyle.name)
-        .put("switchIconStyle", switchIconStyle.name)
-        .put("subjectOrder", JSONArray(subjectOrder))
-        .put("academicProgressShape", academicProgressShape.name)
-        .put("showHomeGreeting", showHomeGreeting)
-        .put("showHomeHero", showHomeHero)
-        .put("showHomeAgenda", showHomeAgenda)
-        .put("showHomeSnapshot", showHomeSnapshot)
-        .put("homeSectionOrder", JSONArray(homeSectionOrder.map { it.name }))
-        .put("heroAutoRotate", heroAutoRotate)
-        .put("heroShowsGrades", heroShowsGrades)
-        .put("heroShowsTasks", heroShowsTasks)
-        .put("heroShowsExpenses", heroShowsExpenses)
-        .put("initialTab", initialTab.name)
-        .put("visualPreset", visualPreset.name)
-        .toString()
+    private fun AppearancePreferences.toJsonString(): String =
+        AppearancePreferencesJson.encode(this).toString()
 
-    private fun AccessibilityPreferences.toJsonString(): String = JSONObject()
-        .put("appLanguage", appLanguage.name)
-        .put("highContrastEnabled", highContrastEnabled)
-        .put("use24HourTime", use24HourTime)
-        .put("textScale", textScale.name)
-        .put("motionPreference", motionPreference.name)
-        .put("heroAnimationEnabled", heroAnimationEnabled)
-        .put("contrast", contrast.name)
-        .put("colorBlindPalette", colorBlindPalette.name)
-        .put("shapesBesidesColor", shapesBesidesColor)
-        .put("boldText", boldText)
-        .put("readingFont", readingFont.name)
-        .put("touchTargetSize", touchTargetSize.name)
-        .put("reduceTransparency", reduceTransparency)
-        .put("oneHandedMode", oneHandedMode)
-        .put("undoDuration", undoDuration.name)
-        .put("spokenDescriptions", spokenDescriptions)
-        .put("confirmIrreversible", confirmIrreversible)
-        .put("keepScreenOn", keepScreenOn)
-        .put("dateFormat", dateFormat.name)
-        .put("currency", currency.name)
-        .toString()
+    private fun AccessibilityPreferences.toJsonString(): String =
+        AccessibilityPreferencesJson.encode(this).toString()
 
     private fun parseAccessibilityPreferences(raw: String?): AccessibilityPreferences {
         if (raw.isNullOrBlank()) return AccessibilityPreferences()
         return runCatching {
-            val json = JSONObject(raw)
-            AccessibilityPreferences(
-                appLanguage = json.enumOrDefault("appLanguage", AppLanguage.SYSTEM),
-                highContrastEnabled = json.optBoolean("highContrastEnabled", false),
-                use24HourTime = json.optBoolean("use24HourTime", true),
-                textScale = json.enumOrDefault("textScale", TextScalePreference.STANDARD),
-                motionPreference = json.enumOrDefault("motionPreference", MotionPreference.FULL),
-                heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", true),
-                dateFormat = json.enumOrDefault("dateFormat", DateFormatPreference.DMY),
-                currency = json.enumOrDefault("currency", CurrencyPreference.COP),
-                contrast = json.enumOrDefault("contrast", ContrastLevel.ESTANDAR),
-                colorBlindPalette = json.enumOrDefault("colorBlindPalette", ColorBlindPalette.NINGUNA),
-                shapesBesidesColor = json.optBoolean("shapesBesidesColor", false),
-                boldText = json.optBoolean("boldText", false),
-                readingFont = json.enumOrDefault("readingFont", ReadingFont.NORMAL),
-                touchTargetSize = json.enumOrDefault("touchTargetSize", TouchTargetSize.ESTANDAR),
-                reduceTransparency = json.optBoolean("reduceTransparency", false),
-                oneHandedMode = json.optBoolean("oneHandedMode", false),
-                undoDuration = json.enumOrDefault("undoDuration", UndoDuration.CORTA),
-                spokenDescriptions = json.optBoolean("spokenDescriptions", false),
-                confirmIrreversible = json.optBoolean("confirmIrreversible", true),
-                keepScreenOn = json.optBoolean("keepScreenOn", false)
-            )
+            AccessibilityPreferencesJson.decode(JSONObject(raw), AccessibilityPreferences())
         }.getOrDefault(AccessibilityPreferences())
     }
 
     private fun parseAppearancePreferences(raw: String?): AppearancePreferences {
         if (raw.isNullOrBlank()) return AppearancePreferences.defaults()
         return runCatching {
-            val json = JSONObject(raw)
-            val defaults = AppearancePreferences.defaults()
-            AppearancePreferences(
-                themeId = json.optString("themeId").ifBlank { defaults.themeId },
-                backgroundStyle = json.enumOrDefault("backgroundStyle", defaults.backgroundStyle),
-                customBackgroundColor = json.optIntOrNull("customBackgroundColor"),
-                customThemeBase = json.enumOrDefault("customThemeBase", defaults.customThemeBase),
-                accentStyle = json.enumOrDefault("accentStyle", defaults.accentStyle),
-                customAccentColor = json.optIntOrNull("customAccentColor"),
-                accentIntensity = json.enumOrDefault("accentIntensity", defaults.accentIntensity),
-                surfaceStyle = json.enumOrDefault("surfaceStyle", defaults.surfaceStyle),
-                shadowIntensity = json.enumOrDefault("shadowIntensity", defaults.shadowIntensity),
-                outlineWeight = json.enumOrDefault("outlineWeight", defaults.outlineWeight),
-                cornerStyle = json.enumOrDefault("cornerStyle", defaults.cornerStyle),
-                interfaceDensity = json.enumOrDefault("interfaceDensity", defaults.interfaceDensity),
-                motionPreference = json.enumOrDefault("motionPreference", defaults.motionPreference),
-                motion = parseMotion(json.optJSONObject("motion")),
-                textScale = json.enumOrDefault("textScale", defaults.textScale),
-                typographyStyle = json.enumOrDefault("typographyStyle", defaults.typographyStyle),
-                textScalePercent = json.optInt("textScalePercent", defaults.textScalePercent),
-                lineHeightStyle = json.enumOrDefault("lineHeightStyle", defaults.lineHeightStyle),
-                decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
-                bottomBarStyle = json.enumOrDefault("bottomBarStyle", defaults.bottomBarStyle),
-                // Clave nueva a propósito: «Medios» era el de por defecto y quedó guardado en todos
-                // los teléfonos sin que nadie lo eligiera. Con otra clave, todos pasan a la pastilla
-                // de ahora y quien quiera los de antes los vuelve a elegir.
-                buttonShape = json.enumOrDefault("buttonShapeV2", defaults.buttonShape),
-                buttonSize = json.enumOrDefault("buttonSize", defaults.buttonSize),
-                textFieldStyle = json.enumOrDefault("textFieldStyle", defaults.textFieldStyle),
-                chipStyle = json.enumOrDefault("chipStyle", defaults.chipStyle),
-                iconStyle = json.enumOrDefault("iconStyle", defaults.iconStyle),
-                settingsIconStyle = json.enumOrDefault("settingsIconStyle", defaults.settingsIconStyle),
-                badgeShape = json.enumOrDefault("badgeShape", defaults.badgeShape),
-                listDividers = json.optBoolean("listDividers", defaults.listDividers),
-                firstDayOfWeek = json.enumOrDefault("firstDayOfWeek", defaults.firstDayOfWeek),
-                sectionColorsEnabled = json.optBoolean("sectionColorsEnabled", defaults.sectionColorsEnabled),
-                // Clave nueva a propósito: la anterior guardaba «FADE» en los teléfonos que
-                // pasaron por las alphas, y ese valor —que entonces era el de por defecto, no una
-                // elección— se quedaba pisando el empuje. Con otra clave, todos empiezan por el
-                // valor de hoy y quien quiera el fundido lo vuelve a elegir.
-                academicIndicatorStyle = json.enumOrDefault(
-                    "academicIndicatorStyle",
-                    defaults.academicIndicatorStyle
-                ),
-                switchIconStyle = json.enumOrDefault("switchIconStyle", defaults.switchIconStyle),
-                subjectOrder = json.optJSONArray("subjectOrder")
-                    ?.let { array -> (0 until array.length()).map(array::optString) }
-                    ?.filter { it.isNotBlank() }
-                    ?: defaults.subjectOrder,
-                academicProgressShape = json.enumOrDefault(
-                    "academicProgressShape",
-                    defaults.academicProgressShape
-                ),
-                showHomeGreeting = json.optBoolean("showHomeGreeting", defaults.showHomeGreeting),
-                showHomeHero = json.optBoolean("showHomeHero", defaults.showHomeHero),
-                showHomeAgenda = json.optBoolean("showHomeAgenda", defaults.showHomeAgenda),
-                showHomeSnapshot = json.optBoolean("showHomeSnapshot", defaults.showHomeSnapshot),
-                homeSectionOrder = json.optJSONArray("homeSectionOrder")
-                    ?.let { array ->
-                        (0 until array.length()).mapNotNull { index ->
-                            runCatching { HomeSection.valueOf(array.optString(index)) }.getOrNull()
-                        }
-                    }
-                    ?.ifEmpty { defaults.homeSectionOrder }
-                    ?: defaults.homeSectionOrder,
-                heroAutoRotate = json.optBoolean("heroAutoRotate", defaults.heroAutoRotate),
-                heroShowsGrades = json.optBoolean("heroShowsGrades", defaults.heroShowsGrades),
-                heroShowsTasks = json.optBoolean("heroShowsTasks", defaults.heroShowsTasks),
-                heroShowsExpenses = json.optBoolean("heroShowsExpenses", defaults.heroShowsExpenses),
-                initialTab = json.enumOrDefault("initialTab", defaults.initialTab),
-                visualPreset = json.enumOrDefault("visualPreset", defaults.visualPreset)
-            ).normalized()
+            AppearancePreferencesJson.decode(JSONObject(raw), AppearancePreferences.defaults())
         }.getOrDefault(AppearancePreferences.defaults())
-    }
-
-    /**
-     * El movimiento, guardado **por el catalogo** y no campo a campo.
-     *
-     * Son veinticinco gestos con sus variantes: escritos a mano serian cincuenta lineas aqui y
-     * otras cincuenta al leer, y cada gesto nuevo obligaria a tocar las dos. Recorriendo
-     * [MotionCatalog] se guarda y se lee solo, y anadir un gesto es anadirlo alli.
-     */
-    private fun MotionPreferences.toJson(): JSONObject {
-        val json = JSONObject()
-        MotionCatalog.gestures.forEach { gesto -> json.put(gesto.id, gesto.read(this).id) }
-        MotionCatalog.toggles.forEach { toggle -> json.put(toggle.id, toggle.read(this)) }
-        return json
-    }
-
-    private fun parseMotion(json: JSONObject?): MotionPreferences {
-        if (json == null) return MotionPreferences.defaults()
-        var prefs = MotionPreferences.defaults()
-        MotionCatalog.gestures.forEach { gesto ->
-            val guardada = json.optString(gesto.id)
-            // Una variante que ya no existe —renombrada, o retirada— cae en el valor por
-            // defecto en vez de tumbar la lectura entera de las preferencias.
-            gesto.options.firstOrNull { it.id == guardada }?.let { prefs = gesto.write(prefs, it) }
-        }
-        MotionCatalog.toggles.forEach { toggle ->
-            if (json.has(toggle.id)) prefs = toggle.write(prefs, json.optBoolean(toggle.id, toggle.read(prefs)))
-        }
-        return prefs
-    }
-
-    private inline fun <reified T : Enum<T>> JSONObject.enumOrDefault(key: String, default: T): T {
-        val raw = optString(key)
-        return enumValues<T>().firstOrNull { it.name == raw } ?: default
-    }
-
-    private fun JSONObject.optIntOrNull(key: String): Int? {
-        if (!has(key) || isNull(key)) return null
-        return optLong(key).toInt()
     }
 
     suspend fun updatePreferredName(name: String) {
@@ -621,43 +411,11 @@ class UserPreferencesDataSource(private val context: Context) {
 
     private fun parseGradeScenarios(json: String?): List<SavedGradeScenario> {
         if (json.isNullOrBlank()) return emptyList()
-        return runCatching {
-            val array = JSONArray(json)
-            buildList {
-                for (index in 0 until array.length()) {
-                    val item = array.optJSONObject(index) ?: continue
-                    add(
-                        SavedGradeScenario(
-                            id = item.optString("id"),
-                            subjectId = item.optString("subjectId"),
-                            subjectName = item.optString("subjectName"),
-                            name = item.optString("name"),
-                            targetAverage = item.optDouble("targetAverage"),
-                            neededGrade = if (item.isNull("neededGrade")) null else item.optDouble("neededGrade"),
-                            createdAt = item.optLong("createdAt")
-                        )
-                    )
-                }
-            }.filter { it.id.isNotBlank() && it.subjectId.isNotBlank() && it.name.isNotBlank() }
-        }.getOrDefault(emptyList())
+        return runCatching { GradeScenariosJson.decode(JSONArray(json)) }.getOrDefault(emptyList())
     }
 
-    private fun List<SavedGradeScenario>.toJsonArrayString(): String {
-        val array = JSONArray()
-        forEach { scenario ->
-            array.put(
-                JSONObject()
-                    .put("id", scenario.id)
-                    .put("subjectId", scenario.subjectId)
-                    .put("subjectName", scenario.subjectName)
-                    .put("name", scenario.name)
-                    .put("targetAverage", scenario.targetAverage)
-                    .put("neededGrade", scenario.neededGrade)
-                    .put("createdAt", scenario.createdAt)
-            )
-        }
-        return array.toString()
-    }
+    private fun List<SavedGradeScenario>.toJsonArrayString(): String =
+        GradeScenariosJson.encode(this).toString()
 
     private fun parseGradingCutScheme(json: String?): GradingCutScheme =
         GradingCutSchemeJson.decode(json) ?: GradingCutScheme.default()

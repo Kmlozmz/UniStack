@@ -3,6 +3,10 @@ package com.unistack.app.feature_sync.data
 import android.content.Context
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
+import com.unistack.app.core.datastore.AccessibilityPreferencesJson
+import com.unistack.app.core.datastore.AppearancePreferencesJson
+import com.unistack.app.core.datastore.GradeScenariosJson
+import com.unistack.app.core.datastore.GradingCutSchemeJson
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_expenses.domain.Expense
@@ -27,9 +31,11 @@ import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
 import com.unistack.app.feature_sync.domain.LocalBackupRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskAttachment
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
+import com.unistack.app.feature_tasks.domain.TaskSubtask
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
@@ -45,17 +51,23 @@ import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
-import com.unistack.app.feature_user.domain.GradingCut
-import com.unistack.app.feature_user.domain.Corte
+import com.unistack.app.feature_terms.domain.AcademicBreak
+import com.unistack.app.feature_terms.domain.AcademicBreakRepository
+import com.unistack.app.feature_terms.domain.AcademicTerm
+import com.unistack.app.feature_terms.domain.AcademicTermRepository
+import com.unistack.app.feature_terms.domain.AcademicTermStatus
+import com.unistack.app.feature_terms.domain.AcademicTermType
+import com.unistack.app.feature_user.domain.AppLanguage
 import com.unistack.app.feature_user.domain.GradingCutScheme
-import com.unistack.app.feature_user.domain.AppearancePreferences
-import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
-import com.unistack.app.feature_user.domain.HomeSection
+import com.unistack.app.feature_user.domain.StudyArea
+import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.VisualPreference
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -70,13 +82,17 @@ class LocalJsonBackupRepository(
     private val expensesRepository: ExpensesRepository,
     private val academicWorksRepository: AcademicWorksRepository,
     private val scheduleRepository: ScheduleRepository,
-    private val notesRepository: NotesRepository
+    private val notesRepository: NotesRepository,
+    private val termRepository: AcademicTermRepository,
+    private val breakRepository: AcademicBreakRepository
 ) : LocalBackupRepository {
     override fun exportBackupJson(): String {
         return JSONObject()
             .put("schemaVersion", SCHEMA_VERSION)
             .put("exportedAt", System.currentTimeMillis())
             .put("profile", profileJson(userRepository.userProfile.value))
+            .put("terms", JSONArray(termRepository.terms.value.map(::termJson)))
+            .put("academicBreaks", JSONArray(breakRepository.breaks.value.map(::breakJson)))
             .put("subjects", JSONArray(gradesRepository.subjects.value.map(::subjectJson)))
             .put("tasks", JSONArray(tasksRepository.tasks.value.map(::taskJson)))
             .put("expenses", JSONArray(expensesRepository.expenses.value.map(::expenseJson)))
@@ -103,52 +119,86 @@ class LocalJsonBackupRepository(
             expenses = root.optJSONArray("expenses")?.length() ?: 0,
             academicWorks = root.optJSONArray("academicWorks")?.length() ?: 0,
             agendaEvents = root.optJSONArray("agendaEvents")?.length() ?: 0,
-            notes = root.optJSONArray("notes")?.length() ?: 0
+            notes = root.optJSONArray("notes")?.length() ?: 0,
+            terms = root.optJSONArray("terms")?.length() ?: 0,
+            appLanguage = root.optJSONObject("profile")
+                ?.optJSONObject("accessibilityPreferences")
+                ?.optString("appLanguage")
+                ?.toEnumOrNull<AppLanguage>()
         )
     }
 
-    override fun restoreBackupJson(json: String): Result<LocalBackupPreview> = runCatching {
+    /*
+     * El orden importa.
+     *
+     * Primero el perfil y los periodos: una materia sin periodo se apunta al activo en cuanto
+     * se añade, así que el activo tiene que ser ya el de la copia. Luego las materias, antes
+     * que lo que cuelga de ellas.
+     *
+     * Cada bloque solo se toca si la copia lo trae. Una copia de antes de que existieran los
+     * periodos no dice nada de ellos, y eso no significa que haya que borrarlos.
+     */
+    override suspend fun restoreBackupJson(
+        json: String,
+        localPhotoUri: String?
+    ): Result<LocalBackupPreview> = runCatching {
         val preview = previewBackupJson(json).getOrThrow()
         val root = JSONObject(json)
-        restoreProfile(root.optJSONObject("profile"))
-        parseSubjects(root.optJSONArray("subjects")).forEach { subject ->
-            val existing = gradesRepository.subjects.value.firstOrNull { it.id == subject.id }
-            if (existing == null) gradesRepository.addSubject(subject.copy(grades = emptyList())) else gradesRepository.updateSubject(subject.copy(grades = existing.grades))
-            subject.grades.forEach { grade ->
-                if (existing?.grades?.any { it.id == grade.id } == true) {
-                    gradesRepository.updateGrade(subject.id, grade)
-                } else {
-                    gradesRepository.addGrade(subject.id, grade)
-                }
+        restoreProfile(root.optJSONObject("profile"), localPhotoUri)
+        root.optJSONArray("terms")?.let { restoreTerms(it) }
+        root.optJSONArray("academicBreaks")?.let { restoreBreaks(it) }
+        root.optJSONArray("subjects")?.let(::restoreSubjects)
+        root.optJSONArray("tasks")?.let(::restoreTasks)
+        root.optJSONArray("expenses")?.let { array ->
+            reemplazar(
+                actuales = expensesRepository.expenses.value.map { it.id },
+                enLaCopia = array,
+                nuevos = parseExpenses(array),
+                id = Expense::id,
+                borrar = expensesRepository::deleteExpense
+            ) { expense, existe ->
+                if (existe) expensesRepository.updateExpense(expense) else expensesRepository.addExpense(expense)
             }
         }
-        parseTasks(root.optJSONArray("tasks")).forEach { task ->
-            if (tasksRepository.tasks.value.any { it.id == task.id }) tasksRepository.updateTask(task) else tasksRepository.addTask(task)
-        }
-        parseExpenses(root.optJSONArray("expenses")).forEach { expense ->
-            if (expensesRepository.expenses.value.any { it.id == expense.id }) expensesRepository.updateExpense(expense) else expensesRepository.addExpense(expense)
-        }
-        parseAcademicWorks(root.optJSONArray("academicWorks")).forEach { work ->
-            if (academicWorksRepository.works.value.any { it.id == work.id }) academicWorksRepository.updateWork(work) else academicWorksRepository.addWork(work)
-        }
-        parseClassSessions(root.optJSONArray("classSessions")).forEach(scheduleRepository::saveSession)
-        parseClassOccurrences(root.optJSONArray("classOccurrences")).forEach(scheduleRepository::saveOccurrence)
-        parseAgendaEvents(root.optJSONArray("agendaEvents")).forEach(scheduleRepository::saveAgendaEvent)
-        parseNotes(root.optJSONArray("notes")).forEach { note ->
-            if (notesRepository.notes.value.any { it.id == note.id }) {
-                notesRepository.updateNote(note)
-            } else {
-                notesRepository.addNote(note)
+        root.optJSONArray("academicWorks")?.let { array ->
+            reemplazar(
+                actuales = academicWorksRepository.works.value.map { it.id },
+                enLaCopia = array,
+                nuevos = parseAcademicWorks(array),
+                id = AcademicWork::id,
+                borrar = academicWorksRepository::deleteWork
+            ) { work, existe ->
+                if (existe) academicWorksRepository.updateWork(work) else academicWorksRepository.addWork(work)
             }
         }
-        root.optJSONArray("notes").objects().forEach { item ->
-            val noteId = item.optString("id").takeIf { it.isNotBlank() } ?: return@forEach
-            parseAttachments(noteId, item.optJSONArray("attachments")).forEach { adjunto ->
-                if (notesRepository.attachments.value.none { it.id == adjunto.id }) {
-                    notesRepository.addAttachment(adjunto)
-                }
-            }
+        root.optJSONArray("classSessions")?.let { array ->
+            reemplazar(
+                actuales = scheduleRepository.sessions.value.map { it.id },
+                enLaCopia = array,
+                nuevos = parseClassSessions(array),
+                id = ClassSession::id,
+                borrar = scheduleRepository::deleteSession
+            ) { session, _ -> scheduleRepository.saveSession(session) }
         }
+        root.optJSONArray("classOccurrences")?.let { array ->
+            reemplazar(
+                actuales = scheduleRepository.occurrences.value.map { it.id },
+                enLaCopia = array,
+                nuevos = parseClassOccurrences(array),
+                id = ClassOccurrence::id,
+                borrar = scheduleRepository::deleteOccurrence
+            ) { occurrence, _ -> scheduleRepository.saveOccurrence(occurrence) }
+        }
+        root.optJSONArray("agendaEvents")?.let { array ->
+            reemplazar(
+                actuales = scheduleRepository.agendaEvents.value.map { it.id },
+                enLaCopia = array,
+                nuevos = parseAgendaEvents(array),
+                id = AgendaEvent::id,
+                borrar = scheduleRepository::deleteAgendaEvent
+            ) { event, _ -> scheduleRepository.saveAgendaEvent(event) }
+        }
+        root.optJSONArray("notes")?.let(::restoreNotes)
         preview
     }
 
@@ -164,7 +214,7 @@ class LocalJsonBackupRepository(
                     subject.grades,
                     subject.cutScheme.cuts
                 )
-                appendLine("${subject.name} · ${Textos.get(R.string.backup_summary_average)} ${GradingScaleUtils.formatGrade(average, scale ?: profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)}")
+                appendLine("${subject.name} · ${Textos.get(R.string.backup_summary_average)} ${GradingScaleUtils.formatGrade(average, scale ?: GradingScale.ZERO_TO_FIVE)}")
                 subject.grades.forEach { grade ->
                     appendLine("- ${grade.name}: ${grade.value} · ${(grade.percentage * 100).toInt()}%")
                 }
@@ -222,24 +272,52 @@ class LocalJsonBackupRepository(
         )
     }
 
+    /**
+     * Lo que hay y no está en la copia se borra; lo de la copia se escribe encima o se añade.
+     *
+     * Lo que se conserva se decide por los identificadores del JSON, no por lo que se pudo
+     * leer: una fila que la copia trae pero que no se entiende —de una versión más nueva, o
+     * a medias— no es motivo para borrar la que ya hay.
+     */
+    private inline fun <T> reemplazar(
+        actuales: List<String>,
+        enLaCopia: JSONArray,
+        nuevos: List<T>,
+        id: (T) -> String,
+        borrar: (String) -> Unit,
+        escribir: (T, Boolean) -> Unit
+    ) {
+        val quedan = enLaCopia.ids()
+        actuales.filterNot(quedan::contains).forEach(borrar)
+        val habia = actuales.toSet()
+        nuevos.forEach { item -> escribir(item, id(item) in habia) }
+    }
+
     private fun profileJson(profile: UserProfile?): JSONObject {
         return JSONObject()
             .put("preferredName", profile?.preferredName)
+            // Quién es: sin esto, restaurar en un teléfono nuevo deja la carrera y la
+            // universidad como las pusiera el onboarding de ese teléfono.
+            .putNullable("careerOrProgram", profile?.careerOrProgram)
+            .putNullable("studyArea", profile?.studyArea?.name)
+            .putNullable("customStudyArea", profile?.customStudyArea)
+            .putNullable("institutionName", profile?.institutionName)
+            .putNullable("currentSemester", profile?.currentSemester)
+            .putNullable("totalSemesters", profile?.totalSemesters)
+            // Solo el nombre: el archivo viaja aparte, dentro del archivo de la copia.
+            .putNullable("photoFile", profile?.localPhotoUri?.substringAfterLast('/'))
             .put("gradingScale", profile?.gradingScale?.name)
             .put("customGradeMax", profile?.customGradeMax ?: 100.0)
             .put("passingGrade", profile?.passingGrade ?: 3.0)
             .put("absenceLimit", profile?.absenceLimit)
             .put("targetAverage", profile?.targetAverage ?: 4.0)
             .put("visualPreference", profile?.visualPreference?.name ?: VisualPreference.SYSTEM.name)
-            .put(
-                "appearancePreferences",
-                appearanceJson(profile?.appearancePreferences ?: AppearancePreferences.defaults())
-            )
-            .put(
-                "accessibilityPreferences",
-                accessibilityJson(profile?.accessibilityPreferences ?: AccessibilityPreferences())
-            )
-            .put("academicPeriodScheme", profile?.gradingCutScheme?.toJsonObject() ?: GradingCutScheme.default().toJsonObject())
+            .apply {
+                profile?.appearancePreferences?.let { put("appearancePreferences", AppearancePreferencesJson.encode(it)) }
+                profile?.accessibilityPreferences?.let { put("accessibilityPreferences", AccessibilityPreferencesJson.encode(it)) }
+            }
+            .put("academicPeriodScheme", GradingCutSchemeJson.toJson(profile?.gradingCutScheme ?: GradingCutScheme.default()))
+            .put("gradeScenarios", GradeScenariosJson.encode(profile?.gradeScenarios.orEmpty()))
             .put("taskRemindersEnabled", profile?.taskRemindersEnabled ?: true)
             .put("academicWorkRemindersEnabled", profile?.academicWorkRemindersEnabled ?: true)
             .put("overdueRemindersEnabled", profile?.overdueRemindersEnabled ?: true)
@@ -255,6 +333,7 @@ class LocalJsonBackupRepository(
             .put("quietHoursEnabled", profile?.quietHoursEnabled ?: false)
             .put("quietHoursStartHour", profile?.quietHoursStartHour)
             .put("quietHoursEndHour", profile?.quietHoursEndHour)
+            .putNullable("expenseChartStyle", profile?.expenseChartStyle?.name)
             .put("weeklyBudget", profile?.weeklyBudget ?: 0)
             .put("monthlyBudget", profile?.monthlyBudget ?: 0)
             .put("expenseAlertThresholdPercent", profile?.expenseAlertThresholdPercent ?: 80)
@@ -265,7 +344,7 @@ class LocalJsonBackupRepository(
             .put("notesSort", (profile?.notesSort ?: NotesSort.MODIFICADA).name)
     }
 
-    private fun restoreProfile(profileJson: JSONObject?) {
+    private fun restoreProfile(profileJson: JSONObject?, localPhotoUri: String?) {
         val current = userRepository.userProfile.value ?: return
         if (profileJson == null) return
         val modules = profileJson.optJSONArray("enabledModules")
@@ -281,6 +360,13 @@ class LocalJsonBackupRepository(
         userRepository.saveUserProfile(
             current.copy(
                 preferredName = profileJson.optString("preferredName", current.preferredName).takeIf { it.isNotBlank() } ?: current.preferredName,
+                careerOrProgram = profileJson.nullableOr("careerOrProgram", current.careerOrProgram) { optString(it) },
+                studyArea = profileJson.nullableOr("studyArea", current.studyArea) { optString(it).toEnumOrNull<StudyArea>() },
+                customStudyArea = profileJson.nullableOr("customStudyArea", current.customStudyArea) { optString(it) },
+                institutionName = profileJson.nullableOr("institutionName", current.institutionName) { optString(it) },
+                currentSemester = profileJson.nullableOr("currentSemester", current.currentSemester) { optInt(it).takeIf { valor -> valor > 0 } },
+                totalSemesters = profileJson.nullableOr("totalSemesters", current.totalSemesters) { optInt(it).takeIf { valor -> valor > 0 } },
+                localPhotoUri = localPhotoUri ?: current.localPhotoUri,
                 gradingScale = profileJson.optString("gradingScale").toGradingScaleOrNull() ?: current.gradingScale,
                 customGradeMax = profileJson.optDouble("customGradeMax", current.customGradeMax).coerceIn(1.0, 100.0),
                 passingGrade = profileJson.optDouble("passingGrade", current.passingGrade),
@@ -292,16 +378,17 @@ class LocalJsonBackupRepository(
                 targetAverage = profileJson.optDouble("targetAverage", current.targetAverage),
                 visualPreference = profileJson.optString("visualPreference")
                     .toEnum(current.visualPreference),
-                appearancePreferences = parseAppearance(
-                    profileJson.optJSONObject("appearancePreferences"),
-                    current.appearancePreferences
-                ),
-                accessibilityPreferences = parseAccessibility(
-                    profileJson.optJSONObject("accessibilityPreferences"),
-                    current.accessibilityPreferences
-                ),
-                gradingCutScheme = profileJson.optJSONObject("academicPeriodScheme").toGradingCutSchemeOrNull()
+                appearancePreferences = profileJson.optJSONObject("appearancePreferences")
+                    ?.let { AppearancePreferencesJson.decode(it, current.appearancePreferences) }
+                    ?: current.appearancePreferences,
+                accessibilityPreferences = profileJson.optJSONObject("accessibilityPreferences")
+                    ?.let { AccessibilityPreferencesJson.decode(it, current.accessibilityPreferences) }
+                    ?: current.accessibilityPreferences,
+                gradingCutScheme = GradingCutSchemeJson.fromJson(profileJson.optJSONObject("academicPeriodScheme"))
                     ?: current.gradingCutScheme,
+                gradeScenarios = profileJson.optJSONArray("gradeScenarios")
+                    ?.let(GradeScenariosJson::decode)
+                    ?: current.gradeScenarios,
                 taskRemindersEnabled = profileJson.optBoolean("taskRemindersEnabled", current.taskRemindersEnabled),
                 academicWorkRemindersEnabled = profileJson.optBoolean(
                     "academicWorkRemindersEnabled",
@@ -352,6 +439,7 @@ class LocalJsonBackupRepository(
                 } else {
                     current.quietHoursEndHour
                 },
+                expenseChartStyle = profileJson.optString("expenseChartStyle").toEnum(current.expenseChartStyle),
                 weeklyBudget = profileJson.optInt("weeklyBudget", current.weeklyBudget),
                 monthlyBudget = profileJson.optInt("monthlyBudget", current.monthlyBudget),
                 expenseAlertThresholdPercent = profileJson.optInt("expenseAlertThresholdPercent", current.expenseAlertThresholdPercent),
@@ -371,163 +459,166 @@ class LocalJsonBackupRepository(
         )
     }
 
-    private fun appearanceJson(value: AppearancePreferences): JSONObject = JSONObject()
-        .put("backgroundStyle", value.backgroundStyle.name)
-        .put("customBackgroundColor", value.customBackgroundColor)
-        .put("customThemeBase", value.customThemeBase.name)
-        .put("accentStyle", value.accentStyle.name)
-        .put("customAccentColor", value.customAccentColor)
-        .put("accentIntensity", value.accentIntensity.name)
-        .put("surfaceStyle", value.surfaceStyle.name)
-        .put("cornerStyle", value.cornerStyle.name)
-        .put("interfaceDensity", value.interfaceDensity.name)
-        .put("motionPreference", value.motionPreference.name)
-        .put("textScale", value.textScale.name)
-        .put("typographyStyle", value.typographyStyle.name)
-        .put("decimalPlaces", value.decimalPlaces)
-        .put("bottomBarStyle", value.bottomBarStyle.name)
-        .put("academicIndicatorStyle", value.academicIndicatorStyle.name)
-        .put("showHomeGreeting", value.showHomeGreeting)
-        .put("showHomeHero", value.showHomeHero)
-        .put("showHomeAgenda", value.showHomeAgenda)
-        .put("showHomeSnapshot", value.showHomeSnapshot)
-        .put("homeSectionOrder", JSONArray(value.homeSectionOrder.map { it.name }))
-        .put("heroAutoRotate", value.heroAutoRotate)
-        .put("heroShowsGrades", value.heroShowsGrades)
-        .put("heroShowsTasks", value.heroShowsTasks)
-        .put("heroShowsExpenses", value.heroShowsExpenses)
-        .put("initialTab", value.initialTab.name)
-        .put("visualPreset", value.visualPreset.name)
-
-    private fun accessibilityJson(value: AccessibilityPreferences): JSONObject = JSONObject()
-        .put("appLanguage", value.appLanguage.name)
-        .put("highContrastEnabled", value.highContrastEnabled)
-        .put("use24HourTime", value.use24HourTime)
-        .put("textScale", value.textScale.name)
-        .put("motionPreference", value.motionPreference.name)
-        .put("heroAnimationEnabled", value.heroAnimationEnabled)
-        .put("dateFormat", value.dateFormat.name)
-        .put("currency", value.currency.name)
-        .put("contrast", value.contrast.name)
-        .put("colorBlindPalette", value.colorBlindPalette.name)
-        .put("shapesBesidesColor", value.shapesBesidesColor)
-        .put("boldText", value.boldText)
-        .put("readingFont", value.readingFont.name)
-        .put("touchTargetSize", value.touchTargetSize.name)
-        .put("reduceTransparency", value.reduceTransparency)
-        .put("oneHandedMode", value.oneHandedMode)
-        .put("undoDuration", value.undoDuration.name)
-        .put("spokenDescriptions", value.spokenDescriptions)
-        .put("confirmIrreversible", value.confirmIrreversible)
-        .put("keepScreenOn", value.keepScreenOn)
-
-    private fun parseAccessibility(
-        json: JSONObject?,
-        current: AccessibilityPreferences
-    ): AccessibilityPreferences {
-        if (json == null) return current
-        return AccessibilityPreferences(
-            appLanguage = json.optString("appLanguage").toEnum(current.appLanguage),
-            highContrastEnabled = json.optBoolean("highContrastEnabled", current.highContrastEnabled),
-            use24HourTime = json.optBoolean("use24HourTime", current.use24HourTime),
-            textScale = json.optString("textScale").toEnum(current.textScale),
-            motionPreference = json.optString("motionPreference").toEnum(current.motionPreference),
-            heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", current.heroAnimationEnabled),
-            dateFormat = json.optString("dateFormat").toEnum(current.dateFormat),
-            currency = json.optString("currency").toEnum(current.currency),
-            contrast = json.optString("contrast").toEnum(current.contrast),
-            colorBlindPalette = json.optString("colorBlindPalette").toEnum(current.colorBlindPalette),
-            shapesBesidesColor = json.optBoolean("shapesBesidesColor", current.shapesBesidesColor),
-            boldText = json.optBoolean("boldText", current.boldText),
-            readingFont = json.optString("readingFont").toEnum(current.readingFont),
-            touchTargetSize = json.optString("touchTargetSize").toEnum(current.touchTargetSize),
-            reduceTransparency = json.optBoolean("reduceTransparency", current.reduceTransparency),
-            oneHandedMode = json.optBoolean("oneHandedMode", current.oneHandedMode),
-            undoDuration = json.optString("undoDuration").toEnum(current.undoDuration),
-            spokenDescriptions = json.optBoolean("spokenDescriptions", current.spokenDescriptions),
-            confirmIrreversible = json.optBoolean("confirmIrreversible", current.confirmIrreversible),
-            keepScreenOn = json.optBoolean("keepScreenOn", current.keepScreenOn)
-        )
+    /*
+     * Los periodos, que es lo que el histórico necesita para colocar cada materia.
+     *
+     * Se guardan con el usuario de este teléfono y no con el de la copia: el almacén solo
+     * devuelve las filas de quien está usando la app, y un periodo apuntado a otro usuario
+     * estaría en la base sin aparecer en ningún sitio.
+     */
+    private suspend fun restoreTerms(array: JSONArray) {
+        val userId = UserIds.normalize(userRepository.currentUser.value.userId)
+        val quedan = array.ids()
+        termRepository.terms.value
+            .filterNot { it.id in quedan }
+            .forEach { termRepository.delete(it.id) }
+        val terms = array.objects().mapNotNull(::parseTerm).map { it.copy(userId = userId) }
+        terms.forEach { term -> termRepository.update(term) }
+        /*
+         * Se espera a que el periodo activo sea ya el de la copia.
+         *
+         * Una materia sin periodo se apunta al activo al añadirse, y ese dato sale de un flujo
+         * que tarda un momento en enterarse de lo que se acaba de escribir. Sin la espera, las
+         * materias de antes de los periodos podían quedar colgadas del periodo del onboarding,
+         * que la copia acaba de borrar.
+         */
+        val activo = terms.firstOrNull { it.isActive }?.id
+        withTimeoutOrNull(ESPERA_DEL_PERIODO_MS) {
+            termRepository.activeTerm.first { it?.id == activo }
+        }
     }
 
-    private fun parseAppearance(
-        json: JSONObject?,
-        current: AppearancePreferences
-    ): AppearancePreferences {
-        if (json == null) return current
-        return AppearancePreferences(
-            backgroundStyle = json.optString("backgroundStyle").toEnum(current.backgroundStyle),
-            customBackgroundColor = json.optIntOrNull("customBackgroundColor"),
-            customThemeBase = json.optString("customThemeBase").toEnum(current.customThemeBase),
-            accentStyle = json.optString("accentStyle").toEnum(current.accentStyle),
-            customAccentColor = json.optIntOrNull("customAccentColor"),
-            accentIntensity = json.optString("accentIntensity").toEnum(current.accentIntensity),
-            surfaceStyle = json.optString("surfaceStyle").toEnum(current.surfaceStyle),
-            cornerStyle = json.optString("cornerStyle").toEnum(current.cornerStyle),
-            interfaceDensity = json.optString("interfaceDensity").toEnum(current.interfaceDensity),
-            motionPreference = json.optString("motionPreference").toEnum(current.motionPreference),
-            textScale = json.optString("textScale").toEnum(current.textScale),
-            typographyStyle = json.optString("typographyStyle").toEnum(current.typographyStyle),
-            decimalPlaces = json.optInt("decimalPlaces", current.decimalPlaces),
-            bottomBarStyle = json.optString("bottomBarStyle").toEnum(current.bottomBarStyle),
-            academicIndicatorStyle = json.optString("academicIndicatorStyle")
-                .toEnum(current.academicIndicatorStyle),
-            showHomeGreeting = json.optBoolean("showHomeGreeting", current.showHomeGreeting),
-            showHomeHero = json.optBoolean("showHomeHero", current.showHomeHero),
-            showHomeAgenda = json.optBoolean("showHomeAgenda", current.showHomeAgenda),
-            showHomeSnapshot = json.optBoolean("showHomeSnapshot", current.showHomeSnapshot),
-            homeSectionOrder = json.optJSONArray("homeSectionOrder")
-                .strings()
-                .mapNotNull { it.toEnumOrNull<HomeSection>() }
-                .ifEmpty { current.homeSectionOrder },
-            heroAutoRotate = json.optBoolean("heroAutoRotate", current.heroAutoRotate),
-            heroShowsGrades = json.optBoolean("heroShowsGrades", current.heroShowsGrades),
-            heroShowsTasks = json.optBoolean("heroShowsTasks", current.heroShowsTasks),
-            heroShowsExpenses = json.optBoolean("heroShowsExpenses", current.heroShowsExpenses),
-            initialTab = json.optString("initialTab").toEnum(current.initialTab),
-            visualPreset = json.optString("visualPreset").toEnum(current.visualPreset)
-        ).normalized()
+    private suspend fun restoreBreaks(array: JSONArray) {
+        val quedan = array.ids()
+        breakRepository.breaks.value
+            .filterNot { it.id in quedan }
+            .forEach { breakRepository.delete(it.id) }
+        array.objects().mapNotNull(::parseBreak).forEach { tramo ->
+            breakRepository.save(tramo.id, tramo.name, tramo.start, tramo.end)
+        }
     }
 
-    private fun GradingCutScheme.toJsonObject(): JSONObject {
-        return JSONObject()
-            .put(
-                "periods",
-                JSONArray(
-                    cuts.sortedBy { it.order }.map { cut ->
-                        JSONObject()
-                            .put("id", cut.id)
-                            .put("name", cut.name)
-                            .put("weight", cut.weight)
-                            .put("order", cut.order)
-                            .put("endEpochDay", cut.endEpochDay)
-                    }
-                )
-            )
-    }
-
-    private fun JSONObject?.toGradingCutSchemeOrNull(): GradingCutScheme? {
-        val root = this ?: return null
-        val periodsArray = root.optJSONArray("periods") ?: return null
-        val cuts = periodsArray.objects()
-            .mapIndexedNotNull { index, item ->
-                val order = item.optInt("order", index + 1)
-                val weight = item.optDouble("weight", 0.0)
-                if (weight <= 0.0) return@mapIndexedNotNull null
-                GradingCut(
-                    id = item.optString("id", "period-$order"),
-                    name = item.optString("name", "${Corte.Singular} $order"),
-                    weight = weight,
-                    order = order,
-                    endEpochDay = if (item.has("endEpochDay") && !item.isNull("endEpochDay")) {
-                        item.optLong("endEpochDay")
-                    } else {
-                        null
-                    }
-                )
+    private fun restoreSubjects(array: JSONArray) {
+        val actuales = gradesRepository.subjects.value
+        val quedan = array.ids()
+        actuales.filterNot { it.id in quedan }.forEach { gradesRepository.deleteSubject(it.id) }
+        array.objects().forEach { item ->
+            val leida = parseSubject(item) ?: return@forEach
+            val existing = actuales.firstOrNull { it.id == leida.id }
+            // Las copias de antes no traían los cortes cerrados: sin la clave, se quedan los que hay.
+            val subject = if (item.has("closedCutIds")) {
+                leida
+            } else {
+                leida.copy(closedCutIds = existing?.closedCutIds.orEmpty())
             }
-            .sortedBy { it.order }
-        return GradingCutScheme(cuts = cuts).takeIf { it.isValid }
+            if (existing == null) {
+                gradesRepository.addSubject(subject.copy(grades = emptyList()))
+            } else {
+                gradesRepository.updateSubject(subject.copy(grades = existing.grades))
+                val notasQueQuedan = item.optJSONArray("grades").ids()
+                existing.grades
+                    .filterNot { it.id in notasQueQuedan }
+                    .forEach { gradesRepository.deleteGrade(subject.id, it.id) }
+            }
+            subject.grades.forEach { grade ->
+                if (existing?.grades?.any { it.id == grade.id } == true) {
+                    gradesRepository.updateGrade(subject.id, grade)
+                } else {
+                    gradesRepository.addGrade(subject.id, grade)
+                }
+            }
+        }
+    }
+
+    private fun restoreTasks(array: JSONArray) {
+        val actuales = tasksRepository.tasks.value
+        val quedan = array.ids()
+        actuales.filterNot { it.id in quedan }.forEach { tasksRepository.deleteTask(it.id) }
+        array.objects().forEach { item ->
+            val leida = parseTask(item) ?: return@forEach
+            val existing = actuales.firstOrNull { it.id == leida.id }
+            // Las copias de antes no traían subtareas: sin la clave, se quedan las que hay.
+            val task = if (item.has("subtasks")) leida else leida.copy(subtasks = existing?.subtasks.orEmpty())
+            if (existing == null) tasksRepository.addTask(task) else tasksRepository.updateTask(task)
+            if (item.has("attachments")) {
+                val adjuntos = item.optJSONArray("attachments")
+                val habia = tasksRepository.attachments.value.filter { it.taskId == task.id }
+                val siguen = adjuntos.ids()
+                habia.filterNot { it.id in siguen }.forEach { tasksRepository.deleteAttachment(it.id) }
+                parseTaskAttachments(task.id, adjuntos)
+                    .filter { nuevo -> habia.none { it.id == nuevo.id } }
+                    .forEach(tasksRepository::addAttachment)
+            }
+        }
+    }
+
+    private fun restoreNotes(array: JSONArray) {
+        val actuales = notesRepository.notes.value
+        val quedan = array.ids()
+        actuales.filterNot { it.id in quedan }.forEach { notesRepository.deleteNote(it.id) }
+        array.objects().forEach { item ->
+            val note = parseNote(item) ?: return@forEach
+            if (actuales.any { it.id == note.id }) notesRepository.updateNote(note) else notesRepository.addNote(note)
+            if (item.has("attachments")) {
+                val adjuntos = item.optJSONArray("attachments")
+                val habia = notesRepository.attachments.value.filter { it.noteId == note.id }
+                val siguen = adjuntos.ids()
+                habia.filterNot { it.id in siguen }.forEach { notesRepository.deleteAttachment(it.id) }
+                parseNoteAttachments(note.id, adjuntos)
+                    .filter { nuevo -> habia.none { it.id == nuevo.id } }
+                    .forEach(notesRepository::addAttachment)
+            }
+        }
+    }
+
+    private fun termJson(term: AcademicTerm): JSONObject = JSONObject()
+        .put("id", term.id)
+        .put("name", term.name)
+        .put("type", term.type.name)
+        .put("startEpochDay", term.startEpochDay)
+        .putNullable("plannedEndEpochDay", term.plannedEndEpochDay)
+        .putNullable("closedEpochDay", term.closedEpochDay)
+        .put("status", term.status.name)
+        .put("createdAt", term.createdAt)
+        .put("updatedAt", term.updatedAt)
+        .putNullable("cutScheme", term.cutScheme?.let(GradingCutSchemeJson::toJson))
+
+    private fun parseTerm(item: JSONObject): AcademicTerm? {
+        val created = item.optLong("createdAt", System.currentTimeMillis())
+        return AcademicTerm(
+            id = item.optString("id").takeIf { it.isNotBlank() } ?: return null,
+            userId = "",
+            name = item.optString("name").takeIf { it.isNotBlank() } ?: return null,
+            type = item.optString("type").toEnum(AcademicTermType.SEMESTER),
+            startEpochDay = if (item.has("startEpochDay")) item.optLong("startEpochDay") else return null,
+            plannedEndEpochDay = item.optLongOrNull("plannedEndEpochDay"),
+            closedEpochDay = item.optLongOrNull("closedEpochDay"),
+            status = item.optString("status").toEnumOrNull<AcademicTermStatus>() ?: return null,
+            createdAt = created,
+            updatedAt = item.optLong("updatedAt", created),
+            cutScheme = GradingCutSchemeJson.fromJson(item.optJSONObject("cutScheme"))
+        ).takeIf { it.isValid }
+    }
+
+    private fun breakJson(tramo: AcademicBreak): JSONObject = JSONObject()
+        .put("id", tramo.id)
+        .put("name", tramo.name)
+        .put("startEpochDay", tramo.startEpochDay)
+        .put("endEpochDay", tramo.endEpochDay)
+        .put("createdAt", tramo.createdAt)
+        .put("updatedAt", tramo.updatedAt)
+
+    private fun parseBreak(item: JSONObject): AcademicBreak? {
+        val created = item.optLong("createdAt", System.currentTimeMillis())
+        return AcademicBreak(
+            id = item.optString("id").takeIf { it.isNotBlank() } ?: return null,
+            userId = "",
+            name = item.optString("name").takeIf { it.isNotBlank() } ?: return null,
+            startEpochDay = if (item.has("startEpochDay")) item.optLong("startEpochDay") else return null,
+            endEpochDay = if (item.has("endEpochDay")) item.optLong("endEpochDay") else return null,
+            createdAt = created,
+            updatedAt = item.optLong("updatedAt", created)
+        ).takeIf { it.isValid }
     }
 
     private fun subjectJson(subject: Subject): JSONObject = JSONObject()
@@ -536,18 +627,20 @@ class LocalJsonBackupRepository(
         .put("targetAverage", subject.targetAverage)
         .put("visualType", subject.visualType.name)
         .put("customColor", subject.customColor)
-        .put("periodScheme", subject.cutScheme.toJsonObject())
+        .put("periodScheme", GradingCutSchemeJson.toJson(subject.cutScheme))
         .put("activePeriodId", subject.activeCutId)
         .put("historyPromptStatus", subject.historyPromptStatus.name)
         .put("unknownCutIds", JSONArray(subject.unknownCutIds.toList()))
         /*
          * Estos tres viajan porque si no, restaurar los pierde.
          *
-         * `termId` es a que semestre pertenece la materia: sin el, una copia restaurada deja
-         * el historico entero sin poder colocar nada. `absenceLimit` es el tope que puso el
-         * usuario, y `repeatedFromSubjectId` la marca de que la esta repitiendo.
+         * `termId` es a qué periodo pertenece la materia: sin él, una copia restaurada deja
+         * el histórico entero sin poder colocar nada. `closedCutIds` son los cortes que el
+         * usuario dio por cerrados, y `repeatedFromSubjectId` la marca de que la está
+         * repitiendo.
          */
         .put("termId", subject.termId)
+        .put("closedCutIds", JSONArray(subject.closedCutIds.toList()))
         .put("repeatedFromSubjectId", subject.repeatedFromSubjectId)
         .put("grades", JSONArray(subject.grades.map(::gradeJson)))
 
@@ -579,6 +672,37 @@ class LocalJsonBackupRepository(
         .put("completedAt", task.completedAt)
         .put("createdAt", task.createdAt)
         .put("updatedAt", task.updatedAt)
+        .put(
+            "subtasks",
+            JSONArray(
+                task.subtasks.sortedBy { it.position }.map { subtask ->
+                    JSONObject()
+                        .put("id", subtask.id)
+                        .put("title", subtask.title)
+                        .put("isCompleted", subtask.isCompleted)
+                        .put("position", subtask.position)
+                }
+            )
+        )
+        .put(
+            "attachments",
+            JSONArray(
+                tasksRepository.attachments.value
+                    .filter { it.taskId == task.id }
+                    .map(::taskAttachmentJson)
+            )
+        )
+
+    // De los adjuntos de una tarea viaja lo mismo que de los de una nota: ver `attachmentJson`.
+    private fun taskAttachmentJson(attachment: TaskAttachment): JSONObject = JSONObject()
+        .put("id", attachment.id)
+        .put("kind", attachment.kind.name)
+        .put("displayName", attachment.displayName)
+        .put("storedName", attachment.storedName)
+        .put("mimeType", attachment.mimeType)
+        .put("sizeBytes", attachment.sizeBytes)
+        .put("durationMillis", attachment.durationMillis)
+        .put("createdAt", attachment.createdAt)
 
     private fun classSessionJson(session: ClassSession): JSONObject = JSONObject()
         .put("id", session.id)
@@ -652,17 +776,13 @@ class LocalJsonBackupRepository(
         )
 
     /*
-     * De los adjuntos viaja la ficha, no el archivo.
+     * En el JSON va la ficha del adjunto, no el archivo.
      *
-     * Es una decision, y con numeros detras: una sola foto de movil son tres o cuatro megas, y
-     * la copia en la nube va a un documento de Firestore que no admite mas de uno. Meter las
-     * fotos dentro convertiria un respaldo de kilobytes —que se manda por Telegram y se abre en
-     * cualquier sitio— en uno de decenas de megas que la nube ya no aceptaria.
-     *
-     * Asi que la copia guarda que la nota llevaba una foto llamada asi y de este tamano. Al
-     * restaurar en el mismo telefono el archivo sigue estando y todo funciona; en uno nuevo, la
-     * nota lo dice en vez de dejar un hueco. Llevarse los archivos de verdad pide otro formato
-     * de copia —un zip—, y eso es un trabajo aparte.
+     * Una sola foto de móvil son tres o cuatro megas, y la copia en la nube va a un documento
+     * de Firestore que no admite más de uno. Los archivos de verdad viajan al lado, dentro del
+     * archivo de la copia que se guarda o se comparte: ver `BackupArchive`. Si una copia llega
+     * sin ellos —un JSON suelto, o la nube—, la nota dice que llevaba una foto llamada así en
+     * vez de dejar un hueco.
      */
     private fun attachmentJson(attachment: NoteAttachment): JSONObject = JSONObject()
         .put("id", attachment.id)
@@ -674,7 +794,7 @@ class LocalJsonBackupRepository(
         .put("durationMillis", attachment.durationMillis)
         .put("createdAt", attachment.createdAt)
 
-    private fun parseAttachments(noteId: String, array: JSONArray?): List<NoteAttachment> =
+    private fun parseNoteAttachments(noteId: String, array: JSONArray?): List<NoteAttachment> =
         array.objects().mapNotNull { item ->
             val id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
             val storedName = item.optString("storedName").takeIf { it.isNotBlank() }
@@ -692,14 +812,37 @@ class LocalJsonBackupRepository(
             )
         }
 
-    private fun parseNotes(array: JSONArray?): List<QuickNote> = array.objects().mapNotNull { item ->
-        val id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+    private fun parseTaskAttachments(taskId: String, array: JSONArray?): List<TaskAttachment> =
+        parseNoteAttachments(taskId, array).map { ficha ->
+            TaskAttachment(
+                id = ficha.id,
+                taskId = taskId,
+                kind = ficha.kind,
+                displayName = ficha.displayName,
+                storedName = ficha.storedName,
+                mimeType = ficha.mimeType,
+                sizeBytes = ficha.sizeBytes,
+                durationMillis = ficha.durationMillis,
+                createdAt = ficha.createdAt
+            )
+        }
+
+    /*
+     * Una nota sin texto también vale si lleva algo colgado.
+     *
+     * Una foto de la pizarra sin una sola palabra es la nota más común. Leerlas exigía cuerpo,
+     * así que restaurar se saltaba justo esas, y sus adjuntos se quedaban sin nota.
+     */
+    private fun parseNote(item: JSONObject): QuickNote? {
+        val id = item.optString("id").takeIf { it.isNotBlank() } ?: return null
         val body = item.optString("body")
-        if (body.isBlank()) return@mapNotNull null
+        val title = item.optString("title")
+        val llevaAlgo = (item.optJSONArray("attachments")?.length() ?: 0) > 0
+        if (body.isBlank() && title.isBlank() && !llevaAlgo) return null
         val created = item.optLong("createdAt", System.currentTimeMillis())
-        QuickNote(
+        return QuickNote(
             id = id,
-            title = item.optString("title"),
+            title = title,
             body = body,
             reminderAt = if (item.isNull("reminderAt")) null else item.optLong("reminderAt"),
             colorArgb = if (item.isNull("colorArgb")) null else item.optInt("colorArgb"),
@@ -737,20 +880,21 @@ class LocalJsonBackupRepository(
         .put("createdAt", work.createdAt)
         .put("updatedAt", work.updatedAt)
 
-    private fun parseSubjects(array: JSONArray?): List<Subject> = array.objects().mapNotNull { item ->
-        Subject(
-            id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
-            name = item.optString("name").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
+    private fun parseSubject(item: JSONObject): Subject? {
+        return Subject(
+            id = item.optString("id").takeIf { it.isNotBlank() } ?: return null,
+            name = item.optString("name").takeIf { it.isNotBlank() } ?: return null,
             targetAverage = item.optDouble("targetAverage"),
             visualType = item.optString("visualType").toEnum(SubjectVisualType.TEAL),
             customColor = if (item.isNull("customColor")) null else item.optInt("customColor"),
             grades = parseGrades(item.optJSONArray("grades")),
-            cutScheme = item.optJSONObject("periodScheme").toGradingCutSchemeOrNull()
+            cutScheme = GradingCutSchemeJson.fromJson(item.optJSONObject("periodScheme"))
                 ?: GradingCutScheme.default(),
             activeCutId = item.optString("activePeriodId", ""),
             historyPromptStatus = item.optString("historyPromptStatus")
                 .toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
             unknownCutIds = item.optJSONArray("unknownCutIds").strings().toSet(),
+            closedCutIds = item.optJSONArray("closedCutIds").strings().toSet(),
             // Ausentes en copias viejas: nulo es exactamente lo que significaban entonces.
             termId = if (item.isNull("termId")) null else item.optString("termId").takeIf { it.isNotBlank() },
             repeatedFromSubjectId = if (item.isNull("repeatedFromSubjectId")) {
@@ -776,10 +920,11 @@ class LocalJsonBackupRepository(
         )
     }
 
-    private fun parseTasks(array: JSONArray?): List<StudentTask> = array.objects().mapNotNull { item ->
-        StudentTask(
-            id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
-            title = item.optString("title").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
+    private fun parseTask(item: JSONObject): StudentTask? {
+        val id = item.optString("id").takeIf { it.isNotBlank() } ?: return null
+        return StudentTask(
+            id = id,
+            title = item.optString("title").takeIf { it.isNotBlank() } ?: return null,
             description = item.optString("description", ""),
             subjectId = item.optNullableString("subjectId"),
             type = item.optString("type").toEnum(TaskType.WORKSHOP),
@@ -792,7 +937,16 @@ class LocalJsonBackupRepository(
             cutId = item.optNullableString("periodId"),
             gradingStatus = item.optString("gradingStatus").toEnum(TaskGradingStatus.UNDECIDED),
             linkedGradeId = item.optNullableString("linkedGradeId"),
-            completedAt = if (item.isNull("completedAt")) null else item.optLong("completedAt")
+            completedAt = if (item.isNull("completedAt")) null else item.optLong("completedAt"),
+            subtasks = item.optJSONArray("subtasks").objects().mapIndexedNotNull { index, subtask ->
+                TaskSubtask(
+                    id = subtask.optString("id").takeIf { it.isNotBlank() } ?: return@mapIndexedNotNull null,
+                    taskId = id,
+                    title = subtask.optString("title").takeIf { it.isNotBlank() } ?: return@mapIndexedNotNull null,
+                    isCompleted = subtask.optBoolean("isCompleted"),
+                    position = subtask.optInt("position", index)
+                )
+            }
         )
     }
 
@@ -894,13 +1048,39 @@ class LocalJsonBackupRepository(
         return (0 until length()).mapNotNull { index -> optString(index).takeIf { it.isNotBlank() } }
     }
 
+    /** Los identificadores que trae un bloque, se hayan podido leer sus filas o no. */
+    private fun JSONArray?.ids(): Set<String> =
+        objects().mapNotNull { item -> item.optString("id").takeIf { it.isNotBlank() } }.toSet()
+
+    /**
+     * Un nulo que se escribe, en vez de quitar la clave.
+     *
+     * `put` con nulo borra la clave, y entonces al leer no se distingue «no tenía» de «esta
+     * copia es de cuando no se guardaba». Con el nulo escrito, lo que falta es de una copia
+     * antigua y se deja lo que hay.
+     */
+    private fun JSONObject.putNullable(key: String, value: Any?): JSONObject = put(key, value ?: JSONObject.NULL)
+
+    private inline fun <T> JSONObject.nullableOr(key: String, current: T?, read: JSONObject.(String) -> T?): T? = when {
+        !has(key) -> current
+        isNull(key) -> null
+        else -> read(key)
+    }
+
     private inline fun <reified T : Enum<T>> String.toEnum(default: T): T = runCatching { enumValueOf<T>(this) }.getOrDefault(default)
     private inline fun <reified T : Enum<T>> String.toEnumOrNull(): T? = runCatching { enumValueOf<T>(this) }.getOrNull()
     private fun JSONObject.optNullableString(key: String): String? = if (isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
     private fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else optInt(key)
+    private fun JSONObject.optLongOrNull(key: String): Long? = if (isNull(key) || !has(key)) null else optLong(key)
     private fun String.csvEscape(): String = "\"${replace("\"", "\"\"")}\""
 
     private companion object {
-        const val SCHEMA_VERSION = 11
+        /*
+         * 12: periodos, días sin clase, subtareas y adjuntos de tareas, cortes cerrados de cada
+         * materia, y el perfil y las preferencias enteros.
+         */
+        const val SCHEMA_VERSION = 12
+
+        const val ESPERA_DEL_PERIODO_MS = 3_000L
     }
 }

@@ -1411,6 +1411,8 @@
     <string name="settings_backup_expenses">Gastos</string>
     <string name="settings_backup_works">Trabajos</string>
     <string name="settings_backup_events">Eventos</string>
+    <string name="settings_backup_terms">Periodos</string>
+    <string name="settings_backup_notes">Apuntes</string>
     <string name="settings_backup_warning">Se reemplaza todo, no se mezcla, y no se puede deshacer. Si dudas, guarda antes una copia de lo que tienes ahora.</string>
     <string name="settings_backup_now">Ahora</string>
     <string name="settings_backup_would_be">Quedaría</string>
@@ -2106,6 +2108,8 @@
     <string name="backup_eventos">eventos</string>
     <string name="backup_apunte">apunte</string>
     <string name="backup_apuntes">apuntes</string>
+    <string name="backup_periodo">periodo</string>
+    <string name="backup_periodos">periodos</string>
     <string name="backup_todavia_no_has_registrado_nada">Todavía no has registrado nada</string>
     <string name="tasks_copia">%1$s (copia)</string>
     <string name="works_medio_o_editorial_pendiente">Medio o editorial pendiente.</string>
