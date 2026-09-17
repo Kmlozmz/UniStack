@@ -70,6 +70,10 @@ import java.time.YearMonth
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
+import androidx.compose.animation.AnimatedContent
+import com.unistack.app.core.navigation.cambioDeVista
+import com.unistack.app.core.navigation.transicionEntreVistas
+import com.unistack.app.core.design.components.galletaViva
 
 /** Las tres maneras de leer lo mismo. */
 private enum class InsightView(@StringRes val labelRes: Int) {
@@ -108,6 +112,8 @@ fun ExpenseInsightsScreen(
     val spacing = LocalInterfaceSpacing.current
     var vista by rememberSaveable { mutableStateOf(InsightView.COMPARAR) }
 
+    val transicion = transicionEntreVistas()
+
     LargeTitleScaffold(
         title = stringResource(R.string.insights_title),
         subtitle = stringResource(R.string.insights_subtitle),
@@ -125,103 +131,113 @@ fun ExpenseInsightsScreen(
                 onSelected = { vista = it }
             )
         }
-        when (vista) {
-            InsightView.COMPARAR -> comparado(expenses)
-            InsightView.RITMO -> ritmo(expenses, profile?.monthlyBudget ?: 0)
-            InsightView.CALENDARIO -> calendario(expenses)
+        // Las tres lecturas cambian como pantallas, del lado en el que está cada una.
+        item {
+            AnimatedContent(
+                targetState = vista,
+                transitionSpec = { cambioDeVista(transicion, recortar = false) { it.ordinal } },
+                label = "lecturas de gastos"
+            ) { vistaVisible ->
+                Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+                    when (vistaVisible) {
+                        InsightView.COMPARAR -> LecturaComparado(expenses)
+                        InsightView.RITMO -> LecturaRitmo(expenses, profile?.monthlyBudget ?: 0)
+                        InsightView.CALENDARIO -> LecturaCalendario(expenses)
+                    }
+                }
+            }
         }
     }
 }
 
 // ------------------------------------------------------------------ comparado
 
-private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
+@Composable
+private fun LecturaComparado(
     expenses: List<com.unistack.app.feature_expenses.domain.Expense>
 ) {
-    item {
-        val c = remember(expenses) { ExpenseInsights.compararSemanas(expenses) }
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(18.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.insights_this_week), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val c = remember(expenses) { ExpenseInsights.compararSemanas(expenses) }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.insights_this_week), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        formatCurrency(c.actual),
+                        style = MaterialTheme.typography.headlineSmallEmphasized,
+                        color = LocalSectionColors.current.expenses,
+                        maxLines = 1
+                    )
+                }
+                c.cambioPorcentual?.let { cambio ->
+                    val baja = cambio <= 0
+                    val tono = if (baja) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.error
+                    // La diferencia va dentro de la galleta de M3E y no de un rectangulo:
+                    // es el dato que se viene a mirar, y la forma lo separa de las dos
+                    // cifras que compara.
+                    Box(
+                        modifier = Modifier
+                            .size(62.dp)
+                            .galletaViva(tono.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            formatCurrency(c.actual),
-                            style = MaterialTheme.typography.headlineSmallEmphasized,
-                            color = LocalSectionColors.current.expenses,
-                            maxLines = 1
-                        )
-                    }
-                    c.cambioPorcentual?.let { cambio ->
-                        val baja = cambio <= 0
-                        val tono = if (baja) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.error
-                        // La diferencia va dentro de la galleta de M3E y no de un rectangulo:
-                        // es el dato que se viene a mirar, y la forma lo separa de las dos
-                        // cifras que compara.
-                        Box(
-                            modifier = Modifier
-                                .size(62.dp)
-                                .background(tono.copy(alpha = 0.18f), MaterialShapes.Cookie9Sided.toShape()),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = (if (baja) "" else "+") + cambio + "%",
-                                color = tono,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                        Text(stringResource(R.string.insights_previous_week), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            formatCurrency(c.anterior),
-                            style = MaterialTheme.typography.headlineSmallEmphasized,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = (if (baja) "" else "+") + cambio + "%",
+                            color = tono,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1
                         )
                     }
                 }
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                    Text(stringResource(R.string.insights_previous_week), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        formatCurrency(c.anterior),
+                        style = MaterialTheme.typography.headlineSmallEmphasized,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
             }
+        }
 
-            if (c.categorias.isEmpty()) {
-                Text(
-                    stringResource(R.string.insights_not_enough_data),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                Text(stringResource(R.string.insights_where_difference), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
-                c.categorias.forEach { cat -> CategoriaComparadaRow(cat) }
-                c.categoriaQueMasCambia?.let { mayor ->
-                    UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(15.dp)) {
-                      // UniCard mete su contenido en un Box: sin columna, los dos textos se
-                      // pintan uno encima del otro.
-                      Column {
-                        val baja = c.diferencia <= 0
-                        Text(
-                            text = if (baja) {
-                                stringResource(R.string.insights_spent_less, formatCurrency(-c.diferencia))
-                            } else {
-                                stringResource(R.string.insights_spent_more, formatCurrency(c.diferencia))
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (mayor.diferencia < 0) {
-                                stringResource(R.string.insights_diff_source_down, mayor.category.label().lowercase(), formatCurrency(kotlin.math.abs(mayor.diferencia)))
-                            } else {
-                                stringResource(R.string.insights_diff_source_up, mayor.category.label().lowercase(), formatCurrency(kotlin.math.abs(mayor.diferencia)))
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                      }
-                    }
+        if (c.categorias.isEmpty()) {
+            Text(
+                stringResource(R.string.insights_not_enough_data),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            Text(stringResource(R.string.insights_where_difference), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
+            c.categorias.forEach { cat -> CategoriaComparadaRow(cat) }
+            c.categoriaQueMasCambia?.let { mayor ->
+                UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(15.dp)) {
+                  // UniCard mete su contenido en un Box: sin columna, los dos textos se
+                  // pintan uno encima del otro.
+                  Column {
+                    val baja = c.diferencia <= 0
+                    Text(
+                        text = if (baja) {
+                            stringResource(R.string.insights_spent_less, formatCurrency(-c.diferencia))
+                        } else {
+                            stringResource(R.string.insights_spent_more, formatCurrency(c.diferencia))
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (mayor.diferencia < 0) {
+                            stringResource(R.string.insights_diff_source_down, mayor.category.label().lowercase(), formatCurrency(kotlin.math.abs(mayor.diferencia)))
+                        } else {
+                            stringResource(R.string.insights_diff_source_up, mayor.category.label().lowercase(), formatCurrency(kotlin.math.abs(mayor.diferencia)))
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                  }
                 }
             }
         }
@@ -306,89 +322,88 @@ private fun ComparaBarra(rotulo: String, valor: Int, mayor: Int, color: Color, v
 
 // ------------------------------------------------------------------ ritmo
 
-private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
+@Composable
+private fun LecturaRitmo(
     expenses: List<com.unistack.app.feature_expenses.domain.Expense>,
     presupuesto: Int
 ) {
-    item {
-        val r = remember(expenses, presupuesto) { ExpenseInsights.ritmoDelMes(expenses, presupuesto) }
-        val sections = LocalSectionColors.current
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(18.dp)) {
-              Column {
+    val r = remember(expenses, presupuesto) { ExpenseInsights.ritmoDelMes(expenses, presupuesto) }
+    val sections = LocalSectionColors.current
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(18.dp)) {
+          Column {
+            Text(
+                if (presupuesto > 0) stringResource(R.string.insights_projected_end) else stringResource(R.string.insights_projected_month_end),
+                style = SectionLabelStyle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                formatCurrency(r.proyeccion),
+                style = MaterialTheme.typography.displaySmallEmphasized,
+                color = if (r.seVaAPasar) MaterialTheme.colorScheme.error else sections.expenses,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Text(
+                text = when {
+                    presupuesto <= 0 -> stringResource(R.string.insights_pace_no_budget, formatCurrency(r.gastado), r.diaDelMes)
+                    r.seVaAPasar -> stringResource(R.string.insights_pace_over_budget, formatCurrency(r.proyeccion - presupuesto))
+                    else -> stringResource(R.string.insights_pace_within_budget, formatCurrency(presupuesto))
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (r.seVaAPasar) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+            RitmoLinea(
+                acumulado = r.acumuladoPorDia,
+                proyeccion = r.proyeccion,
+                diasDelMes = r.diasDelMes,
+                presupuesto = presupuesto,
+                modifier = Modifier.fillMaxWidth().height(96.dp).padding(top = 14.dp)
+            )
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                Text(stringResource(R.string.insights_pace_day_one), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    if (presupuesto > 0) stringResource(R.string.insights_projected_end) else stringResource(R.string.insights_projected_month_end),
-                    style = SectionLabelStyle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    stringResource(R.string.insights_pace_today, r.diaDelMes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    formatCurrency(r.proyeccion),
-                    style = MaterialTheme.typography.displaySmallEmphasized,
-                    color = if (r.seVaAPasar) MaterialTheme.colorScheme.error else sections.expenses,
-                    maxLines = 1,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-                Text(
-                    text = when {
-                        presupuesto <= 0 -> stringResource(R.string.insights_pace_no_budget, formatCurrency(r.gastado), r.diaDelMes)
-                        r.seVaAPasar -> stringResource(R.string.insights_pace_over_budget, formatCurrency(r.proyeccion - presupuesto))
-                        else -> stringResource(R.string.insights_pace_within_budget, formatCurrency(presupuesto))
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (r.seVaAPasar) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 3.dp)
-                )
-                RitmoLinea(
-                    acumulado = r.acumuladoPorDia,
-                    proyeccion = r.proyeccion,
-                    diasDelMes = r.diasDelMes,
-                    presupuesto = presupuesto,
-                    modifier = Modifier.fillMaxWidth().height(96.dp).padding(top = 14.dp)
-                )
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                    Text(stringResource(R.string.insights_pace_day_one), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(
-                        stringResource(R.string.insights_pace_today, r.diaDelMes),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(stringResource(R.string.insights_pace_day_n, r.diasDelMes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-              }
+                Text(stringResource(R.string.insights_pace_day_n, r.diasDelMes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+          }
+        }
 
-            r.diarioRestante?.let { diario ->
-                UniCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = sections.onTrackContainer,
-                    contentPadding = PaddingValues(18.dp)
-                ) {
-                  Column {
-                    Text(stringResource(R.string.insights_to_not_exceed), style = SectionLabelStyle, color = sections.onOnTrackContainer)
-                    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
-                        Text(
-                            formatCurrency(diario),
-                            style = MaterialTheme.typography.headlineMediumEmphasized,
-                            color = sections.onOnTrackContainer,
-                            maxLines = 1
-                        )
-                        Text(
-                            " " + stringResource(R.string.insights_per_day_suffix),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = sections.onOnTrackContainer.copy(alpha = 0.8f),
-                            modifier = Modifier.padding(bottom = 3.dp)
-                        )
-                    }
+        r.diarioRestante?.let { diario ->
+            UniCard(
+                modifier = Modifier.fillMaxWidth(),
+                color = sections.onTrackContainer,
+                contentPadding = PaddingValues(18.dp)
+            ) {
+              Column {
+                Text(stringResource(R.string.insights_to_not_exceed), style = SectionLabelStyle, color = sections.onOnTrackContainer)
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
                     Text(
-                        text = stringResource(R.string.insights_days_budget_left, r.diasRestantes, formatCurrency((presupuesto - r.gastado).coerceAtLeast(0))),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = sections.onOnTrackContainer.copy(alpha = 0.85f),
-                        modifier = Modifier.padding(top = 4.dp)
+                        formatCurrency(diario),
+                        style = MaterialTheme.typography.headlineMediumEmphasized,
+                        color = sections.onOnTrackContainer,
+                        maxLines = 1
                     )
-                  }
+                    Text(
+                        " " + stringResource(R.string.insights_per_day_suffix),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = sections.onOnTrackContainer.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(bottom = 3.dp)
+                    )
                 }
+                Text(
+                    text = stringResource(R.string.insights_days_budget_left, r.diasRestantes, formatCurrency((presupuesto - r.gastado).coerceAtLeast(0))),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = sections.onOnTrackContainer.copy(alpha = 0.85f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+              }
             }
         }
     }
@@ -470,72 +485,71 @@ private fun RitmoLinea(
 
 // ------------------------------------------------------------------ calendario
 
-private fun androidx.compose.foundation.lazy.LazyListScope.calendario(
+@Composable
+private fun LecturaCalendario(
     expenses: List<com.unistack.app.feature_expenses.domain.Expense>
 ) {
-    item {
-        val hoy = ExpenseDateUtils.today()
-        val cal = remember(expenses) { ExpenseInsights.calendarioDelMes(expenses, YearMonth.from(hoy)) }
-        var elegido by rememberSaveable { mutableStateOf(hoy.dayOfMonth) }
-        val sections = LocalSectionColors.current
-        val maximo = cal.dias.maxOfOrNull { it.total }?.coerceAtLeast(1) ?: 1
+    val hoy = ExpenseDateUtils.today()
+    val cal = remember(expenses) { ExpenseInsights.calendarioDelMes(expenses, YearMonth.from(hoy)) }
+    var elegido by rememberSaveable { mutableStateOf(hoy.dayOfMonth) }
+    val sections = LocalSectionColors.current
+    val maximo = cal.dias.maxOfOrNull { it.total }?.coerceAtLeast(1) ?: 1
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.insights_in_month), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(
-                        formatCurrency(cal.total),
-                        style = MaterialTheme.typography.headlineSmallEmphasized,
-                        color = sections.expenses,
-                        maxLines = 1
-                    )
-                }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.insights_in_month), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    formatCurrency(cal.total),
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
+                    color = sections.expenses,
+                    maxLines = 1
+                )
             }
+        }
 
-            Row(modifier = Modifier.fillMaxWidth()) {
-                DayLabels.short.forEach { dia ->
-                    Text(
-                        dia,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            DayLabels.short.forEach { dia ->
+                Text(
+                    dia,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
+                )
             }
+        }
 
-            // La rejilla se arma a mano en filas de siete: una LazyVerticalGrid dentro de una
-            // LazyColumn no se puede medir, y para 30 casillas no hace falta.
-            val casillas = List(cal.huecosIniciales) { null } + cal.dias
-            casillas.chunked(7).forEach { semana ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    semana.forEach { dia ->
-                        if (dia == null) {
-                            Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
-                        } else {
-                            DiaDelCalendario(
-                                dia = dia,
-                                maximo = maximo,
-                                esHoy = dia.fecha == hoy,
-                                elegido = dia.fecha.dayOfMonth == elegido,
-                                onClick = { elegido = dia.fecha.dayOfMonth },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    repeat(7 - semana.size) {
+        // La rejilla se arma a mano en filas de siete: una LazyVerticalGrid dentro de una
+        // LazyColumn no se puede medir, y para 30 casillas no hace falta.
+        val casillas = List(cal.huecosIniciales) { null } + cal.dias
+        casillas.chunked(7).forEach { semana ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                semana.forEach { dia ->
+                    if (dia == null) {
                         Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                    } else {
+                        DiaDelCalendario(
+                            dia = dia,
+                            maximo = maximo,
+                            esHoy = dia.fecha == hoy,
+                            elegido = dia.fecha.dayOfMonth == elegido,
+                            onClick = { elegido = dia.fecha.dayOfMonth },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
+                repeat(7 - semana.size) {
+                    Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                }
             }
+        }
 
-            cal.dias.firstOrNull { it.fecha.dayOfMonth == elegido }?.let { dia ->
-                DiaDetalle(dia)
-            }
+        cal.dias.firstOrNull { it.fecha.dayOfMonth == elegido }?.let { dia ->
+            DiaDetalle(dia)
         }
     }
 }

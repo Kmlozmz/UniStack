@@ -60,6 +60,9 @@ import com.unistack.app.feature_terms.domain.HistorialAcademico
 import com.unistack.app.feature_terms.domain.PendienteDeCierre
 import com.unistack.app.feature_terms.domain.PeriodoDelHistorico
 import com.unistack.app.feature_user.domain.GradingScale
+import androidx.compose.animation.AnimatedContent
+import com.unistack.app.core.navigation.cambioDeVista
+import com.unistack.app.core.navigation.transicionEntreVistas
 
 /**
  * Cerrar el periodo en tres pasos: revisar, ver cómo te fue y cerrar.
@@ -101,58 +104,78 @@ fun TermCloseScreen(
     }
 
     val periodo = historial?.activo?.takeIf { !it.porEmpezar }
+    val transicion = transicionEntreVistas()
     Box(modifier = modifier.fillMaxSize().background(Paleta.fondo)) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 132.dp)
-        ) {
-            CabeceraDelHistorico(onBack = atras)
-            if (historial == null || periodo == null) return@Column
-            val nombres = listOf(R.string.hist_paso_revisar, R.string.hist_paso_tu_periodo, R.string.hist_paso_cerrar)
-            TituloDelHistorico(
-                titulo = stringResource(R.string.hist_cerrar_titulo, periodo.nombre),
-                subtitulo = stringResource(R.string.hist_paso_de, paso, 3, stringResource(nombres[paso - 1]))
-            )
-            PasosDelFlujo(paso, 3)
-            when (paso) {
-                1 -> PasoRevisar(periodo, pendientes, resueltos, onResolver = { hoja = it.clave })
-                2 -> PasoTuPeriodo(periodo, historial, escala)
-                else -> PasoCerrar(periodo, historial, pendientes.size, onRevisar = { paso = 1 })
+        // Cada paso entra como una pantalla, con la transición de Movimiento y su propio
+        // desplazamiento: el paso siguiente empieza arriba, no donde se dejó el anterior.
+        AnimatedContent(
+            targetState = paso,
+            transitionSpec = { cambioDeVista(transicion) { it } },
+            label = "pasos de cerrar",
+            modifier = Modifier.fillMaxSize()
+        ) { pasoVisible ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Paleta.fondo)
+                    .statusBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 132.dp)
+            ) {
+                CabeceraDelHistorico(onBack = atras)
+                if (historial == null || periodo == null) return@Column
+                val nombres = listOf(R.string.hist_paso_revisar, R.string.hist_paso_tu_periodo, R.string.hist_paso_cerrar)
+                TituloDelHistorico(
+                    titulo = stringResource(R.string.hist_cerrar_titulo, periodo.nombre),
+                    subtitulo = stringResource(R.string.hist_paso_de, pasoVisible, 3, stringResource(nombres[pasoVisible - 1]))
+                )
+                PasosDelFlujo(pasoVisible, 3)
+                when (pasoVisible) {
+                    1 -> PasoRevisar(periodo, pendientes, resueltos, onResolver = { hoja = it.clave })
+                    2 -> PasoTuPeriodo(periodo, historial, escala)
+                    else -> PasoCerrar(periodo, historial, pendientes.size, onRevisar = { paso = 1 })
+                }
             }
         }
         if (historial != null && periodo != null) {
             Muelle {
-                when (paso) {
-                    1 -> UniStackButton(
-                        text = stringResource(if (pendientes.isEmpty()) R.string.hist_continuar else R.string.hist_seguir_con_lo_que_falta),
-                        onClick = { paso = 2 },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    2 -> UniStackButton(
-                        text = stringResource(R.string.hist_continuar),
-                        onClick = { paso = 3 },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    else -> {
-                        val quedara = historial.acumuladoAlCerrar(periodo)
-                        DeslizarParaConfirmar(
-                            texto = stringResource(R.string.hist_desliza_para_cerrar, periodo.nombre),
-                            onConfirmado = {
-                                viewModel.cerrarPeriodo { id, nombre, acumulado ->
-                                    celebracion = Triple(
-                                        id,
-                                        nombre,
-                                        (acumulado ?: quedara)?.let {
-                                            Textos.get(R.string.hist_acumulado_queda_en, Formato.promedio(it, historial.notaMaxima))
-                                        } ?: Textos.get(R.string.hist_pasa_al_historico)
-                                    )
-                                }
+                AnimatedContent(
+                    targetState = paso,
+                    transitionSpec = { cambioDelMuelle(transicion) },
+                    label = "muelle de cerrar",
+                    modifier = Modifier.fillMaxWidth()
+                ) { pasoVisible ->
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        when (pasoVisible) {
+                            1 -> UniStackButton(
+                                text = stringResource(if (pendientes.isEmpty()) R.string.hist_continuar else R.string.hist_seguir_con_lo_que_falta),
+                                onClick = { paso = 2 },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            2 -> UniStackButton(
+                                text = stringResource(R.string.hist_continuar),
+                                onClick = { paso = 3 },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            else -> {
+                                val quedara = historial.acumuladoAlCerrar(periodo)
+                                DeslizarParaConfirmar(
+                                    texto = stringResource(R.string.hist_desliza_para_cerrar, periodo.nombre),
+                                    onConfirmado = {
+                                        viewModel.cerrarPeriodo { id, nombre, acumulado ->
+                                            celebracion = Triple(
+                                                id,
+                                                nombre,
+                                                (acumulado ?: quedara)?.let {
+                                                    Textos.get(R.string.hist_acumulado_queda_en, Formato.promedio(it, historial.notaMaxima))
+                                                } ?: Textos.get(R.string.hist_pasa_al_historico)
+                                            )
+                                        }
+                                    }
+                                )
+                                NotaDelMuelle(stringResource(R.string.hist_sueltalo_antes))
                             }
-                        )
-                        NotaDelMuelle(stringResource(R.string.hist_sueltalo_antes))
+                        }
                     }
                 }
             }

@@ -66,6 +66,9 @@ import com.unistack.app.core.utils.Textos
 import com.unistack.app.feature_terms.domain.RepartoDeCortes
 import com.unistack.app.feature_user.domain.GradingScale
 import java.time.LocalDate
+import androidx.compose.animation.AnimatedContent
+import com.unistack.app.core.navigation.cambioDeVista
+import com.unistack.app.core.navigation.transicionEntreVistas
 
 private const val SUGERIDA = "sugerida"
 private const val SEMANA_DESPUES = "semana"
@@ -143,218 +146,229 @@ fun NewTermScreen(
     }
     val perdidas = previo?.perdidas.orEmpty()
 
+    val transicion = transicionEntreVistas()
     Box(modifier = modifier.fillMaxSize().background(Paleta.fondo)) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 132.dp)
-        ) {
-            CabeceraDelHistorico(onBack = atras)
-            if (propuesta == null || historial == null) return@Column
-            val titulos = listOf(
-                stringResource(R.string.hist_nuevo_cuando),
-                stringResource(R.string.hist_nuevo_donde),
-                if (previo != null) stringResource(R.string.hist_nuevo_que_traes_de, previo.nombre) else stringResource(R.string.hist_nuevo_que_traes)
-            )
-            TituloDelHistorico(
-                titulo = titulos[paso - 1],
-                subtitulo = stringResource(R.string.hist_paso_de, paso, 3, nombre)
-            )
-            PasosDelFlujo(paso, 3)
-            Pila {
-                when (paso) {
-                    1 -> {
-                        if (previo != null) {
-                            Tarjeta(separacion = 6.dp) {
-                                Rotulo(stringResource(R.string.hist_asi_queda_tu_anio), conMargen = false)
-                                val textoLibres = stringResource(R.string.hist_semanas_libres)
-                                LineaDelAnio(
-                                    previoInicio = previo.inicio,
-                                    previoFin = previo.fin,
-                                    previoNombre = previo.nombre,
-                                    nuevoInicio = inicio,
-                                    nuevoFin = acaba,
-                                    nuevoNombre = nombre,
-                                    hoy = historial.hoy,
-                                    textoLibres = { String.format(textoLibres, it) },
-                                    textoHoy = stringResource(R.string.hist_hoy)
+        // Cada paso entra como una pantalla, con la transición de Movimiento y su propio
+        // desplazamiento: el paso siguiente empieza arriba, no donde se dejó el anterior.
+        AnimatedContent(
+            targetState = paso,
+            transitionSpec = { cambioDeVista(transicion) { it } },
+            label = "pasos del periodo nuevo",
+            modifier = Modifier.fillMaxSize()
+        ) { pasoVisible ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Paleta.fondo)
+                    .statusBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 132.dp)
+            ) {
+                CabeceraDelHistorico(onBack = atras)
+                if (propuesta == null || historial == null) return@Column
+                val titulos = listOf(
+                    stringResource(R.string.hist_nuevo_cuando),
+                    stringResource(R.string.hist_nuevo_donde),
+                    if (previo != null) stringResource(R.string.hist_nuevo_que_traes_de, previo.nombre) else stringResource(R.string.hist_nuevo_que_traes)
+                )
+                TituloDelHistorico(
+                    titulo = titulos[pasoVisible - 1],
+                    subtitulo = stringResource(R.string.hist_paso_de, pasoVisible, 3, nombre)
+                )
+                PasosDelFlujo(pasoVisible, 3)
+                Pila {
+                    when (pasoVisible) {
+                        1 -> {
+                            if (previo != null) {
+                                Tarjeta(separacion = 6.dp) {
+                                    Rotulo(stringResource(R.string.hist_asi_queda_tu_anio), conMargen = false)
+                                    val textoLibres = stringResource(R.string.hist_semanas_libres)
+                                    LineaDelAnio(
+                                        previoInicio = previo.inicio,
+                                        previoFin = previo.fin,
+                                        previoNombre = previo.nombre,
+                                        nuevoInicio = inicio,
+                                        nuevoFin = acaba,
+                                        nuevoNombre = nombre,
+                                        hoy = historial.hoy,
+                                        textoLibres = { String.format(textoLibres, it) },
+                                        textoHoy = stringResource(R.string.hist_hoy)
+                                    )
+                                }
+                            }
+                            Rotulo(stringResource(R.string.hist_empieza))
+                            val sugerido = propuesta.inicioSugerido
+                            val detalleSugerido = if (propuesta.iniciosAnteriores.isNotEmpty()) {
+                                stringResource(
+                                    R.string.hist_sugerido_empezaste,
+                                    Formato.lista(propuesta.iniciosAnteriores.map { Textos.get(R.string.hist_el_dia_de, Formato.diaMes(it), it.year) })
                                 )
+                            } else if (previo != null) {
+                                stringResource(R.string.hist_sugerido_despues_de, previo.nombre)
+                            } else {
+                                stringResource(R.string.hist_sugerido)
                             }
-                        }
-                        Rotulo(stringResource(R.string.hist_empieza))
-                        val sugerido = propuesta.inicioSugerido
-                        val detalleSugerido = if (propuesta.iniciosAnteriores.isNotEmpty()) {
-                            stringResource(
-                                R.string.hist_sugerido_empezaste,
-                                Formato.lista(propuesta.iniciosAnteriores.map { Textos.get(R.string.hist_el_dia_de, Formato.diaMes(it), it.year) })
-                            )
-                        } else if (previo != null) {
-                            stringResource(R.string.hist_sugerido_despues_de, previo.nombre)
-                        } else {
-                            stringResource(R.string.hist_sugerido)
-                        }
-                        OpcionDeInicio(eleccion == SUGERIDA, Icons.Rounded.AutoAwesome, Formato.conMayuscula(Formato.larga(sugerido)), detalleSugerido) { eleccion = SUGERIDA }
-                        OpcionDeInicio(eleccion == SEMANA_DESPUES, Icons.Rounded.CalendarMonth, Formato.conMayuscula(Formato.larga(sugerido.plusWeeks(1))), stringResource(R.string.hist_una_semana_despues)) { eleccion = SEMANA_DESPUES }
-                        val otra = otraFecha?.let(LocalDate::ofEpochDay)
-                        OpcionDeInicio(
-                            eleccion == OTRA,
-                            Icons.Rounded.CalendarMonth,
-                            if (eleccion == OTRA && otra != null) Formato.conMayuscula(Formato.larga(otra)) else stringResource(R.string.hist_otra_fecha),
-                            stringResource(if (eleccion == OTRA && otra != null) R.string.hist_elegido_en_calendario else R.string.hist_elige_en_calendario)
-                        ) { calendario = true }
-                        Rotulo(stringResource(R.string.hist_dura))
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            propuesta.opcionesDeSemanas.forEach { w ->
-                                Opcion(stringResource(R.string.hist_n_semanas, w), semanas == w, onClick = {
-                                    semanas = w
-                                    if (reparto == A_MANO) reparto = IGUALES
-                                })
-                            }
-                        }
-                        Tarjeta {
-                            Fila(separacion = 12.dp) {
-                                Azulejo(Icons.Rounded.Schedule, Tono.Acento)
-                                Columna(
-                                    titulo = stringResource(R.string.hist_acaba_el, Formato.corta(acaba), acaba.year),
-                                    sub = if (previo != null && semanas == propuesta.semanas) {
-                                        stringResource(R.string.hist_previsto_como, semanas, previo.nombre)
-                                    } else {
-                                        stringResource(R.string.hist_previsto)
-                                    }
-                                )
-                            }
-                        }
-                        Tarjeta {
-                            Fila(separacion = 12.dp) {
-                                Azulejo(Icons.Rounded.Edit, Tono.Acento)
-                                Columna(titulo = nombre, sub = stringResource(R.string.hist_se_llamara), subArriba = true)
-                                MiniBoton(stringResource(R.string.hist_cambiar), onClick = { hoja = "nombre" })
-                            }
-                        }
-                    }
-                    2 -> {
-                        Tarjeta(separacion = 8.dp) {
-                            val textoSemanas = stringResource(R.string.hist_n_semanas)
-                            val textoSemanasCorto = stringResource(R.string.hist_n_semanas_corto)
-                            BarraDeCortes(
-                                semanasPorCorte = cortes,
-                                pesos = pesos,
-                                inicio = inicio,
-                                conFechas = !cortesLuego,
-                                textoSemanas = { w, corto -> String.format(if (corto) textoSemanasCorto else textoSemanas, w) },
-                                etiquetaCorte = { n, peso -> Formato.etiquetaCorte(n, peso) }
-                            )
-                            Text(
-                                stringResource(if (cortesLuego) R.string.hist_sin_fechas_de_corte else R.string.hist_con_fechas_de_corte),
-                                style = Letra.sub,
-                                color = Paleta.apagado
-                            )
-                        }
-                        if (nCortes > 1) {
-                            Rotulo(stringResource(R.string.hist_reparto))
+                            OpcionDeInicio(eleccion == SUGERIDA, Icons.Rounded.AutoAwesome, Formato.conMayuscula(Formato.larga(sugerido)), detalleSugerido) { eleccion = SUGERIDA }
+                            OpcionDeInicio(eleccion == SEMANA_DESPUES, Icons.Rounded.CalendarMonth, Formato.conMayuscula(Formato.larga(sugerido.plusWeeks(1))), stringResource(R.string.hist_una_semana_despues)) { eleccion = SEMANA_DESPUES }
+                            val otra = otraFecha?.let(LocalDate::ofEpochDay)
+                            OpcionDeInicio(
+                                eleccion == OTRA,
+                                Icons.Rounded.CalendarMonth,
+                                if (eleccion == OTRA && otra != null) Formato.conMayuscula(Formato.larga(otra)) else stringResource(R.string.hist_otra_fecha),
+                                stringResource(if (eleccion == OTRA && otra != null) R.string.hist_elegido_en_calendario else R.string.hist_elige_en_calendario)
+                            ) { calendario = true }
+                            Rotulo(stringResource(R.string.hist_dura))
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Opcion(stringResource(R.string.hist_reparto_iguales), reparto == IGUALES, onClick = { reparto = IGUALES })
-                                Opcion(stringResource(R.string.hist_reparto_ultimo), reparto == ULTIMO_LARGO, onClick = { reparto = ULTIMO_LARGO })
-                                Opcion(stringResource(R.string.hist_reparto_mano), reparto == A_MANO, onClick = {
-                                    aMano = ArrayList(cortes)
-                                    reparto = A_MANO
-                                })
+                                propuesta.opcionesDeSemanas.forEach { w ->
+                                    Opcion(stringResource(R.string.hist_n_semanas, w), semanas == w, onClick = {
+                                        semanas = w
+                                        if (reparto == A_MANO) reparto = IGUALES
+                                    })
+                                }
                             }
-                            if (reparto == A_MANO) {
-                                Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
-                                    cortes.forEachIndexed { k, w ->
-                                        Fila(modifier = Modifier.lineaArriba(k > 0).padding(vertical = 10.dp), separacion = 12.dp) {
-                                            Box(Modifier.size(14.dp).clip(RoundedCornerShape(4.dp)).background(colorDeCorte(k)))
-                                            Text(cuts.getOrNull(k)?.name.orEmpty(), style = Letra.t15, color = Paleta.tinta, modifier = Modifier.weight(1f))
-                                            if (k < cortes.lastIndex) {
-                                                val menos = RepartoDeCortes.ajustar(cortes, semanas, k, -1)
-                                                val mas = RepartoDeCortes.ajustar(cortes, semanas, k, 1)
-                                                Paso(
-                                                    valor = w,
-                                                    onMenos = { menos?.let { aMano = ArrayList(it) } },
-                                                    onMas = { mas?.let { aMano = ArrayList(it) } },
-                                                    puedeMenos = menos != null,
-                                                    puedeMas = mas != null
-                                                )
-                                            } else {
-                                                Text("$w", style = Letra.numero(18f), color = Paleta.tinta, modifier = Modifier.padding(end = 12.dp))
+                            Tarjeta {
+                                Fila(separacion = 12.dp) {
+                                    Azulejo(Icons.Rounded.Schedule, Tono.Acento)
+                                    Columna(
+                                        titulo = stringResource(R.string.hist_acaba_el, Formato.corta(acaba), acaba.year),
+                                        sub = if (previo != null && semanas == propuesta.semanas) {
+                                            stringResource(R.string.hist_previsto_como, semanas, previo.nombre)
+                                        } else {
+                                            stringResource(R.string.hist_previsto)
+                                        }
+                                    )
+                                }
+                            }
+                            Tarjeta {
+                                Fila(separacion = 12.dp) {
+                                    Azulejo(Icons.Rounded.Edit, Tono.Acento)
+                                    Columna(titulo = nombre, sub = stringResource(R.string.hist_se_llamara), subArriba = true)
+                                    MiniBoton(stringResource(R.string.hist_cambiar), onClick = { hoja = "nombre" })
+                                }
+                            }
+                        }
+                        2 -> {
+                            Tarjeta(separacion = 8.dp) {
+                                val textoSemanas = stringResource(R.string.hist_n_semanas)
+                                val textoSemanasCorto = stringResource(R.string.hist_n_semanas_corto)
+                                BarraDeCortes(
+                                    semanasPorCorte = cortes,
+                                    pesos = pesos,
+                                    inicio = inicio,
+                                    conFechas = !cortesLuego,
+                                    textoSemanas = { w, corto -> String.format(if (corto) textoSemanasCorto else textoSemanas, w) },
+                                    etiquetaCorte = { n, peso -> Formato.etiquetaCorte(n, peso) }
+                                )
+                                Text(
+                                    stringResource(if (cortesLuego) R.string.hist_sin_fechas_de_corte else R.string.hist_con_fechas_de_corte),
+                                    style = Letra.sub,
+                                    color = Paleta.apagado
+                                )
+                            }
+                            if (nCortes > 1) {
+                                Rotulo(stringResource(R.string.hist_reparto))
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Opcion(stringResource(R.string.hist_reparto_iguales), reparto == IGUALES, onClick = { reparto = IGUALES })
+                                    Opcion(stringResource(R.string.hist_reparto_ultimo), reparto == ULTIMO_LARGO, onClick = { reparto = ULTIMO_LARGO })
+                                    Opcion(stringResource(R.string.hist_reparto_mano), reparto == A_MANO, onClick = {
+                                        aMano = ArrayList(cortes)
+                                        reparto = A_MANO
+                                    })
+                                }
+                                if (reparto == A_MANO) {
+                                    Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+                                        cortes.forEachIndexed { k, w ->
+                                            Fila(modifier = Modifier.lineaArriba(k > 0).padding(vertical = 10.dp), separacion = 12.dp) {
+                                                Box(Modifier.size(14.dp).clip(RoundedCornerShape(4.dp)).background(colorDeCorte(k)))
+                                                Text(cuts.getOrNull(k)?.name.orEmpty(), style = Letra.t15, color = Paleta.tinta, modifier = Modifier.weight(1f))
+                                                if (k < cortes.lastIndex) {
+                                                    val menos = RepartoDeCortes.ajustar(cortes, semanas, k, -1)
+                                                    val mas = RepartoDeCortes.ajustar(cortes, semanas, k, 1)
+                                                    Paso(
+                                                        valor = w,
+                                                        onMenos = { menos?.let { aMano = ArrayList(it) } },
+                                                        onMas = { mas?.let { aMano = ArrayList(it) } },
+                                                        puedeMenos = menos != null,
+                                                        puedeMas = mas != null
+                                                    )
+                                                } else {
+                                                    Text("$w", style = Letra.numero(18f), color = Paleta.tinta, modifier = Modifier.padding(end = 12.dp))
+                                                }
                                             }
                                         }
                                     }
-                                }
-                                Text(
-                                    stringResource(R.string.hist_el_ultimo_se_ajusta, semanas),
-                                    style = Letra.sub,
-                                    color = Paleta.apagado,
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                )
-                            }
-                        }
-                        Tarjeta {
-                            Fila(separacion = 12.dp) {
-                                Azulejo(Icons.Rounded.Schedule, Tono.Acento)
-                                Columna(titulo = stringResource(R.string.hist_todavia_no_se_las_fechas), sub = stringResource(R.string.hist_las_pones_luego))
-                                UniSwitch(checked = cortesLuego, onCheckedChange = { cortesLuego = it })
-                            }
-                        }
-                        Rotulo(stringResource(R.string.hist_se_mantiene))
-                        Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
-                            val maxima = perfil?.let { GradingScaleUtils.maxGradeFor(it) } ?: 5.0
-                            listOf(
-                                Triple(Icons.Rounded.Straighten, stringResource(R.string.hist_escala), stringResource(R.string.hist_escala_valor, notaMaximaTexto(maxima).removeSuffix(".0"))),
-                                Triple(Icons.Rounded.Star, stringResource(R.string.hist_apruebas_con), Formato.nota(perfil?.passingGrade, escala)),
-                                Triple(
-                                    Icons.Rounded.EventAvailable,
-                                    stringResource(R.string.hist_tope_de_faltas),
-                                    perfil?.absenceLimit?.let { stringResource(R.string.hist_pierdes_con, it) } ?: stringResource(R.string.hist_sin_tope)
-                                )
-                            ).forEachIndexed { i, (icono, etiqueta, valor) ->
-                                Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 10.dp), separacion = 12.dp) {
-                                    Azulejo(icono)
-                                    Text(etiqueta, style = Letra.t15, color = Paleta.tinta, modifier = Modifier.weight(1f))
-                                    Text(valor, style = Letra.t15, color = Paleta.tinta)
+                                    Text(
+                                        stringResource(R.string.hist_el_ultimo_se_ajusta, semanas),
+                                        style = Letra.sub,
+                                        color = Paleta.apagado,
+                                        modifier = Modifier.padding(horizontal = 4.dp)
+                                    )
                                 }
                             }
-                            Box(modifier = Modifier.fillMaxWidth().lineaArriba(true).padding(vertical = 4.dp)) {
-                                BotonDeTexto(stringResource(R.string.hist_cambiar_en_configuracion), onClick = onAcademicSettingsClick)
-                            }
-                        }
-                    }
-                    else -> {
-                        perdidas.forEach { materia ->
                             Tarjeta {
                                 Fila(separacion = 12.dp) {
-                                    Azulejo(Icons.Rounded.Replay, Tono.Mal)
-                                    Columna(
-                                        titulo = materia.nombre,
-                                        sub = stringResource(R.string.hist_la_perdiste_con, Formato.nota(materia.final, escala))
+                                    Azulejo(Icons.Rounded.Schedule, Tono.Acento)
+                                    Columna(titulo = stringResource(R.string.hist_todavia_no_se_las_fechas), sub = stringResource(R.string.hist_las_pones_luego))
+                                    UniSwitch(checked = cortesLuego, onCheckedChange = { cortesLuego = it })
+                                }
+                            }
+                            Rotulo(stringResource(R.string.hist_se_mantiene))
+                            Tarjeta(relleno = PaddingValues(horizontal = 18.dp, vertical = 4.dp)) {
+                                val maxima = perfil?.let { GradingScaleUtils.maxGradeFor(it) } ?: 5.0
+                                listOf(
+                                    Triple(Icons.Rounded.Straighten, stringResource(R.string.hist_escala), stringResource(R.string.hist_escala_valor, notaMaximaTexto(maxima).removeSuffix(".0"))),
+                                    Triple(Icons.Rounded.Star, stringResource(R.string.hist_apruebas_con), Formato.nota(perfil?.passingGrade, escala)),
+                                    Triple(
+                                        Icons.Rounded.EventAvailable,
+                                        stringResource(R.string.hist_tope_de_faltas),
+                                        perfil?.absenceLimit?.let { stringResource(R.string.hist_pierdes_con, it) } ?: stringResource(R.string.hist_sin_tope)
                                     )
-                                    UniSwitch(
-                                        checked = materia.id in traer,
-                                        onCheckedChange = { activo ->
-                                            traer = ArrayList(if (activo) traer + materia.id else traer - materia.id)
-                                        }
-                                    )
+                                ).forEachIndexed { i, (icono, etiqueta, valor) ->
+                                    Fila(modifier = Modifier.lineaArriba(i > 0).padding(vertical = 10.dp), separacion = 12.dp) {
+                                        Azulejo(icono)
+                                        Text(etiqueta, style = Letra.t15, color = Paleta.tinta, modifier = Modifier.weight(1f))
+                                        Text(valor, style = Letra.t15, color = Paleta.tinta)
+                                    }
+                                }
+                                Box(modifier = Modifier.fillMaxWidth().lineaArriba(true).padding(vertical = 4.dp)) {
+                                    BotonDeTexto(stringResource(R.string.hist_cambiar_en_configuracion), onClick = onAcademicSettingsClick)
                                 }
                             }
                         }
-                        if (perdidas.isEmpty()) {
+                        else -> {
+                            perdidas.forEach { materia ->
+                                Tarjeta {
+                                    Fila(separacion = 12.dp) {
+                                        Azulejo(Icons.Rounded.Replay, Tono.Mal)
+                                        Columna(
+                                            titulo = materia.nombre,
+                                            sub = stringResource(R.string.hist_la_perdiste_con, Formato.nota(materia.final, escala))
+                                        )
+                                        UniSwitch(
+                                            checked = materia.id in traer,
+                                            onCheckedChange = { activo ->
+                                                traer = ArrayList(if (activo) traer + materia.id else traer - materia.id)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                            if (perdidas.isEmpty()) {
+                                Tarjeta {
+                                    Fila(separacion = 12.dp) {
+                                        Azulejo(Icons.Rounded.EventAvailable, Tono.Ok)
+                                        Columna(
+                                            titulo = stringResource(R.string.hist_nada_que_traer),
+                                            sub = previo?.let { stringResource(R.string.hist_no_perdiste_en, it.nombre) } ?: stringResource(R.string.hist_no_perdiste)
+                                        )
+                                    }
+                                }
+                            }
                             Tarjeta {
                                 Fila(separacion = 12.dp) {
-                                    Azulejo(Icons.Rounded.EventAvailable, Tono.Ok)
-                                    Columna(
-                                        titulo = stringResource(R.string.hist_nada_que_traer),
-                                        sub = previo?.let { stringResource(R.string.hist_no_perdiste_en, it.nombre) } ?: stringResource(R.string.hist_no_perdiste)
-                                    )
+                                    Azulejo(Icons.AutoMirrored.Rounded.MenuBook, Tono.Acento)
+                                    Columna(titulo = stringResource(R.string.hist_y_las_nuevas), sub = stringResource(R.string.hist_y_las_nuevas_sub))
                                 }
-                            }
-                        }
-                        Tarjeta {
-                            Fila(separacion = 12.dp) {
-                                Azulejo(Icons.AutoMirrored.Rounded.MenuBook, Tono.Acento)
-                                Columna(titulo = stringResource(R.string.hist_y_las_nuevas), sub = stringResource(R.string.hist_y_las_nuevas_sub))
                             }
                         }
                     }
@@ -363,10 +377,17 @@ fun NewTermScreen(
         }
         if (propuesta != null && historial != null) {
             Muelle {
-                if (paso < 3) {
-                    UniStackButton(text = stringResource(R.string.hist_continuar), onClick = { paso++ }, modifier = Modifier.fillMaxWidth())
-                } else {
-                    UniStackButton(text = stringResource(R.string.hist_revisar_y_crear), onClick = { hoja = "revisar" }, modifier = Modifier.fillMaxWidth())
+                AnimatedContent(
+                    targetState = paso,
+                    transitionSpec = { cambioDelMuelle(transicion) },
+                    label = "muelle del periodo nuevo",
+                    modifier = Modifier.fillMaxWidth()
+                ) { pasoVisible ->
+                    if (pasoVisible < 3) {
+                        UniStackButton(text = stringResource(R.string.hist_continuar), onClick = { paso++ }, modifier = Modifier.fillMaxWidth())
+                    } else {
+                        UniStackButton(text = stringResource(R.string.hist_revisar_y_crear), onClick = { hoja = "revisar" }, modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
         }

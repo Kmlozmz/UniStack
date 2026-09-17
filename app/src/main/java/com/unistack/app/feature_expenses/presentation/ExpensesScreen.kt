@@ -10,6 +10,7 @@ import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.utils.DayLabels
 import com.unistack.app.core.utils.desde
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.design.components.galletaViva
 
 import androidx.compose.ui.draw.rotate
 import androidx.compose.material.icons.rounded.Tune
@@ -800,7 +801,6 @@ private fun CategoryRingChart(
     modifier: Modifier = Modifier
 ) {
     val total = totals.sumOf { it.second }
-    val galleta = MaterialShapes.Cookie9Sided.toShape()
     // Los colores se leen aqui: dentro del Canvas no hay tema al que preguntarle.
     val arcos = totals.map { (categoria, monto) -> categoria.expenseTone() to monto }
     val arcosConNombre = totals
@@ -822,7 +822,7 @@ private fun CategoryRingChart(
         Box(
             modifier = Modifier
                 .size(62.dp)
-                .background(ExpenseCoral.copy(alpha = 0.16f), galleta)
+                .galletaViva(ExpenseCoral.copy(alpha = 0.16f))
         )
         // El total, dentro de la galleta.
         //

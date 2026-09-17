@@ -40,6 +40,11 @@ import com.unistack.app.feature_user.domain.GradingScale
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import com.unistack.app.core.utils.Textos
+import androidx.compose.animation.AnimatedContent
+import com.unistack.app.core.navigation.cambioDeVista
+import com.unistack.app.core.navigation.transicionEntreVistas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 
 /** Las tres preguntas que sabe responder la calculadora. */
 enum class CalculatorTab(private val labelRes: Int) {
@@ -77,6 +82,7 @@ fun GpaCalculatorScreen(
     val target = profile?.targetAverage ?: (maxGrade * 0.8)
 
     var tab by rememberSaveable { mutableStateOf(CalculatorTab.SUBJECT) }
+    val transicion = transicionEntreVistas()
     val holder = rememberSaveableStateHolder()
     var toast by remember { mutableStateOf<String?>(null) }
     var helpOpen by rememberSaveable { mutableStateOf(false) }
@@ -117,31 +123,41 @@ fun GpaCalculatorScreen(
          * Solo mientras estas dentro: al salir de la calculadora se pierde todo, que es lo que
          * tiene que pasar. Es una calculadora, no un cuaderno.
          */
-        holder.SaveableStateProvider(tab) {
-        when (tab) {
-            CalculatorTab.SUBJECT -> SubjectCalculator(
-                maxGrade = maxGrade,
-                scale = scale,
-                toast = toast,
-                onToast = { toast = it }
-            )
-            CalculatorTab.SEMESTER -> SemesterCalculator(
-                maxGrade = maxGrade,
-                scale = scale,
-                passing = passing,
-                target = target,
-                available = subjects,
-                toast = toast,
-                onToast = { toast = it }
-            )
-            CalculatorTab.NEEDED -> NeededCalculator(
-                maxGrade = maxGrade,
-                scale = scale,
-                defaultTarget = target,
-                toast = toast,
-                onToast = { toast = it }
-            )
-        }
+        // Las tres calculadoras cambian como pantallas, del lado en el que está cada una.
+        AnimatedContent(
+            targetState = tab,
+            transitionSpec = { cambioDeVista(transicion) { it.ordinal } },
+            label = "calculadoras",
+            modifier = Modifier.fillMaxSize()
+        ) { pestanaVisible ->
+            Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                holder.SaveableStateProvider(pestanaVisible) {
+                    when (pestanaVisible) {
+                        CalculatorTab.SUBJECT -> SubjectCalculator(
+                            maxGrade = maxGrade,
+                            scale = scale,
+                            toast = toast,
+                            onToast = { toast = it }
+                        )
+                        CalculatorTab.SEMESTER -> SemesterCalculator(
+                            maxGrade = maxGrade,
+                            scale = scale,
+                            passing = passing,
+                            target = target,
+                            available = subjects,
+                            toast = toast,
+                            onToast = { toast = it }
+                        )
+                        CalculatorTab.NEEDED -> NeededCalculator(
+                            maxGrade = maxGrade,
+                            scale = scale,
+                            defaultTarget = target,
+                            toast = toast,
+                            onToast = { toast = it }
+                        )
+                    }
+                }
+            }
         }
     }
 

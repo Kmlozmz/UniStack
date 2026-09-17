@@ -329,21 +329,33 @@ fun MainNavGraph(
                      */
                     .consumeWindowInsets(WindowInsets.ime)
                     .padding(contentPadding),
+                /*
+                 * Las pestañas de abajo también se mueven, del lado en el que están.
+                 *
+                 * Estuvieron quietas desde el 19 ago 2026 y se notaba como un salto: el 16 sep
+                 * se pidió transición «en general al pasar de una pantalla a otra». Ir a una
+                 * pestaña de la derecha entra por la derecha y a una de la izquierda, por la
+                 * izquierda; así la barra se lee como un orden y no como un carrusel.
+                 */
                 enterTransition = {
-                    if (!motionEnabled || isTabSwitch(initialState, targetState)) EnterTransition.None
-                    else transicion.entra
+                    when {
+                        !motionEnabled -> EnterTransition.None
+                        haciaLaIzquierda(initialState, targetState) -> transicion.entraDesdeElOtroLado
+                        else -> transicion.entra
+                    }
                 },
                 exitTransition = {
-                    if (!motionEnabled || isTabSwitch(initialState, targetState)) ExitTransition.None
-                    else transicion.sale
+                    when {
+                        !motionEnabled -> ExitTransition.None
+                        haciaLaIzquierda(initialState, targetState) -> transicion.saleHaciaElOtroLado
+                        else -> transicion.sale
+                    }
                 },
                 popEnterTransition = {
-                    if (!motionEnabled || isTabSwitch(initialState, targetState)) EnterTransition.None
-                    else transicion.vuelveEntrando
+                    if (!motionEnabled) EnterTransition.None else transicion.vuelveEntrando
                 },
                 popExitTransition = {
-                    if (!motionEnabled || isTabSwitch(initialState, targetState)) ExitTransition.None
-                    else transicion.vuelveSaliendo
+                    if (!motionEnabled) ExitTransition.None else transicion.vuelveSaliendo
                 }
             ) {
                 composable(AppRoutes.Home) {
@@ -1300,10 +1312,8 @@ internal fun routeShowsBottomBar(route: String?): Boolean {
 /**
  * Si el cambio es entre dos pestañas de la barra de abajo.
  *
- * Esas no se empujan: la barra no es una pila, es un conmutador. Deslizar entre ellas cuenta
- * un viaje que no ocurre —Gastos no está «a la derecha» de Inicio— y al pulsar rápido convierte
- * la barra en un carrusel. El empuje se reserva para entrar y salir de una pantalla, que sí es
- * ir hacia dentro y volver.
+ * Estuvieron sin transición del 19 ago al 16 sep 2026 —«la barra es un conmutador, no una
+ * pila»—, y se veía como un salto entre pantallas. Ahora se animan, y esto decide solo el lado.
  */
 private fun isTabSwitch(
     initial: androidx.navigation.NavBackStackEntry,
@@ -1311,6 +1321,13 @@ private fun isTabSwitch(
 ): Boolean {
     return isBottomRoot(initial.destination.route) && isBottomRoot(target.destination.route)
 }
+
+/** Un cambio de pestaña hacia una que queda a la izquierda en la barra. */
+private fun haciaLaIzquierda(
+    initial: androidx.navigation.NavBackStackEntry,
+    target: androidx.navigation.NavBackStackEntry
+): Boolean = isTabSwitch(initial, target) &&
+    !isForwardNavigation(initial.destination.route, target.destination.route)
 
 /**
  * Si una ruta es la raíz de una pestaña y no algo abierto dentro de ella.
@@ -1454,7 +1471,8 @@ private fun routeRank(route: String?): Int {
         AppRoutes.Academic -> 1
         AppRoutes.Calendar -> 2
         AppRoutes.Expenses -> 3
-        AppRoutes.Profile -> 4
+        // Ajustes, y no Perfil: `bottomRouteFor` devuelve la pestaña, y la pestaña es Ajustes.
+        AppRoutes.Settings -> 4
         else -> 0
     }
 }

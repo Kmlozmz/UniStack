@@ -42,6 +42,9 @@ import com.unistack.app.feature_tasks.presentation.TasksViewModel
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.AnimatedContent
+import com.unistack.app.core.navigation.cambioDeVista
+import com.unistack.app.core.navigation.transicionEntreVistas
 
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
@@ -87,6 +90,7 @@ fun AcademicScreen(
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
 
+    val transicion = transicionEntreVistas()
     var selectedTab by rememberSaveable(initialTab) {
         mutableStateOf(
             when (initialTab) {
@@ -166,23 +170,33 @@ fun AcademicScreen(
             }
 
             Box(modifier = Modifier.weight(1f)) {
-                when (selectedTab) {
-                    AcademicTab.SUBJECTS -> GradesScreen(
-                        onAddSubjectClick = onAddSubjectClick,
-                        onSubjectClick = onSubjectClick,
-                        onEditSubjectClick = onEditSubjectClick,
-                        onSelectionChange = { markedSubjects = it },
-                        embedded = true,
-                        nameQuery = query
-                    )
-                    AcademicTab.TASKS -> TasksScreen(
-                        onNewTaskClick = onNewTaskClick,
-                        onEditTaskClick = onEditTaskClick,
-                        onOpenTaskClick = onOpenTaskClick,
-                        onCompleteHistoryClick = onCompleteHistoryClick,
-                        onSubjectClick = onSubjectClick,
-                        embedded = true
-                    )
+                // Materias y Tareas cambian como dos pantallas, con la transición de Movimiento.
+                AnimatedContent(
+                    targetState = selectedTab,
+                    transitionSpec = { cambioDeVista(transicion) { it.ordinal } },
+                    label = "materias y tareas",
+                    modifier = Modifier.fillMaxSize()
+                ) { pestanaVisible ->
+                    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                        when (pestanaVisible) {
+                            AcademicTab.SUBJECTS -> GradesScreen(
+                                onAddSubjectClick = onAddSubjectClick,
+                                onSubjectClick = onSubjectClick,
+                                onEditSubjectClick = onEditSubjectClick,
+                                onSelectionChange = { markedSubjects = it },
+                                embedded = true,
+                                nameQuery = query
+                            )
+                            AcademicTab.TASKS -> TasksScreen(
+                                onNewTaskClick = onNewTaskClick,
+                                onEditTaskClick = onEditTaskClick,
+                                onOpenTaskClick = onOpenTaskClick,
+                                onCompleteHistoryClick = onCompleteHistoryClick,
+                                onSubjectClick = onSubjectClick,
+                                embedded = true
+                            )
+                        }
+                    }
                 }
             }
         }

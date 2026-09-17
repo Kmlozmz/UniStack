@@ -145,6 +145,15 @@ import androidx.compose.ui.layout.positionInRoot
 import com.unistack.app.core.design.components.celebracionDelDia
 import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.utils.performSafely
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import com.unistack.app.core.navigation.TransicionDePantalla
+import com.unistack.app.core.design.components.galletaViva
 
 /*
  * Las piezas del histórico, copiadas de la simulación aprobada.
@@ -579,7 +588,7 @@ internal fun ruedaDeNota(nota: Double?, aprobado: Double): EstadoDeRueda = when 
     else -> EstadoDeRueda.Mal
 }
 
-/** La galleta de nueve lados de M3E, con la cifra dentro. */
+/** La galleta de M3E, viva, con la cifra dentro. */
 @Composable
 internal fun Galleta(
     tamano: Dp,
@@ -587,9 +596,9 @@ internal fun Galleta(
     modifier: Modifier = Modifier,
     contenido: @Composable BoxScope.() -> Unit
 ) {
-    val forma = MaterialShapes.Cookie9Sided.toShape()
+    // La galleta se mueve —gira y respira— y lo de dentro se queda quieto.
     Box(
-        modifier = modifier.size(tamano).background(fondo, forma),
+        modifier = modifier.size(tamano).galletaViva(fondo),
         contentAlignment = Alignment.Center,
         content = contenido
     )
@@ -792,6 +801,20 @@ internal fun BoxScope.Muelle(contenido: @Composable ColumnScope.() -> Unit) {
         content = contenido
     )
 }
+
+/**
+ * Lo del muelle cuando cambia de paso: se apaga lo que había y luego se enciende lo nuevo.
+ *
+ * No se desliza con la pantalla porque el muelle no se va, sigue abajo y solo cambia lo que
+ * lleva. Primero se va lo de antes y después llega lo nuevo, para que nunca se vean dos botones
+ * uno a través del otro.
+ */
+internal fun <S> AnimatedContentTransitionScope<S>.cambioDelMuelle(transicion: TransicionDePantalla?): ContentTransform =
+    if (transicion == null) {
+        EnterTransition.None togetherWith ExitTransition.None
+    } else {
+        fadeIn(tween(220, delayMillis = 90)) togetherWith fadeOut(tween(90))
+    }
 
 @Composable
 internal fun NotaDelMuelle(texto: String) {

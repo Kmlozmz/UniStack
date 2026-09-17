@@ -6,6 +6,9 @@ import com.unistack.app.core.utils.DayLabels
 import com.unistack.app.core.utils.mediumDesde
 import com.unistack.app.core.utils.huecosAntesDelUno
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import androidx.compose.animation.AnimatedContent
+import com.unistack.app.core.navigation.cambioDeVista
+import com.unistack.app.core.navigation.transicionEntreVistas
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -150,6 +153,7 @@ internal fun ScheduleIdentityContent(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalInterfaceSpacing.current
+    val transicion = transicionEntreVistas()
     var metricDetail by remember { mutableStateOf<IdentityMetricDetail?>(null) }
     LazyColumn(
         modifier = modifier
@@ -191,93 +195,87 @@ internal fun ScheduleIdentityContent(
             }
         }
 
-        when (view) {
-            IdentityScheduleView.TIMETABLE -> {
-                item {
-                    TimetableMetrics(
-                        selectedDate = selectedDate,
-                        sessions = uiState.sessions,
-                        subjects = uiState.subjects,
-                        onSubjectsClick = { metricDetail = IdentityMetricDetail.SUBJECTS },
-                        onTodayClick = { metricDetail = IdentityMetricDetail.TODAY },
-                        onWeekClick = { metricDetail = IdentityMetricDetail.WEEK }
-                    )
-                }
-                // La próxima clase va antes de la rejilla y el acceso al horario completo
-                // después: lo primero es lo que se viene a mirar, y lo segundo es una salida
-                // hacia otra pantalla, que se ofrece cuando ya has visto la semana.
-                item {
-                    NextClassPanel(
-                        sessions = uiState.sessions,
-                        subjects = uiState.subjects,
-                        use24Hour = uiState.accessibility.use24HourTime,
-                        onSessionClick = onSessionClick
-                    )
-                }
-                item {
-                    IdentityWeeklyTimeline(
-                        selectedDate = selectedDate,
-                        sessions = uiState.sessions,
-                        subjects = uiState.subjects,
-                        use24Hour = uiState.accessibility.use24HourTime,
-                        onDateSelected = onDateSelected,
-                        onSessionClick = onSessionClick
-                    )
-                }
-                item {
-                    WeekDayClassList(
-                        selectedDate = selectedDate,
-                        sessions = uiState.sessions,
-                        subjects = uiState.subjects,
-                        occurrences = uiState.occurrences,
-                        use24Hour = uiState.accessibility.use24HourTime,
-                        onSessionClick = onSessionClick
-                    )
-                }
-                item {
-                    FullScheduleLaunchCard(onClick = onOpenFullSchedule)
-                }
-                item {
-                    IdentityPrimaryButton(label = stringResource(R.string.schedule_add_class), onClick = onAddClass)
-                }
-            }
+        // Horario y Calendario cambian como dos pantallas, del lado en el que está cada una.
+        item {
+            AnimatedContent(
+                targetState = view,
+                transitionSpec = { cambioDeVista(transicion, recortar = false) { it.ordinal } },
+                label = "horario y calendario"
+            ) { vistaVisible ->
+                Column(
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
+                    verticalArrangement = Arrangement.spacedBy(spacing.section)
+                ) {
+                    when (vistaVisible) {
+                        IdentityScheduleView.TIMETABLE -> {
+                            TimetableMetrics(
+                                selectedDate = selectedDate,
+                                sessions = uiState.sessions,
+                                subjects = uiState.subjects,
+                                onSubjectsClick = { metricDetail = IdentityMetricDetail.SUBJECTS },
+                                onTodayClick = { metricDetail = IdentityMetricDetail.TODAY },
+                                onWeekClick = { metricDetail = IdentityMetricDetail.WEEK }
+                            )
+                            // La próxima clase va antes de la rejilla y el acceso al horario completo
+                            // después: lo primero es lo que se viene a mirar, y lo segundo es una salida
+                            // hacia otra pantalla, que se ofrece cuando ya has visto la semana.
+                            NextClassPanel(
+                                sessions = uiState.sessions,
+                                subjects = uiState.subjects,
+                                use24Hour = uiState.accessibility.use24HourTime,
+                                onSessionClick = onSessionClick
+                            )
+                            IdentityWeeklyTimeline(
+                                selectedDate = selectedDate,
+                                sessions = uiState.sessions,
+                                subjects = uiState.subjects,
+                                use24Hour = uiState.accessibility.use24HourTime,
+                                onDateSelected = onDateSelected,
+                                onSessionClick = onSessionClick
+                            )
+                            WeekDayClassList(
+                                selectedDate = selectedDate,
+                                sessions = uiState.sessions,
+                                subjects = uiState.subjects,
+                                occurrences = uiState.occurrences,
+                                use24Hour = uiState.accessibility.use24HourTime,
+                                onSessionClick = onSessionClick
+                            )
+                            FullScheduleLaunchCard(onClick = onOpenFullSchedule)
+                            IdentityPrimaryButton(label = stringResource(R.string.schedule_add_class), onClick = onAddClass)
+                        }
 
-            IdentityScheduleView.CALENDAR -> {
-                item {
-                    CalendarMetrics(
-                        month = YearMonth.from(selectedDate),
-                        tasks = uiState.tasks,
-                        agendaEvents = uiState.agendaEvents,
-                        onEventsClick = { metricDetail = IdentityMetricDetail.EVENTS },
-                        onDeliveriesClick = { metricDetail = IdentityMetricDetail.DELIVERIES },
-                        onExamsClick = { metricDetail = IdentityMetricDetail.EXAMS }
-                    )
-                }
-                item {
-                    IdentityMonthCalendar(
-                        selectedDate = selectedDate,
-                        sessions = uiState.sessions,
-                        tasks = uiState.tasks,
-                        subjects = uiState.subjects,
-                        agendaEvents = uiState.agendaEvents,
-                        onDateSelected = onDateSelected
-                    )
-                }
-                item {
-                    SelectedDayPanel(
-                        date = selectedDate,
-                        sessions = uiState.sessions,
-                        tasks = uiState.tasks,
-                        subjects = uiState.subjects,
-                        agendaEvents = uiState.agendaEvents,
-                        use24Hour = uiState.accessibility.use24HourTime,
-                        onSessionClick = onSessionClick,
-                        onTaskClick = onTaskClick,
-                        onAgendaEventClick = onAgendaEventClick
-                    )
-                }
-                item {
-                    IdentityPrimaryButton(label = stringResource(R.string.schedule_identity_add_agenda), onClick = onAddEvent)
+                        IdentityScheduleView.CALENDAR -> {
+                            CalendarMetrics(
+                                month = YearMonth.from(selectedDate),
+                                tasks = uiState.tasks,
+                                agendaEvents = uiState.agendaEvents,
+                                onEventsClick = { metricDetail = IdentityMetricDetail.EVENTS },
+                                onDeliveriesClick = { metricDetail = IdentityMetricDetail.DELIVERIES },
+                                onExamsClick = { metricDetail = IdentityMetricDetail.EXAMS }
+                            )
+                            IdentityMonthCalendar(
+                                selectedDate = selectedDate,
+                                sessions = uiState.sessions,
+                                tasks = uiState.tasks,
+                                subjects = uiState.subjects,
+                                agendaEvents = uiState.agendaEvents,
+                                onDateSelected = onDateSelected
+                            )
+                            SelectedDayPanel(
+                                date = selectedDate,
+                                sessions = uiState.sessions,
+                                tasks = uiState.tasks,
+                                subjects = uiState.subjects,
+                                agendaEvents = uiState.agendaEvents,
+                                use24Hour = uiState.accessibility.use24HourTime,
+                                onSessionClick = onSessionClick,
+                                onTaskClick = onTaskClick,
+                                onAgendaEventClick = onAgendaEventClick
+                            )
+                            IdentityPrimaryButton(label = stringResource(R.string.schedule_identity_add_agenda), onClick = onAddEvent)
+                        }
+                    }
                 }
             }
         }

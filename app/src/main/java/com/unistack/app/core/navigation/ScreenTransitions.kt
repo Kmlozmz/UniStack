@@ -1,7 +1,11 @@
 package com.unistack.app.core.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,7 +17,12 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOut
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.IntOffset
+import com.unistack.app.core.design.theme.LocalMotionDurationScale
+import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.feature_user.domain.ScreenTransition
 
 /**
@@ -31,7 +40,16 @@ internal data class TransicionDePantalla(
     val entra: EnterTransition,
     val sale: ExitTransition,
     val vuelveEntrando: EnterTransition,
-    val vuelveSaliendo: ExitTransition
+    val vuelveSaliendo: ExitTransition,
+    /**
+     * [entra] y [sale] vistas en un espejo, para ir a una pestaña que queda a la izquierda.
+     *
+     * Cambiar de pestaña no es volver atrás —no se deshace nada de la pila—, así que la que llega
+     * se pinta encima, como al entrar; solo cambia el lado por el que llega. En las transiciones
+     * que no tienen lado son las mismas.
+     */
+    val entraDesdeElOtroLado: EnterTransition = entra,
+    val saleHaciaElOtroLado: ExitTransition = sale
 )
 
 internal fun transicionDe(
@@ -58,7 +76,9 @@ internal fun transicionDe(
         entra = slideInHorizontally(desplazamiento) { ancho -> ancho },
         sale = slideOutHorizontally(desplazamiento) { ancho -> -ancho / 3 },
         vuelveEntrando = slideInHorizontally(desplazamiento) { ancho -> -ancho / 3 },
-        vuelveSaliendo = slideOutHorizontally(desplazamiento) { ancho -> ancho }
+        vuelveSaliendo = slideOutHorizontally(desplazamiento) { ancho -> ancho },
+        entraDesdeElOtroLado = slideInHorizontally(desplazamiento) { ancho -> -ancho },
+        saleHaciaElOtroLado = slideOutHorizontally(desplazamiento) { ancho -> ancho / 3 }
     )
 
     /*
@@ -136,4 +156,50 @@ internal fun transicionDe(
         vuelveEntrando = fadeIn(fundido),
         vuelveSaliendo = slideOut(desplazamiento) { tam -> IntOffset(tam.width, tam.height) }
     )
+}
+
+/**
+ * La transición de Movimiento para lo que cambia de pantalla sin cambiar de ruta: los pasos de un
+ * flujo y las vistas de un selector. Nula con el movimiento apagado.
+ *
+ * Existe porque esos cambios no pasan por el `NavHost` y saltaban de golpe: cerrar un periodo iba
+ * del paso 1 al 2 sin moverse, igual que Materias y Tareas. Con la misma transición que las
+ * pantallas, un paso se lee como la pantalla siguiente. Lo que va dentro tiene que llevar fondo
+ * opaco, por lo mismo que `screen()`.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun transicionEntreVistas(): TransicionDePantalla? {
+    if (LocalMotionDurationScale.current <= 0f) return null
+    return transicionDe(
+        estilo = motionActual().screenTransition,
+        desplazamiento = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        fundido = MaterialTheme.motionScheme.defaultEffectsSpec()
+    )
+}
+
+/**
+ * El cambio de una vista a otra, hacia delante o hacia atrás según [orden].
+ *
+ * La capa también sale del orden: la vista de más adelante se pinta encima. Al avanzar, la nueva
+ * tapa a la anterior; al volver, la que se va sigue encima mientras se retira, igual que en el
+ * `NavHost`.
+ *
+ * [recortar] en falso deja que lo que se desliza se vea fuera de su caja. Hace falta cuando la
+ * vista va dentro de los márgenes de la pantalla: recortada, desaparecería a veinte puntos del
+ * borde en vez de salir por él.
+ */
+internal fun <S> AnimatedContentTransitionScope<S>.cambioDeVista(
+    transicion: TransicionDePantalla?,
+    recortar: Boolean = true,
+    orden: (S) -> Int
+): ContentTransform {
+    val desde = orden(initialState)
+    val hacia = orden(targetState)
+    val cambio = when {
+        transicion == null -> EnterTransition.None togetherWith ExitTransition.None
+        hacia >= desde -> transicion.entra togetherWith transicion.sale
+        else -> transicion.vuelveEntrando togetherWith transicion.vuelveSaliendo
+    }
+    return (cambio using SizeTransform(clip = recortar)).apply { targetContentZIndex = hacia.toFloat() }
 }

@@ -75,6 +75,9 @@ import com.unistack.app.feature_user.domain.GradingScale
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
+import androidx.compose.animation.AnimatedContent
+import com.unistack.app.core.navigation.cambioDeVista
+import com.unistack.app.core.navigation.transicionEntreVistas
 
 private enum class Pestana { Notas, Asistencia, Metricas }
 
@@ -98,6 +101,7 @@ fun TermSubjectScreen(
     val encontrada = historial?.materia(subjectId)
     val escala = estado.profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val tope = estado.profile?.absenceLimit
+    val transicion = transicionEntreVistas()
     var pestana by rememberSaveable { mutableStateOf(Pestana.Notas) }
 
     Box(modifier = modifier.fillMaxSize().background(Paleta.fondo)) {
@@ -132,19 +136,32 @@ fun TermSubjectScreen(
                     ),
                     onSelected = { pestana = it }
                 )
-                when (pestana) {
-                    Pestana.Notas -> {
-                        PestanaDeNotas(materia, historial, escala)
-                        UniStackButton(
-                            text = stringResource(R.string.hist_editar_notas),
-                            onClick = { onEditGrades(subjectId) },
-                            variant = UniStackButtonVariant.Outlined,
-                            leadingIcon = Icons.Rounded.Edit,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                // Cada pestaña entra como una pantalla, del lado en el que está.
+                AnimatedContent(
+                    targetState = pestana,
+                    transitionSpec = { cambioDeVista(transicion, recortar = false) { it.ordinal } },
+                    label = "pestañas de la materia",
+                    modifier = Modifier.fillMaxWidth()
+                ) { pestanaVisible ->
+                    Column(
+                        modifier = Modifier.fillMaxWidth().background(Paleta.fondo),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        when (pestanaVisible) {
+                            Pestana.Notas -> {
+                                PestanaDeNotas(materia, historial, escala)
+                                UniStackButton(
+                                    text = stringResource(R.string.hist_editar_notas),
+                                    onClick = { onEditGrades(subjectId) },
+                                    variant = UniStackButtonVariant.Outlined,
+                                    leadingIcon = Icons.Rounded.Edit,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            Pestana.Asistencia -> PestanaDeAsistencia(periodo, materia, tope)
+                            Pestana.Metricas -> PestanaDeMetricas(periodo, materia, historial, escala, tope)
+                        }
                     }
-                    Pestana.Asistencia -> PestanaDeAsistencia(periodo, materia, tope)
-                    Pestana.Metricas -> PestanaDeMetricas(periodo, materia, historial, escala, tope)
                 }
             }
         }
