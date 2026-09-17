@@ -888,7 +888,40 @@ fun changelogBodyFor(versionName: String): String {
     if (body.isBlank()) {
         throw GradleException("La seccion de $versionName en CHANGELOG.md esta vacia.")
     }
-    return body
+    return body.unwrapMarkdownLines()
+}
+
+/**
+ * Une en una sola línea cada párrafo y cada viñeta.
+ *
+ * CHANGELOG.md se escribe a 100 columnas, y GitHub pinta cada salto de línea de las notas de una
+ * publicación como un salto real: la 1.0.0 salió con las frases partidas por la mitad. Los
+ * encabezados, las tablas, las líneas en blanco y los bloques de código se dejan como están.
+ */
+fun String.unwrapMarkdownLines(): String {
+    val salida = mutableListOf<String>()
+    var enCodigo = false
+    lines().forEach { original ->
+        val linea = original.trimEnd()
+        val suelta = linea.trimStart()
+        if (suelta.startsWith("```")) {
+            enCodigo = !enCodigo
+            salida += linea
+            return@forEach
+        }
+        val abreBloque = enCodigo || suelta.isEmpty() || suelta.startsWith("#") ||
+            suelta.startsWith("- ") || suelta.startsWith("* ") || suelta.startsWith("|") ||
+            suelta == "---" || Regex("^\\d+\\. ").containsMatchIn(suelta)
+        val anterior = salida.lastOrNull()?.trimStart()
+        val seSuma = !abreBloque && !anterior.isNullOrBlank() &&
+            !anterior.startsWith("#") && !anterior.startsWith("|") && anterior != "---"
+        if (seSuma) {
+            salida[salida.lastIndex] = salida.last() + " " + suelta
+        } else {
+            salida += linea
+        }
+    }
+    return salida.joinToString(System.lineSeparator())
 }
 
 val validateGitHubPublishReady = tasks.register("validateGitHubPublishReady") {
