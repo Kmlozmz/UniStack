@@ -16,10 +16,12 @@ This document establishes the authoritative rules, domain invariants, technical 
 2. **Autonomous Alpha Delivery (`sendAlpha`)**:
    - After completing and verifying a unit of work, compile and distribute an alpha build immediately:
      ```powershell
-     ./gradlew sendAlpha "-PversionName=1.6.0-alpha.N"
+     ./gradlew sendAlpha "-PversionName=1.0.1-alpha.N"
      ```
    - **PowerShell Quoting Rule**: Always wrap `-PversionName=...` in double quotes.
    - The build is delivered automatically to the developer's Telegram bot (`UniStackBot`).
+   - Versions restarted at **1.0.0** on 17 Sep 2026 (first public release). Alphas prepare the *next* version: `1.0.1-alpha.N` for fixes, `1.1.0-alpha.N` for features. Never a `1.0.0-*` suffix again.
+   - GitHub Releases (`Kmlozmz/UniStack-releases`) only receives final versions, via `publishReleaseToGitHub`, and only when the user confirms. See `PUBLICAR.md`.
 
 3. **Commit Integrity (No AI Footers)**:
    - Use Conventional Commits in **English** explaining the architectural *why*.
@@ -52,7 +54,7 @@ This document establishes the authoritative rules, domain invariants, technical 
    - Subtasks checklist stored in Room v22 table `task_subtasks` with drag-and-drop position sorting.
 
 4. **Database & Migrations**:
-   - Room schema currently at v21 (12 tables). Handcrafted migrations in `DatabaseMigrations.kt`.
+   - Room schema currently at v24 (14 tables). Handcrafted migrations in `UniStackDatabase.kt`.
    - Destructive migrations are strictly forbidden.
    - All migrations must be verified via `RoomMigrationTest.kt`.
    - DataStore preferences (~137 keys) accessed only via typed repositories.
