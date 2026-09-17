@@ -3,6 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
@@ -244,21 +245,21 @@ internal fun BackupSection(
                 icon = Icons.Rounded.Backup,
                 title = stringResource(R.string.settings_backup_restore_title),
                 subtitle = stringResource(R.string.settings_backup_restore_subtitle),
-                iconColor = LocalSectionColors.current.schedule,
+                iconColor = tonosDeAjustes.cian,
                 onClick = { openBackup.launch(arrayOf("application/json", "text/plain", "*/*")) }
             )
             SettingsRow(
                 icon = Icons.AutoMirrored.Rounded.ListAlt,
                 title = stringResource(R.string.settings_backup_csv_tasks_title),
                 subtitle = stringResource(R.string.settings_backup_csv_tasks_subtitle),
-                iconColor = MaterialTheme.colorScheme.tertiary,
+                iconColor = tonosDeAjustes.indigo,
                 onClick = { saveTasksCsv.launch(BackupFiles.suggestedName("unistack-tareas", "csv")) }
             )
             SettingsRow(
                 icon = Icons.Rounded.AccountBalanceWallet,
                 title = stringResource(R.string.settings_backup_csv_expenses_title),
                 subtitle = stringResource(R.string.settings_backup_csv_expenses_subtitle),
-                iconColor = LocalSectionColors.current.expenses,
+                iconColor = tonosDeAjustes.rojo,
                 onClick = { saveExpensesCsv.launch(BackupFiles.suggestedName("unistack-gastos", "csv")) }
             )
         }

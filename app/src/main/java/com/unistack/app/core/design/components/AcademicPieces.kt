@@ -606,7 +606,7 @@ internal fun CutBalanceNotice(total: Double, remaining: Double, isValid: Boolean
     ) {
         Text(
             text = when {
-                isValid -> stringResource(R.string.cuts_weights_ok)
+                isValid -> stringResource(R.string.cuts_weights_ok, 100)
                 over -> stringResource(R.string.cuts_weights_over, formatSetupPercent(total - 100.0))
                 else -> stringResource(R.string.cuts_weights_missing, formatSetupPercent(remaining))
             },

@@ -1523,10 +1523,12 @@
     <string name="settings_typo_sample_desc">Con 3,10 en el tercer corte cierras en 4,00. El segundo corte pesa el 35%.</string>
     <string name="settings_typo_scale_label">Al %d%%. Vale para toda la app, no solo para esta pantalla.</string>
     <string name="settings_components_title">Componentes</string>
-    <string name="settings_components_subtitle">Tamaños, barra, progreso e interruptores</string>
+    <string name="settings_components_subtitle">Tamaños, barra, iconos, progreso e interruptores</string>
     <string name="settings_components_sec_button_size">TAMAÑO DE LOS BOTONES</string>
     <string name="settings_components_button_size_desc">La forma se elige en Forma y superficie.</string>
     <string name="settings_components_sec_bottom_bar">BARRA DE ABAJO</string>
+    <string name="settings_components_sec_settings_icons">ICONOS DE AJUSTES</string>
+    <string name="settings_components_settings_icons_desc">Por ahora solo cambian los de Ajustes. De colores, cada uno lleva el de lo que hace; circulares, van todos con el acento.</string>
     <string name="settings_components_bottom_bar_desc">Míralos en la barra de abajo mientras eliges: cambia al momento.</string>
     <string name="settings_components_sec_progress">BARRAS DE PROGRESO</string>
     <string name="settings_components_progress_desc">Es la onda de Material 3 Expressive, y se ve moviéndose porque quieta apenas se distingue de una recta. Las de descarga se quedan onduladas siempre.</string>
@@ -2304,6 +2306,8 @@ a tu medida</string>
     <string name="appearance_solo_texto">Solo texto</string>
     <string name="appearance_redondeado">Redondeado</string>
     <string name="appearance_lineal">Lineal</string>
+    <string name="appearance_iconos_de_colores">De colores</string>
+    <string name="appearance_iconos_circulares">Circulares</string>
     <string name="appearance_circulo">Círculo</string>
     <string name="appearance_galleta">Galleta</string>
     <string name="appearance_trebol">Trébol</string>
@@ -2733,7 +2737,7 @@ a tu medida</string>
     <string name="scale_help_passed">De %1$s a %2$s: pasas la materia, pero aún no llegas a tu meta.</string>
     <string name="scale_help_goal">De %1$s en adelante: el promedio que te propusiste.</string>
     <string name="scale_help_width">El ancho de cada tramo es el sitio que ocupa en la escala. Si subes la meta, el tramo verde se estrecha: te dejas menos margen.</string>
-    <string name="cuts_weights_ok">Cuadra: el 100 %% está repartido.</string>
+    <string name="cuts_weights_ok">Cuadra: el %1$d %% está repartido.</string>
     <string name="cuts_weights_over">Te pasas %1$s puntos. Baja alguno.</string>
     <string name="cuts_weights_missing">Te faltan %1$s puntos por repartir.</string>
     <string name="cuts_how_many">¿CUÁNTOS %1$s?</string>
@@ -3350,6 +3354,7 @@ a tu medida</string>
     <string name="hist_cerraste_hace_uno">Cerraste %1$s hace 1 día</string>
     <string name="hist_cerraste_hace">Cerraste %1$s hace %2$d días</string>
     <string name="hist_ver">Ver %1$s</string>
+    <string name="hist_ver_imagen">Ver</string>
     <string name="hist_tu_proximo_periodo">Tu próximo periodo</string>
     <string name="hist_traigo">Traigo la escala 0 a %1$s, el aprobado en %2$s y tus %3$s. Sólo revisas fechas y materias.</string>
     <string name="hist_corte_uno">1 corte</string>

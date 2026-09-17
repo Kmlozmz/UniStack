@@ -3,6 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -124,7 +125,7 @@ fun AppearanceSettingsScreen(
                     // quedó puesta.
                     subtitle = current.visualPreference.orSystem().label() + " · " +
                         AppThemes.byId(appearance.themeId).name,
-                    iconColor = MaterialTheme.colorScheme.primary,
+                    iconColor = tonosDeAjustes.rosa,
                     onClick = onThemeClick
                 )
                 SettingsRow(
@@ -136,7 +137,7 @@ fun AppearanceSettingsScreen(
                         appearance.cornerStyle.label().lowercase(),
                         appearance.interfaceDensity.label().lowercase()
                     ),
-                    iconColor = sections.schedule,
+                    iconColor = tonosDeAjustes.violeta,
                     onClick = onSurfaceClick
                 )
                 SettingsRow(
@@ -144,7 +145,7 @@ fun AppearanceSettingsScreen(
                     title = stringResource(R.string.settings_appearance_typo_title),
                     subtitle = appearance.typographyStyle.label() + " · " +
                         appearance.decimalPlaces.ejemploDeNota(),
-                    iconColor = sections.onTrack,
+                    iconColor = tonosDeAjustes.indigo,
                     onClick = onTypographyClick
                 )
                 SettingsRow(
@@ -155,7 +156,7 @@ fun AppearanceSettingsScreen(
                         appearance.bottomBarStyle.label().lowercase(),
                         appearance.academicProgressShape.label().lowercase()
                     ),
-                    iconColor = MaterialTheme.colorScheme.tertiary,
+                    iconColor = tonosDeAjustes.naranja,
                     onClick = onComponentsClick
                 )
                 SettingsRow(
@@ -166,14 +167,14 @@ fun AppearanceSettingsScreen(
                         MotionCatalog.gestures.size,
                         MotionCatalog.variantCount
                     ),
-                    iconColor = MaterialTheme.colorScheme.secondary,
+                    iconColor = tonosDeAjustes.turquesa,
                     onClick = onMotionClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Home,
                     title = stringResource(R.string.settings_appearance_home_title),
                     subtitle = appearance.resumenDeInicio(),
-                    iconColor = sections.expenses,
+                    iconColor = tonosDeAjustes.azul,
                     onClick = onHomeClick
                 )
             }

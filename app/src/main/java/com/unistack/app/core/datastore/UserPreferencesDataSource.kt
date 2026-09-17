@@ -377,11 +377,12 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("lineHeightStyle", lineHeightStyle.name)
         .put("decimalPlaces", decimalPlaces)
         .put("bottomBarStyle", bottomBarStyle.name)
-        .put("buttonShape", buttonShape.name)
+        .put("buttonShapeV2", buttonShape.name)
         .put("buttonSize", buttonSize.name)
         .put("textFieldStyle", textFieldStyle.name)
         .put("chipStyle", chipStyle.name)
         .put("iconStyle", iconStyle.name)
+        .put("settingsIconStyle", settingsIconStyle.name)
         .put("badgeShape", badgeShape.name)
         .put("listDividers", listDividers)
         .put("firstDayOfWeek", firstDayOfWeek.name)
@@ -481,11 +482,15 @@ class UserPreferencesDataSource(private val context: Context) {
                 lineHeightStyle = json.enumOrDefault("lineHeightStyle", defaults.lineHeightStyle),
                 decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
                 bottomBarStyle = json.enumOrDefault("bottomBarStyle", defaults.bottomBarStyle),
-                buttonShape = json.enumOrDefault("buttonShape", defaults.buttonShape),
+                // Clave nueva a propósito: «Medios» era el de por defecto y quedó guardado en todos
+                // los teléfonos sin que nadie lo eligiera. Con otra clave, todos pasan a la pastilla
+                // de ahora y quien quiera los de antes los vuelve a elegir.
+                buttonShape = json.enumOrDefault("buttonShapeV2", defaults.buttonShape),
                 buttonSize = json.enumOrDefault("buttonSize", defaults.buttonSize),
                 textFieldStyle = json.enumOrDefault("textFieldStyle", defaults.textFieldStyle),
                 chipStyle = json.enumOrDefault("chipStyle", defaults.chipStyle),
                 iconStyle = json.enumOrDefault("iconStyle", defaults.iconStyle),
+                settingsIconStyle = json.enumOrDefault("settingsIconStyle", defaults.settingsIconStyle),
                 badgeShape = json.enumOrDefault("badgeShape", defaults.badgeShape),
                 listDividers = json.optBoolean("listDividers", defaults.listDividers),
                 firstDayOfWeek = json.enumOrDefault("firstDayOfWeek", defaults.firstDayOfWeek),

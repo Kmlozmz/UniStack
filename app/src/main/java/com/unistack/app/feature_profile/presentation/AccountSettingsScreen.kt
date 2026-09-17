@@ -3,6 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import androidx.compose.runtime.remember
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import androidx.compose.foundation.clickable
 import android.net.Uri
 import com.unistack.app.feature_user.domain.portraitUrl
@@ -506,7 +507,7 @@ private fun AccountLinkRow(
     ) {
         SettingsRowIcon(
             icon = if (linked) Icons.Rounded.CloudDone else Icons.Rounded.CloudOff,
-            color = if (linked) sections.onTrack else sections.schedule
+            color = if (linked) tonosDeAjustes.verde else tonosDeAjustes.gris
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Row(

@@ -1523,10 +1523,12 @@
     <string name="settings_typo_sample_desc">With 3.10 in the third term you finish at 4.00. The second term is weighted at 35%.</string>
     <string name="settings_typo_scale_label">At %d%%. Applies across the entire app, not just this screen.</string>
     <string name="settings_components_title">Components</string>
-    <string name="settings_components_subtitle">Sizes, bar, progress, and switches</string>
+    <string name="settings_components_subtitle">Sizes, bar, icons, progress, and switches</string>
     <string name="settings_components_sec_button_size">BUTTON SIZE</string>
     <string name="settings_components_button_size_desc">Shape is selected in Shape &amp; surface.</string>
     <string name="settings_components_sec_bottom_bar">BOTTOM BAR</string>
+    <string name="settings_components_sec_settings_icons">SETTINGS ICONS</string>
+    <string name="settings_components_settings_icons_desc">For now only the ones in Settings change. In color, each one wears the color of what it does; circular, they all use the accent.</string>
     <string name="settings_components_bottom_bar_desc">Check them on the bottom bar as you choose: updates instantly.</string>
     <string name="settings_components_sec_progress">PROGRESS BARS</string>
     <string name="settings_components_progress_desc">The Material 3 Expressive wave, animated because still it looks similar to a flat line. Downloads remain wavy always.</string>
@@ -2305,6 +2307,8 @@ your course catalog.</string>
     <string name="appearance_solo_texto">Text only</string>
     <string name="appearance_redondeado">Rounded</string>
     <string name="appearance_lineal">Outlined</string>
+    <string name="appearance_iconos_de_colores">In color</string>
+    <string name="appearance_iconos_circulares">Circular</string>
     <string name="appearance_circulo">Circle</string>
     <string name="appearance_galleta">Cookie</string>
     <string name="appearance_trebol">Clover</string>
@@ -2734,7 +2738,7 @@ your course catalog.</string>
     <string name="scale_help_passed">From %1$s to %2$s: you pass the subject, but you have not reached your goal yet.</string>
     <string name="scale_help_goal">From %1$s upward: the average you set for yourself.</string>
     <string name="scale_help_width">The width of each range is the room it takes on the scale. If you raise the goal, the green range narrows: you leave yourself less margin.</string>
-    <string name="cuts_weights_ok">It adds up: the whole 100 %% is distributed.</string>
+    <string name="cuts_weights_ok">It adds up: the whole %1$d %% is distributed.</string>
     <string name="cuts_weights_over">You are %1$s points over. Lower one.</string>
     <string name="cuts_weights_missing">You still have %1$s points to distribute.</string>
     <string name="cuts_how_many">HOW MANY %1$s?</string>
@@ -3351,6 +3355,7 @@ your course catalog.</string>
     <string name="hist_cerraste_hace_uno">You closed %1$s 1 day ago</string>
     <string name="hist_cerraste_hace">You closed %1$s %2$d days ago</string>
     <string name="hist_ver">View %1$s</string>
+    <string name="hist_ver_imagen">View</string>
     <string name="hist_tu_proximo_periodo">Your next term</string>
     <string name="hist_traigo">I\'ll bring the 0 to %1$s scale, the %2$s pass mark and your %3$s. You only check dates and subjects.</string>
     <string name="hist_corte_uno">1 cut</string>

@@ -3,6 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.feature_user.domain.portraitUrl
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroup
 import androidx.compose.material.icons.rounded.History
@@ -97,14 +98,14 @@ fun SettingsHubScreen(
                     icon = Icons.Rounded.Palette,
                     title = stringResource(R.string.settings_appearance),
                     subtitle = stringResource(R.string.settings_appearance_desc),
-                    iconColor = MaterialTheme.colorScheme.primary,
+                    iconColor = tonosDeAjustes.rosa,
                     onClick = onAppearanceClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Accessibility,
                     title = stringResource(R.string.settings_accessibility),
                     subtitle = stringResource(R.string.settings_accessibility_desc),
-                    iconColor = MaterialTheme.colorScheme.tertiary,
+                    iconColor = tonosDeAjustes.azul,
                     onClick = onAccessibilityClick
                 )
             }
@@ -115,7 +116,7 @@ fun SettingsHubScreen(
                     icon = Icons.Rounded.School,
                     title = stringResource(R.string.settings_academic),
                     subtitle = stringResource(R.string.settings_academic_desc),
-                    iconColor = sections.schedule,
+                    iconColor = tonosDeAjustes.indigo,
                     onClick = onAcademicClick
                 )
                 /*
@@ -129,14 +130,14 @@ fun SettingsHubScreen(
                     icon = Icons.Rounded.History,
                     title = stringResource(R.string.settings_academic_history),
                     subtitle = academicHistorySubtitle ?: stringResource(R.string.settings_academic_history_desc),
-                    iconColor = sections.onTrack,
+                    iconColor = tonosDeAjustes.turquesa,
                     onClick = onAcademicHistoryClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Widgets,
                     title = stringResource(R.string.settings_modules),
                     subtitle = stringResource(R.string.settings_modules_desc),
-                    iconColor = sections.onTrack,
+                    iconColor = tonosDeAjustes.naranja,
                     onClick = onModulesClick
                 )
             }
@@ -147,21 +148,21 @@ fun SettingsHubScreen(
                     icon = Icons.Rounded.Notifications,
                     title = stringResource(R.string.settings_notifications),
                     subtitle = stringResource(R.string.settings_notifications_desc),
-                    iconColor = MaterialTheme.colorScheme.tertiary,
+                    iconColor = tonosDeAjustes.ambar,
                     onClick = onNotificationsClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Backup,
                     title = stringResource(R.string.settings_data),
                     subtitle = stringResource(R.string.settings_data_desc),
-                    iconColor = sections.schedule,
+                    iconColor = tonosDeAjustes.cian,
                     onClick = onDataClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Refresh,
                     title = stringResource(R.string.settings_updates),
                     subtitle = stringResource(R.string.settings_updates_desc),
-                    iconColor = sections.expenses,
+                    iconColor = tonosDeAjustes.verde,
                     onClick = onUpdatesClick
                 )
             }

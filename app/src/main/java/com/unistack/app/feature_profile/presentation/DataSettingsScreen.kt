@@ -3,6 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.components.LargeTitleScaffold
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.foundation.layout.Arrangement
@@ -83,7 +84,7 @@ fun DataSettingsScreen(
                     icon = Icons.Rounded.RestartAlt,
                     title = stringResource(R.string.settings_data_repeat_setup_title),
                     subtitle = stringResource(R.string.settings_data_repeat_setup_subtitle),
-                    iconColor = MaterialTheme.colorScheme.error,
+                    iconColor = tonosDeAjustes.rojo,
                     onClick = { showRestartDialog = true }
                 )
             }

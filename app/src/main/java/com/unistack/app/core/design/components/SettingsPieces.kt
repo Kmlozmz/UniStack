@@ -2,7 +2,9 @@
 
 package com.unistack.app.core.design.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,11 +30,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.SectionLabelStyle
+import com.unistack.app.feature_user.domain.SettingsIconStyle
 
 /*
  * Las piezas con las que están hechas las nueve pantallas de ajustes.
@@ -239,22 +244,43 @@ fun SettingsGroup(
 }
 
 /**
- * El cuadrado de color con el icono dentro, a la izquierda de cada fila.
+ * El icono a la izquierda de cada fila, en la forma que se haya elegido en Apariencia.
  *
- * Va relleno del color de la sección y el icono en el color del fondo, no al revés: en una
- * lista de ocho filas, ocho iconos teñidos sobre pastillas pálidas se leen como ocho manchas
- * del mismo peso, y el relleno sólido es lo que deja distinguirlos de un vistazo.
+ * - **De colores**: cuadrado relleno del color de lo que hace la fila y el icono en el color del
+ *   fondo, no al revés. En una lista de ocho filas, ocho iconos teñidos sobre pastillas pálidas
+ *   se leen como ocho manchas del mismo peso, y el relleno sólido es lo que deja distinguirlos.
+ * - **Circulares**: círculo un tono por encima de la fila y el icono en el acento, como en la
+ *   simulación del histórico. Todos del mismo color, así que ahí manda el dibujo.
+ *
+ * Apagado —un interruptor sin encender— pierde el color en las dos, que es lo que deja ver de
+ * un vistazo cuáles están encendidos sin leer fila a fila.
  */
 @Composable
-fun SettingsRowIcon(icon: ImageVector, color: Color) {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = color,
-        contentColor = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.size(40.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
+fun SettingsRowIcon(icon: ImageVector, color: Color, activo: Boolean = true) {
+    when (LocalAppearancePreferences.current.settingsIconStyle) {
+        SettingsIconStyle.COLOR -> Surface(
+            shape = MaterialTheme.shapes.small,
+            color = if (activo) color else MaterialTheme.colorScheme.surfaceContainerHighest,
+            contentColor = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
+            }
+        }
+        SettingsIconStyle.CIRCULO -> Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (activo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }
@@ -321,12 +347,9 @@ fun SettingsGroupScope.SettingsToggleRow(
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
         },
         leadingContent = {
-            SettingsRowIcon(
-                icon = icon,
-                // Apagado, el icono pierde el color: en una lista de interruptores es lo que
-                // deja ver de un vistazo cuáles están encendidos sin leer fila a fila.
-                color = if (checked) iconColor else MaterialTheme.colorScheme.surfaceContainerHighest
-            )
+            // Apagado, el icono pierde el color: en una lista de interruptores es lo que deja
+            // ver de un vistazo cuáles están encendidos sin leer fila a fila.
+            SettingsRowIcon(icon = icon, color = iconColor, activo = checked)
         },
         trailingContent = { UniSwitch(checked = checked, onCheckedChange = onCheckedChange) },
         colors = ListItemDefaults.colors(

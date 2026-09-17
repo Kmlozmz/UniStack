@@ -448,13 +448,19 @@ private val manchaDeTinta = listOf(
  *
  * [mensaje] es lo que se celebra, en palabras —«¡Todo hecho!», «¡Corte cerrado!»—, y lo
  * llevan las cuatro: una figura sola, sea confeti, rayos o un aro, no dice que se celebra.
+ *
+ * [centro] mueve el corazón de la figura —la onda, el sello, los rayos y el mensaje— a otro
+ * punto del recuadro, en píxeles. Sin él es el centro. Lo usa el cierre del periodo, que ya
+ * tiene su galleta y quiere la figura saliendo de ella y no de media pantalla.
  */
 @Composable
 fun Modifier.celebracionDelDia(
     disparada: Boolean,
     onTerminada: () -> Unit,
-    mensaje: String? = null
+    mensaje: String? = null,
+    centro: Offset? = null
 ): Modifier {
+    val centroPedido = centro
     val estilo = motionActual().celebration
     if (estilo == CelebrationMotion.NINGUNA || !hayMovimiento()) {
         // Sin celebración, el aviso se cierra al momento: si no, quien la apagó se queda con
@@ -540,7 +546,7 @@ fun Modifier.celebracionDelDia(
         val t = avance
         val w = size.width
         val h = size.height
-        val centro = Offset(w / 2f, h / 2f)
+        val centro = centroPedido ?: Offset(w / 2f, h / 2f)
         val alcance = kotlin.math.hypot(w, h) / 2f
         when (estilo) {
             /*

@@ -263,14 +263,23 @@ private fun expressiveColorScheme(
             onSurface = tema.ink,
             onSurfaceVariant = tema.ink.copy(alpha = 0.66f).compuestoSobre(tema.background),
             surfaceContainerLowest = tema.background.mezclaCon(tema.surface, 0.25f),
-            surfaceContainerLow = tema.background.mezclaCon(tema.surface, 0.6f),
+            /*
+             * En oscuro, la tarjeta es el color de tarjeta del tema, sin rebajar.
+             *
+             * `UniCard` y casi todo lo que hace de tarjeta pintan con este nivel, y salía al 60 %
+             * entre el fondo y la tarjeta: en UniStack, #12161E sobre #0A0C11. En el teléfono
+             * las tarjetas se fundían con el fondo y lo que llevaban dentro se perdía. Se pidió
+             * el 16 sep 2026 que todas fueran #181C27, que es justo lo que el tema declara como
+             * tarjeta; en los demás temas es su propia tarjeta, no ese número.
+             */
+            surfaceContainerLow = if (darkTheme) tema.surface else tema.background.mezclaCon(tema.surface, 0.6f),
             surfaceContainer = tema.surface,
             surfaceContainerHigh = tema.surface.mezclaCon(tema.ink, 0.07f),
             surfaceContainerHighest = tema.surface.mezclaCon(tema.ink, 0.13f),
             surfaceVariant = tema.surface,
             outline = tema.ink.copy(alpha = 0.34f).compuestoSobre(tema.background),
             outlineVariant = tema.ink.copy(alpha = 0.16f).compuestoSobre(tema.background)
-        ).conSuperficie(appearance.surfaceStyle, tema)
+        ).conSuperficie(appearance.surfaceStyle, tema, darkTheme)
     }
 
     // OLED apaga el píxel: el fondo y el contenedor más bajo van a negro puro, y el resto de
@@ -352,8 +361,24 @@ internal fun Color.saturado(fuerza: Float): Color {
  * - **Filete**: la tarjeta se funde con el fondo y lo que la delimita es el contorno.
  * - **Sombra**: la tarjeta se aleja del fondo en tono; la sombra la ponen los componentes.
  * - **Cristal**: nivel intermedio y contorno tenue, para que se lea como algo translucido.
+ *
+ * **En oscuro el tono ya no se toca.** Los cuatro estilos bajaban la tarjeta hacia el fondo, y
+ * sobre un fondo casi negro eso la hacía desaparecer: «Filete», el de por defecto, dejaba las
+ * baldosas de dentro más oscuras que la tarjeta que las contiene. Ahora las tarjetas son el
+ * color de tarjeta del tema en los cuatro, y el estilo decide solo el borde: `UniCard` pone el
+ * filete, la sombra o la transparencia, y aquí se ajusta el contraste de ese filete.
  */
-internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: ThemePalette): ColorScheme = when (estilo) {
+internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: ThemePalette, oscuro: Boolean = false): ColorScheme = if (oscuro) {
+    copy(
+        outlineVariant = when (estilo) {
+            // Sin borde en la tarjeta, lo que queda de esta línea son los separadores de dentro:
+            // tienen que verse más claros que la tarjeta, no más oscuros.
+            SurfaceStyle.FLAT, SurfaceStyle.ELEVATED -> tema.surface.mezclaCon(tema.ink, 0.08f)
+            SurfaceStyle.OUTLINED -> tema.ink.copy(alpha = 0.28f).compuestoSobre(tema.background)
+            SurfaceStyle.TRANSLUCENT -> tema.ink.copy(alpha = 0.20f).compuestoSobre(tema.background)
+        }
+    )
+} else when (estilo) {
     SurfaceStyle.FLAT -> copy(
         surfaceContainer = tema.background.mezclaCon(tema.surface, 0.55f),
         surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.75f),

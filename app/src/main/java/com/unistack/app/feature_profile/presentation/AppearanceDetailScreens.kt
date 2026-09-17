@@ -37,13 +37,22 @@ import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Accessibility
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.School
 import com.unistack.app.core.design.components.LargeTitleScaffold
+import com.unistack.app.core.design.components.SettingsRowIcon
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BadgeShape
 import com.unistack.app.feature_user.domain.BottomBarStyle
@@ -57,6 +66,7 @@ import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.LineHeightStyle
 import com.unistack.app.feature_user.domain.OutlineWeight
 import com.unistack.app.feature_user.domain.ProgressShape
+import com.unistack.app.feature_user.domain.SettingsIconStyle
 import com.unistack.app.feature_user.domain.ShadowIntensity
 import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.SwitchIconStyle
@@ -422,6 +432,16 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
         // misma cosa dos veces en la misma pantalla.
         Explicacion(stringResource(R.string.settings_components_bottom_bar_desc))
 
+        Rotulo(stringResource(R.string.settings_components_sec_settings_icons), arriba = true)
+        UniSegmentedControl(
+            selected = appearance.settingsIconStyle,
+            options = SettingsIconStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(settingsIconStyle = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        MuestraDeIconosDeAjustes()
+        Explicacion(stringResource(R.string.settings_components_settings_icons_desc))
+
         Rotulo(stringResource(R.string.settings_components_sec_progress), arriba = true)
         UniSegmentedControl(
             selected = appearance.academicProgressShape,
@@ -540,6 +560,39 @@ internal fun ChipStyle.label(): String {
         ChipStyle.FILETE -> Textos.get(R.string.appearance_filete)
         ChipStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
         ChipStyle.TEXTO -> Textos.get(R.string.appearance_solo_texto)
+    }
+}
+
+internal fun SettingsIconStyle.label(): String = when (this) {
+    SettingsIconStyle.COLOR -> Textos.get(R.string.appearance_iconos_de_colores)
+    SettingsIconStyle.CIRCULO -> Textos.get(R.string.appearance_iconos_circulares)
+}
+
+/**
+ * Seis iconos de Ajustes con la forma elegida, que es donde se juzga.
+ *
+ * Ajustes no está a la vista mientras se elige, así que sin esto habría que salir y volver para
+ * saber qué cambió. Son los de las puertas de verdad, con sus colores.
+ */
+@Composable
+private fun MuestraDeIconosDeAjustes() {
+    val tonos = tonosDeAjustes
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            SettingsRowIcon(Icons.Rounded.Palette, tonos.rosa)
+            SettingsRowIcon(Icons.Rounded.Accessibility, tonos.azul)
+            SettingsRowIcon(Icons.Rounded.School, tonos.indigo)
+            SettingsRowIcon(Icons.Rounded.History, tonos.turquesa)
+            SettingsRowIcon(Icons.Rounded.Notifications, tonos.ambar)
+            SettingsRowIcon(Icons.Rounded.Backup, tonos.cian)
+        }
     }
 }
 

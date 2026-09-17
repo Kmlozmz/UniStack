@@ -57,8 +57,13 @@ data class AppearancePreferences(
     val decimalPlaces: Int = 1,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
 
-    /** La forma de los botones de accion. */
-    val buttonShape: ButtonShapeStyle = ButtonShapeStyle.MEDIO,
+    /**
+     * La forma de los botones de accion.
+     *
+     * Pastilla por defecto desde el 16 sep 2026: se pidieron redondos del todo, y que al
+     * pulsarlos quedaran como estaban hasta entonces.
+     */
+    val buttonShape: ButtonShapeStyle = ButtonShapeStyle.PASTILLA,
 
     /** Cuanto ocupan. */
     val buttonSize: ButtonSizeStyle = ButtonSizeStyle.MEDIO,
@@ -71,6 +76,9 @@ data class AppearancePreferences(
 
     /** Redondeado, lineal o relleno: los iconos de la barra de abajo. */
     val iconStyle: IconStyle = IconStyle.REDONDEADO,
+
+    /** Cómo van los iconos de las filas de Ajustes: de colores o en círculo con el acento. */
+    val settingsIconStyle: SettingsIconStyle = SettingsIconStyle.COLOR,
 
     /**
      * La forma del distintivo de cada materia.
@@ -400,6 +408,19 @@ enum class IconStyle {
     REDONDEADO,
     LINEAL,
     RELLENO
+}
+
+/**
+ * Los iconos de las filas de Ajustes. Por ahora solo esos; el resto de la app no cambia.
+ *
+ * Los dos se pidieron el 16 sep 2026, para poder elegir entre ellos.
+ */
+enum class SettingsIconStyle {
+    /** Cuadrado relleno, un color por lo que hace cada fila. El de siempre. */
+    COLOR,
+
+    /** Círculo del tono de la tarjeta con el icono en el acento, como en la simulación. */
+    CIRCULO
 }
 
 /**

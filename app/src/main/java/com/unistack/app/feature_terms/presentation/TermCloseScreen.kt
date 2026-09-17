@@ -94,7 +94,8 @@ fun TermCloseScreen(
             onTerminada = {
                 MensajesDelHistorico.publicar(Textos.get(R.string.hist_cerraste, nombre), deshacerCierre = termId to nombre)
                 onClosed()
-            }
+            },
+            conEfectoDeCierre = true
         )
         return
     }

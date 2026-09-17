@@ -416,6 +416,71 @@ data class VividAccents(
 val LocalVividAccents = androidx.compose.runtime.staticCompositionLocalOf { VividAccents.Default }
 
 /**
+ * Los colores de los iconos de Ajustes, cuando van de colores: uno por lo que hace cada puerta.
+ *
+ * Se pidieron el 16 sep 2026 «diferentes cada cosa, alusivos a lo que hacen»: hasta entonces
+ * salían de los colores de sección y del acento, y de ocho filas del centro cinco eran morado o
+ * verde. Aquí cada tono tiene un significado y se reparte por él —la campana en ámbar, la nube
+ * en cian, lo que borra en rojo—, no por turno.
+ *
+ * Van en dos juegos porque el icono se pinta con el color del fondo encima del relleno: en
+ * oscuro el relleno es claro y el icono oscuro, y en claro al revés. Por eso los de la cara
+ * clara son tonos hondos y los de la oscura, tonos altos del mismo color.
+ */
+@androidx.compose.runtime.Immutable
+data class TonosDeAjustes(
+    val rojo: Color,
+    val naranja: Color,
+    val ambar: Color,
+    val verde: Color,
+    val turquesa: Color,
+    val cian: Color,
+    val azul: Color,
+    val indigo: Color,
+    val violeta: Color,
+    val rosa: Color,
+    val gris: Color
+) {
+    companion object {
+        val Oscuro = TonosDeAjustes(
+            rojo = Color(0xFFFF6B5E),
+            naranja = Color(0xFFFF9A4D),
+            ambar = Color(0xFFF2B632),
+            verde = Color(0xFF3FD17A),
+            turquesa = Color(0xFF2FD1BE),
+            cian = Color(0xFF3CC8F0),
+            azul = Color(0xFF5B9DFF),
+            indigo = Color(0xFF8A93FF),
+            violeta = Color(0xFFB18CFF),
+            rosa = Color(0xFFF27CC0),
+            gris = Color(0xFFA3AEC2)
+        )
+
+        val Claro = TonosDeAjustes(
+            rojo = Color(0xFFC8321F),
+            naranja = Color(0xFFB85A00),
+            ambar = Color(0xFF8C6800),
+            verde = Color(0xFF0A8A31),
+            turquesa = Color(0xFF00897B),
+            cian = Color(0xFF00799C),
+            azul = Color(0xFF0A63D6),
+            indigo = Color(0xFF4553C8),
+            violeta = Color(0xFF7446D6),
+            rosa = Color(0xFFB8307A),
+            gris = Color(0xFF5B6678)
+        )
+
+        fun para(oscuro: Boolean): TonosDeAjustes = if (oscuro) Oscuro else Claro
+    }
+}
+
+/** Los tonos de Ajustes de la cara en curso, clara u oscura. */
+val tonosDeAjustes: TonosDeAjustes
+    @androidx.compose.runtime.Composable
+    @androidx.compose.runtime.ReadOnlyComposable
+    get() = TonosDeAjustes.para(LocalIsDarkTheme.current)
+
+/**
  * Los mismos colores de seccion, sin el verde y el rojo.
  *
  * Horario y Gastos se quedan como estan —son identidad de seccion, no un juicio— y lo que se

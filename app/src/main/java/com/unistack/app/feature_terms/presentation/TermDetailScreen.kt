@@ -37,15 +37,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniStackButton
@@ -353,6 +360,13 @@ internal fun FilaDeGrupo(
  * Los avisos del histórico en esta pantalla: guardados, cierres y deshacer.
  *
  * El mensaje se consume en cuanto se enseña, así que solo lo pinta la primera pantalla que lo ve.
+ *
+ * **Se escucha mientras la pantalla está delante, no con la clave del mensaje.** Estaba en un
+ * `LaunchedEffect(mensaje?.id)` que lo primero que hacía era darlo por leído: el mensaje pasaba a
+ * nulo, la clave cambiaba y el propio efecto se cancelaba a mitad de `showSnackbar`. Ningún aviso
+ * del histórico llegó a verse, ni «guardado en Galería» ni el «Deshacer» del cierre, y por eso
+ * Guardar parecía no hacer nada. Con `RESUMED`, además, la pantalla que se va no se queda con el
+ * aviso de la que llega: al cerrar un periodo, el «Cerraste» lo recoge Inicio.
  */
 @Composable
 internal fun BoxScope.AvisosDelHistorico(
@@ -360,20 +374,35 @@ internal fun BoxScope.AvisosDelHistorico(
     onDeshacerCierre: ((String, String) -> Unit)? = null
 ) {
     val host = remember { SnackbarHostState() }
-    val mensaje by MensajesDelHistorico.mensaje.collectAsStateWithLifecycle()
-    val deshacer = stringResource(R.string.hist_deshacer)
-    val duracionConDeshacer = duracionDeDeshacer()
-    LaunchedEffect(mensaje?.id) {
-        val actual = mensaje ?: return@LaunchedEffect
-        MensajesDelHistorico.consumir(actual.id)
-        val conDeshacer = actual.deshacerCierre != null && onDeshacerCierre != null
-        val resultado = host.showSnackbar(
-            message = actual.texto,
-            actionLabel = if (conDeshacer) deshacer else null,
-            duration = if (conDeshacer) duracionConDeshacer else SnackbarDuration.Short
-        )
-        if (resultado == SnackbarResult.ActionPerformed) {
-            actual.deshacerCierre?.let { (id, nombre) -> onDeshacerCierre?.invoke(id, nombre) }
+    val deshacer by rememberUpdatedState(stringResource(R.string.hist_deshacer))
+    val ver by rememberUpdatedState(stringResource(R.string.hist_ver_imagen))
+    val duracionConDeshacer by rememberUpdatedState(duracionDeDeshacer())
+    val alDeshacer by rememberUpdatedState(onDeshacerCierre)
+    val contexto = LocalContext.current
+    val ciclo = LocalLifecycleOwner.current
+    LaunchedEffect(host, ciclo) {
+        ciclo.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            MensajesDelHistorico.mensaje.filterNotNull().collectLatest { actual ->
+                MensajesDelHistorico.consumir(actual.id)
+                val conDeshacer = actual.deshacerCierre != null && alDeshacer != null
+                val imagen = actual.abrirImagen.takeIf { !conDeshacer }
+                val resultado = host.showSnackbar(
+                    message = actual.texto,
+                    actionLabel = when {
+                        conDeshacer -> deshacer
+                        imagen != null -> ver
+                        else -> null
+                    },
+                    duration = if (conDeshacer) duracionConDeshacer else SnackbarDuration.Short
+                )
+                if (resultado == SnackbarResult.ActionPerformed) {
+                    if (conDeshacer) {
+                        actual.deshacerCierre?.let { (id, nombre) -> alDeshacer?.invoke(id, nombre) }
+                    } else if (imagen != null) {
+                        ImagenDelBoletin.ver(contexto, imagen)
+                    }
+                }
+            }
         }
     }
     SnackbarHost(

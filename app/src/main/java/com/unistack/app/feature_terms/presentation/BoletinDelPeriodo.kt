@@ -1,6 +1,7 @@
 // design-tokens-exempt: el boletín es un documento para compartir, con colores de papel fijos que no siguen al tema.
 package com.unistack.app.feature_terms.presentation
 
+import android.content.ClipData
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -8,7 +9,9 @@ import android.graphics.Bitmap
 import android.graphics.Canvas as LienzoAndroid
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import android.text.TextPaint
 import android.text.TextUtils
@@ -278,32 +281,75 @@ internal object ImagenDelBoletin {
     private fun nombreDeArchivo(periodo: PeriodoDelHistorico): String =
         Textos.get(R.string.hist_boletin_archivo, periodo.nombre.replace(Regex("""[\\/:*?"<>|]"""), "-"))
 
+    /**
+     * La hoja de compartir del sistema, con la imagen ya escrita en la caché.
+     *
+     * **El `ClipData` es lo que faltaba.** Con la imagen solo en `EXTRA_STREAM`, `createChooser`
+     * no le pasa el permiso de lectura a la hoja: la del sistema no podía abrir el archivo
+     * («Permission Denial» en el registro), salía sin vista previa y hay capas de fabricante que
+     * directamente no la abren. Con el `ClipData` puesto, `createChooser` copia el permiso a la
+     * hoja y la app que se elija lo hereda igual.
+     *
+     * El archivo lleva un nombre sin acentos ni espacios: el que se ve al compartir es el
+     * `DISPLAY_NAME` del proveedor, y hay apps que tropiezan con una ruta codificada.
+     */
     fun compartir(context: Context, bitmap: Bitmap, periodo: PeriodoDelHistorico): Result<Unit> = runCatching {
-        val archivo = File(context.cacheDir, nombreDeArchivo(periodo))
+        val carpeta = File(context.cacheDir, "boletines").apply { mkdirs() }
+        val archivo = File(carpeta, "boletin-${periodo.nombre.replace(Regex("[^A-Za-z0-9-]"), "-")}.png")
         archivo.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", archivo)
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = ClipData.newRawUri(nombreDeArchivo(periodo), uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, Textos.get(R.string.hist_compartir_boletin)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        context.startActivity(
+            Intent.createChooser(intent, Textos.get(R.string.hist_compartir_boletin))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        )
     }
 
-    /** En Galería, dentro de Imágenes/UniStack. Antes de Android 10 hace falta permiso, así que se comparte. */
-    fun guardar(context: Context, bitmap: Bitmap, periodo: PeriodoDelHistorico): Result<Boolean> = runCatching {
+    /**
+     * En Galería, dentro de Imágenes/UniStack; devuelve dónde quedó para poder abrirla.
+     *
+     * Se marca pendiente mientras se escribe: sin eso, la galería puede verla a medio escribir y
+     * quedarse con una miniatura vacía. Si algo falla, la fila a medias se borra. Antes de
+     * Android 10 hace falta permiso, así que ahí se comparte y devuelve nulo.
+     */
+    fun guardar(context: Context, bitmap: Bitmap, periodo: PeriodoDelHistorico): Result<Uri?> = runCatching {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             compartir(context, bitmap, periodo).getOrThrow()
-            return@runCatching false
+            return@runCatching null
         }
         val valores = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, nombreDeArchivo(periodo))
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/UniStack")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/UniStack")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val resolver = context.contentResolver
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, valores) ?: error("MediaStore")
-        resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } ?: error("MediaStore")
-        true
+        val coleccion = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val uri = resolver.insert(coleccion, valores) ?: error("MediaStore")
+        try {
+            val escrita = resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } ?: false
+            check(escrita) { "MediaStore" }
+            resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
+        } catch (fallo: Exception) {
+            resolver.delete(uri, null, null)
+            throw fallo
+        }
+        uri
+    }
+
+    /** Abre la imagen guardada con la galería que tenga el teléfono. */
+    fun ver(context: Context, uri: String) {
+        runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(Uri.parse(uri), "image/png")
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
     }
 }

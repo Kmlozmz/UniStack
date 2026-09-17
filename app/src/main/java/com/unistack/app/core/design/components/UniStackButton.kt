@@ -1,7 +1,6 @@
 package com.unistack.app.core.design.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -43,10 +42,10 @@ enum class UniStackButtonVariant {
  * quedó con el tamaño por defecto —40dp y forma de píldora— y se veía pequeño y demasiado
  * redondo para lo que es: la acción principal de la pantalla, anclada abajo.
  *
- * **La forma cambia al pulsar.** En reposo lleva la forma «cuadrada» de su tamaño (28dp) y bajo
- * el dedo pasa a la de pulsado (12dp): las esquinas se cierran mientras lo tienes apretado y
+ * **La forma cambia al pulsar.** En reposo es una pastilla, redonda del todo, y bajo el dedo
+ * pasa a la forma cuadrada de Material: las esquinas se cierran mientras lo tienes apretado y
  * vuelven a abrirse al soltar. Es el morphing de Material 3 Expressive, y lo hace el propio
- * componente a partir de [ButtonDefaults]; no hay ninguna animación escrita aquí.
+ * componente a partir de [UniStackButtonDefaults.shapes]; no hay ninguna animación escrita aquí.
  *
  * Nota sobre la dirección: Material aprieta las esquinas al pulsar, no las redondea. Si se
  * quiere al revés —redondear bajo el dedo— basta con intercambiar los dos valores de `shapes`.
@@ -68,23 +67,30 @@ fun UniStackButton(
      */
     containerColor: Color? = null
 ) {
+    /*
+     * Icono y texto van juntos y centrados como un solo bloque.
+     *
+     * Estaban repartidos: el icono pegado al borde y el texto centrado en el hueco que sobraba,
+     * así que con icono el texto quedaba corrido hacia un lado y el icono lejos de él («Crear
+     * 2027-1» se veía descentrado). El texto sigue pudiendo encogerse con puntos suspensivos:
+     * `weight(fill = false)` le deja ocupar solo lo que mide, y recortarse si no cabe.
+     */
     val content: @Composable () -> Unit = {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
         ) {
             if (leadingIcon != null) {
                 Icon(leadingIcon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.MediumIconSize))
             }
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.titleMediumEmphasized,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMediumEmphasized,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
             if (trailingIcon != null) {
                 Icon(trailingIcon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.MediumIconSize))
             }

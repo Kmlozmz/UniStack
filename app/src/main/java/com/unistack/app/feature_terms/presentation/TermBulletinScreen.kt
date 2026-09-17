@@ -99,8 +99,11 @@ fun TermBulletinScreen(
                             val imagen = ImagenDelBoletin.dibujar(periodo, opciones, escala, historial.notaMaxima, historial.aprobado)
                             ImagenDelBoletin.guardar(contexto, imagen, periodo)
                                 .onSuccess { enGaleria ->
-                                    if (enGaleria) {
-                                        MensajesDelHistorico.publicar(Textos.get(R.string.hist_boletin_guardado, periodo.nombre))
+                                    if (enGaleria != null) {
+                                        MensajesDelHistorico.publicar(
+                                            Textos.get(R.string.hist_boletin_guardado, periodo.nombre),
+                                            abrirImagen = enGaleria.toString()
+                                        )
                                     }
                                 }
                                 .onFailure { MensajesDelHistorico.publicar(Textos.get(R.string.hist_boletin_no_se_pudo)) }

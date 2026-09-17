@@ -124,6 +124,27 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.material.icons.rounded.KeyboardDoubleArrowRight
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import com.unistack.app.core.design.components.celebracionDelDia
+import com.unistack.app.core.design.theme.muelleDeMovimiento
+import com.unistack.app.core.utils.performSafely
 
 /*
  * Las piezas del histórico, copiadas de la simulación aprobada.
@@ -872,82 +893,316 @@ internal fun CampoDelHistorico(etiqueta: String, valor: String, onValor: (String
  * El pulgar arrastra y deja un rastro del acento; soltarlo antes del final lo devuelve a su
  * sitio y llegar al final confirma sin esperar a soltar. Para quien usa lector de pantalla, la
  * acción también se ofrece como un toque.
+ *
+ * **Rehecho el 16 sep 2026**, porque se veía pobre: una pista lisa y un círculo sin nada que
+ * tapaba el texto. Ahora cuenta lo que pasa en cada momento:
+ *
+ * - En reposo, la doble flecha del pulgar da un empujoncito hacia la derecha cada poco y un
+ *   brillo recorre el texto. Se entiende «esto se desliza» antes de leer la frase.
+ * - Al fondo espera el candado en un hueco punteado, que es a donde hay que llevarlo. Según se
+ *   acerca el pulgar, el hueco se enciende; desde el 85 % el trazo se cierra y el candado pasa
+ *   a visto, y el pulgar también.
+ * - El rastro es un degradado que se intensifica hacia el pulgar, y el texto se apaga según
+ *   queda tapado.
+ * - Vibra al agarrar, con un tic suave cada décima del recorrido, con un golpe al entrar en la
+ *   zona de confirmar, con la confirmación al llegar y con un rechazo si se suelta a medias.
+ * - Al llegar, un fogonazo del acento recorre la pista antes de cerrar, para que se vea que
+ *   entró.
+ *
+ * Sin movimiento no hay brillo, ni empujón, ni fogonazo; la vibración sigue lo que diga
+ * Movimiento.
  */
 @Composable
 internal fun DeslizarParaConfirmar(texto: String, onConfirmado: () -> Unit, modifier: Modifier = Modifier) {
     val densidad = LocalDensity.current
     val haptica = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
+    val movimiento = hayMovimiento()
+    val confirmar by rememberUpdatedState(onConfirmado)
+
+    val alto = 64.dp
+    val aire = 4.dp
+    val lado = alto - aire * 2
+    val ladoPx = with(densidad) { lado.toPx() }
+    val airePx = with(densidad) { aire.toPx() }
+
     var ancho by remember { mutableIntStateOf(0) }
     var hecho by remember { mutableStateOf(false) }
+    var agarrado by remember { mutableStateOf(false) }
+    var tramo by remember { mutableIntStateOf(0) }
+    var enZona by remember { mutableStateOf(false) }
+    // Dónde va el dedo, al instante. `posicion` se mueve en una corrutina, y leerla entre dos
+    // eventos seguidos daba el valor de antes: el pulgar se quedaba atrás del dedo.
+    val dedo = remember { floatArrayOf(0f) }
     val posicion = remember { Animatable(0f) }
-    val confirmar by rememberUpdatedState(onConfirmado)
-    val pulgar = with(densidad) { 56.dp.toPx() }
-    val recorrido = (ancho - pulgar).coerceAtLeast(1f)
-    val volver = duracion(260)
+    val fogonazo = remember { Animatable(0f) }
+    val recorrido = (ancho - ladoPx - airePx * 2).coerceAtLeast(1f)
+    val fraccion = (posicion.value / recorrido).coerceIn(0f, 1f)
+    val listo = ((fraccion - 0.55f) / 0.30f).coerceIn(0f, 1f)
+
+    val vuelta = muelleDeMovimiento<Float>()
+    val llegada = duracion(140).coerceAtLeast(1)
+    val destello = duracion(460)
+    val escalaDelPulgar by animateFloatAsState(
+        targetValue = if (agarrado || hecho) 1.06f else 1f,
+        animationSpec = muelleDeMovimiento(),
+        label = "pulgar"
+    )
+    val ciclo = if (movimiento) rememberInfiniteTransition(label = "deslizar") else null
+    val brillo = ciclo?.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing)),
+        label = "brillo"
+    )
+    val empujon = ciclo?.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing)),
+        label = "empujon"
+    )
+
+    fun completar() {
+        if (hecho) return
+        hecho = true
+        agarrado = false
+        haptica.performSafely(HapticFeedbackType.Confirm)
+        scope.launch {
+            posicion.animateTo(recorrido, tween(llegada))
+            if (destello > 0) fogonazo.animateTo(1f, tween(destello, easing = LinearOutSlowInEasing))
+            confirmar()
+            // Si a los seis segundos sigue aquí es que el cierre no salió —el aviso ya lo dice—:
+            // el pulgar vuelve a su sitio para poder intentarlo otra vez.
+            delay(6000)
+            fogonazo.snapTo(0f)
+            hecho = false
+            tramo = 0
+            enZona = false
+            dedo[0] = 0f
+            posicion.animateTo(0f, vuelta)
+        }
+    }
+
+    fun soltar() {
+        if (hecho) return
+        agarrado = false
+        // Un roce no es un intento: el rechazo solo vibra si de verdad se llegó a arrastrar.
+        if (dedo[0] / recorrido > 0.12f) haptica.performSafely(HapticFeedbackType.Reject)
+        tramo = 0
+        enZona = false
+        dedo[0] = 0f
+        scope.launch { posicion.animateTo(0f, vuelta) }
+    }
+
+    val acento = Paleta.acento
+    val sobre = Paleta.sobreAcento
+    val tinta = Paleta.tinta
+    // La luz del pulgar tiene que ser la más clara de las dos tintas: en oscuro el acento lleva
+    // letra oscura encima y un brillo de ese color lo ensuciaría.
+    val luz = if (LocalIsDarkTheme.current) tinta else sobre
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(28.dp))
+            .height(alto)
+            .clip(CircleShape)
             .background(Paleta.acentoSuave)
+            .border(1.dp, acento.copy(alpha = 0.22f), CircleShape)
             .onSizeChanged { ancho = it.width }
             .semantics {
                 onClick(label = texto) {
-                    if (!hecho) {
-                        hecho = true
-                        confirmar()
-                    }
+                    completar()
                     true
                 }
             }
             .pointerInput(recorrido) {
                 detectHorizontalDragGestures(
-                    onDragEnd = {
-                        if (!hecho) scope.launch { posicion.animateTo(0f, tween(volver)) }
+                    onDragStart = {
+                        if (!hecho) {
+                            agarrado = true
+                            dedo[0] = posicion.value
+                            haptica.performSafely(HapticFeedbackType.SegmentTick)
+                        }
                     },
-                    onDragCancel = {
-                        if (!hecho) scope.launch { posicion.animateTo(0f, tween(volver)) }
-                    },
+                    onDragEnd = { soltar() },
+                    onDragCancel = { soltar() },
                     onHorizontalDrag = { cambio, delta ->
                         if (hecho) return@detectHorizontalDragGestures
                         cambio.consume()
-                        val nueva = (posicion.value + delta).coerceIn(0f, recorrido)
+                        val nueva = (dedo[0] + delta).coerceIn(0f, recorrido)
+                        dedo[0] = nueva
                         scope.launch { posicion.snapTo(nueva) }
-                        if (nueva >= recorrido * 0.97f) {
-                            hecho = true
-                            haptica.performHapticFeedback(HapticFeedbackType.LongPress)
-                            confirmar()
+                        val f = nueva / recorrido
+                        val nuevoTramo = (f * 10f).toInt()
+                        if (nuevoTramo != tramo) {
+                            tramo = nuevoTramo
+                            haptica.performSafely(HapticFeedbackType.SegmentFrequentTick)
                         }
+                        if (!enZona && f >= 0.85f) {
+                            enZona = true
+                            haptica.performSafely(HapticFeedbackType.GestureThresholdActivate)
+                        } else if (enZona && f < 0.75f) {
+                            enZona = false
+                        }
+                        if (f >= 0.97f) completar()
                     }
                 )
             }
     ) {
-        val fraccion = posicion.value / recorrido
+        // El rastro: del borde al pulgar, más intenso cuanto más se ha recorrido.
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(with(densidad) { (fraccion * ancho).toDp() })
-                .background(Paleta.acento.copy(alpha = 0.25f))
+                .width(with(densidad) { (airePx * 2 + ladoPx + posicion.value).toDp() })
+                .clip(CircleShape)
+                .background(
+                    Brush.horizontalGradient(
+                        0f to acento.copy(alpha = 0.06f),
+                        1f to acento.copy(alpha = 0.16f + 0.32f * fraccion)
+                    )
+                )
         )
+
+        // El hueco del final, con su candado.
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = aire)
+                .size(lado)
+                .drawBehind {
+                    val trazo = 1.5.dp.toPx()
+                    val radio = size.minDimension / 2f - trazo
+                    drawCircle(color = acento.copy(alpha = 0.08f + 0.20f * listo), radius = radio)
+                    drawCircle(
+                        color = acento.copy(alpha = 0.38f + 0.62f * listo),
+                        radius = radio,
+                        style = Stroke(
+                            width = trazo,
+                            pathEffect = if (listo < 1f) {
+                                PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.5.dp.toPx()))
+                            } else {
+                                null
+                            }
+                        )
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (listo >= 1f) Icons.Rounded.Check else Icons.Rounded.Lock,
+                contentDescription = null,
+                tint = acento.copy(alpha = 0.55f + 0.45f * listo),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
         Text(
             text = texto,
             style = estilo(15f, 22f, FontWeight.SemiBold),
-            color = Paleta.acento,
-            modifier = Modifier.align(Alignment.Center).padding(horizontal = 60.dp),
+            color = acento,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = alto)
+                .graphicsLayer {
+                    alpha = (1f - fraccion * 1.7f).coerceIn(0f, 1f)
+                    compositingStrategy = CompositingStrategy.Offscreen
+                }
+                .drawWithContent {
+                    drawContent()
+                    val b = brillo?.value ?: return@drawWithContent
+                    val banda = size.width * 0.28f
+                    val x = -banda + (size.width + banda * 2f) * b
+                    // `SrcAtop` pinta el brillo solo donde ya hay letra.
+                    drawRect(
+                        brush = Brush.horizontalGradient(
+                            0f to Color.Transparent,
+                            0.5f to tinta.copy(alpha = 0.9f),
+                            1f to Color.Transparent,
+                            startX = x - banda,
+                            endX = x + banda
+                        ),
+                        blendMode = BlendMode.SrcAtop
+                    )
+                }
         )
+
+        // El fogonazo de la llegada, detrás del pulgar.
+        Spacer(
+            modifier = Modifier
+                .matchParentSize()
+                .drawBehind {
+                    val e = fogonazo.value
+                    if (e <= 0f || e >= 1f) return@drawBehind
+                    val centro = Offset(airePx + posicion.value + ladoPx / 2f, size.height / 2f)
+                    val radio = ladoPx * (0.6f + 4f * e)
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            0f to acento.copy(alpha = 0.55f * (1f - e)),
+                            1f to Color.Transparent,
+                            center = centro,
+                            radius = radio
+                        ),
+                        radius = radio,
+                        center = centro
+                    )
+                }
+        )
+
         Box(
             modifier = Modifier
-                .offset { IntOffset(posicion.value.roundToInt(), 0) }
-                .size(56.dp)
-                .padding(4.dp)
-                .clip(CircleShape)
-                .background(Paleta.acento)
-        )
+                .offset { IntOffset((airePx + posicion.value).roundToInt(), airePx.roundToInt()) }
+                .size(lado)
+                .graphicsLayer {
+                    scaleX = escalaDelPulgar
+                    scaleY = escalaDelPulgar
+                    shadowElevation = 6.dp.toPx()
+                    shape = CircleShape
+                    clip = true
+                    ambientShadowColor = acento
+                    spotShadowColor = acento
+                }
+                .background(acento)
+                .drawBehind {
+                    // Luz desde arriba, como sobre una canica: sin ella el pulgar se ve plano.
+                    drawCircle(
+                        brush = Brush.verticalGradient(
+                            0f to luz.copy(alpha = 0.24f),
+                            0.55f to Color.Transparent
+                        ),
+                        radius = size.minDimension / 2f
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            val visto = hecho || fraccion >= 0.85f
+            Crossfade(targetState = visto, animationSpec = tween(duracion(160).coerceAtLeast(1)), label = "icono") { conVisto ->
+                Icon(
+                    imageVector = if (conVisto) Icons.Rounded.Check else Icons.Rounded.KeyboardDoubleArrowRight,
+                    contentDescription = null,
+                    tint = sobre,
+                    modifier = Modifier
+                        .size(26.dp)
+                        .graphicsLayer {
+                            val t = empujon?.value
+                            translationX = if (conVisto || t == null || agarrado || posicion.value > 0f) {
+                                0f
+                            } else {
+                                empujonDelPulgar(t) * 5.dp.toPx()
+                            }
+                        }
+                )
+            }
+        }
     }
+}
+
+/** Cuánto sale la flecha en cada momento del ciclo: sale, vuelve y espera. */
+private fun empujonDelPulgar(t: Float): Float = when {
+    t < 0.16f -> FastOutSlowInEasing.transform(t / 0.16f)
+    t < 0.38f -> 1f - FastOutSlowInEasing.transform((t - 0.16f) / 0.22f)
+    else -> 0f
 }
 
 // ================================================================== celebración
@@ -957,9 +1212,20 @@ internal fun DeslizarParaConfirmar(texto: String, onConfirmado: () -> Unit, modi
  *
  * Dura lo que la celebración del resto de la app, 2,2 s, y se acorta sin movimiento. Mientras
  * está, atrás no hace nada: el cambio ya está guardado y no hay a dónde volver.
+ *
+ * **Al cerrar, lleva además el efecto de Apariencia.** El confeti, la onda, el sello o el
+ * destello que se haya elegido para cerrar un corte salen también aquí, sumados a la galleta y
+ * no en su lugar: se pidió así el 16 sep 2026, para el cierre. Van detrás de la galleta y del texto, para no tapar lo que se
+ * lee, y la onda, el sello y los rayos nacen de la galleta y no del centro de la pantalla.
  */
 @Composable
-internal fun CelebracionDelHistorico(titulo: String, subtitulo: String, onTerminada: () -> Unit) {
+internal fun CelebracionDelHistorico(
+    titulo: String,
+    subtitulo: String,
+    onTerminada: () -> Unit,
+    /** El efecto de Apariencia para cerrar un corte. Solo al cerrar un periodo, no al crearlo. */
+    conEfectoDeCierre: Boolean = false
+) {
     val movimiento = hayMovimiento()
     val entrada = duracion(700).coerceAtLeast(1)
     val espera = if (movimiento) duracion(2200).coerceAtLeast(1200) else 1200
@@ -968,8 +1234,14 @@ internal fun CelebracionDelHistorico(titulo: String, subtitulo: String, onTermin
     val opacidad = remember { Animatable(if (movimiento) 0f else 1f) }
     val terminar by rememberUpdatedState(onTerminada)
     val curva = remember { CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f) }
+    // Empieza apagado y se enciende tras el primer fotograma: encendido desde el principio, la
+    // animación del efecto nacería ya terminada y no se vería nada.
+    var efecto by remember { mutableStateOf(false) }
+    var origen by remember { mutableStateOf(Offset.Zero) }
+    var centroDeLaGalleta by remember { mutableStateOf<Offset?>(null) }
 
     LaunchedEffect(Unit) {
+        efecto = true
         launch { opacidad.animateTo(1f, tween(250)) }
         launch { escala.animateTo(1f, tween(entrada, easing = curva)) }
         launch { giro.animateTo(0f, tween(entrada, easing = curva)) }
@@ -978,28 +1250,43 @@ internal fun CelebracionDelHistorico(titulo: String, subtitulo: String, onTermin
     }
     BackHandler {}
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .graphicsLayer { alpha = opacidad.value }
             .background(Paleta.acentoContenedor)
             .pointerInput(Unit) { detectTapGestures { } }
-            .padding(30.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .onGloballyPositioned { origen = it.positionInRoot() }
     ) {
-        Galleta(
-            tamano = 150.dp,
-            fondo = Paleta.acento,
-            modifier = Modifier.graphicsLayer {
-                scaleX = escala.value
-                scaleY = escala.value
-                rotationZ = giro.value
-            }
-        ) {
-            Icon(Icons.Rounded.Check, contentDescription = null, tint = Paleta.sobreAcento, modifier = Modifier.size(72.dp))
+        if (conEfectoDeCierre) {
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .celebracionDelDia(disparada = efecto, onTerminada = {}, centro = centroDeLaGalleta)
+            )
         }
-        Text(titulo, style = estilo(32f, 40f, FontWeight.ExtraBold), color = Paleta.tinta, textAlign = TextAlign.Center)
-        Text(subtitulo, style = estilo(16f, 24f), color = Paleta.apagado, textAlign = TextAlign.Center)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(30.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Galleta(
+                tamano = 150.dp,
+                fondo = Paleta.acento,
+                modifier = Modifier
+                    .onGloballyPositioned { centroDeLaGalleta = it.boundsInRoot().center - origen }
+                    .graphicsLayer {
+                        scaleX = escala.value
+                        scaleY = escala.value
+                        rotationZ = giro.value
+                    }
+            ) {
+                Icon(Icons.Rounded.Check, contentDescription = null, tint = Paleta.sobreAcento, modifier = Modifier.size(72.dp))
+            }
+            Text(titulo, style = estilo(32f, 40f, FontWeight.ExtraBold), color = Paleta.tinta, textAlign = TextAlign.Center)
+            Text(subtitulo, style = estilo(16f, 24f), color = Paleta.apagado, textAlign = TextAlign.Center)
+        }
     }
 }

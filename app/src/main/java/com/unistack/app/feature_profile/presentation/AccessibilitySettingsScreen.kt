@@ -3,6 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import androidx.compose.foundation.BorderStroke
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -185,7 +186,7 @@ fun AccessibilitySettingsScreen(
                         icon = Icons.Rounded.Contrast,
                         title = stringResource(R.string.a11y_contrast_title),
                         subtitle = stringResource(R.string.a11y_contrast_subtitle),
-                        iconColor = MaterialTheme.colorScheme.primary
+                        iconColor = tonosDeAjustes.gris
                     ) {
                         UniSegmentedControl(
                             selected = a11y.contrast,
@@ -208,7 +209,7 @@ fun AccessibilitySettingsScreen(
                         icon = Icons.Rounded.Palette,
                         title = stringResource(R.string.a11y_colorblind_title),
                         subtitle = stringResource(R.string.a11y_colorblind_subtitle),
-                        iconColor = sections.onTrack
+                        iconColor = tonosDeAjustes.rosa
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             UniSegmentedControl(
@@ -244,7 +245,7 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_shapes_besides_color_title),
                         subtitle = stringResource(R.string.a11y_shapes_besides_color_subtitle),
                         checked = a11y.shapesBesidesColor,
-                        iconColor = sections.onTrack,
+                        iconColor = tonosDeAjustes.violeta,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(shapesBesidesColor = valor) }
                         }
@@ -255,7 +256,7 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_reading_font_title),
                         subtitle = stringResource(R.string.a11y_reading_font_subtitle),
                         checked = a11y.readingFont == ReadingFont.DISLEXIA,
-                        iconColor = sections.schedule,
+                        iconColor = tonosDeAjustes.indigo,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility {
                                 it.copy(readingFont = if (valor) ReadingFont.DISLEXIA else ReadingFont.NORMAL)
@@ -268,7 +269,7 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_bold_text_title),
                         subtitle = stringResource(R.string.a11y_bold_text_subtitle),
                         checked = a11y.boldText,
-                        iconColor = MaterialTheme.colorScheme.tertiary,
+                        iconColor = tonosDeAjustes.azul,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(boldText = valor) }
                         }
@@ -281,7 +282,7 @@ fun AccessibilitySettingsScreen(
                         checked = a11y.reduceTransparency,
                         // Un acento de verdad, como sus vecinas: con `outline` la casilla salía
                         // gris y parecía desactivada al lado de las otras cuatro.
-                        iconColor = MaterialTheme.colorScheme.primary,
+                        iconColor = tonosDeAjustes.cian,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(reduceTransparency = valor) }
                         }
@@ -296,7 +297,7 @@ fun AccessibilitySettingsScreen(
                         icon = Icons.Rounded.Animation,
                         title = stringResource(R.string.a11y_motion_title),
                         subtitle = stringResource(R.string.a11y_motion_subtitle),
-                        iconColor = MaterialTheme.colorScheme.primary
+                        iconColor = tonosDeAjustes.turquesa
                     ) {
                         UniSegmentedControl(
                             selected = a11y.motionPreference,
@@ -314,7 +315,7 @@ fun AccessibilitySettingsScreen(
                         icon = Icons.Rounded.History,
                         title = stringResource(R.string.a11y_undo_title),
                         subtitle = stringResource(R.string.a11y_undo_subtitle),
-                        iconColor = sections.schedule,
+                        iconColor = tonosDeAjustes.verde,
                         trailingAction = {
                             val duration = duracionDeDeshacer()
                             val seconds = a11y.undoDuration.segundos
@@ -369,7 +370,7 @@ fun AccessibilitySettingsScreen(
                         icon = Icons.Rounded.Translate,
                         title = stringResource(R.string.a11y_language_title),
                         subtitle = langLabel,
-                        iconColor = MaterialTheme.colorScheme.secondary,
+                        iconColor = tonosDeAjustes.cian,
                         onClick = { showLanguageDialog = true }
                     )
 
@@ -378,7 +379,7 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_time_format_title),
                         subtitle = if (a11y.use24HourTime) stringResource(R.string.a11y_time_format_24) else stringResource(R.string.a11y_time_format_12),
                         checked = a11y.use24HourTime,
-                        iconColor = sections.schedule,
+                        iconColor = tonosDeAjustes.naranja,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(use24HourTime = valor) }
                         }
@@ -388,7 +389,7 @@ fun AccessibilitySettingsScreen(
                         icon = Icons.Rounded.CalendarMonth,
                         title = stringResource(R.string.a11y_date_format_title),
                         subtitle = "${a11y.dateFormat.label} · ${a11y.dateFormat.previewDate}",
-                        iconColor = MaterialTheme.colorScheme.primary,
+                        iconColor = tonosDeAjustes.azul,
                         onClick = { showDateFormatDialog = true }
                     )
 
@@ -396,7 +397,7 @@ fun AccessibilitySettingsScreen(
                         icon = Icons.Rounded.AccountBalanceWallet,
                         title = stringResource(R.string.a11y_currency_title),
                         subtitle = "${a11y.currency.label} · ${a11y.currency.preview}",
-                        iconColor = sections.onTrack,
+                        iconColor = tonosDeAjustes.verde,
                         onClick = { showCurrencyDialog = true }
                     )
                 }
@@ -410,7 +411,7 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_spoken_descriptions_title),
                         subtitle = stringResource(R.string.a11y_spoken_descriptions_subtitle),
                         checked = a11y.spokenDescriptions,
-                        iconColor = MaterialTheme.colorScheme.primary,
+                        iconColor = tonosDeAjustes.violeta,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(spokenDescriptions = valor) }
                         }
@@ -421,7 +422,7 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_confirm_irreversible_title),
                         subtitle = stringResource(R.string.a11y_confirm_irreversible_subtitle),
                         checked = a11y.confirmIrreversible,
-                        iconColor = MaterialTheme.colorScheme.error,
+                        iconColor = tonosDeAjustes.rojo,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(confirmIrreversible = valor) }
                         }
@@ -432,7 +433,7 @@ fun AccessibilitySettingsScreen(
                         title = stringResource(R.string.a11y_keep_screen_on_title),
                         subtitle = stringResource(R.string.a11y_keep_screen_on_subtitle),
                         checked = a11y.keepScreenOn,
-                        iconColor = sections.schedule,
+                        iconColor = tonosDeAjustes.ambar,
                         onCheckedChange = { valor ->
                             viewModel.updateAccessibility { it.copy(keepScreenOn = valor) }
                         }

@@ -3,6 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.feature_terms.presentation.AvisosDelPeriodoEnConfiguracion
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.feature_terms.presentation.HojaDelAvisoParaEmpezar
 import com.unistack.app.feature_terms.presentation.TermsViewModel
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -119,7 +120,7 @@ fun AcademicSettingsScreen(
                         title = stringResource(R.string.settings_academic_term_title),
                         subtitle = term.name + " · " + term.type.label +
                             (term.plannedEnd?.let { stringResource(R.string.settings_academic_term_until, fechaLargaDeCorte(it)) } ?: ""),
-                        iconColor = sections.schedule,
+                        iconColor = tonosDeAjustes.azul,
                         onClick = onTermClick
                     )
                 }
@@ -132,7 +133,7 @@ fun AcademicSettingsScreen(
                         academicGradeInput(current.passingGrade, current.gradingScale),
                         academicGradeInput(current.targetAverage, current.gradingScale)
                     ),
-                    iconColor = MaterialTheme.colorScheme.primary,
+                    iconColor = tonosDeAjustes.indigo,
                     onClick = onScaleClick
                 )
                 SettingsRow(
@@ -141,14 +142,14 @@ fun AcademicSettingsScreen(
                     subtitle = cuts.size.toString() + " " +
                         (if (cuts.size == 1) Corte.Singular else Corte.Plural).lowercase() +
                         " · " + cuts.joinToString("/") { academicPercentInput(it.weight) } + "%",
-                    iconColor = sections.schedule,
+                    iconColor = tonosDeAjustes.violeta,
                     onClick = onCutsClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.PersonOff,
                     title = stringResource(R.string.settings_academic_absences_title),
                     subtitle = current.absenceLimit?.let { stringResource(R.string.settings_academic_absences_limit, it) } ?: stringResource(R.string.settings_academic_absences_none),
-                    iconColor = sections.atRisk,
+                    iconColor = tonosDeAjustes.ambar,
                     onClick = onAbsenceClick
                 )
                 SettingsRow(
@@ -161,7 +162,7 @@ fun AcademicSettingsScreen(
                     } else {
                         stringResource(R.string.settings_academic_breaks_multiple, breaks.size)
                     },
-                    iconColor = sections.onTrack,
+                    iconColor = tonosDeAjustes.turquesa,
                     onClick = onBreaksClick
                 )
             }
@@ -174,7 +175,7 @@ fun AcademicSettingsScreen(
                         title = stringResource(R.string.hist_sin_periodo_activo_titulo),
                         subtitle = termsState.lastClosed?.let { stringResource(R.string.hist_el_ultimo_fue, it.nombre) }
                             ?: stringResource(R.string.hist_empezar_uno),
-                        iconColor = sections.schedule,
+                        iconColor = tonosDeAjustes.azul,
                         onClick = onNewTermClick
                     )
                 }

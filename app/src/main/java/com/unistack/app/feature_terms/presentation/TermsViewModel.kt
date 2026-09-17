@@ -554,14 +554,16 @@ object MensajesDelHistorico {
         val texto: String,
         /** Si trae «Deshacer», el periodo que se acaba de cerrar. */
         val deshacerCierre: Pair<String, String>? = null,
+        /** Si trae «Ver», la imagen recién guardada en Galería. */
+        val abrirImagen: String? = null,
         val id: Long = System.nanoTime()
     )
 
     private val _mensaje = MutableStateFlow<Mensaje?>(null)
     val mensaje: StateFlow<Mensaje?> = _mensaje.asStateFlow()
 
-    fun publicar(texto: String, deshacerCierre: Pair<String, String>? = null) {
-        _mensaje.value = Mensaje(texto, deshacerCierre)
+    fun publicar(texto: String, deshacerCierre: Pair<String, String>? = null, abrirImagen: String? = null) {
+        _mensaje.value = Mensaje(texto, deshacerCierre, abrirImagen)
     }
 
     fun consumir(id: Long) {

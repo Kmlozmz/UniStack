@@ -41,24 +41,31 @@ object UniStackButtonDefaults {
         }
 
     /**
-     * Cuadrado en reposo, esquinas cerradas bajo el dedo.
+     * Redondo en reposo, esquinas cerradas bajo el dedo.
      *
      * Ese cambio de forma al pulsar es el gesto de Material 3 Expressive, y lo anima el propio
      * componente con el muelle del tema: no hay ninguna animación escrita a mano detrás.
      *
-     * Material aprieta las esquinas al pulsar en lugar de redondearlas. Para el gesto contrario
-     * basta con intercambiar los dos valores de aquí.
+     * La pastilla, que es la de por defecto, se cierra hasta la forma cuadrada: es la que los
+     * botones tenían en reposo hasta el 16 sep 2026, y se pidió conservarla justo para cuando
+     * se mantienen pulsados. Las otras dos se cierran hasta la de pulsado de Material.
      */
     val shapes: ButtonShapes
         @Composable
-        get() = ButtonDefaults.shapes(
-            shape = when (LocalAppearancePreferences.current.buttonShape) {
-                ButtonShapeStyle.RECTO -> RoundedCornerShape(6.dp)
-                ButtonShapeStyle.MEDIO -> ButtonDefaults.squareShape
-                // Pastilla: la mitad del alto, que es lo que la deja siempre redonda del todo
-                // sea cual sea el tamano elegido.
-                ButtonShapeStyle.PASTILLA -> RoundedCornerShape(percent = 50)
-            },
-            pressedShape = ButtonDefaults.pressedShape
-        )
+        get() = when (LocalAppearancePreferences.current.buttonShape) {
+            ButtonShapeStyle.RECTO -> ButtonDefaults.shapes(
+                shape = RoundedCornerShape(6.dp),
+                pressedShape = ButtonDefaults.pressedShape
+            )
+            ButtonShapeStyle.MEDIO -> ButtonDefaults.shapes(
+                shape = ButtonDefaults.squareShape,
+                pressedShape = ButtonDefaults.pressedShape
+            )
+            // Pastilla: la mitad del alto, que es lo que la deja siempre redonda del todo sea
+            // cual sea el tamano elegido.
+            ButtonShapeStyle.PASTILLA -> ButtonDefaults.shapes(
+                shape = RoundedCornerShape(percent = 50),
+                pressedShape = ButtonDefaults.squareShape
+            )
+        }
 }
