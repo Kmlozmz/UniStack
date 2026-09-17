@@ -40,16 +40,7 @@ internal data class TransicionDePantalla(
     val entra: EnterTransition,
     val sale: ExitTransition,
     val vuelveEntrando: EnterTransition,
-    val vuelveSaliendo: ExitTransition,
-    /**
-     * [entra] y [sale] vistas en un espejo, para ir a una pestaña que queda a la izquierda.
-     *
-     * Cambiar de pestaña no es volver atrás —no se deshace nada de la pila—, así que la que llega
-     * se pinta encima, como al entrar; solo cambia el lado por el que llega. En las transiciones
-     * que no tienen lado son las mismas.
-     */
-    val entraDesdeElOtroLado: EnterTransition = entra,
-    val saleHaciaElOtroLado: ExitTransition = sale
+    val vuelveSaliendo: ExitTransition
 )
 
 internal fun transicionDe(
@@ -76,9 +67,7 @@ internal fun transicionDe(
         entra = slideInHorizontally(desplazamiento) { ancho -> ancho },
         sale = slideOutHorizontally(desplazamiento) { ancho -> -ancho / 3 },
         vuelveEntrando = slideInHorizontally(desplazamiento) { ancho -> -ancho / 3 },
-        vuelveSaliendo = slideOutHorizontally(desplazamiento) { ancho -> ancho },
-        entraDesdeElOtroLado = slideInHorizontally(desplazamiento) { ancho -> -ancho },
-        saleHaciaElOtroLado = slideOutHorizontally(desplazamiento) { ancho -> ancho / 3 }
+        vuelveSaliendo = slideOutHorizontally(desplazamiento) { ancho -> ancho }
     )
 
     /*

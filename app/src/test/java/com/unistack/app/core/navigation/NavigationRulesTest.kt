@@ -128,12 +128,4 @@ class NavigationRulesTest {
         assertNull(moduleForRoute(AppRoutes.Profile))
     }
 
-    @Test
-    fun slideDirectionFollowsTabOrderAndChildDepth() {
-        assertTrue(isForwardNavigation(AppRoutes.Home, AppRoutes.Academic))
-        assertTrue(isForwardNavigation(AppRoutes.Academic, AppRoutes.Calendar))
-        assertFalse(isForwardNavigation(AppRoutes.Expenses, AppRoutes.Academic))
-        assertTrue(isForwardNavigation(AppRoutes.Home, AppRoutes.Profile))
-        assertFalse(isForwardNavigation(AppRoutes.Profile, AppRoutes.Home))
-    }
 }
