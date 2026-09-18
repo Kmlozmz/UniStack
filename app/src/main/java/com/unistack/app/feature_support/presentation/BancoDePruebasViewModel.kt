@@ -11,6 +11,7 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
@@ -63,6 +64,266 @@ class BancoDePruebasViewModel @Inject constructor(
     private companion object {
         /** Lo que distingue lo fabricado de lo real. Nada se borra sin esto delante. */
         const val MARCA = "prueba-"
+    }
+
+
+    // ------------------------------------------------------------------ simulación completa
+
+    /**
+     * Siembra un semestre universitario completo y realista en un solo toque:
+     * - 5 materias activas con notas y cortes (Cálculo, Física, POO, Álgebra, Bases de Datos).
+     * - Horario semanal de Lunes a Viernes con aulas y docentes, más una clase para hoy.
+     * - Tareas académicas con subtareas, fechas de entrega variadas y estados.
+     * - Presupuesto mensual de $180.000 COP y gastos reales en la semana.
+     *
+     * Todo lleva la marca `MARCA` para poder eliminarse limpiamente con [recogerlo].
+     */
+    fun sembrarAppCompleta() {
+        recogerlo()
+
+        val perfil = userRepository.userProfile.value
+        val maximo = perfil?.let { GradingScaleUtils.maxGradeFor(it) } ?: 5.0
+
+        if (perfil != null && (perfil.preferredName.isBlank() || perfil.preferredName.startsWith("Student"))) {
+            userRepository.updatePreferredName("Alex")
+        }
+
+        val hoy = LocalDate.now()
+        val ahora = System.currentTimeMillis()
+
+        // 1. Materias universitarias
+        val matCalc = "${MARCA}calc"
+        val matFis = "${MARCA}fis"
+        val matPoo = "${MARCA}poo"
+        val matAlg = "${MARCA}alg"
+        val matBd = "${MARCA}bd"
+
+        val materias = listOf(
+            Subject(
+                id = matCalc,
+                name = "Cálculo Vectorial",
+                targetAverage = maximo * 0.76,
+                grades = emptyList(),
+                visualType = SubjectVisualType.PURPLE,
+                activeCutId = "period-2"
+            ),
+            Subject(
+                id = matFis,
+                name = "Física Mecánica",
+                targetAverage = maximo * 0.70,
+                grades = emptyList(),
+                visualType = SubjectVisualType.CORAL,
+                activeCutId = "period-2"
+            ),
+            Subject(
+                id = matPoo,
+                name = "Programación Orientada a Objetos",
+                targetAverage = maximo * 0.80,
+                grades = emptyList(),
+                visualType = SubjectVisualType.GREEN,
+                activeCutId = "period-2"
+            ),
+            Subject(
+                id = matAlg,
+                name = "Álgebra Lineal",
+                targetAverage = maximo * 0.72,
+                grades = emptyList(),
+                visualType = SubjectVisualType.YELLOW,
+                activeCutId = "period-2"
+            ),
+            Subject(
+                id = matBd,
+                name = "Bases de Datos",
+                targetAverage = maximo * 0.80,
+                grades = emptyList(),
+                visualType = SubjectVisualType.BLUE,
+                activeCutId = "period-2"
+            )
+        )
+
+        materias.forEach { gradesRepository.addSubject(it) }
+
+        // 2. Calificaciones distribuidas
+        gradesRepository.addGrade(matCalc, GradeItem(id = "${MARCA}c1-g1", name = "Taller derivadas parciales", value = maximo * 0.84, percentage = 0.40, type = GradeType.WORKSHOP, cutId = "period-1", recordedAt = ahora - 25 * 86400000L))
+        gradesRepository.addGrade(matCalc, GradeItem(id = "${MARCA}c1-g2", name = "Parcial 1", value = maximo * 0.76, percentage = 0.60, type = GradeType.EXAM, cutId = "period-1", recordedAt = ahora - 20 * 86400000L))
+        gradesRepository.addGrade(matCalc, GradeItem(id = "${MARCA}c1-g3", name = "Quiz integrales dobles", value = maximo * 0.90, percentage = 0.30, type = GradeType.QUIZ, cutId = "period-2", recordedAt = ahora - 5 * 86400000L))
+        gradesRepository.addGrade(matCalc, GradeItem(id = "${MARCA}c1-g4", name = "Parcial 2", value = maximo * 0.72, percentage = 0.70, type = GradeType.EXAM, cutId = "period-2", recordedAt = ahora - 1 * 86400000L))
+
+        gradesRepository.addGrade(matFis, GradeItem(id = "${MARCA}fis-g1", name = "Laboratorio de cinemática", value = maximo * 0.80, percentage = 0.50, type = GradeType.PRACTICE, cutId = "period-1", recordedAt = ahora - 24 * 86400000L))
+        gradesRepository.addGrade(matFis, GradeItem(id = "${MARCA}fis-g2", name = "Parcial 1 - Cinemática", value = maximo * 0.64, percentage = 0.50, type = GradeType.EXAM, cutId = "period-1", recordedAt = ahora - 18 * 86400000L))
+        gradesRepository.addGrade(matFis, GradeItem(id = "${MARCA}fis-g3", name = "Taller leyes de Newton", value = maximo * 0.78, percentage = 1.00, type = GradeType.WORKSHOP, cutId = "period-2", recordedAt = ahora - 3 * 86400000L))
+
+        gradesRepository.addGrade(matPoo, GradeItem(id = "${MARCA}poo-g1", name = "Proyecto: Clases y herencia", value = maximo * 0.96, percentage = 0.60, type = GradeType.PROJECT, cutId = "period-1", recordedAt = ahora - 22 * 86400000L))
+        gradesRepository.addGrade(matPoo, GradeItem(id = "${MARCA}poo-g2", name = "Quiz principios SOLID", value = maximo * 0.84, percentage = 0.40, type = GradeType.QUIZ, cutId = "period-1", recordedAt = ahora - 16 * 86400000L))
+        gradesRepository.addGrade(matPoo, GradeItem(id = "${MARCA}poo-g3", name = "Laboratorio polimorfismo", value = maximo * 0.90, percentage = 0.50, type = GradeType.PRACTICE, cutId = "period-2", recordedAt = ahora - 6 * 86400000L))
+        gradesRepository.addGrade(matPoo, GradeItem(id = "${MARCA}poo-g4", name = "Parcial 2 - Java y Kotlin", value = maximo * 0.80, percentage = 0.50, type = GradeType.EXAM, cutId = "period-2", recordedAt = ahora - 2 * 86400000L))
+
+        gradesRepository.addGrade(matAlg, GradeItem(id = "${MARCA}alg-g1", name = "Matrices y determinantes", value = maximo * 0.70, percentage = 0.50, type = GradeType.WORKSHOP, cutId = "period-1", recordedAt = ahora - 23 * 86400000L))
+        gradesRepository.addGrade(matAlg, GradeItem(id = "${MARCA}alg-g2", name = "Control 1 - Sistemas lineales", value = maximo * 0.76, percentage = 0.50, type = GradeType.QUIZ, cutId = "period-1", recordedAt = ahora - 17 * 86400000L))
+        gradesRepository.addGrade(matAlg, GradeItem(id = "${MARCA}alg-g3", name = "Taller espacios vectoriales", value = maximo * 0.82, percentage = 1.00, type = GradeType.WORKSHOP, cutId = "period-2", recordedAt = ahora - 4 * 86400000L))
+
+        gradesRepository.addGrade(matBd, GradeItem(id = "${MARCA}bd-g1", name = "Modelo Entidad-Relación", value = maximo * 0.88, percentage = 0.50, type = GradeType.WORKSHOP, cutId = "period-1", recordedAt = ahora - 21 * 86400000L))
+        gradesRepository.addGrade(matBd, GradeItem(id = "${MARCA}bd-g2", name = "SQL DDL y DML básico", value = maximo * 0.92, percentage = 0.50, type = GradeType.PRACTICE, cutId = "period-1", recordedAt = ahora - 15 * 86400000L))
+        gradesRepository.addGrade(matBd, GradeItem(id = "${MARCA}bd-g3", name = "Normalización y restricciones", value = maximo * 0.80, percentage = 1.00, type = GradeType.WORKSHOP, cutId = "period-2", recordedAt = ahora - 2 * 86400000L))
+
+        // 3. Horario semanal
+        val epochDayInicio = hoy.minusDays(30).toEpochDay()
+        fun sesion(subId: String, dias: Set<Int>, inicioH: Int, inicioM: Int, finH: Int, finM: Int, lugar: String, prof: String, key: String) {
+            scheduleRepository.saveSession(
+                ClassSession(
+                    id = "$MARCA$key",
+                    subjectId = subId,
+                    daysOfWeek = dias,
+                    startMinute = inicioH * 60 + inicioM,
+                    endMinute = finH * 60 + finM,
+                    location = "$lugar•$prof",
+                    reminderMinutes = 15,
+                    createdAt = ahora,
+                    updatedAt = ahora,
+                    recurrenceStartEpochDay = epochDayInicio
+                )
+            )
+        }
+
+        sesion(matCalc, setOf(1, 3), 7, 0, 9, 0, "Aula 204", "Prof. Carlos Mendoza", "ses-calc")
+        sesion(matFis, setOf(1, 4), 9, 0, 11, 0, "Edificio B-102", "Prof. Elena Gómez", "ses-fis")
+        sesion(matPoo, setOf(2, 4), 8, 0, 10, 0, "Lab 3", "Prof. Roberto Silva", "ses-poo")
+        sesion(matAlg, setOf(2, 4), 10, 0, 12, 0, "Aula 301", "Prof. Martha Ruiz", "ses-alg")
+        sesion(matBd, setOf(3, 5), 11, 0, 13, 0, "Lab 1", "Prof. Andrés Parra", "ses-bd")
+
+        // Sesión para hoy según la hora del dispositivo para que Inicio muestre la clase
+        val horaActual = LocalTime.now()
+        val diaHoy = hoy.dayOfWeek.value
+        val minutoActual = horaActual.hour * 60 + horaActual.minute
+        val claseHoyInicio = (minutoActual + 20).coerceAtMost(22 * 60)
+        val claseHoyFin = (claseHoyInicio + 110).coerceAtMost(23 * 60 + 50)
+        scheduleRepository.saveSession(
+            ClassSession(
+                id = "${MARCA}ses-hoy",
+                subjectId = matPoo,
+                daysOfWeek = setOf(diaHoy),
+                startMinute = claseHoyInicio,
+                endMinute = claseHoyFin,
+                location = "Lab 3•Prof. Roberto Silva",
+                reminderMinutes = 15,
+                createdAt = ahora,
+                updatedAt = ahora,
+                recurrenceStartEpochDay = epochDayInicio
+            )
+        )
+
+        // 4. Tareas académicas
+        fun tarea(id: String, titulo: String, desc: String, subId: String, tipo: TaskType, dias: Long, dif: TaskDifficulty, compl: Boolean, subtareas: List<String>, estadoNota: TaskGradingStatus = TaskGradingStatus.UNDECIDED) {
+            val taskUid = "$MARCA$id"
+            tasksRepository.addTask(
+                StudentTask(
+                    id = taskUid,
+                    title = titulo,
+                    description = desc,
+                    subjectId = subId,
+                    type = tipo,
+                    dueDateMillis = TaskDateUtils.toMillis(hoy.plusDays(dias), LocalTime.of(23, 59)),
+                    difficulty = dif,
+                    estimatedMinutes = 90,
+                    completed = compl,
+                    createdAt = ahora - 2 * 86400000L,
+                    updatedAt = ahora,
+                    gradingStatus = estadoNota,
+                    subtasks = subtareas.mapIndexed { idx, sub ->
+                        TaskSubtask(id = "${taskUid}-s$idx", taskId = taskUid, title = sub, isCompleted = compl || idx == 0, position = idx)
+                    }
+                )
+            )
+        }
+
+        tarea(
+            "t-poo",
+            "Proyecto Final: Sistema de Gestión",
+            "Implementar arquitectura MVC, patrones DAO y repository, y persistencia local.",
+            matPoo,
+            TaskType.PROJECT,
+            5,
+            TaskDifficulty.HARD,
+            false,
+            listOf("Diseño del diagrama de clases UML", "Implementación de lógica de negocio y DAO", "Pruebas unitarias de repositorios", "Interfaz de usuario"),
+            TaskGradingStatus.AWAITING_GRADE
+        )
+        tarea(
+            "t-calc",
+            "Taller 3: Integrales triples y coordenadas esféricas",
+            "Ejercicios del capítulo 14. Entrega en PDF con procedimiento completo a mano.",
+            matCalc,
+            TaskType.WORKSHOP,
+            1,
+            TaskDifficulty.MEDIUM,
+            false,
+            listOf("Ejercicios 1 a 10 (coordenadas cilíndricas)", "Ejercicios 11 a 20 (coordenadas esféricas)", "Escanear y compilar en PDF")
+        )
+        tarea(
+            "t-fis",
+            "Informe de Laboratorio: Péndulo y conservación de energía",
+            "Formato IEEE. Incluir tablas de datos de Tracker y cálculo de errores experimentales.",
+            matFis,
+            TaskType.RESEARCH,
+            3,
+            TaskDifficulty.MEDIUM,
+            false,
+            listOf("Análisis de video en Tracker", "Cálculo de incertidumbre y gráficas", "Conclusiones y referencias IEEE")
+        )
+        tarea(
+            "t-bd",
+            "Taller SQL: Consultas avanzadas y subqueries",
+            "Guía de laboratorio con JOINs complejos, GROUP BY, HAVING y subconsultas correlacionadas.",
+            matBd,
+            TaskType.PRACTICE,
+            8,
+            TaskDifficulty.EASY,
+            false,
+            listOf("Consultas 1 a 8 en PostgreSQL", "Optimización con índices")
+        )
+        tarea(
+            "t-alg",
+            "Taller de Matrices y Determinantes",
+            "Ejercicios prácticos de eliminación Gaussiana y cálculo de determinantes nxn.",
+            matAlg,
+            TaskType.WORKSHOP,
+            -1,
+            TaskDifficulty.EASY,
+            true,
+            listOf("Ejercicios resueltos", "Revisión con calculadora matricial")
+        )
+
+        // 5. Presupuesto y Gastos de la semana
+        val perfilActual = userRepository.userProfile.value
+        if (perfilActual != null) {
+            userRepository.saveUserProfile(
+                perfilActual.copy(monthlyBudget = 180_000, updatedAt = ahora)
+            )
+        }
+
+        val gastosMuestra = listOf(
+            Triple(ExpenseCategory.FOOD, 14_500, 0),
+            Triple(ExpenseCategory.TRANSPORT, 3_200, 0),
+            Triple(ExpenseCategory.COPIES, 5_800, 1),
+            Triple(ExpenseCategory.FOOD, 18_000, 2),
+            Triple(ExpenseCategory.OUTINGS, 4_500, 3),
+            Triple(ExpenseCategory.TRANSPORT, 3_200, 4),
+            Triple(ExpenseCategory.MATERIALS, 12_000, 5)
+        )
+
+        gastosMuestra.forEachIndexed { idx, (cat, monto, diasAtras) ->
+            val fechaGasto = TaskDateUtils.toMillis(hoy.minusDays(diasAtras.toLong()), LocalTime.of(12, 30))
+            expensesRepository.addExpense(
+                Expense(
+                    id = "${MARCA}exp-$idx",
+                    category = cat,
+                    amount = monto,
+                    dateMillis = fechaGasto,
+                    createdAt = ahora - diasAtras * 86400000L,
+                    updatedAt = ahora
+                )
+            )
+        }
     }
 
     // ------------------------------------------------------------------ horario

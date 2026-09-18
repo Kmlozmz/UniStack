@@ -237,6 +237,14 @@ private fun LazyListScope.caraSimular(
     onAbrirMovimiento: () -> Unit,
     onNavegar: (String) -> Unit
 ) {
+    seccion("Capturas y Demo")
+    palanca(
+        "Llenar app con datos reales (para capturas)",
+        "Siembra 5 materias con notas, horario semanal L-V, tareas con subtareas, gastos de la semana y presupuesto. Todo lleva «prueba-»."
+    ) {
+        vm.sembrarAppCompleta()
+    }
+
     seccion("Histórico")
     palanca(
         "Simular el histórico del artifact",
