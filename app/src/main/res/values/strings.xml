@@ -1197,12 +1197,12 @@
     <string name="settings_module_templates_desc">Plantillas y entregas largas</string>
     <string name="settings_data_title">Datos y respaldos</string>
     <string name="settings_data_subtitle">Copias, exportar y restaurar</string>
-    <string name="settings_data_reset_section">REINICIO</string>
-    <string name="settings_data_repeat_setup_title">Repetir configuración inicial</string>
-    <string name="settings_data_repeat_setup_subtitle">Vuelves al onboarding. Tus datos se quedan.</string>
-    <string name="settings_data_repeat_setup_dialog_title">¿Repetir la configuración inicial?</string>
-    <string name="settings_data_repeat_setup_dialog_msg">Volverás al flujo inicial para configurar tus datos. Tus materias, tareas y gastos locales no se eliminan.</string>
-    <string name="settings_data_repeat_setup_confirm">Repetir</string>
+    <string name="settings_data_reset_section">RECORRIDO</string>
+    <string name="settings_data_repeat_setup_title">Repetir recorrido inicial</string>
+    <string name="settings_data_repeat_setup_subtitle">Explora el onboarding de nuevo sin tocar tu configuración.</string>
+    <string name="settings_data_repeat_setup_dialog_title">¿Ver el recorrido inicial de nuevo?</string>
+    <string name="settings_data_repeat_setup_dialog_msg">Podrás recorrer todos los pasos y animaciones del onboarding inicial. Tu configuración académica, materias y notas registradas no se modificarán.</string>
+    <string name="settings_data_repeat_setup_confirm">Comenzar recorrido</string>
     <string name="settings_a11y_preview">VISTA PREVIA</string>
     <string name="settings_a11y_status_on_track">Al día</string>
     <string name="settings_a11y_status_at_risk">En riesgo</string>
@@ -1772,6 +1772,7 @@
     <string name="setup_perm_example_header">EJEMPLO</string>
     <string name="setup_done_btn_first_subject">Crear mi primera materia</string>
     <string name="setup_done_btn_home">Ir al inicio</string>
+    <string name="setup_replay_done_btn">Volver a UniStack</string>
     <string name="setup_done_footer_with_subjects">UniStack ya es tuyo. Empieza por una materia y el resto se acomoda solo.</string>
     <string name="setup_done_footer_generic">UniStack ya es tuyo. Entra y empieza a llenarlo.</string>
     <string name="setup_finish_best_wishes">Mucho éxito en tus estudios</string>

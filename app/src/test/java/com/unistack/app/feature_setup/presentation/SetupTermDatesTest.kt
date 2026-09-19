@@ -5,6 +5,10 @@ import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_terms.domain.AcademicTermRepository
 import com.unistack.app.feature_terms.domain.AcademicTermType
 import com.unistack.app.feature_user.data.InMemoryUserRepository
+import com.unistack.app.feature_user.domain.AppModule
+import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.StudyArea
+import com.unistack.app.feature_user.domain.UserProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -194,6 +198,75 @@ class SetupTermDatesTest {
         userRepo.finishReplayingSetup()
         assertFalse(userRepo.isReplayingSetup.value)
     }
+
+    @Test
+    fun `init precarga los datos del perfil existente cuando setupCompleted es true`() {
+        val userRepo = InMemoryUserRepository()
+        userRepo.saveUserProfile(
+            testProfile().copy(
+                preferredName = "Carlos",
+                careerOrProgram = "Ingeniería de Software",
+                studyArea = StudyArea.ENGINEERING_TECHNOLOGY,
+                gradingScale = GradingScale.ZERO_TO_FIVE,
+                passingGrade = 3.0,
+                targetAverage = 4.2
+            )
+        )
+
+        val vm = SetupViewModel(userRepo, FakeAcademicTermRepository())
+
+        assertEquals("Carlos", vm.preferredName)
+        assertEquals(StudyArea.ENGINEERING_TECHNOLOGY, vm.studyArea)
+        assertEquals(GradingScale.ZERO_TO_FIVE, vm.gradingScale)
+        assertTrue(vm.scaleChosen)
+        assertEquals("3.0", vm.passingGradeText)
+        assertEquals("4.2", vm.targetAverageText)
+    }
+
+    @Test
+    fun `en modo repeticion finishSetup no modifica el perfil ni crea periodos`() {
+        val userRepo = InMemoryUserRepository()
+        userRepo.saveUserProfile(
+            testProfile().copy(
+                preferredName = "Carlos Original",
+                gradingScale = GradingScale.ZERO_TO_FIVE
+            )
+        )
+        userRepo.startReplayingSetup()
+
+        val termRepo = FakeAcademicTermRepository()
+        val vm = SetupViewModel(userRepo, termRepo)
+
+        // El usuario altera cosas en la pantalla por curiosidad
+        vm.updatePreferredName("Nombre Alterado")
+        vm.updateGradingScale(GradingScale.ZERO_TO_HUNDRED)
+        vm.updateTermType(AcademicTermType.SEMESTER)
+        vm.updateTermStart(LocalDate.of(2026, 8, 24))
+
+        // Al finalizar en modo repetición
+        vm.finishSetup()
+
+        // El perfil persistido se conserva intacto
+        assertEquals("Carlos Original", userRepo.userProfile.value?.preferredName)
+        assertEquals(GradingScale.ZERO_TO_FIVE, userRepo.userProfile.value?.gradingScale)
+
+        // Ningún periodo fue creado
+        assertTrue(termRepo.terms.value.isEmpty())
+    }
+
+    private fun testProfile() = UserProfile(
+        userId = "local",
+        preferredName = "Estudiante",
+        careerOrProgram = "Ingeniería",
+        studyArea = StudyArea.ENGINEERING_TECHNOLOGY,
+        gradingScale = GradingScale.ZERO_TO_FIVE,
+        passingGrade = 3.0,
+        targetAverage = 4.0,
+        enabledModules = setOf(AppModule.GRADES, AppModule.TASKS),
+        setupCompleted = true,
+        createdAt = 1000L,
+        updatedAt = 1000L
+    )
 }
 
 private class FakeAcademicTermRepository : AcademicTermRepository {

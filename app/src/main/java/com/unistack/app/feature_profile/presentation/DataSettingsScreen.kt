@@ -74,12 +74,12 @@ fun DataSettingsScreen(
             )
         }
         item {
-            SettingsGroup(label = stringResource(R.string.settings_data_reset_section), labelColor = MaterialTheme.colorScheme.error, rowCount = 1) {
+            SettingsGroup(label = stringResource(R.string.settings_data_reset_section), rowCount = 1) {
                 SettingsRow(
                     icon = Icons.Rounded.RestartAlt,
                     title = stringResource(R.string.settings_data_repeat_setup_title),
                     subtitle = stringResource(R.string.settings_data_repeat_setup_subtitle),
-                    iconColor = tonosDeAjustes.rojo,
+                    iconColor = tonosDeAjustes.azul,
                     onClick = { showRestartDialog = true }
                 )
             }
@@ -124,7 +124,7 @@ fun DataSettingsScreen(
                         viewModel.restartOnboarding()
                     }
                 ) {
-                    Text(stringResource(R.string.settings_data_repeat_setup_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.settings_data_repeat_setup_confirm), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

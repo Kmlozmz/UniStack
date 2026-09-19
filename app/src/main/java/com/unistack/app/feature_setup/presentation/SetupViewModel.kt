@@ -26,6 +26,7 @@ import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.core.utils.ValidationResult
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import kotlin.math.roundToInt
 
 @HiltViewModel
 class SetupViewModel @Inject constructor(
@@ -154,6 +155,51 @@ class SetupViewModel @Inject constructor(
     /** Si dijo que sabe las fechas de corte. Nulo: todavia no ha contestado. */
     var knowsCutDates by mutableStateOf<Boolean?>(null)
         private set
+
+    init {
+        val profile = userRepository.userProfile.value
+        if (profile != null && profile.setupCompleted) {
+            preferredName = profile.preferredName
+            studyArea = profile.studyArea
+            val program = profile.careerOrProgram
+            if (program != null) {
+                if (profile.studyArea == StudyArea.OTHER || isOtherOption(program)) {
+                    selectedProgram = program
+                    customProgram = program
+                } else {
+                    selectedProgram = program
+                }
+            }
+            institutionName = profile.institutionName ?: ""
+            gradingScale = profile.gradingScale
+            scaleChosen = true
+            customGradeMax = profile.customGradeMax
+            customGradeRangeConfirmed = true
+            passingGradeText = profile.passingGrade.formatForScale(profile.gradingScale)
+            targetAverageText = profile.targetAverage.formatForScale(profile.gradingScale)
+            enabledModules = profile.enabledModules
+            val cuts = profile.gradingCutScheme.cuts.sortedBy { it.order }
+            if (cuts.isNotEmpty()) {
+                gradingCutWeights = cuts.map { (it.weight * 100).roundToInt().toString() }
+            }
+            val active = termRepository.activeTerm.value
+            if (active != null) {
+                termType = active.type
+                termStart = active.start
+                termPlannedEnd = active.plannedEnd
+                termName = active.name
+                if (cuts.size > 1) {
+                    val endDates = cuts.dropLast(1).map { cut ->
+                        cut.endEpochDay?.let { LocalDate.ofEpochDay(it) }
+                    }
+                    if (endDates.any { it != null }) {
+                        knowsCutDates = true
+                        cutEndDates = endDates
+                    }
+                }
+            }
+        }
+    }
 
     fun updateKnowsCutDates(value: Boolean) {
         knowsCutDates = value
@@ -317,6 +363,10 @@ class SetupViewModel @Inject constructor(
     }
 
     fun finishSetup() {
+        if (userRepository.isReplayingSetup.value) {
+            // En modo repetición no se modifica la configuración existente ni se crean periodos duplicados.
+            return
+        }
         crearPeriodoSiSeConfiguro()
         val now = System.currentTimeMillis()
         val info = academicInfoValue()
@@ -478,6 +528,13 @@ private fun SetupViewModel.customDefaultPassingGradeText(): String {
 private fun SetupViewModel.customDefaultTargetAverageText(): String {
     return (customGradeMax * 0.8).roundGradeInput()
 }
+
+private fun Double.formatForScale(scale: GradingScale): String =
+    if (scale == GradingScale.ZERO_TO_FIVE) {
+        String.format(java.util.Locale.US, "%.1f", this)
+    } else {
+        roundGradeInput()
+    }
 
 private fun Double.roundGradeInput(): String {
     return if (this % 1.0 == 0.0) {

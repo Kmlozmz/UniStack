@@ -1197,12 +1197,12 @@
     <string name="settings_module_templates_desc">Templates and long assignments</string>
     <string name="settings_data_title">Data &amp; backups</string>
     <string name="settings_data_subtitle">Backups, export, and restore</string>
-    <string name="settings_data_reset_section">RESET</string>
-    <string name="settings_data_repeat_setup_title">Repeat initial setup</string>
-    <string name="settings_data_repeat_setup_subtitle">Return to onboarding. Your data is kept.</string>
-    <string name="settings_data_repeat_setup_dialog_title">Repeat initial setup?</string>
-    <string name="settings_data_repeat_setup_dialog_msg">You will return to the initial setup flow to configure your details. Your local subjects, tasks, and expenses will not be deleted.</string>
-    <string name="settings_data_repeat_setup_confirm">Repeat</string>
+    <string name="settings_data_reset_section">WALKTHROUGH</string>
+    <string name="settings_data_repeat_setup_title">Repeat initial walkthrough</string>
+    <string name="settings_data_repeat_setup_subtitle">Explore onboarding again without touching your setup.</string>
+    <string name="settings_data_repeat_setup_dialog_title">View initial walkthrough again?</string>
+    <string name="settings_data_repeat_setup_dialog_msg">You can explore all the onboarding steps and animations. Your academic setup, subjects, and registered grades will not be modified.</string>
+    <string name="settings_data_repeat_setup_confirm">Start walkthrough</string>
     <string name="settings_a11y_preview">PREVIEW</string>
     <string name="settings_a11y_status_on_track">On track</string>
     <string name="settings_a11y_status_at_risk">At risk</string>
@@ -1773,6 +1773,7 @@ your course catalog.</string>
     <string name="setup_perm_example_header">EXAMPLE</string>
     <string name="setup_done_btn_first_subject">Create my first course</string>
     <string name="setup_done_btn_home">Go to Home</string>
+    <string name="setup_replay_done_btn">Return to UniStack</string>
     <string name="setup_done_footer_with_subjects">UniStack is all yours. Start with a course and everything falls into place.</string>
     <string name="setup_done_footer_generic">UniStack is all yours. Jump in and get started.</string>
     <string name="setup_finish_best_wishes">Wishing you great success in your studies</string>

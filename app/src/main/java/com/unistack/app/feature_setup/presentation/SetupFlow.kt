@@ -507,14 +507,23 @@ fun SetupFlow(
                 permissionsNeeded = permissionsNeeded,
                 totalSteps = totalSteps,
                 institutionName = viewModel.institutionName,
+                isReplay = isReplay,
                 onBackClick = { navController.navigateUp() },
                 onCreateSubjectClick = {
-                    viewModel.finishSetup()
-                    onSetupFinished(true)
+                    if (!isReplay) {
+                        viewModel.finishSetup()
+                        onSetupFinished(true)
+                    } else {
+                        onDismissReplay?.invoke() ?: onSetupFinished(false)
+                    }
                 },
                 onGoHomeClick = {
-                    viewModel.finishSetup()
-                    onSetupFinished(false)
+                    if (!isReplay) {
+                        viewModel.finishSetup()
+                        onSetupFinished(false)
+                    } else {
+                        onDismissReplay?.invoke() ?: onSetupFinished(false)
+                    }
                 }
             )
         }
@@ -528,6 +537,7 @@ fun SetupWelcomeScreen(
     modifier: Modifier = Modifier,
     onDismissClick: (() -> Unit)? = null
 ) {
+    BackHandler(enabled = onDismissClick != null, onBack = { onDismissClick?.invoke() })
     SetupScaffold(
         modifier = modifier,
         welcome = false,
@@ -2057,7 +2067,8 @@ fun SetupDoneScreen(
     gradesEnabled: Boolean = true,
     permissionsNeeded: Boolean = true,
     totalSteps: Int = 7,
-    institutionName: String = ""
+    institutionName: String = "",
+    isReplay: Boolean = false
 ) {
     BackHandler(onBack = onBackClick)
     val displayName = name.ifBlank { stringResource(R.string.setup_default_user) }
@@ -2109,7 +2120,14 @@ fun SetupDoneScreen(
                 },
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (gradesEnabled) {
+                if (isReplay) {
+                    UniStackButton(
+                        text = stringResource(R.string.setup_replay_done_btn),
+                        onClick = { startExit(false) },
+                        leadingIcon = Icons.Rounded.Home,
+                        trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                    )
+                } else if (gradesEnabled) {
                     UniStackButton(
                         text = stringResource(R.string.setup_done_btn_first_subject),
                         onClick = { startExit(true) },
