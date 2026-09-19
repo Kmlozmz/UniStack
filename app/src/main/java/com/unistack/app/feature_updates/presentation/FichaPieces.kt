@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_updates.presentation
 
 import androidx.compose.foundation.background
@@ -10,6 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -39,11 +54,11 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /*
- * Las piezas de la réplica aprobada el 19 sep 2026 («F · Tu elección»), a 390 dp, sin escalar:
+ * Las piezas de la réplica aprobada el 19 sep 2026 («F · Tu elección»), dibujada a 411 dp —el
+ * ancho de su teléfono— y con Roboto, así que un píxel suyo es un dp aquí, sin escalar:
  * la ficha de una versión, el sello, la losa del icono y las notas agrupadas. Las medidas y los
  * cuerpos de letra son los del artifact en píxeles, que allí son dp.
  */
@@ -269,6 +284,124 @@ private fun iconoDeGrupo(heading: String): ImageVector {
     }
 }
 
+// ------------------------------------------------------------------ barra y botones
+
+/**
+ * La barra de arriba de la réplica: círculo de volver, título de 24 con su subtítulo, y a la
+ * derecha lo que toque (el ⋮). No es la barra grande que se recoge: en el artifact no la hay,
+ * y la comparación lado a lado la pedía igual.
+ */
+@Composable
+internal fun BarraDeLaReplica(
+    title: String,
+    subtitle: String,
+    onBackClick: () -> Unit,
+    trailing: @Composable () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        BotonCircular(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = stringResource(R.string.common_back),
+            onClick = onBackClick
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = TextStyle(fontSize = 24.sp, lineHeight = 26.sp, fontWeight = FontWeight.ExtraBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = TextStyle(fontSize = 13.sp, lineHeight = 17.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        trailing()
+    }
+}
+
+/** El círculo de 44 con fondo de tarjeta: volver, y el ⋮. */
+@Composable
+internal fun BotonCircular(
+    icon: ImageVector,
+    contentDescription: String?,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.size(44.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+/**
+ * El botón de la réplica: 52 de alto, pastilla, 15 sp en negrita con el icono de 20 delante.
+ * `UniStackButton` mide 56 con 16 sp; aquí manda la réplica.
+ */
+@Composable
+internal fun BotonDeLaReplica(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    filled: Boolean = true,
+    height: Dp = 52.dp,
+    fontSize: TextUnit = 15.sp
+) {
+    val label: @Composable RowScope.() -> Unit = {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(
+            text = text,
+            style = TextStyle(fontSize = fontSize, lineHeight = fontSize * 1.2f, fontWeight = FontWeight.ExtraBold),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+    if (filled) {
+        Button(
+            onClick = onClick,
+            shapes = UniStackButtonDefaults.shapes,
+            modifier = modifier.height(height),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            content = label
+        )
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            shapes = UniStackButtonDefaults.shapes,
+            modifier = modifier.height(height),
+            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outlineVariant),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            content = label
+        )
+    }
+}
+
 // ------------------------------------------------------------------ fechas y pesos
 
 /** «19 sep 2026» a partir de la fecha ISO que da GitHub («2026-09-19»). */
@@ -289,9 +422,11 @@ internal fun fechaCorta(millis: Long): String {
     }
 }
 
-private fun LocalDate.fechaCorta(locale: Locale): String =
-    // El nombre corto del mes lleva punto en español («sept.»); en la réplica no lo lleva.
-    format(DateTimeFormatter.ofPattern("d MMM yyyy", locale)).replace(".", "")
+private fun LocalDate.fechaCorta(locale: Locale): String {
+    // El nombre corto del mes en español sale «sept.»; la réplica lleva tres letras: «sep».
+    val mes = month.getDisplayName(java.time.format.TextStyle.FULL, locale).take(3)
+    return "$dayOfMonth $mes $year"
+}
 
 @Composable
 private fun localeDePantalla(): Locale {

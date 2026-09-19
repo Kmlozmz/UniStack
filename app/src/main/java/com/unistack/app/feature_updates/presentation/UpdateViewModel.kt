@@ -2,7 +2,6 @@ package com.unistack.app.feature_updates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unistack.app.BuildConfig
 import com.unistack.app.feature_updates.domain.InstalledVersion
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
@@ -23,7 +22,8 @@ class UpdateViewModel @Inject constructor(
     /** Las publicaciones recientes, de la más nueva a la más vieja. */
     val releases: StateFlow<List<UpdateInfo>> = updateRepository.releases
 
-    val currentVersionName: String = BuildConfig.VERSION_NAME
+    /** La puesta: la de la compilación, o la de la escena del banco de pruebas mientras dure. */
+    val installedVersion: StateFlow<String> = updateRepository.installedVersion
 
     /**
      * Los APK que quedan en el disco.

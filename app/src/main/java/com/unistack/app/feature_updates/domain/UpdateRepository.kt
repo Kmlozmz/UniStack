@@ -65,11 +65,14 @@ interface UpdateRepository {
     val sheetSeenVersion: StateFlow<String?>
     fun markSheetSeen(versionName: String)
 
+    /** La versión puesta: la de la compilación, o la de la escena fingida mientras dure. */
+    val installedVersion: StateFlow<String>
+
     /**
-     * Fuerza un estado, para el banco de pruebas.
+     * Finge una escena entera, para el banco de pruebas.
      *
-     * Ver el flujo entero exige que GitHub tenga publicada una versión más nueva que la que
-     * llevas, y eso casi nunca pasa mientras se desarrolla. Con `null` vuelve a lo real.
+     * Ver el flujo exige que GitHub tenga publicada una versión más nueva que la que llevas, y
+     * eso casi nunca pasa mientras se desarrolla. Con `null` vuelve a lo real.
      */
-    fun simulate(state: UpdateState?)
+    fun simulate(scene: SimulatedUpdates?)
 }

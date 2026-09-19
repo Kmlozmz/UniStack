@@ -18,6 +18,7 @@ import com.unistack.app.feature_updates.domain.CheckInterval
 import com.unistack.app.feature_updates.domain.HistorialDeVersiones
 import com.unistack.app.feature_updates.domain.InstalledVersion
 import com.unistack.app.feature_updates.domain.ReleaseVersion
+import com.unistack.app.feature_updates.domain.SimulatedUpdates
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateSettings
@@ -108,6 +109,14 @@ class GitHubReleaseUpdateRepository(
     private val _sheetSeenVersion = MutableStateFlow(prefs.getString(KEY_SHEET_SEEN, null))
     override val sheetSeenVersion: StateFlow<String?> = _sheetSeenVersion.asStateFlow()
 
+    private val _installedVersion = MutableStateFlow(BuildConfig.VERSION_NAME)
+    override val installedVersion: StateFlow<String> = _installedVersion.asStateFlow()
+
+    /** Lo real, guardado mientras dura una escena fingida del banco de pruebas. */
+    private var escenaReal: SimulatedUpdates? = null
+    private var escenaJob: Job? = null
+    private val fingiendo get() = escenaReal != null
+
     init {
         recordInstalledVersion()
         resumeDownloadIfAny()
@@ -145,6 +154,8 @@ class GitHubReleaseUpdateRepository(
      *   Inicio, y un aviso encima sería contarlo dos veces.
      */
     private suspend fun runCheck(automatic: Boolean): Boolean {
+        // Con una escena fingida puesta, GitHub no la pisa: se sale con «volver a lo real».
+        if (fingiendo) return true
         val sinNadieDelante = automatic && !appEnPrimerPlano()
         // Una descarga en marcha o ya lista no se pisa con «hay una versión disponible»: lo
         // que hay que contar es que ya está bajando, o que ya está.
@@ -662,26 +673,57 @@ class GitHubReleaseUpdateRepository(
 
     // ------------------------------------------------------------------ banco de pruebas
 
-    override fun simulate(state: UpdateState?) {
+    override fun simulate(scene: SimulatedUpdates?) {
         downloadJob?.cancel()
-        if (state == null) {
+        escenaJob?.cancel()
+        if (scene == null) {
+            val real = escenaReal ?: return
+            escenaReal = null
+            _installedVersion.value = real.installedVersion
+            _installHistory.value = real.history
+            _releases.value = real.releases
+            _lastCheckedAt.value = real.lastCheckedAt
             _state.value = UpdateState.Idle
             notificationManager.dismissNotification()
             scope.launch { checkForUpdates() }
             return
         }
-        _state.value = state
-        when (state) {
+        if (escenaReal == null) {
+            escenaReal = SimulatedUpdates(
+                state = _state.value,
+                installedVersion = _installedVersion.value,
+                history = _installHistory.value,
+                releases = _releases.value,
+                lastCheckedAt = _lastCheckedAt.value
+            )
+        }
+        _installedVersion.value = scene.installedVersion
+        _installHistory.value = scene.history
+        _releases.value = scene.releases
+        _lastCheckedAt.value = scene.lastCheckedAt
+        _state.value = scene.state
+        /*
+         * Los avisos solo cuando la app no está delante, igual que en lo real: con ella
+         * abierta un aviso encima no tiene sentido (19 sep 2026). El de «hay una versión»
+         * espera unos segundos para dar tiempo a salir de la app y verlo llegar.
+         */
+        when (val state = scene.state) {
             is UpdateState.Available -> {
-                // Que la hoja vuelva a salir aunque esa versión fingida ya se hubiera visto.
                 prefs.edit { remove(KEY_SHEET_SEEN) }
                 _sheetSeenVersion.value = null
-                notificationManager.showUpdateAvailableNotification()
+                escenaJob = scope.launch {
+                    delay(6_000)
+                    if (fingiendo && !appEnPrimerPlano()) notificationManager.showUpdateAvailableNotification()
+                }
             }
-            is UpdateState.Downloading -> notificationManager.showDownloadingNotification(
-                state.info.versionName, state.progress, state.info.sizeMb
-            )
-            is UpdateState.ReadyToInstall -> notificationManager.showReadyNotification(state.info.versionName)
+            is UpdateState.Downloading -> if (!appEnPrimerPlano()) {
+                notificationManager.showDownloadingNotification(state.info.versionName, state.progress, state.info.sizeMb)
+            }
+            is UpdateState.ReadyToInstall -> if (!appEnPrimerPlano()) {
+                notificationManager.showReadyNotification(state.info.versionName)
+            } else {
+                notificationManager.dismissNotification()
+            }
             else -> notificationManager.dismissNotification()
         }
     }

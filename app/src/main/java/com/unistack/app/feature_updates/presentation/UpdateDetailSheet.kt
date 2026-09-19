@@ -2,36 +2,25 @@ package com.unistack.app.feature_updates.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.NewReleases
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.unistack.app.R
-import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.feature_updates.domain.UpdateInfo
 
 /**
@@ -94,30 +83,20 @@ fun UpdateDetailSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedButton(
-                    shapes = UniStackButtonDefaults.shapes,
+                BotonDeLaReplica(
+                    text = stringResource(R.string.updates_sheet_changelog),
                     onClick = onChangelogClick,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    // Sin este relleno, Material reserva 24dp a cada lado y en media pantalla
-                    // el texto se queda sin sitio y se recorta a puntos.
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    Text(stringResource(R.string.updates_sheet_changelog), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                Button(
-                    shapes = UniStackButtonDefaults.shapes,
+                    filled = false,
+                    height = 50.dp,
+                    modifier = Modifier.weight(1f)
+                )
+                BotonDeLaReplica(
+                    text = stringResource(R.string.updates_sheet_update),
                     onClick = onUpdateClick,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.updates_sheet_update), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                    icon = Icons.Rounded.Download,
+                    height = 50.dp,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

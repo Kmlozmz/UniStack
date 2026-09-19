@@ -504,67 +504,57 @@ private fun AccountLinkRow(
             color = if (linked) tonosDeAjustes.verde else tonosDeAjustes.gris
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = title,
-                    // Cede el ancho que necesite la insignia en lugar de quedarselo todo.
-                    // Sin esto «Pronto» se quedaba sin sitio y se partia letra a letra, en
-                    // vertical, empujando el resto de la fila fuera de la tarjeta.
-                    modifier = Modifier.weight(1f, fill = false),
-                    style = MaterialTheme.typography.titleMediumEmphasized,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    // Entre el icono, la insignia y el boton la columna se queda con poco
-                    // ancho: «Sin cuenta vinculada» no cabe en un renglon y se cortaba en
-                    // «Sin cuenta vin...». Se parte en dos antes que recortarlo.
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (!available) {
-                    Box(
-                        Modifier
-                            .clip(CircleShape)
-                            .background(sections.atRisk.copy(alpha = 0.22f))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.settings_account_soon),
-                            color = sections.atRisk,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                    }
-                }
-            }
+            // Un solo renglón: la insignia ya no le quita sitio, va a la derecha, sobre el
+            // botón. Partido en dos («Sin cuenta / vinculada») estiraba la tarjeta (19 sep).
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMediumEmphasized,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             Text(
                 text = detail,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                // Sin ellipsis, un solo renglon dejaba la frase a medias («Podrás respaldar
-                // tus datos y») como si faltara texto.
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Surface(
-            onClick = onClick,
-            enabled = available && !isBusy,
-            shape = CircleShape,
-            color = if (linked) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary,
-            contentColor = if (linked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
-        ) {
-            Text(
-                text = when {
-                    isBusy -> "..."
-                    linked -> stringResource(R.string.settings_account_btn_unlink)
-                    else -> stringResource(R.string.settings_account_btn_link)
-                },
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (!available) {
+                Box(
+                    Modifier
+                        .clip(CircleShape)
+                        .background(sections.atRisk.copy(alpha = 0.22f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.settings_account_soon),
+                        color = sections.atRisk,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+            Surface(
+                onClick = onClick,
+                enabled = available && !isBusy,
+                shape = CircleShape,
+                color = if (linked) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary,
+                contentColor = if (linked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
+            ) {
+                Text(
+                    text = when {
+                        isBusy -> "..."
+                        linked -> stringResource(R.string.settings_account_btn_unlink)
+                        else -> stringResource(R.string.settings_account_btn_link)
+                    },
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

@@ -29,12 +29,13 @@ import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.MotionChoice
 import com.unistack.app.feature_user.domain.MotionGesture
 import com.unistack.app.feature_user.domain.MotionPreferences
+import com.unistack.app.feature_updates.domain.InstalledVersion
+import com.unistack.app.feature_updates.domain.SimulatedUpdates
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
 import com.unistack.app.feature_user.domain.UserRepository
 import android.net.Uri
-import com.unistack.app.BuildConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
@@ -78,51 +79,77 @@ class BancoDePruebasViewModel @Inject constructor(
 
     // ------------------------------------------------------------------ actualizaciones
 
-    /**
-     * Una versión que no existe, un parche por encima de la instalada, con notas agrupadas
-     * como las del artifact. Sale el aviso y, en Inicio, la hoja.
+    /*
+     * La escena es **la del artifact «Flujo de actualizaciones», tal cual**: llevas la 1.0.0
+     * del 17 sep (23,8 MB), hay una 1.0.1 del 19 sep (24,1 MB) con esas seis notas, se miró
+     * hace dos minutos, y el historial es 1.0.0 · 0.9.1 · 0.9.0 · 0.8.4 con sus fechas. Así la
+     * comparación lado a lado va sobre los mismos datos.
      */
-    private fun versionFingida(): UpdateInfo {
-        val base = BuildConfig.VERSION_NAME.substringBefore("-")
-        val partes = base.split(".").mapNotNull { it.toIntOrNull() }.toMutableList()
-        while (partes.size < 3) partes += 0
-        partes[2] = partes[2] + 1
-        return UpdateInfo(
-            versionName = partes.joinToString("."),
-            releaseNotes = """
-                ### Nuevo
-                - Escribe la nota directamente en el campo, sin subir de 0,1 en 0,1.
-                - Puedes saltarte las fechas del periodo en la configuración inicial y ponerlas después.
+    private fun notasDelArtifact(): String = """
+        ### Nuevo
+        - Escribe la nota directamente en el campo, sin subir de 0,1 en 0,1.
+        - Puedes saltarte las fechas del periodo en la configuración inicial y ponerlas después.
 
-                ### Mejorado
-                - La rueda de asistencia rebota al marcar.
-                - Inicio calcula el resumen en segundo plano: entra más rápido.
+        ### Mejorado
+        - La rueda de asistencia rebota al marcar.
+        - Inicio calcula el resumen en segundo plano: entra más rápido.
 
-                ### Arreglado
-                - La tarjeta de cuenta cortaba «Sin cuenta vinculada».
-                - Repetir el recorrido inicial ya no toca tu configuración.
-            """.trimIndent(),
-            releaseDate = LocalDate.now().toString(),
-            downloadUrl = "https://example.invalid/UniStack.apk",
-            sizeMb = 24.1
-        )
-    }
+        ### Arreglado
+        - La tarjeta de cuenta cortaba «Sin cuenta vinculada».
+        - Repetir el recorrido inicial ya no toca tu configuración.
+    """.trimIndent()
+
+    private fun publicacion(version: String, fecha: String, mb: Double, notas: String = "") = UpdateInfo(
+        versionName = version,
+        releaseNotes = notas,
+        releaseDate = fecha,
+        downloadUrl = "https://example.invalid/UniStack-$version.apk",
+        sizeMb = mb
+    )
+
+    private fun versionNueva() = publicacion("1.0.1", "2026-09-19", 24.1, notasDelArtifact())
+
+    private fun escena(estado: UpdateState) = SimulatedUpdates(
+        state = estado,
+        installedVersion = "1.0.0",
+        history = listOf(
+            InstalledVersion("1.0.0", diaMillis(2026, 9, 17)),
+            InstalledVersion("0.9.1", diaMillis(2026, 9, 12)),
+            InstalledVersion("0.9.0", diaMillis(2026, 9, 5)),
+            InstalledVersion("0.8.4", diaMillis(2026, 8, 28))
+        ),
+        releases = listOf(
+            versionNueva(),
+            publicacion("1.0.0", "2026-09-17", 23.8, "**Release inicial.** La primera versión estable de UniStack."),
+            publicacion("0.9.1", "2026-09-12", 23.1),
+            publicacion("0.9.0", "2026-09-05", 22.7),
+            publicacion("0.8.4", "2026-08-28", 22.2)
+        ),
+        lastCheckedAt = System.currentTimeMillis() - 2 * 60_000L
+    )
+
+    private fun diaMillis(anio: Int, mes: Int, dia: Int): Long =
+        LocalDate.of(anio, mes, dia).atTime(10, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
 
     fun fingirVersionNueva() {
-        updateRepository.simulate(UpdateState.Available(versionFingida()))
+        updateRepository.simulate(escena(UpdateState.Available(versionNueva())))
     }
 
     /** La descarga entera en ocho segundos, con su ritmo, hasta «lista para instalar». */
     fun fingirDescarga() {
-        val info = versionFingida()
+        val info = versionNueva()
         viewModelScope.launch {
             for (paso in 0..100 step 4) {
                 val faltan = ((100 - paso) * 80L / 1000L).toInt()
-                updateRepository.simulate(UpdateState.Downloading(info, paso, faltan))
+                updateRepository.simulate(escena(UpdateState.Downloading(info, paso, faltan)))
                 delay(320)
             }
-            updateRepository.simulate(UpdateState.ReadyToInstall(info, Uri.parse("file:///no-existe.apk")))
+            updateRepository.simulate(escena(UpdateState.ReadyToInstall(info, Uri.parse("file:///no-existe.apk"))))
         }
+    }
+
+    fun fingirAlDia() {
+        updateRepository.simulate(escena(UpdateState.UpToDate))
     }
 
     /** Vuelve a lo real: comprueba en GitHub y se queda con lo que diga. */

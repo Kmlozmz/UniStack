@@ -3,7 +3,12 @@
 package com.unistack.app.feature_updates.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,7 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,11 +68,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
-import com.unistack.app.core.design.components.LargeTitleScaffoldLayout
 import com.unistack.app.core.design.components.SystemProgress
-import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniLoadingIndicator
-import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -105,7 +107,7 @@ fun UpdateSettingsScreen(
     val lastCheckedAt by viewModel.lastCheckedAt.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val installRequested by UpdateDeepLink.installRequested.collectAsStateWithLifecycle()
-    val installed = viewModel.currentVersionName
+    val installed by viewModel.installedVersion.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.refreshPendingApks()
@@ -120,15 +122,23 @@ fun UpdateSettingsScreen(
     }
 
     var menuOpen by remember { mutableStateOf(false) }
+    val checking = state is UpdateState.Checking || state is UpdateState.Idle
+    val pending = (state as? UpdateState.Available)?.info
+        ?: (state as? UpdateState.Downloading)?.info
+        ?: (state as? UpdateState.ReadyToInstall)?.info
 
-    LargeTitleScaffoldLayout(
-        title = stringResource(R.string.updates_title),
-        subtitle = stringResource(R.string.updates_subtitle),
-        onBackClick = onBackClick,
-        modifier = modifier,
-        actions = {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        BarraDeLaReplica(
+            title = stringResource(R.string.updates_title),
+            subtitle = stringResource(R.string.updates_subtitle),
+            onBackClick = onBackClick
+        ) {
             Box {
-                UniIconButton(
+                BotonCircular(
                     icon = Icons.Rounded.MoreVert,
                     contentDescription = stringResource(R.string.updates_menu),
                     onClick = { menuOpen = true }
@@ -150,96 +160,106 @@ fun UpdateSettingsScreen(
                 )
             }
         }
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            val listState = rememberLazyListState()
             val pullState = rememberPullToRefreshState()
-            val checking = state is UpdateState.Checking || state is UpdateState.Idle
-            val pending = (state as? UpdateState.Available)?.info
-                ?: (state as? UpdateState.Downloading)?.info
-                ?: (state as? UpdateState.ReadyToInstall)?.info
+            /*
+             * Tirar solo cuenta si la lista **ya estaba arriba** cuando empezó el gesto. Sin
+             * esto, un desplazamiento hacia arriba desde media lista llegaba al tope y, en
+             * el mismo gesto, se convertía en una comprobación que nadie había pedido.
+             */
+            var pullAllowed by remember { mutableStateOf(true) }
+            LaunchedEffect(listState) {
+                listState.interactionSource.interactions.collect { interaction ->
+                    if (interaction is DragInteraction.Start) {
+                        pullAllowed = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                    }
+                }
+            }
 
-            PullToRefreshBox(
-                isRefreshing = checking,
-                onRefresh = viewModel::checkForUpdates,
-                state = pullState,
-                // El indicador va dentro de la lista, empujándola: el de Material flota encima.
-                indicator = {}
-            ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 20.dp,
-                        end = 20.dp,
-                        top = 8.dp,
-                        bottom = scrollBottomRoom + 96.dp
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullToRefresh(
+                        isRefreshing = checking,
+                        state = pullState,
+                        enabled = pullAllowed,
+                        onRefresh = viewModel::checkForUpdates
                     ),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    item("tirar") {
-                        val fraction = if (checking) 1f else pullState.distanceFraction.coerceIn(0f, 1f)
-                        if (fraction > 0f) {
-                            Box(
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 4.dp,
+                    bottom = scrollBottomRoom + 90.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item("tirar") {
+                    val fraction = if (checking) 1f else pullState.distanceFraction.coerceIn(0f, 1f)
+                    if (fraction > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp * fraction),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            UniLoadingIndicator(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(42.dp * fraction),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                UniLoadingIndicator(
-                                    modifier = Modifier
-                                        .size(34.dp)
-                                        .graphicsLayer {
-                                            scaleX = fraction
-                                            scaleY = fraction
-                                            alpha = fraction
-                                        }
-                                )
-                            }
-                        }
-                    }
-
-                    item("estado") {
-                        TarjetaDeEstado(
-                            state = state,
-                            lastCheckedAt = lastCheckedAt,
-                            onClick = viewModel::checkForUpdates
-                        )
-                    }
-
-                    val downloading = state as? UpdateState.Downloading
-                    if (downloading != null) {
-                        item("progreso") { TarjetaDeProgreso(downloading) }
-                    }
-
-                    if (pending != null) {
-                        item("ficha") {
-                            val (sello, tono) = when (state) {
-                                is UpdateState.ReadyToInstall -> stringResource(R.string.updates_chip_downloaded) to Tono.BIEN
-                                is UpdateState.Downloading -> stringResource(R.string.updates_chip_downloading) to Tono.ACENTO
-                                else -> stringResource(R.string.updates_chip_new) to Tono.ACENTO
-                            }
-                            TarjetaDeVersion(
-                                versionName = pending.versionName,
-                                meta = "${fechaCorta(pending.releaseDate)} · ${pesoEnMb(pending.sizeMb)}",
-                                sello = sello,
-                                tonoSello = tono,
-                                tonoLosa = Tono.SUAVE
+                                    .size(34.dp)
+                                    .graphicsLayer {
+                                        scaleX = fraction
+                                        scaleY = fraction
+                                        alpha = fraction
+                                    }
                             )
                         }
-                        if (pending.releaseNotes.isNotBlank()) {
-                            item("notas") { NotasAgrupadas(markdown = pending.releaseNotes) }
-                        }
                     }
+                }
 
-                    item("instalada") {
-                        val ahead = state is UpdateState.Ahead
+                item("estado") {
+                    TarjetaDeEstado(
+                        state = state,
+                        lastCheckedAt = lastCheckedAt,
+                        onClick = viewModel::checkForUpdates
+                    )
+                }
+
+                val downloading = state as? UpdateState.Downloading
+                if (downloading != null) {
+                    item("progreso") { TarjetaDeProgreso(downloading) }
+                }
+
+                if (pending != null) {
+                    item("ficha") {
+                        val (sello, tono) = when (state) {
+                            is UpdateState.ReadyToInstall -> stringResource(R.string.updates_chip_downloaded) to Tono.BIEN
+                            is UpdateState.Downloading -> stringResource(R.string.updates_chip_downloading) to Tono.ACENTO
+                            else -> stringResource(R.string.updates_chip_new) to Tono.ACENTO
+                        }
                         TarjetaDeVersion(
-                            versionName = installed,
-                            meta = metaDeLaInstalada(installed, releases),
-                            sello = stringResource(if (ahead) R.string.updates_chip_ahead else R.string.updates_chip_installed),
-                            tonoSello = Tono.BIEN,
+                            versionName = pending.versionName,
+                            meta = "${fechaCorta(pending.releaseDate)} · ${pesoEnMb(pending.sizeMb)}",
+                            sello = sello,
+                            tonoSello = tono,
                             tonoLosa = Tono.SUAVE
                         )
                     }
+                    if (pending.releaseNotes.isNotBlank()) {
+                        item("notas") { NotasAgrupadas(markdown = pending.releaseNotes) }
+                    }
+                }
+
+                item("instalada") {
+                    val ahead = state is UpdateState.Ahead
+                    TarjetaDeVersion(
+                        versionName = installed,
+                        meta = metaDeLaInstalada(installed, releases),
+                        sello = stringResource(if (ahead) R.string.updates_chip_ahead else R.string.updates_chip_installed),
+                        tonoSello = Tono.BIEN,
+                        tonoLosa = Tono.SUAVE
+                    )
                 }
             }
 
@@ -419,9 +439,9 @@ private fun metaDeLaInstalada(installed: String, releases: List<UpdateInfo>): St
 }
 
 /**
- * El menú ⋮, tal cual la réplica: 262 dp, esquinas de 18, filas de 50 con icono, dos líneas y
- * el mando a la derecha. Los interruptores van dentro porque así venía su captura; Material
- * los preferiría como ítems con visto.
+ * El menú ⋮, a lo M3E (19 sep 2026, segunda vuelta): 300 de ancho, esquinas de 28, filas de
+ * 56 con el icono, dos líneas y el mando a la derecha, y un separador que se vea antes del
+ * historial. Los interruptores van dentro porque así venía su captura.
  */
 @Composable
 private fun MenuDeActualizaciones(
@@ -436,11 +456,12 @@ private fun MenuDeActualizaciones(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.width(262.dp)
+        shadowElevation = 8.dp,
+        modifier = Modifier.width(300.dp)
     ) {
-        Column(modifier = Modifier.padding(6.dp)) {
+        Column(modifier = Modifier.padding(8.dp)) {
             FilaDeMenu(
                 icon = Icons.Rounded.Wifi,
                 title = stringResource(R.string.updates_menu_wifi_title),
@@ -481,8 +502,8 @@ private fun MenuDeActualizaciones(
                 )
             }
             HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
             )
             FilaDeMenu(
                 icon = Icons.Rounded.History,
@@ -494,7 +515,7 @@ private fun MenuDeActualizaciones(
                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
             if (pendingApks > 0) {
@@ -524,31 +545,34 @@ private fun FilaDeMenu(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(56.dp)
+            .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Icon(
             icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(22.dp)
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = TextStyle(fontSize = 13.5.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
+                style = TextStyle(fontSize = 14.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
-                    style = TextStyle(fontSize = 11.sp, lineHeight = 13.sp, fontWeight = FontWeight.Medium),
+                    style = TextStyle(fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -556,14 +580,14 @@ private fun FilaDeMenu(
     }
 }
 
-/** El interruptor de la app, encogido al tamaño del menú (36 × 20 en la réplica). */
+/** El interruptor de la app, un poco encogido para la fila del menú (44 × 24 en la réplica). */
 @Composable
 private fun InterruptorDeMenu(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Box(modifier = Modifier.width(38.dp).height(24.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.width(46.dp).height(28.dp), contentAlignment = Alignment.Center) {
         UniSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            modifier = Modifier.scale(0.72f)
+            modifier = Modifier.scale(0.85f)
         )
     }
 }
@@ -602,11 +626,13 @@ private fun UpdateActions(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background
     ) {
-        UniStackButton(
+        BotonDeLaReplica(
             text = action.first,
             onClick = action.third,
-            leadingIcon = action.second,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+            icon = action.second,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 18.dp)
         )
     }
 }

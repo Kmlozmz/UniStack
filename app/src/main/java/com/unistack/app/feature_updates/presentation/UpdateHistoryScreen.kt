@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
-import com.unistack.app.core.design.components.LargeTitleScaffoldLayout
+import androidx.compose.foundation.background
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_support.domain.changelogFor
 import com.unistack.app.feature_updates.domain.HistorialDeVersiones
@@ -62,15 +62,15 @@ fun UpdateHistoryScreen(
     val history by viewModel.installHistory.collectAsStateWithLifecycle()
     val releases by viewModel.releases.collectAsStateWithLifecycle()
 
-    LargeTitleScaffoldLayout(
-        title = stringResource(R.string.updates_history_title),
-        subtitle = stringResource(R.string.updates_history_subtitle),
-        onBackClick = onBackClick,
-        modifier = modifier
-    ) { innerPadding ->
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        BarraDeLaReplica(
+            title = stringResource(R.string.updates_history_title),
+            subtitle = stringResource(R.string.updates_history_subtitle),
+            onBackClick = onBackClick
+        )
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = scrollBottomRoom),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = scrollBottomRoom),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item("lista") {
@@ -221,7 +221,8 @@ fun UpdateVersionScreen(
     val history by viewModel.installHistory.collectAsStateWithLifecycle()
     val releases by viewModel.releases.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val actual = versionName == viewModel.currentVersionName
+    val installed by viewModel.installedVersion.collectAsStateWithLifecycle()
+    val actual = versionName == installed
     val entry = history.firstOrNull { it.versionName == versionName }
     val release = releases.firstOrNull { it.versionName == versionName }
 
@@ -244,19 +245,19 @@ fun UpdateVersionScreen(
     val peso = pesoDeLaVersion(versionName, releases, actual)
     val meta = listOfNotNull(fecha.takeIf { it.isNotBlank() }, peso).joinToString(" · ")
 
-    LargeTitleScaffoldLayout(
-        title = "v$versionName",
-        subtitle = if (actual) {
-            stringResource(R.string.updates_history_detail_meta_installed, meta)
-        } else {
-            meta
-        },
-        onBackClick = onBackClick,
-        modifier = modifier
-    ) { innerPadding ->
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        BarraDeLaReplica(
+            title = "v$versionName",
+            subtitle = if (actual) {
+                stringResource(R.string.updates_history_detail_meta_installed, meta)
+            } else {
+                meta
+            },
+            onBackClick = onBackClick
+        )
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = scrollBottomRoom),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = scrollBottomRoom),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item("ficha") {

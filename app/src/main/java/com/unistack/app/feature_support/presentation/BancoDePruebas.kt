@@ -290,8 +290,9 @@ private fun LazyListScope.caraSimular(
     palanca("Deshacer lo de Tareas", "Elimina tareas y materias de prueba", suave = true) { vm.recogerTareas() }
 
     seccion("Actualizaciones")
-    palanca("Fingir versión nueva", "Sale el aviso y, en Inicio, la hoja; la sección enseña la ficha") { vm.fingirVersionNueva() }
-    palanca("Fingir descarga", "Ocho segundos de barra y aviso hasta «lista para instalar»") { vm.fingirDescarga() }
+    palanca("Fingir versión nueva", "La escena del artifact: 1.0.1 sobre 1.0.0, historial incluido. La hoja en Inicio; el aviso llega en 6 s si sales de la app") { vm.fingirVersionNueva() }
+    palanca("Fingir descarga", "Ocho segundos de barra hasta «lista para instalar»; los avisos, solo con la app detrás") { vm.fingirDescarga() }
+    palanca("Fingir al día", "La misma escena con «Estás al día»") { vm.fingirAlDia() }
     palanca("Volver a lo real", "Comprueba en GitHub y se queda con lo que diga", suave = true) { vm.actualizacionReal() }
 
     seccion("Notificaciones")
