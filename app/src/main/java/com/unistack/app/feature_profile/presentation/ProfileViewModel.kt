@@ -474,8 +474,8 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun restartOnboarding(): Boolean {
-        val current = profile.value ?: return false
-        save(current.copy(setupCompleted = false))
+        if (profile.value == null) return false
+        userRepository.startReplayingSetup()
         return true
     }
 

@@ -28,6 +28,17 @@ class InMemoryUserRepository : UserRepository {
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     override val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
+    private val _isReplayingSetup = MutableStateFlow(false)
+    override val isReplayingSetup: StateFlow<Boolean> = _isReplayingSetup.asStateFlow()
+
+    override fun startReplayingSetup() {
+        _isReplayingSetup.value = true
+    }
+
+    override fun finishReplayingSetup() {
+        _isReplayingSetup.value = false
+    }
+
     override fun saveUserProfile(profile: UserProfile) {
         _userProfile.value = profile.copy(userId = UserIds.normalize(profile.userId))
         _currentUser.value = _currentUser.value.copy(

@@ -170,6 +170,30 @@ class SetupTermDatesTest {
         assertEquals(2, viewModel.cutEndDates.size)
         assertTrue(viewModel.cutEndDates.all { it == null })
     }
+
+    @Test
+    fun `saltar fechas deja inicio y fin nulos y limpia los cortes`() {
+        periodoCon(3)
+        viewModel.skipTermDates()
+
+        assertNull(viewModel.termStart)
+        assertNull(viewModel.termPlannedEnd)
+        assertEquals(false, viewModel.knowsCutDates)
+        assertEquals(2, viewModel.cutEndDates.size)
+        assertTrue(viewModel.cutEndDates.all { it == null })
+    }
+
+    @Test
+    fun `reiniciar onboarding activa isReplayingSetup y se puede finalizar`() {
+        val userRepo = InMemoryUserRepository()
+        assertFalse(userRepo.isReplayingSetup.value)
+
+        userRepo.startReplayingSetup()
+        assertTrue(userRepo.isReplayingSetup.value)
+
+        userRepo.finishReplayingSetup()
+        assertFalse(userRepo.isReplayingSetup.value)
+    }
 }
 
 private class FakeAcademicTermRepository : AcademicTermRepository {

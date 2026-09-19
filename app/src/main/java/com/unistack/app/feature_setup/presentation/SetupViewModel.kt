@@ -212,6 +212,13 @@ class SetupViewModel @Inject constructor(
         cutEndDates = cortesVacios()
     }
 
+    fun skipTermDates() {
+        termStart = null
+        termPlannedEnd = null
+        knowsCutDates = false
+        cutEndDates = cortesVacios()
+    }
+
     fun updateCutEndDate(index: Int, value: LocalDate) {
         // Si la lista no tiene el tamano que toca, se rehace antes de escribir en ella.
         val base = if (cutEndDates.size == (termCutCount - 1).coerceAtLeast(0)) {

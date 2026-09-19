@@ -1745,6 +1745,10 @@ your course catalog.</string>
     <string name="setup_term_dates_end_projected">Ends (if known)</string>
     <string name="setup_term_dates_not_yet">Not yet</string>
     <string name="setup_term_dates_skip_info">You can continue without it. It\'s only a projection, and you can add it anytime in Settings › Academic settings.</string>
+    <string name="setup_term_dates_btn_skip">Set up later</string>
+    <string name="setup_term_dates_skip_dialog_title">Set up dates later?</string>
+    <string name="setup_term_dates_skip_dialog_msg">You can set up your academic term and cut dates anytime in Settings › Academic settings.</string>
+    <string name="setup_term_dates_skip_dialog_confirm">Continue without dates</string>
     <string name="setup_term_weeks_count">That\'s %1$d weeks.</string>
     <string name="setup_term_wont_close_notice">The term won\'t close on that date: it closes only when you manually close it.</string>
     <string name="setup_cuts_dates_question">When does each %1$s close?</string>

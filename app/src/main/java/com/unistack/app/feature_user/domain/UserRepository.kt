@@ -9,6 +9,10 @@ interface UserRepository {
     /** True once the first value has been emitted from the persistent source. */
     val didLoad: Boolean
 
+    val isReplayingSetup: StateFlow<Boolean>
+    fun startReplayingSetup()
+    fun finishReplayingSetup()
+
     fun saveUserProfile(profile: UserProfile)
     fun updatePreferredName(name: String)
     fun markSetupCompleted()

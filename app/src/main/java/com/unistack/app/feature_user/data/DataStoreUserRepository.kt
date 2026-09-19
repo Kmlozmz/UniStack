@@ -9,8 +9,10 @@ import com.unistack.app.feature_user.domain.UserIds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -24,6 +26,17 @@ class DataStoreUserRepository(
     @Volatile
     override var didLoad: Boolean = false
         private set
+
+    private val _isReplayingSetup = MutableStateFlow(false)
+    override val isReplayingSetup: StateFlow<Boolean> = _isReplayingSetup.asStateFlow()
+
+    override fun startReplayingSetup() {
+        _isReplayingSetup.value = true
+    }
+
+    override fun finishReplayingSetup() {
+        _isReplayingSetup.value = false
+    }
 
     override val userProfile: StateFlow<UserProfile?> = dataSource.userProfileFlow
         .onEach { didLoad = true }

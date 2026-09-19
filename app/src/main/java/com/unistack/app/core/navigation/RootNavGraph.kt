@@ -52,6 +52,7 @@ fun RootNavGraph(
             .map { it?.setupCompleted }
             .distinctUntilChanged()
     }.collectAsStateWithLifecycle(initialValue = null)
+    val isReplayingSetup by userRepository.isReplayingSetup.collectAsStateWithLifecycle()
     var setupLaunchRoute by remember { mutableStateOf<String?>(null) }
     // Se lee una sola vez, al entrar: lo que pase con el archivo a partir de aquí lo decide
     // esta misma pantalla al despacharlo.
@@ -90,8 +91,8 @@ fun RootNavGraph(
     // por mezclas intermedias que no son ninguno de los dos y se leían como un segundo
     // destello. Al no coincidir nunca en pantalla, ese problema no puede darse.
     val mainAlpha = remember { Animatable(if (animationsDisabled) 1f else 0f) }
-    LaunchedEffect(setupCompleted, animationsDisabled) {
-        if (setupCompleted != true) return@LaunchedEffect
+    LaunchedEffect(setupCompleted, isReplayingSetup, animationsDisabled) {
+        if (setupCompleted != true || isReplayingSetup) return@LaunchedEffect
         if (animationsDisabled) {
             mainAlpha.snapTo(1f)
         } else {
@@ -126,7 +127,7 @@ fun RootNavGraph(
                     onTerminar = { falloPendiente = null },
                     modifier = Modifier.fillMaxSize()
                 )
-                setupCompleted == true -> MainNavGraph(
+                setupCompleted == true && !isReplayingSetup -> MainNavGraph(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer { alpha = mainAlpha.value },
@@ -142,7 +143,12 @@ fun RootNavGraph(
                 )
                 else -> SetupFlow(
                     modifier = Modifier.fillMaxSize(),
+                    isReplay = isReplayingSetup,
+                    onDismissReplay = if (isReplayingSetup) {
+                        { userRepository.finishReplayingSetup() }
+                    } else null,
                     onSetupFinished = { createFirstSubject ->
+                        userRepository.finishReplayingSetup()
                         setupLaunchRoute = if (createFirstSubject) AppRoutes.AddSubject else null
                     }
                 )

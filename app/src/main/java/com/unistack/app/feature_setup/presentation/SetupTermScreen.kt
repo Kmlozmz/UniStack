@@ -28,10 +28,12 @@ import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,6 +55,7 @@ import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButton
+import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.feature_terms.domain.AcademicTermType
 import com.unistack.app.feature_user.domain.Corte
@@ -301,11 +304,13 @@ fun SetupTermDatesScreen(
     onKnowsCutDatesChange: (Boolean) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
+    onSkipClick: () -> Unit,
     modifier: Modifier = Modifier,
     totalSteps: Int = 8
 ) {
     var picking by remember { mutableStateOf<TermDateTarget?>(null) }
     var ayudaVisible by remember { mutableStateOf(false) }
+    var showSkipDialog by remember { mutableStateOf(false) }
     val fechasPuestas = start != null && plannedEnd != null
     /*
      * Para seguir basta el inicio.
@@ -332,6 +337,11 @@ fun SetupTermDatesScreen(
                 onClick = onContinueClick,
                 enabled = listo,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
+            )
+            UniStackButton(
+                text = stringResource(R.string.setup_term_dates_btn_skip),
+                onClick = { showSkipDialog = true },
+                variant = UniStackButtonVariant.Outlined
             )
         }
     ) {
@@ -448,7 +458,7 @@ fun SetupTermDatesScreen(
                 }
             }
 
-            Revelado(visible = fechasPuestas && cutCount > 1) {
+            Revelado(visible = start != null && cutCount > 1) {
                 Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     /*
                      * Se pregunta por lo que vas a hacer, no por lo que sabes.
@@ -532,6 +542,46 @@ fun SetupTermDatesScreen(
                 }
             }
         }
+    }
+
+    if (showSkipDialog) {
+        AlertDialog(
+            onDismissRequest = { showSkipDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.setup_term_dates_skip_dialog_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.setup_term_dates_skip_dialog_msg),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSkipDialog = false
+                        onSkipClick()
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.setup_term_dates_skip_dialog_confirm),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSkipDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = MaterialTheme.shapes.extraLarge
+        )
     }
 
     picking?.let { target ->

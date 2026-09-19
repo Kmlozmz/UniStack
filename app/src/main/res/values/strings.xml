@@ -1744,6 +1744,10 @@
     <string name="setup_term_dates_end_projected">Acaba (si lo sabes)</string>
     <string name="setup_term_dates_not_yet">Aún no</string>
     <string name="setup_term_dates_skip_info">Puedes seguir sin ella. Es solo una previsión para avisarte cuando llegue el final, y la pones cuando la sepas en Ajustes › Configuración académica.</string>
+    <string name="setup_term_dates_btn_skip">Configurar después</string>
+    <string name="setup_term_dates_skip_dialog_title">¿Configurar fechas más tarde?</string>
+    <string name="setup_term_dates_skip_dialog_msg">Podrás definir las fechas de tu periodo académico y tus cortes en cualquier momento desde Ajustes › Configuración académica.</string>
+    <string name="setup_term_dates_skip_dialog_confirm">Continuar sin fechas</string>
     <string name="setup_term_weeks_count">Son %1$d semanas.</string>
     <string name="setup_term_wont_close_notice">El periodo no se cierra en esa fecha: se cierra cuando tú lo cierres.</string>
     <string name="setup_cuts_dates_question">¿Cuándo cierra cada %1$s?</string>

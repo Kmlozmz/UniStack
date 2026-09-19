@@ -200,7 +200,7 @@ class UserPreferencesDataSource(private val context: Context) {
                 ?: ExpenseCategory.entries.toSet(),
             gradeScenarios = parseGradeScenarios(prefs[Keys.GRADE_SCENARIOS_JSON]),
             gradingCutScheme = parseGradingCutScheme(prefs[Keys.GRADING_CUT_SCHEME_JSON]),
-            setupCompleted = prefs[Keys.SETUP_COMPLETED] ?: false,
+            setupCompleted = (prefs[Keys.SETUP_COMPLETED] ?: false) || (prefs[Keys.CREATED_AT] ?: 0L) > 0L,
             createdAt = prefs[Keys.CREATED_AT] ?: 0L,
             updatedAt = prefs[Keys.UPDATED_AT] ?: 0L
         )

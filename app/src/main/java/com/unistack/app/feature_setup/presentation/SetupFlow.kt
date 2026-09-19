@@ -222,6 +222,8 @@ private const val SETUP_EXIT_MILLIS = 220
 fun SetupFlow(
     onSetupFinished: (createFirstSubject: Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    isReplay: Boolean = false,
+    onDismissReplay: (() -> Unit)? = null,
     viewModel: SetupViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
@@ -272,7 +274,11 @@ fun SetupFlow(
     SetupProgressHeader(
         step = pasoActual,
         totalSteps = totalSteps,
-        onBackClick = { navController.navigateUp() },
+        onBackClick = {
+            if (!navController.navigateUp() && isReplay && onDismissReplay != null) {
+                onDismissReplay()
+            }
+        },
         chromeAlpha = chromeAlpha
     )
     NavHost(
@@ -325,7 +331,13 @@ fun SetupFlow(
         }
     ) {
         composable(SetupRoutes.Welcome) {
-            SetupWelcomeScreen(onStartClick = { navController.navigate(SetupRoutes.Name) })
+            if (isReplay && onDismissReplay != null) {
+                BackHandler(onBack = onDismissReplay)
+            }
+            SetupWelcomeScreen(
+                onStartClick = { navController.navigate(SetupRoutes.Name) },
+                onDismissClick = if (isReplay) onDismissReplay else null
+            )
         }
         composable(SetupRoutes.Name) {
             SetupNameScreen(
@@ -333,7 +345,11 @@ fun SetupFlow(
                 nameValidation = viewModel.nameValidation,
                 totalSteps = totalSteps,
                 onNameChange = viewModel::updatePreferredName,
-                onBackClick = { navController.navigateUp() },
+                onBackClick = {
+                    if (!navController.navigateUp() && isReplay && onDismissReplay != null) {
+                        onDismissReplay()
+                    }
+                },
                 onContinueClick = { navController.navigate(SetupRoutes.Profile) }
             )
         }
@@ -426,6 +442,10 @@ fun SetupFlow(
                         } else {
                             navController.navigate(afterEvaluation)
                         }
+                    },
+                    onSkipClick = {
+                        viewModel.skipTermDates()
+                        navController.navigate(afterEvaluation)
                     }
                 )
             }
@@ -503,7 +523,11 @@ fun SetupFlow(
 }
 
 @Composable
-fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SetupWelcomeScreen(
+    onStartClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDismissClick: (() -> Unit)? = null
+) {
     SetupScaffold(
         modifier = modifier,
         welcome = false,
@@ -513,6 +537,13 @@ fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) 
                 onClick = onStartClick,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
+            if (onDismissClick != null) {
+                UniStackButton(
+                    text = stringResource(R.string.common_cancel),
+                    onClick = onDismissClick,
+                    variant = UniStackButtonVariant.Outlined
+                )
+            }
         }
     ) {
         Column(
