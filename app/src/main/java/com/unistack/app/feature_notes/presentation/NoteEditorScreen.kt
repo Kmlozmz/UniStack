@@ -385,6 +385,7 @@ fun NoteEditorScreen(
                     ?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
             }
             runCatching { context.startActivity(Intent.createChooser(intent, Textos.get(R.string.notes_share_title))) }
+                .onFailure { attachError = Textos.get(R.string.notes_error_no_app_to_open) }
         }
     }
 

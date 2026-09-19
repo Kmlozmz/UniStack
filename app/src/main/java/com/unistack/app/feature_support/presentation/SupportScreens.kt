@@ -404,6 +404,12 @@ fun ResourcesScreen(
                                 onClick = {
                                     runCatching {
                                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    }.onFailure {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            Textos.get(R.string.notes_error_no_app_to_open),
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 }
                             )

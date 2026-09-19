@@ -86,6 +86,13 @@ fun rememberTaskAttachmentOpener(viewModel: TasksViewModel): TaskAttachmentOpene
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             runCatching { context.startActivity(selector) }
+                .onFailure {
+                    android.widget.Toast.makeText(
+                        context,
+                        Textos.get(R.string.notes_error_no_app_to_open),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
         }
     }
 

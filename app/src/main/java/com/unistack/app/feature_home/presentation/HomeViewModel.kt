@@ -1,4 +1,4 @@
-﻿package com.unistack.app.feature_home.presentation
+package com.unistack.app.feature_home.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,12 +13,16 @@ import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_home.domain.HomeContent
+import com.unistack.app.feature_home.domain.HomeSummaryFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -75,17 +79,11 @@ class HomeViewModel @Inject constructor(
                 user = user
             )
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = HomeUiState()
-    )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = HomeUiState()
+        )
 }
-
-internal data class HomeContent(
-    val subjects: List<Subject>,
-    val tasks: List<StudentTask>,
-    val expenses: List<Expense>,
-    val works: List<AcademicWork>,
-    val classSessions: List<ClassSession> = emptyList()
-)
