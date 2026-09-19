@@ -35,8 +35,6 @@ import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
 import com.unistack.app.feature_user.domain.UserRepository
-import android.net.Uri
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -135,17 +133,10 @@ class BancoDePruebasViewModel @Inject constructor(
         updateRepository.simulate(escena(UpdateState.Available(versionNueva())))
     }
 
-    /** La descarga entera en ocho segundos, con su ritmo, hasta «lista para instalar». */
+    /** La escena con la versión nueva y, encima, su descarga fingida: ocho segundos hasta «lista». */
     fun fingirDescarga() {
-        val info = versionNueva()
-        viewModelScope.launch {
-            for (paso in 0..100 step 4) {
-                val faltan = ((100 - paso) * 80L / 1000L).toInt()
-                updateRepository.simulate(escena(UpdateState.Downloading(info, paso, faltan)))
-                delay(320)
-            }
-            updateRepository.simulate(escena(UpdateState.ReadyToInstall(info, Uri.parse("file:///no-existe.apk"))))
-        }
+        updateRepository.simulate(escena(UpdateState.Available(versionNueva())))
+        updateRepository.downloadUpdate()
     }
 
     fun fingirAlDia() {

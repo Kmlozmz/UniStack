@@ -48,8 +48,20 @@ class UpdateViewModel @Inject constructor(
         }
     }
 
-    fun downloadUpdate() {
-        updateRepository.downloadUpdate()
+    fun downloadUpdate(allowMetered: Boolean = true) {
+        updateRepository.downloadUpdate(allowMetered)
+    }
+
+    fun isOnMeteredNetwork(): Boolean = updateRepository.isOnMeteredNetwork()
+
+    val downloadRequested: StateFlow<Boolean> = updateRepository.downloadRequested
+
+    fun requestDownload() {
+        updateRepository.requestDownload()
+    }
+
+    fun consumeDownloadRequest() {
+        updateRepository.consumeDownloadRequest()
     }
 
     fun installUpdate() {

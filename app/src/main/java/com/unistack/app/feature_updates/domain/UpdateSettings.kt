@@ -23,7 +23,9 @@ enum class CheckInterval {
  * mira cada dos horas. Quien no quiera que haga nada por su cuenta lo apaga desde el mismo menú.
  */
 data class UpdateSettings(
+    /** Con datos móviles no se descarga sola; a mano, pregunta antes de gastar datos. */
     val autoDownloadOnWifi: Boolean = true,
-    val notifyWhenReady: Boolean = true,
+    /** «Notificar nueva versión»: todos los avisos de actualización, del primero al «lista». */
+    val notifyNewVersion: Boolean = true,
     val checkInterval: CheckInterval = CheckInterval.EVERY_2H
 )

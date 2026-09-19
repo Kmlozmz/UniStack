@@ -24,8 +24,25 @@ interface UpdateRepository {
 
     suspend fun checkForUpdates()
     suspend fun checkForUpdatesIfDue()
-    fun downloadUpdate()
+
+    /**
+     * @param allowMetered si puede bajar con datos móviles. En falso, el gestor del sistema la
+     *   deja en cola hasta que haya Wi-Fi, y el estado lo dice.
+     */
+    fun downloadUpdate(allowMetered: Boolean = true)
     fun installUpdate()
+
+    /** Si la red de ahora mismo cobra por megas: es cuando se pregunta antes de descargar. */
+    fun isOnMeteredNetwork(): Boolean
+
+    /**
+     * La hoja de Inicio pide descargar, pero la pregunta de los datos móviles vive en la
+     * pantalla de Actualizaciones: la hoja deja el encargo aquí y navega, y la pantalla lo
+     * recoge nada más abrirse.
+     */
+    val downloadRequested: StateFlow<Boolean>
+    fun requestDownload()
+    fun consumeDownloadRequest()
 
     /** ¿Puede la app instalar APKs, o falta que el usuario la autorice como origen? */
     fun canInstallPackages(): Boolean

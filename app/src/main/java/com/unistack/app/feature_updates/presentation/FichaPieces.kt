@@ -238,16 +238,18 @@ internal fun NotasAgrupadas(markdown: String, modifier: Modifier = Modifier) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 6.dp)
                     ) {
+                        // En el acento, que es lo que hace que NUEVO / MEJORADO / ARREGLADO se
+                        // lean como títulos y no como una nota más (19 sep).
                         Icon(
                             iconoDeGrupo(block.text),
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = block.text.uppercase(),
                             style = RotuloDeGrupo,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 

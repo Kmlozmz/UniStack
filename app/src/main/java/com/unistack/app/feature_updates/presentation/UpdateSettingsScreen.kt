@@ -4,6 +4,7 @@ package com.unistack.app.feature_updates.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -37,7 +38,9 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Wifi
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -69,6 +72,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
 import com.unistack.app.core.design.components.SystemProgress
+import com.unistack.app.core.design.components.UniChoiceRow
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniLoadingIndicator
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -122,6 +127,29 @@ fun UpdateSettingsScreen(
     }
 
     var menuOpen by remember { mutableStateOf(false) }
+    var intervalDialog by remember { mutableStateOf(false) }
+    var dataDialog by remember { mutableStateOf(false) }
+    val downloadRequested by viewModel.downloadRequested.collectAsStateWithLifecycle()
+
+    /*
+     * Descargar pasa siempre por aquí: con datos móviles se pregunta antes de gastar, y la
+     * respuesta depende de «Descargar sola con Wi-Fi»: encendido ofrece esperar al Wi-Fi.
+     */
+    val descargar: () -> Unit = {
+        if (state is UpdateState.Available && viewModel.isOnMeteredNetwork()) {
+            dataDialog = true
+        } else {
+            viewModel.downloadUpdate(allowMetered = true)
+        }
+    }
+    // El «Actualizar» de la hoja de Inicio deja el encargo y navega hasta aquí.
+    LaunchedEffect(downloadRequested, state) {
+        if (downloadRequested && state is UpdateState.Available) {
+            viewModel.consumeDownloadRequest()
+            descargar()
+        }
+    }
+
     val checking = state is UpdateState.Checking || state is UpdateState.Idle
     val pending = (state as? UpdateState.Available)?.info
         ?: (state as? UpdateState.Downloading)?.info
@@ -150,6 +178,10 @@ fun UpdateSettingsScreen(
                     pendingApks = pendingApks,
                     onDismiss = { menuOpen = false },
                     onSettingsChange = viewModel::updateSettings,
+                    onIntervalClick = {
+                        menuOpen = false
+                        intervalDialog = true
+                    },
                     onHistoryClick = {
                         menuOpen = false
                         onHistoryClick()
@@ -198,12 +230,19 @@ fun UpdateSettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item("tirar") {
-                    val fraction = if (checking) 1f else pullState.distanceFraction.coerceIn(0f, 1f)
-                    if (fraction > 0f) {
+                    /*
+                     * El hueco sigue al dedo casi uno a uno hasta el umbral (80 dp) y un poco
+                     * más allá: con 42 dp de tope se sentía pesado, como tirar de algo que no
+                     * quiere bajar. Comprobando, se queda en 56.
+                     */
+                    val pulled = pullState.distanceFraction.coerceIn(0f, 1.3f)
+                    val fraction = if (checking) 1f else pulled.coerceAtMost(1f)
+                    val gap = if (checking) 56.dp else 72.dp * pulled
+                    if (checking || pulled > 0f) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(42.dp * fraction),
+                                .height(gap),
                             contentAlignment = Alignment.Center
                         ) {
                             UniLoadingIndicator(
@@ -267,7 +306,7 @@ fun UpdateSettingsScreen(
             UpdateActions(
                 state = state,
                 canInstall = viewModel.canInstallPackages(),
-                onDownload = viewModel::downloadUpdate,
+                onDownload = descargar,
                 onInstall = viewModel::installUpdate,
                 onAllowInstall = viewModel::openInstallPermissionSettings,
                 onCheck = viewModel::checkForUpdates,
@@ -275,7 +314,117 @@ fun UpdateSettingsScreen(
             )
         }
     }
+
+    if (intervalDialog) {
+        DialogoDeIntervalo(
+            selected = settings.checkInterval,
+            onSelected = { interval -> viewModel.updateSettings { it.copy(checkInterval = interval) } },
+            onDismiss = { intervalDialog = false }
+        )
     }
+    val available = state as? UpdateState.Available
+    if (dataDialog && available != null) {
+        DialogoDeDatosMoviles(
+            info = available.info,
+            wifiOnly = settings.autoDownloadOnWifi,
+            onDownloadAnyway = {
+                dataDialog = false
+                viewModel.downloadUpdate(allowMetered = true)
+            },
+            onWaitForWifi = {
+                dataDialog = false
+                viewModel.downloadUpdate(allowMetered = false)
+            },
+            onDismiss = { dataDialog = false }
+        )
+    }
+    }
+}
+
+/**
+ * «Comprobar»: un diálogo con las tres opciones, no un chip que rueda.
+ *
+ * Tocar el chip cambiaba el valor sin decir cuáles había; él pidió (19 sep) poder elegir. Es
+ * [UniChoiceRow] —contorno y visto— porque acota un ajuste, no cambia de vista.
+ */
+@Composable
+private fun DialogoDeIntervalo(
+    selected: CheckInterval,
+    onSelected: (CheckInterval) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.updates_check_dialog_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                UniChoiceRow(
+                    selected = selected,
+                    options = listOf(
+                        UniSegmentedOption(CheckInterval.EVERY_2H, stringResource(R.string.updates_interval_2h)),
+                        UniSegmentedOption(CheckInterval.DAILY, stringResource(R.string.updates_interval_daily)),
+                        UniSegmentedOption(CheckInterval.MANUAL, stringResource(R.string.updates_interval_manual))
+                    ),
+                    onSelected = onSelected
+                )
+                Text(
+                    text = stringResource(
+                        when (selected) {
+                            CheckInterval.EVERY_2H -> R.string.updates_menu_check_2h
+                            CheckInterval.DAILY -> R.string.updates_menu_check_daily
+                            CheckInterval.MANUAL -> R.string.updates_menu_check_manual
+                        }
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.updates_check_dialog_done), fontWeight = FontWeight.Bold)
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    )
+}
+
+/**
+ * Con datos móviles se pregunta antes de gastar. Con «Descargar sola con Wi-Fi» encendido, la
+ * salida buena es esperar: el gestor del sistema la deja en cola hasta que haya Wi-Fi.
+ */
+@Composable
+private fun DialogoDeDatosMoviles(
+    info: UpdateInfo,
+    wifiOnly: Boolean,
+    onDownloadAnyway: () -> Unit,
+    onWaitForWifi: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.updates_data_dialog_title)) },
+        text = {
+            Text(
+                stringResource(
+                    if (wifiOnly) R.string.updates_data_dialog_msg_wifi_only else R.string.updates_data_dialog_msg,
+                    info.versionName,
+                    pesoEnMb(info.sizeMb)
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDownloadAnyway) {
+                Text(stringResource(R.string.updates_data_dialog_download), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = if (wifiOnly) onWaitForWifi else onDismiss) {
+                Text(stringResource(if (wifiOnly) R.string.updates_data_dialog_wait else R.string.common_cancel))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    )
 }
 
 /**
@@ -401,7 +550,13 @@ private fun TarjetaDeProgreso(downloading: UpdateState.Downloading) {
                     style = TextStyle(fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                if (!unknown) {
+                if (downloading.waitingForWifi) {
+                    Text(
+                        text = stringResource(R.string.updates_waiting_wifi),
+                        style = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (!unknown) {
                     val eta = downloading.secondsLeft
                     Text(
                         text = if (eta != null) {
@@ -452,6 +607,7 @@ private fun MenuDeActualizaciones(
     pendingApks: Int,
     onDismiss: () -> Unit,
     onSettingsChange: ((UpdateSettings) -> UpdateSettings) -> Unit,
+    onIntervalClick: () -> Unit,
     onHistoryClick: () -> Unit,
     onCleanClick: () -> Unit
 ) {
@@ -476,9 +632,9 @@ private fun MenuDeActualizaciones(
                 icon = Icons.Rounded.Notifications,
                 title = stringResource(R.string.updates_menu_notify_title),
                 subtitle = stringResource(R.string.updates_menu_notify_desc),
-                onClick = { onSettingsChange { it.copy(notifyWhenReady = !it.notifyWhenReady) } }
+                onClick = { onSettingsChange { it.copy(notifyNewVersion = !it.notifyNewVersion) } }
             ) {
-                InterruptorDeMenu(settings.notifyWhenReady) { on -> onSettingsChange { it.copy(notifyWhenReady = on) } }
+                InterruptorDeMenu(settings.notifyNewVersion) { on -> onSettingsChange { it.copy(notifyNewVersion = on) } }
             }
             FilaDeMenu(
                 icon = Icons.Rounded.Schedule,
@@ -490,7 +646,7 @@ private fun MenuDeActualizaciones(
                         CheckInterval.MANUAL -> R.string.updates_menu_check_manual
                     }
                 ),
-                onClick = { onSettingsChange { it.copy(checkInterval = it.checkInterval.next()) } }
+                onClick = onIntervalClick
             ) {
                 Sello(
                     text = stringResource(
@@ -569,12 +725,13 @@ private fun FilaDeMenu(
                 overflow = TextOverflow.Ellipsis
             )
             if (subtitle != null) {
+                // Lo que no cabe se desplaza solo, para leerlo entero sin partir la fila.
                 Text(
                     text = subtitle,
                     style = TextStyle(fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 900)
                 )
             }
         }

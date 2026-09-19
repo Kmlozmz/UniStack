@@ -413,7 +413,9 @@ fun MainNavGraph(
                             },
                             onUpdateClick = {
                                 updateViewModel.markSheetSeen(updateInfo.versionName)
-                                updateViewModel.downloadUpdate()
+                                // La pregunta de los datos móviles vive en Actualizaciones:
+                                // se deja el encargo y la pantalla lo recoge al abrirse.
+                                updateViewModel.requestDownload()
                                 navController.go(AppRoutes.UpdateSettings)
                             },
                             onDismiss = { updateViewModel.markSheetSeen(updateInfo.versionName) }

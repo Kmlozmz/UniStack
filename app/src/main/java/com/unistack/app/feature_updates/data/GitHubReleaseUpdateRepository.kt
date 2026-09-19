@@ -50,7 +50,7 @@ private const val APK_FILE_NAME = "unistack-update.apk"
 private const val PREFS_NAME = "unistack_update_checker"
 private const val KEY_LAST_CHECKED_AT = "last_checked_at"
 private const val KEY_AUTO_DOWNLOAD_WIFI = "auto_download_wifi"
-private const val KEY_NOTIFY_READY = "notify_ready"
+private const val KEY_NOTIFY_NEW_VERSION = "notify_new_version"
 private const val KEY_CHECK_INTERVAL = "check_interval"
 private const val KEY_SHEET_SEEN = "sheet_seen_version"
 private const val KEY_DOWNLOAD_ID = "download_id"
@@ -111,6 +111,17 @@ class GitHubReleaseUpdateRepository(
 
     private val _installedVersion = MutableStateFlow(BuildConfig.VERSION_NAME)
     override val installedVersion: StateFlow<String> = _installedVersion.asStateFlow()
+
+    private val _downloadRequested = MutableStateFlow(false)
+    override val downloadRequested: StateFlow<Boolean> = _downloadRequested.asStateFlow()
+
+    override fun requestDownload() {
+        _downloadRequested.value = true
+    }
+
+    override fun consumeDownloadRequest() {
+        _downloadRequested.value = false
+    }
 
     /** Lo real, guardado mientras dura una escena fingida del banco de pruebas. */
     private var escenaReal: SimulatedUpdates? = null
@@ -177,9 +188,9 @@ class GitHubReleaseUpdateRepository(
                 _state.value = resolved
                 if (resolved is UpdateState.Available) {
                     if (sinNadieDelante) {
-                        notificationManager.showUpdateAvailableNotification()
-                        if (_settings.value.autoDownloadOnWifi && isOnUnmeteredNetwork()) {
-                            startDownload(resolved.info, byUser = false)
+                        if (_settings.value.notifyNewVersion) notificationManager.showUpdateAvailableNotification()
+                        if (_settings.value.autoDownloadOnWifi && !isOnMeteredNetwork()) {
+                            startDownload(resolved.info, byUser = false, allowMetered = false)
                         }
                     }
                 } else {
@@ -269,12 +280,16 @@ class GitHubReleaseUpdateRepository(
 
     // ------------------------------------------------------------------ descargar
 
-    override fun downloadUpdate() {
+    override fun downloadUpdate(allowMetered: Boolean) {
         val info = (_state.value as? UpdateState.Available)?.info ?: return
-        startDownload(info, byUser = true)
+        if (fingiendo) {
+            fingirDescarga(info)
+            return
+        }
+        startDownload(info, byUser = true, allowMetered = allowMetered)
     }
 
-    private fun startDownload(info: UpdateInfo, byUser: Boolean) {
+    private fun startDownload(info: UpdateInfo, byUser: Boolean, allowMetered: Boolean) {
         apkFile().delete()
 
         val request = DownloadManager.Request(Uri.parse(info.downloadUrl))
@@ -283,7 +298,8 @@ class GitHubReleaseUpdateRepository(
             // El progreso lo cuenta el aviso de la app, que es el mismo que dijo que había
             // versión nueva; el del gestor del sistema sería un segundo aviso para lo mismo.
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
-            .setAllowedOverMetered(byUser || !_settings.value.autoDownloadOnWifi)
+            // En falso, el gestor la deja en cola hasta que haya Wi-Fi: es «esperar al Wi-Fi».
+            .setAllowedOverMetered(allowMetered)
 
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         downloadId = downloadManager.enqueue(request)
@@ -294,7 +310,7 @@ class GitHubReleaseUpdateRepository(
         }
         refreshPendingApks()
         _state.value = UpdateState.Downloading(info, 0)
-        notificationManager.showDownloadingNotification(info.versionName, 0, info.sizeMb)
+        if (_settings.value.notifyNewVersion) notificationManager.showDownloadingNotification(info.versionName, 0, info.sizeMb)
         observeDownload(downloadManager, info)
     }
 
@@ -387,6 +403,9 @@ class GitHubReleaseUpdateRepository(
                         else -> {
                             val downloaded = it.longOrZero(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
                             val total = it.longOrZero(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                            val reason = it.intOrNull(DownloadManager.COLUMN_REASON)
+                            val waitingForWifi = status == DownloadManager.STATUS_PAUSED &&
+                                reason == DownloadManager.PAUSED_QUEUED_FOR_WIFI
                             /*
                              * Mientras el servidor no diga cuánto pesa, la columna vale -1.
                              * Dividiendo por eso salía un porcentaje inventado; ahora se
@@ -403,10 +422,10 @@ class GitHubReleaseUpdateRepository(
                                 bajados = downloaded,
                                 total = total
                             )
-                            _state.value = UpdateState.Downloading(info, progress, secondsLeft)
+                            _state.value = UpdateState.Downloading(info, progress, secondsLeft, waitingForWifi)
                             // El aviso se reescribe solo cuando cambia el número: cien
                             // notificaciones por segundo tampoco las pinta el sistema.
-                            if (progress != lastNotified) {
+                            if (progress != lastNotified && _settings.value.notifyNewVersion) {
                                 lastNotified = progress
                                 notificationManager.showDownloadingNotification(info.versionName, progress, info.sizeMb)
                             }
@@ -425,7 +444,7 @@ class GitHubReleaseUpdateRepository(
         if (isSignedByThisApp(apkFile())) {
             _state.value = UpdateState.ReadyToInstall(info, apkUri())
             refreshPendingApks()
-            if (_settings.value.notifyWhenReady) {
+            if (_settings.value.notifyNewVersion) {
                 notificationManager.showReadyNotification(info.versionName)
             } else {
                 notificationManager.dismissNotification()
@@ -467,10 +486,10 @@ class GitHubReleaseUpdateRepository(
     private fun appEnPrimerPlano(): Boolean =
         ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
 
-    private fun isOnUnmeteredNetwork(): Boolean {
+    override fun isOnMeteredNetwork(): Boolean {
         val connectivity = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-            ?: return false
-        return !connectivity.isActiveNetworkMetered
+            ?: return true
+        return connectivity.isActiveNetworkMetered
     }
 
     // ------------------------------------------------------------------ instalar
@@ -493,6 +512,8 @@ class GitHubReleaseUpdateRepository(
     }
 
     override fun installUpdate() {
+        // Fingida no hay archivo que instalar: el instalador solo diría que el paquete no existe.
+        if (fingiendo) return
         val readyState = _state.value as? UpdateState.ReadyToInstall ?: return
         // Sin el permiso, lanzar el instalador dejaba al usuario en un desvío del sistema
         // sin contexto. Se le lleva directo al interruptor que necesita.
@@ -595,9 +616,10 @@ class GitHubReleaseUpdateRepository(
         if (after == before) return
         prefs.edit {
             putBoolean(KEY_AUTO_DOWNLOAD_WIFI, after.autoDownloadOnWifi)
-            putBoolean(KEY_NOTIFY_READY, after.notifyWhenReady)
+            putBoolean(KEY_NOTIFY_NEW_VERSION, after.notifyNewVersion)
             putString(KEY_CHECK_INTERVAL, after.checkInterval.name)
         }
+        if (!after.notifyNewVersion) notificationManager.dismissNotification()
         _settings.value = after
         if (after.checkInterval != before.checkInterval) {
             UpdateCheckWorker.schedule(context, after.checkInterval, replace = true)
@@ -608,7 +630,7 @@ class GitHubReleaseUpdateRepository(
         val defaults = UpdateSettings()
         return UpdateSettings(
             autoDownloadOnWifi = prefs.getBoolean(KEY_AUTO_DOWNLOAD_WIFI, defaults.autoDownloadOnWifi),
-            notifyWhenReady = prefs.getBoolean(KEY_NOTIFY_READY, defaults.notifyWhenReady),
+            notifyNewVersion = prefs.getBoolean(KEY_NOTIFY_NEW_VERSION, defaults.notifyNewVersion),
             checkInterval = prefs.getString(KEY_CHECK_INTERVAL, null)
                 ?.let { name -> CheckInterval.entries.firstOrNull { it.name == name } }
                 ?: defaults.checkInterval
@@ -673,6 +695,32 @@ class GitHubReleaseUpdateRepository(
 
     // ------------------------------------------------------------------ banco de pruebas
 
+    /**
+     * La descarga entera en ocho segundos, con su ritmo, hasta «lista para instalar».
+     *
+     * Vive aquí y no en el banco de pruebas para que «Descargar» y «Actualizar» hagan lo mismo
+     * con la escena fingida: antes intentaban bajar de verdad una URL inventada.
+     */
+    private fun fingirDescarga(info: UpdateInfo) {
+        downloadJob?.cancel()
+        downloadJob = scope.launch {
+            for (paso in 0..100 step 4) {
+                val faltan = ((100 - paso) * 80L / 1000L).toInt()
+                _state.value = UpdateState.Downloading(info, paso, faltan)
+                if (!appEnPrimerPlano() && _settings.value.notifyNewVersion) {
+                    notificationManager.showDownloadingNotification(info.versionName, paso, info.sizeMb)
+                }
+                delay(320)
+            }
+            _state.value = UpdateState.ReadyToInstall(info, Uri.parse("file:///no-existe.apk"))
+            if (!appEnPrimerPlano() && _settings.value.notifyNewVersion) {
+                notificationManager.showReadyNotification(info.versionName)
+            } else {
+                notificationManager.dismissNotification()
+            }
+        }
+    }
+
     override fun simulate(scene: SimulatedUpdates?) {
         downloadJob?.cancel()
         escenaJob?.cancel()
@@ -713,7 +761,9 @@ class GitHubReleaseUpdateRepository(
                 _sheetSeenVersion.value = null
                 escenaJob = scope.launch {
                     delay(6_000)
-                    if (fingiendo && !appEnPrimerPlano()) notificationManager.showUpdateAvailableNotification()
+                    if (fingiendo && !appEnPrimerPlano() && _settings.value.notifyNewVersion) {
+                        notificationManager.showUpdateAvailableNotification()
+                    }
                 }
             }
             is UpdateState.Downloading -> if (!appEnPrimerPlano()) {

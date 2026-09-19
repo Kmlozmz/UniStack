@@ -14,7 +14,9 @@ sealed interface UpdateState {
     data class Downloading(
         val info: UpdateInfo,
         val progress: Int,
-        val secondsLeft: Int? = null
+        val secondsLeft: Int? = null,
+        /** En cola hasta que haya Wi-Fi: el usuario prefirió no gastar datos. */
+        val waitingForWifi: Boolean = false
     ) : UpdateState
     data class ReadyToInstall(val info: UpdateInfo, val apkUri: Uri) : UpdateState
 
