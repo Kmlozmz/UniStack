@@ -29,7 +29,15 @@ import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.MotionChoice
 import com.unistack.app.feature_user.domain.MotionGesture
 import com.unistack.app.feature_user.domain.MotionPreferences
+import com.unistack.app.feature_updates.domain.UpdateInfo
+import com.unistack.app.feature_updates.domain.UpdateRepository
+import com.unistack.app.feature_updates.domain.UpdateState
 import com.unistack.app.feature_user.domain.UserRepository
+import android.net.Uri
+import com.unistack.app.BuildConfig
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.LocalTime
@@ -59,13 +67,68 @@ class BancoDePruebasViewModel @Inject constructor(
     private val expensesRepository: ExpensesRepository,
     private val tasksRepository: TasksRepository,
     private val userRepository: UserRepository,
-    private val taskAttachmentStore: TaskAttachmentStore
+    private val taskAttachmentStore: TaskAttachmentStore,
+    private val updateRepository: UpdateRepository
 ) : ViewModel() {
     private companion object {
         /** Lo que distingue lo fabricado de lo real. Nada se borra sin esto delante. */
         const val MARCA = "prueba-"
     }
 
+
+    // ------------------------------------------------------------------ actualizaciones
+
+    /**
+     * Una versión que no existe, un parche por encima de la instalada, con notas agrupadas
+     * como las del artifact. Sale el aviso y, en Inicio, la hoja.
+     */
+    private fun versionFingida(): UpdateInfo {
+        val base = BuildConfig.VERSION_NAME.substringBefore("-")
+        val partes = base.split(".").mapNotNull { it.toIntOrNull() }.toMutableList()
+        while (partes.size < 3) partes += 0
+        partes[2] = partes[2] + 1
+        return UpdateInfo(
+            versionName = partes.joinToString("."),
+            releaseNotes = """
+                ### Nuevo
+                - Escribe la nota directamente en el campo, sin subir de 0,1 en 0,1.
+                - Puedes saltarte las fechas del periodo en la configuración inicial y ponerlas después.
+
+                ### Mejorado
+                - La rueda de asistencia rebota al marcar.
+                - Inicio calcula el resumen en segundo plano: entra más rápido.
+
+                ### Arreglado
+                - La tarjeta de cuenta cortaba «Sin cuenta vinculada».
+                - Repetir el recorrido inicial ya no toca tu configuración.
+            """.trimIndent(),
+            releaseDate = LocalDate.now().toString(),
+            downloadUrl = "https://example.invalid/UniStack.apk",
+            sizeMb = 24.1
+        )
+    }
+
+    fun fingirVersionNueva() {
+        updateRepository.simulate(UpdateState.Available(versionFingida()))
+    }
+
+    /** La descarga entera en ocho segundos, con su ritmo, hasta «lista para instalar». */
+    fun fingirDescarga() {
+        val info = versionFingida()
+        viewModelScope.launch {
+            for (paso in 0..100 step 4) {
+                val faltan = ((100 - paso) * 80L / 1000L).toInt()
+                updateRepository.simulate(UpdateState.Downloading(info, paso, faltan))
+                delay(320)
+            }
+            updateRepository.simulate(UpdateState.ReadyToInstall(info, Uri.parse("file:///no-existe.apk")))
+        }
+    }
+
+    /** Vuelve a lo real: comprueba en GitHub y se queda con lo que diga. */
+    fun actualizacionReal() {
+        updateRepository.simulate(null)
+    }
 
     // ------------------------------------------------------------------ simulación completa
 

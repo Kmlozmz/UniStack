@@ -3,8 +3,10 @@ package com.unistack.app.feature_updates.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unistack.app.BuildConfig
+import com.unistack.app.feature_updates.domain.InstalledVersion
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
+import com.unistack.app.feature_updates.domain.UpdateSettings
 import com.unistack.app.feature_updates.domain.UpdateState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +32,11 @@ class UpdateViewModel @Inject constructor(
      * al borrarlos la tarjeta de limpieza se quedaba puesta hasta salir y volver a entrar.
      */
     val pendingApks: StateFlow<Int> = updateRepository.pendingApks
+
+    val lastCheckedAt: StateFlow<Long> = updateRepository.lastCheckedAt
+    val settings: StateFlow<UpdateSettings> = updateRepository.settings
+    val installHistory: StateFlow<List<InstalledVersion>> = updateRepository.installHistory
+    val sheetSeenVersion: StateFlow<String?> = updateRepository.sheetSeenVersion
 
     fun refreshPendingApks() {
         updateRepository.refreshPendingApks()
@@ -63,7 +70,11 @@ class UpdateViewModel @Inject constructor(
         updateRepository.clearDownload()
     }
 
-    fun dismiss() {
-        updateRepository.dismiss()
+    fun updateSettings(transform: (UpdateSettings) -> UpdateSettings) {
+        updateRepository.updateSettings(transform)
+    }
+
+    fun markSheetSeen(versionName: String) {
+        updateRepository.markSheetSeen(versionName)
     }
 }

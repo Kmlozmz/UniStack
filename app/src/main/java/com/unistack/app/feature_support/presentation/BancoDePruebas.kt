@@ -289,6 +289,11 @@ private fun LazyListScope.caraSimular(
     palanca("Sembrar tareas del artifact", "7 tareas con subtareas y estados del diseño") { vm.sembrarTareasDelArtifact() }
     palanca("Deshacer lo de Tareas", "Elimina tareas y materias de prueba", suave = true) { vm.recogerTareas() }
 
+    seccion("Actualizaciones")
+    palanca("Fingir versión nueva", "Sale el aviso y, en Inicio, la hoja; la sección enseña la ficha") { vm.fingirVersionNueva() }
+    palanca("Fingir descarga", "Ocho segundos de barra y aviso hasta «lista para instalar»") { vm.fingirDescarga() }
+    palanca("Volver a lo real", "Comprueba en GitHub y se queda con lo que diga", suave = true) { vm.actualizacionReal() }
+
     seccion("Notificaciones")
     item {
         val contexto = LocalContext.current

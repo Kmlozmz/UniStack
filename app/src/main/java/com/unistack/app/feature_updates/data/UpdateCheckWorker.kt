@@ -8,6 +8,9 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.unistack.app.core.di.UniStackEntryPoint
+import com.unistack.app.feature_updates.domain.CheckInterval
+import dagger.hilt.android.EntryPointAccessors
 import java.util.concurrent.TimeUnit
 
 /**
@@ -21,9 +24,9 @@ import java.util.concurrent.TimeUnit
  * llegue en el momento hace falta que el aviso venga de fuera —una notificación push—, y eso
  * exige un servicio de mensajería configurado; hoy no lo hay.
  *
- * Crea su propio repositorio en vez de recibirlo inyectado: [GitHubReleaseUpdateRepository] solo
- * necesita un `Context`, y la marca de la última consulta la comparten por preferencias, así que
- * ni se pisan ni consultan de más.
+ * Usa el mismo repositorio que la app y no uno propio: desde que la descarga puede empezar
+ * aquí, con Wi-Fi y sin nadie delante, el estado tiene que ser uno solo, o la app abriría sin
+ * saber que ya está bajando.
  */
 class UpdateCheckWorker(
     context: Context,
@@ -31,7 +34,10 @@ class UpdateCheckWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        return runCatching { GitHubReleaseUpdateRepository(applicationContext).checkForUpdatesIfDue() }
+        val repository = EntryPointAccessors
+            .fromApplication(applicationContext, UniStackEntryPoint::class.java)
+            .updateRepository()
+        return runCatching { repository.checkForUpdatesIfDue() }
             .fold(
                 onSuccess = { Result.success() },
                 // Sin red o con GitHub caído se reintenta; no es un fallo del trabajo.
@@ -42,8 +48,19 @@ class UpdateCheckWorker(
     companion object {
         private const val WORK_NAME = "unistack-update-check"
 
-        fun schedule(context: Context) {
-            val request = PeriodicWorkRequestBuilder<UpdateCheckWorker>(2, TimeUnit.HOURS)
+        /**
+         * @param replace al cambiar «cada cuánto» en el menú. Al arrancar va en falso: reprogramar
+         *   en cada arranque reiniciaría el contador, y la app que se abre a menudo no llegaría
+         *   nunca a ejecutarlo.
+         */
+        fun schedule(context: Context, interval: CheckInterval, replace: Boolean = false) {
+            val workManager = WorkManager.getInstance(context)
+            if (interval == CheckInterval.MANUAL) {
+                workManager.cancelUniqueWork(WORK_NAME)
+                return
+            }
+            val hours = if (interval == CheckInterval.DAILY) 24L else 2L
+            val request = PeriodicWorkRequestBuilder<UpdateCheckWorker>(hours, TimeUnit.HOURS)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -51,11 +68,9 @@ class UpdateCheckWorker(
                 )
                 .build()
 
-            // KEEP y no UPDATE: reprogramar en cada arranque reiniciaría el contador, y la app
-            // que se abre a menudo no llegaría nunca a ejecutarlo.
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            workManager.enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                if (replace) ExistingPeriodicWorkPolicy.UPDATE else ExistingPeriodicWorkPolicy.KEEP,
                 request
             )
         }

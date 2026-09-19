@@ -105,7 +105,7 @@ class UniStackApplication : Application(), Configuration.Provider {
         }
         // Y que siga mirando aunque la app no se abra: sin esto, enterarse de una versión nueva
         // dependía de cerrar el proceso y volver a arrancarlo.
-        UpdateCheckWorker.schedule(this)
+        UpdateCheckWorker.schedule(this, updateRepository.settings.value.checkInterval)
     }
 
     /**

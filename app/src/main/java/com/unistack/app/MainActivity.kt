@@ -12,6 +12,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
 import com.unistack.app.core.notifications.AttendanceDeepLink
+import com.unistack.app.core.navigation.AppRoutes
+import com.unistack.app.core.notifications.UpdateDeepLink
+import com.unistack.app.feature_updates.data.UpdateNotificationManager
 import com.unistack.app.core.notifications.EXTRA_ATTENDANCE_EPOCH_DAY
 import com.unistack.app.core.notifications.EXTRA_ATTENDANCE_SESSION_ID
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,6 +39,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         pendingLaunchRoute.value = intent.resolveLaunchRoute()
         intent.offerAttendance()
+        intent.offerInstall()
         applyEdgeToEdge(darkTheme = isSystemInDarkMode())
         // El permiso de notificaciones ya no se pide aquí: saltaba nada más instalar, sin
         // que el usuario supiera para qué. Ahora se pide en su paso del onboarding, después
@@ -56,6 +60,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         pendingLaunchRoute.value = intent.resolveLaunchRoute()
         intent.offerAttendance()
+        intent.offerInstall()
     }
 
     private fun applyEdgeToEdge(darkTheme: Boolean) {
@@ -86,6 +91,11 @@ class MainActivity : ComponentActivity() {
      * No viaja en la ruta: `calendar` es una pestaña de la barra inferior y colgarle
      * argumentos obliga a tocar cómo se decide la pestaña activa. Ver [AttendanceDeepLink].
      */
+    /** El «Instalar» del aviso: la pantalla de Actualizaciones lo recoge al abrirse. */
+    private fun Intent.offerInstall() {
+        if (getBooleanExtra(UpdateNotificationManager.EXTRA_INSTALL, false)) UpdateDeepLink.offerInstall()
+    }
+
     private fun Intent.offerAttendance() {
         val sessionId = getStringExtra(EXTRA_ATTENDANCE_SESSION_ID) ?: return
         AttendanceDeepLink.offer(sessionId, getLongExtra(EXTRA_ATTENDANCE_EPOCH_DAY, -1L))
@@ -95,9 +105,10 @@ class MainActivity : ComponentActivity() {
         val explicit = launchRoute()
         if (explicit != null) return explicit
 
-        val navigateTo = getStringExtra("navigate_to")
+        val navigateTo = getStringExtra(UpdateNotificationManager.EXTRA_NAVIGATE_TO)
         return when (navigateTo) {
-            "updates" -> "settings/updates"
+            // Era «settings/updates», una ruta que no existe: tocar el aviso reventaba la app.
+            UpdateNotificationManager.NAVIGATE_UPDATES -> AppRoutes.UpdateSettings
             else -> null
         }
     }

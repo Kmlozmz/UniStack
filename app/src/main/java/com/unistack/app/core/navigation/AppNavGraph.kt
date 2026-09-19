@@ -131,9 +131,10 @@ import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_templates.presentation.AcademicWorkScreen
 import com.unistack.app.feature_updates.domain.UpdateState
-import com.unistack.app.feature_updates.presentation.UpdateAvailableBanner
 import com.unistack.app.feature_updates.presentation.UpdateDetailSheet
+import com.unistack.app.feature_updates.presentation.UpdateHistoryScreen
 import com.unistack.app.feature_updates.presentation.UpdateSettingsScreen
+import com.unistack.app.feature_updates.presentation.UpdateVersionScreen
 import com.unistack.app.feature_updates.presentation.UpdateViewModel
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.BottomBarStyle
@@ -349,27 +350,14 @@ fun MainNavGraph(
 
                     val updateViewModel: UpdateViewModel = hiltViewModel()
                     val updateState by updateViewModel.state.collectAsStateWithLifecycle()
-                    val updateInfo = when (val current = updateState) {
-                        is UpdateState.Available -> current.info
-                        is UpdateState.Downloading -> current.info
-                        is UpdateState.ReadyToInstall -> current.info
-                        else -> null
-                    }
-
-                    val onNavigateToUpdates = {
-                        navController.navigate(AppRoutes.Settings) {
-                            launchSingleTop = true
-                        }
-                    }
+                    val sheetSeenVersion by updateViewModel.sheetSeenVersion.collectAsStateWithLifecycle()
+                    // La hoja sale solo con versión disponible —no bajando ni ya lista— y una
+                    // vez por versión. El banner rojo que iba encima de Inicio se fue el 19 sep
+                    // 2026: usaba el color de error y llevaba al hub de Ajustes.
+                    val updateInfo = (updateState as? UpdateState.Available)?.info
+                        ?.takeIf { it.versionName != sheetSeenVersion }
 
                     Column(modifier = Modifier.fillMaxSize()) {
-                        if (updateInfo != null && updateState is UpdateState.Available) {
-                            UpdateAvailableBanner(
-                                versionName = updateInfo.versionName,
-                                onTap = onNavigateToUpdates
-                            )
-                        }
-
                         HomeScreen(
                             uiState = uiState,
                             historico = termsState,
@@ -419,10 +407,16 @@ fun MainNavGraph(
                     if (updateInfo != null) {
                         UpdateDetailSheet(
                             info = updateInfo,
-                            state = updateState,
-                            onDownloadClick = updateViewModel::downloadUpdate,
-                            onInstallClick = updateViewModel::installUpdate,
-                            onDismiss = updateViewModel::dismiss
+                            onChangelogClick = {
+                                updateViewModel.markSheetSeen(updateInfo.versionName)
+                                navController.go(AppRoutes.UpdateSettings)
+                            },
+                            onUpdateClick = {
+                                updateViewModel.markSheetSeen(updateInfo.versionName)
+                                updateViewModel.downloadUpdate()
+                                navController.go(AppRoutes.UpdateSettings)
+                            },
+                            onDismiss = { updateViewModel.markSheetSeen(updateInfo.versionName) }
                         )
                     }
                 }
@@ -544,6 +538,30 @@ fun MainNavGraph(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
+                        }
+                    },
+                    onHistoryClick = { navController.go(AppRoutes.UpdateHistory) }
+                )
+            }
+            screen(AppRoutes.UpdateHistory) {
+                UpdateHistoryScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.UpdateSettings)
+                        }
+                    },
+                    onVersionClick = { version -> navController.go(AppRoutes.updateVersion(version)) }
+                )
+            }
+            screen(
+                "${AppRoutes.UpdateVersion}/{${AppRoutes.UpdateVersionArg}}",
+                arguments = listOf(navArgument(AppRoutes.UpdateVersionArg) { type = NavType.StringType })
+            ) { backStackEntry ->
+                UpdateVersionScreen(
+                    versionName = backStackEntry.arguments?.getString(AppRoutes.UpdateVersionArg).orEmpty(),
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.UpdateHistory)
                         }
                     }
                 )
@@ -1381,6 +1399,8 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.UpdateSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.UpdateHistory) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.UpdateVersion) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.WhatsNew) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Resources) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Help) -> AppRoutes.Home

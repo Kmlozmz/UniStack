@@ -6,7 +6,16 @@ sealed interface UpdateState {
     data object Idle : UpdateState
     data object Checking : UpdateState
     data class Available(val info: UpdateInfo) : UpdateState
-    data class Downloading(val info: UpdateInfo, val progress: Int) : UpdateState
+    /**
+     * @param progress de 0 a 100, o [UNKNOWN_PROGRESS] si el servidor no dijo cuánto pesa.
+     * @param secondsLeft lo que falta al ritmo de los últimos segundos, o nulo mientras no haya
+     *   ritmo que medir. Es lo que la pantalla pone junto al porcentaje («45 % · 6 s»).
+     */
+    data class Downloading(
+        val info: UpdateInfo,
+        val progress: Int,
+        val secondsLeft: Int? = null
+    ) : UpdateState
     data class ReadyToInstall(val info: UpdateInfo, val apkUri: Uri) : UpdateState
 
     /** Lo instalado y lo último del canal son la misma versión. */

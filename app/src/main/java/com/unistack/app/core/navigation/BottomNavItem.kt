@@ -52,6 +52,9 @@ object AppRoutes {
     const val NotificationSettings = "notification_settings"
     const val DataSettings = "data_settings"
     const val UpdateSettings = "update_settings"
+    const val UpdateHistory = "update_history"
+    const val UpdateVersion = "update_version"
+    const val UpdateVersionArg = "version"
     const val WhatsNew = "whats_new"
     const val Resources = "resources"
     const val Help = "help"
@@ -150,6 +153,7 @@ object AppRoutes {
     fun taskDetail(taskId: String) = "$TaskDetail/$taskId"
     fun editExpense(expenseId: String) = "$EditExpense/$expenseId"
     fun notificationDetail(notificationId: Int) = "$NotificationDetail/$notificationId"
+    fun updateVersion(versionName: String) = "$UpdateVersion/$versionName"
 }
 
 data class BottomNavItem(

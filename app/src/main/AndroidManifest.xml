@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- El progreso de la descarga lo cuenta el aviso de la app; el del gestor del sistema sobra. -->
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
@@ -113,6 +115,14 @@
         <receiver
             android:name=".core.notifications.ReminderReceiver"
             android:exported="false" />
+        <!-- La descarga de una actualización terminó, con la app abierta o no. -->
+        <receiver
+            android:name=".feature_updates.data.UpdateDownloadReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+            </intent-filter>
+        </receiver>
         <!-- Los botones «Asistí» y «Falta» del aviso: nadie de fuera los dispara. -->
         <receiver
             android:name=".core.notifications.AttendanceActionReceiver"
