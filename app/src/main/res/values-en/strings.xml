@@ -1502,7 +1502,6 @@
     <string name="updates_subtitle">Check and download</string>
     <string name="updates_check_again">Check again</string>
     <string name="updates_downloading_v">Downloading v%1$s…</string>
-    <string name="updates_your_version">Your version: %1$s.</string>
     <string name="updates_version_available">A version is available</string>
     <string name="updates_version_available_desc">You have v%1$s. The latest version is v%2$s.</string>
     <string name="updates_ready_to_install">Ready to install</string>
@@ -1520,7 +1519,6 @@
     <string name="updates_could_not_check">Could not check</string>
     <string name="updates_could_not_check_desc">Check if there\'s anything newer.</string>
     <string name="updates_installed_version_header">INSTALLED VERSION</string>
-    <string name="updates_build">Build %1$s</string>
     <string name="updates_btn_download">Download</string>
     <string name="updates_btn_install">Install</string>
     <string name="updates_btn_allow_install">Allow install</string>

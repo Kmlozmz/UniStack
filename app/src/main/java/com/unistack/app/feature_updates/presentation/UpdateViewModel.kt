@@ -22,7 +22,6 @@ class UpdateViewModel @Inject constructor(
     val releases: StateFlow<List<UpdateInfo>> = updateRepository.releases
 
     val currentVersionName: String = BuildConfig.VERSION_NAME
-    val currentVersionCode: Int = BuildConfig.VERSION_CODE
 
     /**
      * Los APK que quedan en el disco.

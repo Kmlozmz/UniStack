@@ -2,15 +2,10 @@ package com.unistack.app.feature_home.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradesRepository
-import com.unistack.app.feature_grades.domain.Subject
-import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
-import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TasksRepository
-import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_home.domain.HomeContent

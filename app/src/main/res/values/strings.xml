@@ -1502,7 +1502,6 @@
     <string name="updates_subtitle">Comprueba y descarga</string>
     <string name="updates_check_again">Volver a comprobar</string>
     <string name="updates_downloading_v">Descargando la v%1$s…</string>
-    <string name="updates_your_version">Tu versión: %1$s.</string>
     <string name="updates_version_available">Hay una versión disponible</string>
     <string name="updates_version_available_desc">Tienes la v%1$s. La versión más reciente es la v%2$s.</string>
     <string name="updates_ready_to_install">Lista para instalar</string>
@@ -1520,7 +1519,6 @@
     <string name="updates_could_not_check">No se pudo comprobar</string>
     <string name="updates_could_not_check_desc">Comprueba si hay algo más nuevo.</string>
     <string name="updates_installed_version_header">VERSIÓN INSTALADA</string>
-    <string name="updates_build">Compilación %1$s</string>
     <string name="updates_btn_download">Descargar</string>
     <string name="updates_btn_install">Instalar</string>
     <string name="updates_btn_allow_install">Permitir instalar</string>

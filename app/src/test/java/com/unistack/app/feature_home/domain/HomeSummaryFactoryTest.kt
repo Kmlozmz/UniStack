@@ -1,4 +1,4 @@
-package com.unistack.app.feature_home.presentation
+package com.unistack.app.feature_home.domain
 
 import com.unistack.app.TextosDePrueba
 import com.unistack.app.feature_expenses.domain.Expense
@@ -12,7 +12,6 @@ import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
-import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AuthProvider

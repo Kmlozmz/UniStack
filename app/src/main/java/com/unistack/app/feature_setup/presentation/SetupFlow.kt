@@ -331,9 +331,6 @@ fun SetupFlow(
         }
     ) {
         composable(SetupRoutes.Welcome) {
-            if (isReplay && onDismissReplay != null) {
-                BackHandler(onBack = onDismissReplay)
-            }
             SetupWelcomeScreen(
                 onStartClick = { navController.navigate(SetupRoutes.Name) },
                 onDismissClick = if (isReplay) onDismissReplay else null

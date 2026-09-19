@@ -200,6 +200,9 @@ class UserPreferencesDataSource(private val context: Context) {
                 ?: ExpenseCategory.entries.toSet(),
             gradeScenarios = parseGradeScenarios(prefs[Keys.GRADE_SCENARIOS_JSON]),
             gradingCutScheme = parseGradingCutScheme(prefs[Keys.GRADING_CUT_SCHEME_JSON]),
+            // `createdAt` solo lo escribe terminar el onboarding, asi que un perfil con fecha
+            // ya paso por el. Cubre a quien «Repetir configuracion» le dejo `false` en disco
+            // cuando todavia lo escribia ahi: hoy repetir el recorrido no toca el archivo.
             setupCompleted = (prefs[Keys.SETUP_COMPLETED] ?: false) || (prefs[Keys.CREATED_AT] ?: 0L) > 0L,
             createdAt = prefs[Keys.CREATED_AT] ?: 0L,
             updatedAt = prefs[Keys.UPDATED_AT] ?: 0L
