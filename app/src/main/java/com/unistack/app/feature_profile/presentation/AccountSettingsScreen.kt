@@ -516,7 +516,10 @@ private fun AccountLinkRow(
                     modifier = Modifier.weight(1f, fill = false),
                     style = MaterialTheme.typography.titleMediumEmphasized,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    // Entre el icono, la insignia y el boton la columna se queda con poco
+                    // ancho: «Sin cuenta vinculada» no cabe en un renglon y se cortaba en
+                    // «Sin cuenta vin...». Se parte en dos antes que recortarlo.
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 if (!available) {
@@ -539,7 +542,10 @@ private fun AccountLinkRow(
                 text = detail,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
+                // Sin ellipsis, un solo renglon dejaba la frase a medias («Podrás respaldar
+                // tus datos y») como si faltara texto.
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
         Surface(
