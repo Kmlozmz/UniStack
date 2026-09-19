@@ -22,6 +22,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -376,7 +380,12 @@ internal fun GradeStepperRow(
     filled: Boolean,
     onValueChange: (String) -> Unit
 ) {
-    val step = if (max > 10.0) 5.0 else 0.1
+    val step = when {
+        max > 20.0 -> 5.0
+        max > 10.0 -> 1.0
+        max > 5.0 -> 0.5
+        else -> 0.1
+    }
     val current = gradeValueOf(value) ?: floorValue
     val container = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow
     val content = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
@@ -399,18 +408,48 @@ internal fun GradeStepperRow(
                     color = content.copy(alpha = 0.78f),
                     style = MaterialTheme.typography.bodySmall
                 )
-                Text(
-                    text = value.ifBlank { formatGradeValue(current, max) },
-                    color = content,
-                    style = MaterialTheme.typography.headlineSmallEmphasized
+                BasicTextField(
+                    value = value,
+                    onValueChange = { nuevo ->
+                        val filtrado = nuevo.filter { it.isDigit() || it == '.' || it == ',' }.replace(',', '.')
+                        if (filtrado.count { it == '.' } <= 1) {
+                            val num = filtrado.toDoubleOrNull()
+                            if (num != null) {
+                                if (num <= max) {
+                                    onValueChange(filtrado)
+                                }
+                            } else {
+                                onValueChange(filtrado)
+                            }
+                        }
+                    },
+                    textStyle = MaterialTheme.typography.headlineSmallEmphasized.copy(color = content),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal
+                    ),
+                    singleLine = true,
+                    cursorBrush = SolidColor(content),
+                    modifier = Modifier.fillMaxWidth(),
+                    decorationBox = { innerTextField ->
+                        if (value.isBlank()) {
+                            Text(
+                                text = formatGradeValue(current, max),
+                                color = content.copy(alpha = 0.38f),
+                                style = MaterialTheme.typography.headlineSmallEmphasized
+                            )
+                        }
+                        innerTextField()
+                    }
                 )
             }
             GradeStepperButton("−", stepContainer, stepContent) {
-                onValueChange(formatGradeValue((current - step).coerceAtLeast(floorValue), max))
+                val base = gradeValueOf(value) ?: current
+                onValueChange(formatGradeValue((base - step).coerceAtLeast(floorValue), max))
             }
             Spacer(modifier = Modifier.width(8.dp))
             GradeStepperButton("+", stepContainer, stepContent) {
-                onValueChange(formatGradeValue((current + step).coerceAtMost(ceilingValue), max))
+                val base = gradeValueOf(value) ?: current
+                onValueChange(formatGradeValue((base + step).coerceAtMost(ceilingValue), max))
             }
         }
     }

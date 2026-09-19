@@ -152,7 +152,7 @@ fun UpdateSettingsScreen(
                 }
 
                 if (pending.isEmpty() && state !is UpdateState.Checking) {
-                    item("instalada") { InstalledCard(installed, viewModel.currentVersionCode) }
+                    item("instalada") { InstalledCard(installed) }
                 }
 
                 item("limpieza") {
@@ -160,18 +160,6 @@ fun UpdateSettingsScreen(
                         visible = pendingApks > 0,
                         apkCount = pendingApks,
                         onClick = viewModel::clearDownload
-                    )
-                }
-
-                // El pie dice qué versión llevas puesta y cada cuánto se mira: sin eso, una
-                // pantalla que dice «estás al día» no aclara si eso se comprobó hace un
-                // minuto o hace una semana.
-                item("pie") {
-                    Text(
-                        text = stringResource(R.string.updates_your_version, installed),
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -357,7 +345,7 @@ private fun ReleaseEntry(release: UpdateInfo) {
 
 /** Cuando no hay nada pendiente: qué versión llevas puesta. */
 @Composable
-private fun InstalledCard(versionName: String, versionCode: Int) {
+private fun InstalledCard(versionName: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -372,11 +360,6 @@ private fun InstalledCard(versionName: String, versionCode: Int) {
                 text = "v$versionName",
                 style = MaterialTheme.typography.titleLargeEmphasized,
                 color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = stringResource(R.string.updates_build, versionCode),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

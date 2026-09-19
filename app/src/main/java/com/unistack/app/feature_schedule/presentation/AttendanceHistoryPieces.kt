@@ -47,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.unistack.app.core.design.components.RuedaDeAsistencia
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -649,7 +650,17 @@ internal fun HojaDeClase(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                RuedaDeEstado(status = estado, tamano = 44.dp)
+                RuedaDeAsistencia(
+                    marcada = estado != ClassAttendanceStatus.PENDING,
+                    color = estado.attendanceColor() ?: MaterialTheme.colorScheme.primary,
+                    icono = when (estado) {
+                        ClassAttendanceStatus.ATTENDED -> Icons.Rounded.Check
+                        ClassAttendanceStatus.ABSENT -> Icons.Rounded.Close
+                        ClassAttendanceStatus.CANCELLED -> Icons.Rounded.Remove
+                        else -> Icons.Rounded.EventRepeat
+                    },
+                    reboteTrigger = estado
+                )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text(
                         text = entrada.date.format(DiaEntero).conMayuscula(),

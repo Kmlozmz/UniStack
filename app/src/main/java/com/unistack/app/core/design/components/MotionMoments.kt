@@ -11,6 +11,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -20,6 +21,7 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -966,24 +968,41 @@ fun RuedaDeAsistencia(
     marcada: Boolean,
     color: Color,
     icono: ImageVector,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    reboteTrigger: Any? = null
 ) {
     val neutro = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+    val bordeNeutro = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f)
     val encima = MaterialTheme.colorScheme.surface
     val conMovimiento = hayMovimiento() && motionActual().speed != MotionSpeed.INSTANTANEA
+    val rigidez = 900f / motionActual().speed.factor.coerceAtLeast(0.2f)
 
-    val avance by animateFloatAsState(
-        targetValue = if (marcada) 1f else 0f,
-        // Muelle propio, no el general: aqui el rebote **es** el gesto, y con el amortiguado
-        // de «Suave» no rebotaria nada. Rigido para que sea rapido.
-        animationSpec = if (conMovimiento && marcada) {
-            spring(dampingRatio = 0.28f, stiffness = 900f / motionActual().speed.factor.coerceAtLeast(0.2f))
-        } else {
-            snap()
-        },
-        label = "rueda"
-    )
-    val p = if (conMovimiento) avance else (if (marcada) 1f else 0f)
+    val escalaMuelle = remember { Animatable(if (marcada) 1f else 0.4f) }
+    var primerRender by remember { mutableStateOf(true) }
+
+    LaunchedEffect(marcada, reboteTrigger) {
+        if (primerRender) {
+            primerRender = false
+            if (marcada) {
+                escalaMuelle.snapTo(1f)
+            }
+            return@LaunchedEffect
+        }
+        if (marcada && conMovimiento) {
+            escalaMuelle.snapTo(0.4f)
+            escalaMuelle.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = 0.28f,
+                    stiffness = rigidez
+                )
+            )
+        } else if (!marcada) {
+            escalaMuelle.snapTo(0.4f)
+        }
+    }
+
+    val escala = if (conMovimiento && marcada) escalaMuelle.value else 1f
 
     Box(
         modifier = modifier
@@ -991,15 +1010,18 @@ fun RuedaDeAsistencia(
             // Arranca desde un 40 % —una rueda que nace de dentro— y el muelle la lleva mas
             // alla del 100 % antes de asentarla.
             .graphicsLayer {
-                val escala = if (conMovimiento && marcada) 0.4f + 0.6f * p else 1f
-                scaleX = escala
-                scaleY = escala
+                val e = if (conMovimiento && marcada) escala else 1f
+                scaleX = e
+                scaleY = e
             }
             .clip(CircleShape)
-            .background(if (marcada) color else neutro),
+            .background(if (marcada) color else neutro)
+            .then(
+                if (!marcada) Modifier.border(1.5.dp, bordeNeutro, CircleShape) else Modifier
+            ),
         contentAlignment = Alignment.Center
     ) {
-        if (marcada && p > 0.15f) {
+        if (marcada && (!conMovimiento || escala > 0.55f)) {
             Icon(
                 imageVector = icono,
                 contentDescription = null,
