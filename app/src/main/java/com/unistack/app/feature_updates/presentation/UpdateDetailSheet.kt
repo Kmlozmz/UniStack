@@ -42,6 +42,7 @@ fun UpdateDetailSheet(
     onUpdateClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    AEscalaDelArtifact {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
@@ -99,5 +100,6 @@ fun UpdateDetailSheet(
                 )
             }
         }
+    }
     }
 }

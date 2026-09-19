@@ -127,6 +127,7 @@ fun UpdateSettingsScreen(
         ?: (state as? UpdateState.Downloading)?.info
         ?: (state as? UpdateState.ReadyToInstall)?.info
 
+    AEscalaDelArtifact {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -273,6 +274,7 @@ fun UpdateSettingsScreen(
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
+    }
     }
 }
 

@@ -22,7 +22,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.foundation.shape.CircleShape
@@ -57,8 +64,9 @@ import java.time.ZoneId
 import java.util.Locale
 
 /*
- * Las piezas de la réplica aprobada el 19 sep 2026 («F · Tu elección»), dibujada a 411 dp —el
- * ancho de su teléfono— y con Roboto, así que un píxel suyo es un dp aquí, sin escalar:
+ * Las piezas de la réplica aprobada el 19 sep 2026 («F · Tu elección»), dibujada en una pantalla
+ * de 370 px con Roboto. Los números de aquí son los suyos; [AEscalaDelArtifact] los lleva al
+ * ancho del teléfono guardando la proporción:
  * la ficha de una versión, el sello, la losa del icono y las notas agrupadas. Las medidas y los
  * cuerpos de letra son los del artifact en píxeles, que allí son dp.
  */
@@ -282,6 +290,42 @@ private fun iconoDeGrupo(heading: String): ImageVector {
         "mejor" in h || "cambi" in h || "improv" in h || "changed" in h -> Icons.Rounded.Build
         else -> Icons.Rounded.NewReleases
     }
+}
+
+// ------------------------------------------------------------------ escala del artifact
+
+/** El ancho de la pantalla del artifact: marco de 390 con 10 de relleno a cada lado. */
+private const val ANCHO_DEL_ARTIFACT = 370f
+
+/**
+ * Las pantallas de Actualizaciones a la escala del artifact: dentro, un dp mide lo que un
+ * píxel suyo, multiplicado por lo que el teléfono sea más ancho que la réplica.
+ *
+ * Él lo dijo el 19 sep 2026: le gustaban **las proporciones** del artifact y «no me gusta
+ * cuando las cosas se ven muy largas horizontalmente». Copiar los píxeles como dp en un
+ * teléfono de 400 dp deja las tarjetas más anchas de lo que eran en proporción; escalar la
+ * densidad —incluida la letra— guarda la proporción del diseño en cualquier ancho. Los
+ * mínimos táctiles se dividen por la escala, como en la pantalla de fallo, para que Material
+ * no infle los botones por encima de lo que dice la réplica.
+ */
+@Composable
+internal fun AEscalaDelArtifact(content: @Composable () -> Unit) {
+    val densidad = LocalDensity.current
+    val anchoDp = LocalConfiguration.current.screenWidthDp.toFloat()
+    val escala = (anchoDp / ANCHO_DEL_ARTIFACT).coerceIn(0.92f, 1.3f)
+    val configuracion = LocalViewConfiguration.current
+    val configuracionEscalada = remember(configuracion, escala) {
+        object : ViewConfiguration by configuracion {
+            override val minimumTouchTargetSize: DpSize
+                get() = configuracion.minimumTouchTargetSize / escala
+        }
+    }
+    CompositionLocalProvider(
+        LocalDensity provides Density(densidad.density * escala, densidad.fontScale),
+        LocalMinimumInteractiveComponentSize provides LocalMinimumInteractiveComponentSize.current / escala,
+        LocalViewConfiguration provides configuracionEscalada,
+        content = content
+    )
 }
 
 // ------------------------------------------------------------------ barra y botones

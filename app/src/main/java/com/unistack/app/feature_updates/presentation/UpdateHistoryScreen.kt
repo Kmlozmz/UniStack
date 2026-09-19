@@ -62,6 +62,7 @@ fun UpdateHistoryScreen(
     val history by viewModel.installHistory.collectAsStateWithLifecycle()
     val releases by viewModel.releases.collectAsStateWithLifecycle()
 
+    AEscalaDelArtifact {
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         BarraDeLaReplica(
             title = stringResource(R.string.updates_history_title),
@@ -104,6 +105,7 @@ fun UpdateHistoryScreen(
                 )
             }
         }
+    }
     }
 }
 
@@ -245,6 +247,7 @@ fun UpdateVersionScreen(
     val peso = pesoDeLaVersion(versionName, releases, actual)
     val meta = listOfNotNull(fecha.takeIf { it.isNotBlank() }, peso).joinToString(" · ")
 
+    AEscalaDelArtifact {
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         BarraDeLaReplica(
             title = "v$versionName",
@@ -273,5 +276,6 @@ fun UpdateVersionScreen(
                 NotasAgrupadas(markdown = notas ?: stringResource(R.string.update_no_notes))
             }
         }
+    }
     }
 }
