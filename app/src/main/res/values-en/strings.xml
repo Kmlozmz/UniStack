@@ -1536,9 +1536,6 @@
     <string name="updates_interval_daily">Daily</string>
     <string name="updates_interval_weekly">Weekly</string>
     <string name="updates_menu_check_weekly">Checks for available updates weekly</string>
-    <string name="updates_interval_daily_title">Daily</string>
-    <string name="updates_interval_weekly_title">Weekly</string>
-    <string name="updates_interval_manual_title">Manual</string>
     <string name="updates_interval_manual">Manual</string>
     <string name="updates_menu_history">Update history</string>
     <string name="updates_menu_clean_title">Clear downloads</string>

@@ -39,7 +39,6 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,10 +70,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
 import com.unistack.app.core.design.components.SystemProgress
+import com.unistack.app.core.design.components.UniChoiceRow
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniLoadingIndicator
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -372,9 +374,10 @@ fun UpdateSettingsScreen(
 /**
  * «Comprobar»: un diálogo con las tres opciones, no un chip que rueda.
  *
- * Tocar el chip cambiaba el valor sin decir cuáles había; él pidió (19 sep) poder elegir. Van
- * en filas con su círculo y su explicación debajo, una bajo otra: en una fila segmentada las
- * tres se veían apretadas.
+ * Tocar el chip cambiaba el valor sin decir cuáles había; él pidió (19 sep) poder elegir. Es
+ * [UniChoiceRow] —contorno y visto— porque acota un ajuste, no cambia de vista; y le gusta.
+ * Iba apretada porque el diálogo de Material mide 280 dp: aquí se ensancha al 90 % de la
+ * pantalla y la fila lleva la palabra corta, con la frase entera debajo.
  */
 @Composable
 private fun DialogoDeIntervalo(
@@ -384,34 +387,25 @@ private fun DialogoDeIntervalo(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier.fillMaxWidth(0.9f),
         title = { Text(stringResource(R.string.updates_check_dialog_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                CheckInterval.entries.forEach { interval ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.small)
-                            .clickable { onSelected(interval) }
-                            .padding(horizontal = 4.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        RadioButton(selected = interval == selected, onClick = { onSelected(interval) })
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                text = stringResource(interval.titulo()),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(interval.descripcion()),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                UniChoiceRow(
+                    selected = selected,
+                    options = listOf(
+                        UniSegmentedOption(CheckInterval.DAILY, stringResource(R.string.updates_interval_daily)),
+                        UniSegmentedOption(CheckInterval.WEEKLY, stringResource(R.string.updates_interval_weekly)),
+                        UniSegmentedOption(CheckInterval.MANUAL, stringResource(R.string.updates_interval_manual))
+                    ),
+                    onSelected = onSelected
+                )
+                Text(
+                    text = stringResource(selected.descripcion()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         },
         confirmButton = {
@@ -421,12 +415,6 @@ private fun DialogoDeIntervalo(
         },
         containerColor = MaterialTheme.colorScheme.background
     )
-}
-
-private fun CheckInterval.titulo(): Int = when (this) {
-    CheckInterval.DAILY -> R.string.updates_interval_daily_title
-    CheckInterval.WEEKLY -> R.string.updates_interval_weekly_title
-    CheckInterval.MANUAL -> R.string.updates_interval_manual_title
 }
 
 private fun CheckInterval.descripcion(): Int = when (this) {
