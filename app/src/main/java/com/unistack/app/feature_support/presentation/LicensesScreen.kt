@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.TextFields
@@ -95,7 +96,18 @@ fun LicensesScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
             } else {
                 stringResource(R.string.licenses_libraries_header_count, librerias.size)
             }
-            SettingsGroup(label = rotulo, rowCount = maxOf(1, librerias.size)) {
+            /*
+             * Las 180 bibliotecas llegaban de golpe en este mismo item y Compose las componía
+             * todas en un solo frame en cuanto terminaba de leer el JSON: un segundo entero
+             * congelado justo después de entrar a la pantalla. `SettingsGroup` necesita conocer
+             * su número de filas de antemano para dar la forma a la primera y a la última, así
+             * que no se puede repartir en items propios de la LazyColumn sin perder esa forma;
+             * en su lugar se muestran solo las primeras y el resto se compone bajo pedido.
+             */
+            var mostrarTodas by remember { mutableStateOf(false) }
+            val visibles = if (mostrarTodas || librerias.size <= LIMITE_INICIAL) librerias else librerias.take(LIMITE_INICIAL)
+            val hayMas = !mostrarTodas && librerias.size > LIMITE_INICIAL
+            SettingsGroup(label = rotulo, rowCount = maxOf(1, visibles.size + if (hayMas) 1 else 0)) {
                 if (librerias.isEmpty()) {
                     SettingsSoloRow {
                         Text(
@@ -106,13 +118,22 @@ fun LicensesScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
                         )
                     }
                 }
-                librerias.forEach { lib ->
+                visibles.forEach { lib ->
                     SettingsRow(
                         icon = Icons.Rounded.Extension,
                         title = lib.nombre,
                         subtitle = listOfNotNull(lib.version, lib.licencia?.nombre).joinToString(" · "),
                         iconColor = tonosDeAjustes.turquesa,
                         onClick = { abierta = Licencia.DeLibreria(lib) }
+                    )
+                }
+                if (hayMas) {
+                    SettingsRow(
+                        icon = Icons.Rounded.ExpandMore,
+                        title = stringResource(R.string.licenses_libraries_show_all, librerias.size),
+                        subtitle = stringResource(R.string.licenses_libraries_show_all_desc),
+                        iconColor = tonosDeAjustes.turquesa,
+                        onClick = { mostrarTodas = true }
                     )
                 }
             }
@@ -123,6 +144,9 @@ fun LicensesScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
         HojaDeLicencia(licencia = licencia, onDismiss = { abierta = null })
     }
 }
+
+/** Cuántas bibliotecas se componen al entrar, antes de que «Ver todas» pida el resto. */
+private const val LIMITE_INICIAL = 20
 
 /** Lo que se abre en la hoja: una fuente o una biblioteca. */
 private sealed interface Licencia {

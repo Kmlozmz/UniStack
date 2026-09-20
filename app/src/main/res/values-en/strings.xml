@@ -1711,6 +1711,8 @@
     <string name="licenses_libraries_header">LIBRARIES</string>
     <string name="licenses_libraries_header_count">LIBRARIES · %1$d</string>
     <string name="licenses_libraries_loading">Reading the list…</string>
+    <string name="licenses_libraries_show_all">Show all %1$d</string>
+    <string name="licenses_libraries_show_all_desc">The full list, with their licenses</string>
     <string name="licenses_open_site">Open on the web</string>
     <string name="licenses_only_online">The text of this license is not bundled with the app; it is at the link above.</string>
     <string name="support_feedback_title">Write to us</string>

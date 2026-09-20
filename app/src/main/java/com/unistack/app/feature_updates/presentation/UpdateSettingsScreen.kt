@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -72,6 +73,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
 import com.unistack.app.core.design.components.SystemProgress
@@ -134,6 +138,22 @@ fun UpdateSettingsScreen(
     var intervalDialog by remember { mutableStateOf(false) }
     var dataDialog by remember { mutableStateOf(false) }
     val downloadRequested by viewModel.downloadRequested.collectAsStateWithLifecycle()
+
+    /*
+     * El permiso de «instalar de orígenes desconocidos» se concede en una pantalla de
+     * Ajustes aparte, no en un diálogo: sin este observador, el botón se quedaba pidiendo
+     * el permiso una y otra vez al volver, porque `canInstallPackages()` solo se leía en la
+     * composición inicial y nada avisaba de que había cambiado.
+     */
+    var canInstall by remember { mutableStateOf(viewModel.canInstallPackages()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) canInstall = viewModel.canInstallPackages()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     /*
      * Descargar pasa siempre por aquí: con datos móviles se pregunta antes de gastar, y la
@@ -335,7 +355,7 @@ fun UpdateSettingsScreen(
 
             UpdateActions(
                 state = state,
-                canInstall = viewModel.canInstallPackages(),
+                canInstall = canInstall,
                 onDownload = descargar,
                 onInstall = viewModel::installUpdate,
                 onAllowInstall = viewModel::openInstallPermissionSettings,

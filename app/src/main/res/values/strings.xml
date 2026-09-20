@@ -1711,6 +1711,8 @@
     <string name="licenses_libraries_header">BIBLIOTECAS</string>
     <string name="licenses_libraries_header_count">BIBLIOTECAS · %1$d</string>
     <string name="licenses_libraries_loading">Leyendo la lista…</string>
+    <string name="licenses_libraries_show_all">Ver las %1$d</string>
+    <string name="licenses_libraries_show_all_desc">La lista completa, con sus licencias</string>
     <string name="licenses_open_site">Abrir en la web</string>
     <string name="licenses_only_online">El texto de esta licencia no viene dentro de la app; está en el enlace de arriba.</string>
     <string name="support_feedback_title">Escríbenos</string>
