@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -144,7 +145,16 @@ fun UniStackAnimatedLaunchScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            /*
+             * Se traga los toques mientras está delante.
+             *
+             * Sin esto era solo un dibujo encima de la app: Inicio ya estaba compuesto debajo y
+             * recibía los toques —la barra de abajo incluida— aunque no se viera nada más que
+             * las tres píldoras. Un `pointerInput` vacío basta: la capa entra en la prueba de
+             * toque y los de debajo dejan de recibirlo.
+             */
+            .pointerInput(Unit) {},
         contentAlignment = Alignment.Center
     ) {
         Column(
