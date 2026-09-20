@@ -11,23 +11,33 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material.icons.rounded.Circle
 import com.unistack.app.core.design.components.SettingsSoloRow
 import com.unistack.app.core.design.components.SettingsToggleRow
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpOffset
 import com.unistack.app.core.design.theme.familia
 import java.util.Locale
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SegmentedListItem
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import com.unistack.app.core.design.components.SettingsRowPosition
+import com.unistack.app.core.design.components.shapesFor
+import kotlinx.coroutines.launch
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -65,11 +75,8 @@ import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BottomBarStyle
-import com.unistack.app.feature_user.domain.ButtonSizeStyle
 import com.unistack.app.feature_user.domain.CornerStyle
 import com.unistack.app.feature_user.domain.SettingsIconColor
-import com.unistack.app.feature_user.domain.SubjectsLayout
-import com.unistack.app.feature_user.domain.FirstDayOfWeek
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.LineHeightStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
@@ -144,11 +151,11 @@ private fun PantallaDeAjustes(
 /**
  * Lo que decide **qué forma tienen las cosas**, con lo que cambia de una persona a otra.
  *
- * Fue «Forma y superficie», con nueve mandos. El 20 sep 2026 se quedó con cuatro: esquinas y
- * densidad, el tamaño de los botones (que vivía en Componentes y es de dedos, no de diseño) y
- * las materias como tarjetas o como lista. Superficie, forma de botones, campos, chips y
- * distintivos eran decisiones de diseño puestas delante del usuario, y van con lo suyo: plana,
- * pastilla, filete, filete y cada materia con la suya.
+ * Fue «Forma y superficie», con nueve mandos. El 20 sep 2026 se quedó con dos: esquinas y
+ * densidad. Superficie, forma de botones, campos, chips y distintivos eran decisiones de diseño
+ * puestas delante del usuario, y van con lo suyo: plana, pastilla, filete, filete y cada
+ * materia con la suya. El tamaño de los botones y las materias como lista duraron un día: se
+ * probaron y se quitaron esa misma noche (botones medios, materias en tarjetas).
  */
 @Composable
 fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -178,25 +185,6 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             modifier = Modifier.fillMaxWidth()
         )
         Explicacion(stringResource(R.string.settings_surface_density_desc))
-
-        Rotulo(stringResource(R.string.settings_components_sec_button_size), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.buttonSize,
-            options = ButtonSizeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonSize = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        VistaPreviaDeBotones()
-        Explicacion(stringResource(R.string.settings_surface_button_size_desc))
-
-        Rotulo(stringResource(R.string.settings_surface_sec_subjects), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.subjectsLayout,
-            options = SubjectsLayout.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(subjectsLayout = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Explicacion(stringResource(R.string.settings_surface_subjects_desc))
     }
 }
 
@@ -285,85 +273,160 @@ private fun MuestraDeLetra(decimales: Int) {
 }
 
 /**
- * La familia como lista desplegable: la fila enseña la elegida con su explicación y, al tocar,
- * se abren las seis, cada una escrita en su propia letra.
+ * La familia: una fila con la elegida y su explicación que abre una hoja con las once.
  *
- * La lista mide lo que la fila —se toma el ancho de la fila al medirla— y cuelga seis puntos
- * por debajo, que es como venía dibujada.
+ * Fue un menú desplegable colgado de la fila, y con seis nombres sueltos se veía pobre («no
+ * me gusta como se ve esa lista», 20 sep 2026). En la hoja cada familia lleva su «Aa», su
+ * nombre y una línea de muestra, todo en su propia letra, y caben once sin apretar.
  */
 @Composable
 private fun SelectorDeFamilia(elegida: TypographyStyle, onElegir: (TypographyStyle) -> Unit) {
-    var abierto by remember { mutableStateOf(false) }
-    var anchoDeLaFila by remember { mutableIntStateOf(0) }
-    val densidad = LocalDensity.current
+    var abierta by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxWidth().onSizeChanged { anchoDeLaFila = it.width }) {
-        Surface(
-            onClick = { abierto = true },
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.fillMaxWidth()
+    Surface(
+        onClick = { abierta = true },
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = elegida.label(),
-                        style = MaterialTheme.typography.titleMediumEmphasized,
-                        fontFamily = elegida.familia()
-                    )
-                    Explicacion(elegida.explicacion())
-                }
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
+            MuestraAa(estilo = elegida, elegida = true)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = elegida.label(),
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    fontFamily = elegida.familia()
+                )
+                Explicacion(elegida.explicacion())
+            }
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+    }
+
+    if (abierta) {
+        HojaDeFamilias(
+            elegida = elegida,
+            onElegir = onElegir,
+            onDismiss = { abierta = false }
+        )
+    }
+}
+
+/** El «Aa» de una familia, en un cuadrado como el de los iconos de Ajustes. */
+@Composable
+private fun MuestraAa(estilo: TypographyStyle, elegida: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(if (elegida) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Aa",
+            style = MaterialTheme.typography.titleMedium,
+            fontFamily = estilo.familia(),
+            fontWeight = FontWeight.SemiBold,
+            color = if (elegida) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HojaDeFamilias(
+    elegida: TypographyStyle,
+    onElegir: (TypographyStyle) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    // Primero se va la hoja y luego cambia la letra: al revés, la app entera se rehacía con la
+    // hoja todavía encima.
+    fun cerrarY(accion: () -> Unit) {
+        scope.launch { sheetState.hide() }.invokeOnCompletion {
+            onDismiss()
+            accion()
+        }
+    }
+
+    ModalBottomSheet(
+        sheetState = sheetState,
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(start = 18.dp, end = 18.dp, bottom = 26.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_typo_family_sheet_title),
+                    style = MaterialTheme.typography.titleLargeEmphasized
+                )
+                Text(
+                    text = stringResource(R.string.settings_typo_family_sheet_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-        DropdownMenu(
-            expanded = abierto,
-            onDismissRequest = { abierto = false },
-            shape = RoundedCornerShape(18.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 8.dp,
-            offset = DpOffset(0.dp, 6.dp),
-            modifier = Modifier.width(with(densidad) { anchoDeLaFila.toDp() })
-        ) {
-            Column(modifier = Modifier.padding(6.dp)) {
-                TypographyStyle.entries.forEach { estilo ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                val familias = TypographyStyle.entries
+                familias.forEachIndexed { indice, estilo ->
                     val esLaElegida = estilo == elegida
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable {
-                                abierto = false
-                                if (!esLaElegida) onElegir(estilo)
+                    val posicion = when {
+                        indice == 0 -> SettingsRowPosition.First
+                        indice == familias.lastIndex -> SettingsRowPosition.Last
+                        else -> SettingsRowPosition.Middle
+                    }
+                    SegmentedListItem(
+                        onClick = { cerrarY { if (!esLaElegida) onElegir(estilo) } },
+                        shapes = shapesFor(posicion),
+                        leadingContent = { MuestraAa(estilo = estilo, elegida = esLaElegida) },
+                        supportingContent = {
+                            Text(
+                                text = stringResource(R.string.settings_typo_family_sample),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = estilo.familia(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        trailingContent = {
+                            if (esLaElegida) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
                             }
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        },
+                        colors = ListItemDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        )
                     ) {
                         Text(
                             text = estilo.label(),
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.titleMediumEmphasized,
                             fontFamily = estilo.familia(),
-                            color = if (esLaElegida) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
+                            color = if (esLaElegida) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
-                        if (esLaElegida) {
-                            Icon(
-                                imageVector = Icons.Rounded.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
                     }
                 }
             }
@@ -433,10 +496,10 @@ private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
 /**
  * Las piezas: los iconos de Ajustes, la barra de abajo y dos detalles.
  *
- * Quedó así el 20 sep 2026. El tamaño de los botones se mudó a Forma; barras de progreso,
- * iconos de los interruptores, separadores y colores por sección eran decisiones de diseño y
- * van con lo suyo. Entran la forma de los iconos aparte del color, los puntos de aviso en las
- * pestañas y el primer día de la semana, que se guardaba y se usaba sin ningún mando.
+ * Quedó así el 20 sep 2026. Barras de progreso, iconos de los interruptores, separadores y
+ * colores por sección eran decisiones de diseño y van con lo suyo. Entran la forma de los
+ * iconos aparte del color y los puntos de aviso en las pestañas. El primer día de la semana
+ * asomó un día y se fue («nadie da clases un domingo»): sigue en lunes, sin mando.
  */
 @Composable
 fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -483,15 +546,6 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
                 onCheckedChange = { valor -> viewModel.updateAppearance { it.copy(tabBadges = valor) } }
             )
         }
-
-        Rotulo(stringResource(R.string.settings_components_sec_first_day), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.firstDayOfWeek,
-            options = FirstDayOfWeek.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(firstDayOfWeek = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Explicacion(stringResource(R.string.settings_components_first_day_desc))
     }
 }
 
@@ -508,18 +562,6 @@ internal fun LineHeightStyle.label(): String {
 }
 
 
-internal fun SubjectsLayout.label(): String = when (this) {
-    SubjectsLayout.CARDS -> Textos.get(R.string.appearance_subjects_cards)
-    SubjectsLayout.LIST -> Textos.get(R.string.appearance_subjects_list)
-}
-
-internal fun ButtonSizeStyle.label(): String {
-    return when (this) {
-        ButtonSizeStyle.PEQUENO -> Textos.get(R.string.appearance_pequeno)
-        ButtonSizeStyle.MEDIO -> Textos.get(R.string.settings_accent_balanced)
-        ButtonSizeStyle.GRANDE -> Textos.get(R.string.appearance_grande)
-    }
-}
 
 
 
@@ -558,9 +600,3 @@ private fun MuestraDeIconosDeAjustes() {
 
 
 
-internal fun FirstDayOfWeek.label(): String {
-    return when (this) {
-        FirstDayOfWeek.LUNES -> Textos.get(R.string.appearance_lunes)
-        FirstDayOfWeek.DOMINGO -> Textos.get(R.string.appearance_domingo)
-    }
-}

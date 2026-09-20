@@ -9,6 +9,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.unistack.app.core.design.theme.tonosDeAjustes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.key
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import com.unistack.app.feature_home.domain.HomeSummary
+import com.unistack.app.feature_home.presentation.AccionesDeInicio
+import com.unistack.app.feature_home.presentation.HomeViewModel
+import com.unistack.app.feature_home.presentation.bloquesDeInicio
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -24,7 +49,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,6 +87,9 @@ fun HomeSettingsScreen(
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
+    // Los datos de Inicio, los de verdad: la maqueta pinta las mismas tarjetas que Inicio.
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val inicio by homeViewModel.uiState.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     val current = profile ?: return
     val appearance = current.appearancePreferences
@@ -83,7 +110,8 @@ fun HomeSettingsScreen(
         item {
             MaquetaDeInicio(
                 nombre = current.preferredName.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_profile_student),
-                appearance = appearance
+                appearance = appearance,
+                summary = inicio.summary
             )
         }
 
@@ -121,14 +149,16 @@ fun HomeSettingsScreen(
              * sigue abriendo Tareas y aquí se ve como Académico.
              */
             val academico = appearance.initialTab == InitialTab.GRADES || appearance.initialTab == InitialTab.TASKS
+            // Con el icono y el color de cada pestaña, los de la barra de abajo.
+            val tonos = tonosDeAjustes
             val pestanas = buildList {
-                add(Triple(InitialTab.HOME, R.string.settings_home_tab_home, appearance.initialTab == InitialTab.HOME))
+                add(Pestana(InitialTab.HOME, R.string.settings_home_tab_home, appearance.initialTab == InitialTab.HOME, Icons.Rounded.Home, tonos.azul))
                 if (AppModule.GRADES in modulos || AppModule.TASKS in modulos) {
-                    add(Triple(InitialTab.GRADES, R.string.settings_home_tab_academic, academico))
+                    add(Pestana(InitialTab.GRADES, R.string.settings_home_tab_academic, academico, Icons.AutoMirrored.Rounded.MenuBook, tonos.indigo))
                 }
-                add(Triple(InitialTab.SCHEDULE, R.string.settings_home_tab_schedule, appearance.initialTab == InitialTab.SCHEDULE))
+                add(Pestana(InitialTab.SCHEDULE, R.string.settings_home_tab_schedule, appearance.initialTab == InitialTab.SCHEDULE, Icons.Rounded.CalendarMonth, tonos.turquesa))
                 if (AppModule.EXPENSES in modulos) {
-                    add(Triple(InitialTab.EXPENSES, R.string.settings_home_tab_expenses, appearance.initialTab == InitialTab.EXPENSES))
+                    add(Pestana(InitialTab.EXPENSES, R.string.settings_home_tab_expenses, appearance.initialTab == InitialTab.EXPENSES, Icons.Rounded.AccountBalanceWallet, tonos.rojo))
                 }
             }
             SettingsGroup(
@@ -137,12 +167,14 @@ fun HomeSettingsScreen(
                 rowCount = pestanas.size,
                 explanation = stringResource(R.string.settings_home_initial_tab_desc)
             ) {
-                pestanas.forEach { (pestana, rotulo, elegida) ->
+                pestanas.forEach { pestana ->
                     SettingsChoiceRow(
-                        title = stringResource(rotulo),
-                        selected = elegida,
+                        title = stringResource(pestana.rotulo),
+                        selected = pestana.elegida,
+                        icon = pestana.icono,
+                        iconColor = pestana.color,
                         onClick = {
-                            if (!elegida) viewModel.updateAppearance { it.copy(initialTab = pestana) }
+                            if (!pestana.elegida) viewModel.updateAppearance { it.copy(initialTab = pestana.valor) }
                         }
                     )
                 }
@@ -150,6 +182,14 @@ fun HomeSettingsScreen(
         }
     }
 }
+
+private class Pestana(
+    val valor: InitialTab,
+    val rotulo: Int,
+    val elegida: Boolean,
+    val icono: ImageVector,
+    val color: Color
+)
 
 /**
  * Los ocho bloques, en orden, cada uno con su asa, su interruptor y su línea.
@@ -175,34 +215,39 @@ private fun ListaDeBloques(
         rowCount = enPantalla.size,
         explanation = stringResource(R.string.settings_home_blocks_drag)
     ) {
-        enPantalla.forEachIndexed { indice, seccion ->
-            SettingsToggleRow(
-                title = seccion.label(),
-                subtitle = seccion.detail(),
-                checked = appearance.showsSection(seccion),
-                onCheckedChange = { valor -> onCambio(seccion, valor) },
-                modifier = Modifier.uniReorderableItem(reorder, seccion),
-                leadingContent = {
-                    Icon(
-                        imageVector = Icons.Rounded.DragIndicator,
-                        contentDescription = stringResource(R.string.settings_home_move, seccion.label()),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .uniReorderHandle(
-                                state = reorder,
-                                key = seccion,
-                                index = { enPantalla.indexOf(seccion) },
-                                itemCount = { enPantalla.size },
-                                onMove = { desde, hasta ->
-                                    enPantalla = enPantalla.toMutableList().apply { add(hasta, removeAt(desde)) }
-                                },
-                                onSettle = { if (enPantalla != orden) onOrden(enPantalla) }
-                            )
-                            .sinToqueCorto()
-                    )
-                }
-            )
+        enPantalla.forEach { seccion ->
+            // `key` es lo que hace que el asa siga a su bloque cuando la lista se permuta:
+            // sin ella, la fila de arriba pasaba a ser otro bloque, el detector del asa se
+            // reiniciaba con la clave nueva y el arrastre se quedaba pegado tras un salto.
+            key(seccion) {
+                SettingsToggleRow(
+                    title = seccion.label(),
+                    subtitle = seccion.detail(),
+                    checked = appearance.showsSection(seccion),
+                    onCheckedChange = { valor -> onCambio(seccion, valor) },
+                    modifier = Modifier.uniReorderableItem(reorder, seccion),
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Rounded.DragIndicator,
+                            contentDescription = stringResource(R.string.settings_home_move, seccion.label()),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .uniReorderHandle(
+                                    state = reorder,
+                                    key = seccion,
+                                    index = { enPantalla.indexOf(seccion) },
+                                    itemCount = { enPantalla.size },
+                                    onMove = { desde, hasta ->
+                                        enPantalla = enPantalla.toMutableList().apply { add(hasta, removeAt(desde)) }
+                                    },
+                                    onSettle = { if (enPantalla != orden) onOrden(enPantalla) }
+                                )
+                                .sinToqueCorto()
+                        )
+                    }
+                )
+            }
         }
     }
 }
@@ -221,78 +266,74 @@ private fun Modifier.sinToqueCorto(): Modifier = pointerInput(Unit) {
 }
 
 /**
- * Inicio en pequeño: el saludo y una línea por bloque encendido, en el orden elegido.
+ * Inicio a escala, con las tarjetas de verdad y tus datos de verdad.
  *
- * Una línea y no una maqueta de cada tarjeta: lo que aquí se decide es qué sale y en qué
- * orden, y para eso basta con ver la lista. «Lo siguiente» va en el color del hero, que es
- * como se distingue en Inicio.
+ * Una línea por bloque no bastaba («ese preview no es muy accurate», 20 sep 2026). Aquí se
+ * pintan los mismos bloques que Inicio, con [bloquesDeInicio] y el mismo resumen, a un 60 %
+ * de densidad: todo —letra, aire, tarjetas— encoge junto, sin escalar un bitmap. Una capa
+ * encima se traga los toques, que esto es para mirar.
  */
 @Composable
-private fun MaquetaDeInicio(nombre: String, appearance: AppearancePreferences) {
+private fun MaquetaDeInicio(nombre: String, appearance: AppearancePreferences, summary: HomeSummary) {
     val esquema = MaterialTheme.colorScheme
+    val densidad = LocalDensity.current
     val visibles = appearance.homeSectionOrder.filter(appearance::showsSection)
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = esquema.surfaceContainerLow
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(esquema.background)
+            .border(1.dp, esquema.outlineVariant, RoundedCornerShape(16.dp))
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (appearance.showHomeGreeting) {
-                Column {
-                    Text(
-                        text = (if (appearance.greetingWithTimeOfDay) greetingForNow() else stringResource(R.string.home_header_greeting_default)).uppercase(),
-                        style = SectionLabelStyle,
-                        color = esquema.primary
-                    )
-                    Text(
-                        text = nombre,
-                        style = MaterialTheme.typography.titleLargeEmphasized,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(esquema.surfaceContainerHigh)
+                .padding(horizontal = 12.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(esquema.error))
+            Text(stringResource(R.string.settings_home_preview_window).uppercase(), style = SectionLabelStyle, color = esquema.onSurfaceVariant)
+        }
+        Box(modifier = Modifier.fillMaxWidth().heightIn(max = 440.dp).clipToBounds()) {
+            CompositionLocalProvider(
+                LocalDensity provides Density(densidad.density * ESCALA_DE_LA_MAQUETA, densidad.fontScale)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                    if (appearance.showHomeGreeting) {
+                        Column(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 14.dp, bottom = 10.dp)) {
+                            Text(
+                                text = (if (appearance.greetingWithTimeOfDay) greetingForNow() else stringResource(R.string.home_header_greeting_default)).uppercase(),
+                                style = SectionLabelStyle,
+                                color = esquema.primary
+                            )
+                            Text(
+                                text = nombre,
+                                style = MaterialTheme.typography.headlineLargeEmphasized,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    bloquesDeInicio(summary = summary, orden = visibles, acciones = AccionesDeInicio()).forEach { bloque ->
+                        key(bloque.clave) { bloque.contenido() }
+                    }
+                    if (!appearance.showHomeGreeting && visibles.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.settings_home_preview_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = esquema.onSurfaceVariant,
+                            modifier = Modifier.padding(24.dp)
+                        )
+                    }
                 }
             }
-            visibles.forEach { seccion ->
-                val hero = seccion == HomeSection.HERO
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    color = if (hero) esquema.primaryContainer else esquema.surfaceContainerHigh,
-                    contentColor = if (hero) esquema.onPrimaryContainer else esquema.onSurfaceVariant
-                ) {
-                    Text(
-                        text = seccion.muestra(),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-                    )
-                }
-            }
-            if (!appearance.showHomeGreeting && visibles.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.settings_home_preview_empty),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = esquema.onSurfaceVariant
-                )
-            }
+            // Encima de todo y sin hacer nada: es lo que deja las tarjetas sin tocar. La lista
+            // de fuera sigue desplazándose porque no se consume nada.
+            Box(modifier = Modifier.matchParentSize().pointerInput(Unit) {})
         }
     }
 }
 
-/** La línea de muestra de cada bloque en la maqueta. */
-@Composable
-private fun HomeSection.muestra(): String = stringResource(
-    when (this) {
-        HomeSection.HERO -> R.string.settings_home_sample_hero
-        HomeSection.AGENDA -> R.string.settings_home_sample_agenda
-        HomeSection.SNAPSHOT -> R.string.settings_home_sample_snapshot
-        HomeSection.SUBJECTS -> R.string.settings_home_sample_subjects
-        HomeSection.WEEK -> R.string.settings_home_sample_week
-        HomeSection.ATTENDANCE -> R.string.settings_home_sample_attendance
-        HomeSection.EXPENSES -> R.string.settings_home_sample_expenses
-        HomeSection.NOTES -> R.string.settings_home_sample_notes
-    }
-)
+private const val ESCALA_DE_LA_MAQUETA = 0.6f

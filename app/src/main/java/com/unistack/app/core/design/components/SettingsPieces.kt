@@ -372,12 +372,15 @@ fun SettingsGroupScope.SettingsChoiceRow(
     title: String,
     selected: Boolean,
     onClick: () -> Unit,
-    subtitle: String? = null
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    iconColor: Color = MaterialTheme.colorScheme.primary
 ) {
     SegmentedListItem(
         onClick = onClick,
         shapes = shapesFor(nextPosition()),
         supportingContent = subtitle?.let { { Text(text = it, style = MaterialTheme.typography.bodySmall) } },
+        leadingContent = icon?.let { { SettingsRowIcon(icon = it, color = iconColor, activo = selected) } },
         trailingContent = {
             if (selected) {
                 Icon(

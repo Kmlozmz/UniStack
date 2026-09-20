@@ -27,7 +27,6 @@ data class AppearancePreferences(
      * Con ocho materias, la lista cabe en una pantalla. Es de las pocas cosas de forma que
      * cambian de una persona a otra (20 sep 2026).
      */
-    val subjectsLayout: SubjectsLayout = SubjectsLayout.CARDS,
     val motionPreference: MotionPreference = MotionPreference.FULL,
 
     /**
@@ -41,7 +40,7 @@ data class AppearancePreferences(
      */
     val motion: MotionPreferences = MotionPreferences(),
     val textScale: TextScalePreference = TextScalePreference.STANDARD,
-    val typographyStyle: TypographyStyle = TypographyStyle.SANS,
+    val typographyStyle: TypographyStyle = TypographyStyle.SYSTEM,
 
     /**
      * El tamano del texto, de 85 a 135 por ciento.
@@ -59,7 +58,6 @@ data class AppearancePreferences(
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
 
     /** Cuanto ocupan. */
-    val buttonSize: ButtonSizeStyle = ButtonSizeStyle.MEDIO,
 
     /** Cómo van los iconos de las filas de Ajustes: de colores o en círculo con el acento. */
     /**
@@ -209,17 +207,6 @@ enum class AccentIntensity {
 }
 
 
-/**
- * Materias como tarjetas (con su barra y su pronóstico) o como filas de lista.
- *
- * Fijado el 20 sep 2026 como lo único que sigue eligiéndose de la forma de Académico: lo
- * demás —superficie, campos, chips, distintivos— es decisión de diseño y va con lo suyo.
- */
-enum class SubjectsLayout {
-    CARDS,
-    LIST
-}
-
 enum class CornerStyle {
     COMPACT,
     BALANCED,
@@ -247,31 +234,39 @@ enum class TextScalePreference {
  * La familia de letra de toda la app.
  *
  * **Ya no se llama «UniStack».** Se llamaba asi la de por defecto y era mentira: no hay ninguna
- * fuente propia, es la `sans-serif` del sistema. Un nombre de marca sobre una fuente prestada
- * hace pensar que se pierde algo al cambiarla, y no se pierde nada.
+ * fuente propia. La de por defecto es [SYSTEM], la del telefono, desde el 20 sep 2026.
  *
- * Las seis salen de las familias que Android ya trae, asi que ninguna suma peso al APK ni tarda
- * en cargar. [ESTRECHA] y [REDONDEADA] se piden por nombre de dispositivo: si el telefono no
- * las tiene, cae en la `sans-serif` normal sin romper nada.
+ * Dos son del sistema ([SYSTEM], [SANS]), una se pide por nombre de dispositivo ([ESTRECHA]:
+ * si no esta, cae en la `sans-serif` normal) y las ocho restantes van empaquetadas en
+ * `res/font` como fuentes variables bajo la SIL Open Font License: unos dos megas en total,
+ * a cambio de que se vean igual en cualquier telefono. Serif, Mono y Redondeada del sistema
+ * se fueron con ellas: [LORA], [JETBRAINS_MONO] y [NUNITO] hacen lo mismo sin depender del
+ * fabricante.
  */
 enum class TypographyStyle {
-    /** La `sans-serif` del sistema. La de siempre, y la de por defecto. */
-    SANS,
-
     /** La que el fabricante haya puesto como suya: Samsung One, MIUI Sans, la que sea. */
     SYSTEM,
 
-    /** Con remates. Se lee mejor en parrafos largos. */
-    SERIF,
+    /** La `sans-serif` del sistema. La de siempre. */
+    SANS,
+
+    INTER,
+    MANROPE,
+    DM_SANS,
+    OUTFIT,
+    SPACE_GROTESK,
+
+    /** De trazo redondeado y amable. */
+    NUNITO,
+
+    /** Con remates: se lee bien en parrafos largos. */
+    LORA,
 
     /** Ancho fijo: alinea cifras por columnas, que en notas e importes se nota. */
-    MONO,
+    JETBRAINS_MONO,
 
     /** Condensada: cabe mas nombre de materia antes de cortarse. */
-    ESTRECHA,
-
-    /** De trazo mas blando, para quien la prefiere menos seca. */
-    REDONDEADA
+    ESTRECHA
 }
 
 enum class BottomBarStyle {
@@ -343,12 +338,6 @@ enum class LineHeightStyle {
     AMPLIO
 }
 
-
-enum class ButtonSizeStyle {
-    PEQUENO,
-    MEDIO,
-    GRANDE
-}
 
 
 

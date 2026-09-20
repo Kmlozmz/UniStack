@@ -28,8 +28,6 @@ import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.components.UniStackButton
-import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.components.formaDeDistintivo
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
@@ -157,31 +155,6 @@ fun VistaPreviaDeTarjeta(modifier: Modifier = Modifier) {
 }
 
 
-/**
- * Los dos botones que la app usa de verdad: la acción principal anclada y la de descartar.
- *
- * La versión anterior enseñaba un «Guardar» suelto, y con eso no se veía lo que más cambia al
- * tocar la forma: cómo queda una pareja de botones al lado de otro, que es como salen siempre
- * al pie de un formulario.
- */
-@Composable
-fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
-    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_form_footer), modifier = modifier) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            UniStackButton(
-                text = stringResource(R.string.common_save),
-                onClick = {},
-                modifier = Modifier.weight(1f)
-            )
-            UniStackButton(
-                text = stringResource(R.string.common_cancel),
-                onClick = {},
-                modifier = Modifier.weight(1f),
-                variant = UniStackButtonVariant.Tonal
-            )
-        }
-    }
-}
 
 
 

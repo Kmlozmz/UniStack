@@ -33,17 +33,15 @@ object AppearancePreferencesJson {
         .put("customAccentColor", value.customAccentColor)
         .put("accentIntensity", value.accentIntensity.name)
         .put("cornerStyle", value.cornerStyle.name)
-        .put("subjectsLayout", value.subjectsLayout.name)
         .put("interfaceDensity", value.interfaceDensity.name)
         .put("motionPreference", value.motionPreference.name)
         .put("motion", encodeMotion(value.motion))
         .put("textScale", value.textScale.name)
-        .put("typographyStyle", value.typographyStyle.name)
+        .put("typographyFamily", value.typographyStyle.name)
         .put("textScalePercent", value.textScalePercent)
         .put("lineHeightStyle", value.lineHeightStyle.name)
         .put("decimalPlaces", value.decimalPlaces)
         .put("bottomBarStyle", value.bottomBarStyle.name)
-        .put("buttonSize", value.buttonSize.name)
         .put("settingsIconColor", value.settingsIconColor.name)
         .put("settingsIconRound", value.settingsIconRound)
         .put("tabBadges", value.tabBadges)
@@ -74,20 +72,18 @@ object AppearancePreferencesJson {
         customAccentColor = json.intOrNull("customAccentColor"),
         accentIntensity = json.enumOr("accentIntensity", base.accentIntensity),
         cornerStyle = json.enumOr("cornerStyle", base.cornerStyle),
-        subjectsLayout = json.enumOr("subjectsLayout", base.subjectsLayout),
         interfaceDensity = json.enumOr("interfaceDensity", base.interfaceDensity),
         motionPreference = json.enumOr("motionPreference", base.motionPreference),
         motion = decodeMotion(json.optJSONObject("motion"), base.motion),
         textScale = json.enumOr("textScale", base.textScale),
-        typographyStyle = json.enumOr("typographyStyle", base.typographyStyle),
+        // Clave nueva a propósito (20 sep 2026): «Sans» era el de por defecto y quedó guardado
+        // en todos los teléfonos sin que nadie lo eligiera. Con otra clave, todos pasan a la
+        // letra del sistema, que es la de ahora, y Serif/Mono/Redondeada ya no existen.
+        typographyStyle = json.enumOr("typographyFamily", base.typographyStyle),
         textScalePercent = json.optInt("textScalePercent", base.textScalePercent),
         lineHeightStyle = json.enumOr("lineHeightStyle", base.lineHeightStyle),
         decimalPlaces = json.optInt("decimalPlaces", base.decimalPlaces),
         bottomBarStyle = json.enumOr("bottomBarStyle", base.bottomBarStyle),
-        // Clave nueva a propósito: «Medios» era el de por defecto y quedó guardado en todos
-        // los teléfonos sin que nadie lo eligiera. Con otra clave, todos pasan a la pastilla
-        // de ahora y quien quiera los de antes los vuelve a elegir.
-        buttonSize = json.enumOr("buttonSize", base.buttonSize),
         // Lo guardado antes del 20 sep era una sola elección: «circulares» eran círculos con el
         // acento. Se reparte en las dos de ahora si las nuevas claves todavía no están.
         settingsIconColor = json.enumOr(

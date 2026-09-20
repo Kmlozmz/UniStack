@@ -10,8 +10,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
-import com.unistack.app.feature_user.domain.ButtonSizeStyle
 
 /**
  * Cómo son los botones de esta app, en un solo sitio.
@@ -25,19 +23,15 @@ import com.unistack.app.feature_user.domain.ButtonSizeStyle
 object UniStackButtonDefaults {
 
     /**
-     * El alto de una accion principal anclada, con el tamano que se haya elegido.
+     * El alto de una accion principal anclada: los 56dp del «medium» de Material.
      *
-     * Estuvo fijo en los 56dp del «medium» de Material, que sigue siendo el de por defecto. El
-     * ajuste de tamano de boton existia en el diseno y no llegaba a ningun sitio.
+     * Se pudo elegir entre tres tamanos hasta el 20 sep 2026; nadie salia del medio y la
+     * opcion se fue con el recorte de Apariencia.
      */
     val PrimaryHeight: Dp
         @Composable
         @ReadOnlyComposable
-        get() = when (LocalAppearancePreferences.current.buttonSize) {
-            ButtonSizeStyle.PEQUENO -> ButtonDefaults.MinHeight
-            ButtonSizeStyle.MEDIO -> ButtonDefaults.MediumContainerHeight
-            ButtonSizeStyle.GRANDE -> ButtonDefaults.LargeContainerHeight
-        }
+        get() = ButtonDefaults.MediumContainerHeight
 
     /**
      * Redondo en reposo, esquinas cerradas bajo el dedo.

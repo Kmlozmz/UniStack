@@ -260,131 +260,34 @@ fun HomeScreen(
                     }
                 }
 
-                // En el orden de Apariencia › Tu inicio. Los tres de siempre y los cinco
-                // opcionales del 20 sep 2026; cada uno solo si está encendido.
+                // En el orden de Apariencia › Tu inicio; cada bloque solo si está encendido.
+                // La lista la arma [bloquesDeInicio], que es la misma que pinta la maqueta de
+                // esa pantalla.
                 if (!sinPeriodo && !porEmpezar) {
-                    appearance.homeSectionOrder.forEach { seccion ->
-                        if (!appearance.showsSection(seccion)) return@forEach
-                        when (seccion) {
-                            HomeSection.HERO -> item("prioridad") {
-                                HomePriorityCard(
-                                    summary = summary,
-                                    onPrimaryAction = {
-                                        val subjects = summary.subjects
-                                        when (summary.priority.action) {
-                                            HomePriorityAction.SUBJECT -> when {
-                                                subjects.isEmpty() -> onAddSubjectClick()
-                                                summary.priority.subjectId != null ->
-                                                    onAddGradeClick(summary.priority.subjectId!!)
-                                                subjects.size == 1 -> onAddGradeClick(subjects.first().id)
-                                                else -> pickingSubjectForGrade = true
-                                            }
-                                            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
-                                            HomePriorityAction.TASKS -> onSeeTasksClick()
-                                            HomePriorityAction.EXPENSES -> onSeeExpensesClick()
-                                            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
-                                            HomePriorityAction.SCHEDULE -> onCalendarClick()
-                                        }
-                                    },
-                                    onSubjectClick = { id -> onSubjectClick(id) }
-                                )
-                            }
-
-                            HomeSection.AGENDA -> {
-                                item("hoy-cabecera") {
-                                    HomeSectionHeader(
-                                        title = todayLabel(),
-                                        actionLabel = stringResource(R.string.home_action_schedule_short),
-                                        onActionClick = onCalendarClick
-                                    )
-                                }
-                                item("hoy") {
-                                    HomeTodayCard(
-                                        summary = summary,
-                                        onEmptyClick = onCalendarClick,
-                                        onTasksClick = onSeeTasksClick,
-                                        onWorksClick = onOpenTemplatesClick,
-                                        onSubjectClick = onSubjectClick
-                                    )
-                                }
-                            }
-
-                            HomeSection.SNAPSHOT -> item("cifras") {
-                                HomeSnapshotRow(
-                                    summary = summary,
-                                    onAverageClick = onSeeAllSubjectsClick,
-                                    onPendingClick = onSeeTasksClick,
-                                    onExpensesClick = onSeeExpensesClick
-                                )
-                            }
-
-                            HomeSection.SUBJECTS -> if (AppModule.GRADES in summary.enabledModules) {
-                                item("materias-cabecera") {
-                                    HomeSectionHeader(
-                                        title = stringResource(R.string.home_block_subjects),
-                                        actionLabel = stringResource(R.string.home_block_see_all),
-                                        onActionClick = onSeeAllSubjectsClick
-                                    )
-                                }
-                                item("materias") {
-                                    HomeSubjectsCard(summary = summary, onSubjectClick = onSubjectClick, onEmptyClick = onAddSubjectClick)
-                                }
-                            }
-
-                            HomeSection.WEEK -> if (AppModule.TASKS in summary.enabledModules) {
-                                item("semana-cabecera") {
-                                    HomeSectionHeader(
-                                        title = stringResource(R.string.home_block_week),
-                                        actionLabel = stringResource(R.string.home_today_view_tasks),
-                                        onActionClick = onSeeTasksClick
-                                    )
-                                }
-                                item("semana") { HomeWeekCard(summary = summary, onClick = onSeeTasksClick) }
-                            }
-
-                            HomeSection.ATTENDANCE -> if (AppModule.GRADES in summary.enabledModules) {
-                                item("asistencia-cabecera") {
-                                    HomeSectionHeader(
-                                        title = stringResource(R.string.home_block_attendance),
-                                        actionLabel = stringResource(R.string.home_action_schedule_short),
-                                        onActionClick = onCalendarClick
-                                    )
-                                }
-                                item("asistencia") {
-                                    HomeAttendanceCard(summary = summary, onSubjectClick = onSubjectClick, onEmptyClick = onCalendarClick)
-                                }
-                            }
-
-                            HomeSection.EXPENSES -> if (AppModule.EXPENSES in summary.enabledModules) {
-                                item("gastos-cabecera") {
-                                    HomeSectionHeader(
-                                        title = stringResource(R.string.home_block_expenses),
-                                        actionLabel = stringResource(R.string.home_block_see_expenses),
-                                        onActionClick = onSeeExpensesClick
-                                    )
-                                }
-                                item("gastos") { HomeExpensesCard(summary = summary, onClick = onSeeExpensesClick) }
-                            }
-
-                            HomeSection.NOTES -> {
-                                item("notas-cabecera") {
-                                    HomeSectionHeader(
-                                        title = stringResource(R.string.home_block_notes),
-                                        actionLabel = stringResource(R.string.home_block_see_notes),
-                                        onActionClick = onQuickNotesClick
-                                    )
-                                }
-                                item("notas") {
-                                    HomeNotesCard(summary = summary, onNoteClick = onNoteClick, onEmptyClick = onQuickNotesClick)
-                                }
-                            }
-                        }
-                    }
+                    bloquesDeInicio(
+                        summary = summary,
+                        orden = appearance.homeSectionOrder.filter(appearance::showsSection),
+                        acciones = AccionesDeInicio(
+                            onAddSubject = onAddSubjectClick,
+                            onSeeAllSubjects = onSeeAllSubjectsClick,
+                            onSeeTasks = onSeeTasksClick,
+                            onSeeExpenses = onSeeExpensesClick,
+                            onOpenTemplates = onOpenTemplatesClick,
+                            onCalendar = onCalendarClick,
+                            onSubject = onSubjectClick,
+                            onAddGrade = onAddGradeClick,
+                            onQuickNotes = onQuickNotesClick,
+                            onNote = onNoteClick,
+                            onPickSubjectForGrade = { pickingSubjectForGrade = true }
+                        )
+                    ).forEach { bloque -> item(bloque.clave) { bloque.contenido() } }
                 }
             }
 
             UniStackFabMenu(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp),
+                // Un poco más adentro que el margen de las tarjetas (20dp): pegado al borde se
+                // sentía fuera de sitio.
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 20.dp),
                 onAddGradeClick = {
                     val subjects = summary.subjects
                     when {
@@ -1160,6 +1063,156 @@ private fun todayLabel(): String {
     val formatter = DateTimeFormatter.ofPattern("EEEE d", Locale.getDefault())
     val formatted = today.format(formatter).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     return stringResource(R.string.home_today_prefix, formatted)
+}
+
+// ------------------------------------------------------------------ los bloques, en orden
+
+/** A dónde lleva cada bloque. La maqueta de Apariencia los pinta con todo apagado. */
+class AccionesDeInicio(
+    val onAddSubject: () -> Unit = {},
+    val onSeeAllSubjects: () -> Unit = {},
+    val onSeeTasks: () -> Unit = {},
+    val onSeeExpenses: () -> Unit = {},
+    val onOpenTemplates: () -> Unit = {},
+    val onCalendar: () -> Unit = {},
+    val onSubject: (String) -> Unit = {},
+    val onAddGrade: (String) -> Unit = {},
+    val onQuickNotes: () -> Unit = {},
+    val onNote: (String) -> Unit = {},
+    val onPickSubjectForGrade: () -> Unit = {}
+)
+
+/** Una pieza de Inicio: su clave estable para la lista perezosa y lo que pinta. */
+class BloqueDeInicio(val clave: String, val contenido: @Composable () -> Unit)
+
+/**
+ * Los bloques de Inicio, en el orden que se pida, como piezas sueltas.
+ *
+ * Es una lista y no un `LazyListScope` a propósito: Inicio los mete en su lista perezosa y la
+ * maqueta de Apariencia › Tu inicio los apila en una columna a escala. Los dos pintan las
+ * mismas tarjetas con los mismos datos, que es lo que hace a la maqueta fiel.
+ */
+fun bloquesDeInicio(
+    summary: HomeSummary,
+    orden: List<HomeSection>,
+    acciones: AccionesDeInicio
+): List<BloqueDeInicio> = buildList {
+    fun bloque(clave: String, contenido: @Composable () -> Unit) = add(BloqueDeInicio(clave, contenido))
+    orden.forEach { seccion ->
+        when (seccion) {
+            HomeSection.HERO -> bloque("prioridad") {
+                HomePriorityCard(
+                    summary = summary,
+                    onPrimaryAction = {
+                        val subjects = summary.subjects
+                        when (summary.priority.action) {
+                            HomePriorityAction.SUBJECT -> when {
+                                subjects.isEmpty() -> acciones.onAddSubject()
+                                summary.priority.subjectId != null -> acciones.onAddGrade(summary.priority.subjectId!!)
+                                subjects.size == 1 -> acciones.onAddGrade(subjects.first().id)
+                                else -> acciones.onPickSubjectForGrade()
+                            }
+                            HomePriorityAction.SUBJECTS -> acciones.onSeeAllSubjects()
+                            HomePriorityAction.TASKS -> acciones.onSeeTasks()
+                            HomePriorityAction.EXPENSES -> acciones.onSeeExpenses()
+                            HomePriorityAction.TEMPLATES -> acciones.onOpenTemplates()
+                            HomePriorityAction.SCHEDULE -> acciones.onCalendar()
+                        }
+                    },
+                    onSubjectClick = acciones.onSubject
+                )
+            }
+
+            HomeSection.AGENDA -> {
+                bloque("hoy-cabecera") {
+                    HomeSectionHeader(
+                        title = todayLabel(),
+                        actionLabel = stringResource(R.string.home_action_schedule_short),
+                        onActionClick = acciones.onCalendar
+                    )
+                }
+                bloque("hoy") {
+                    HomeTodayCard(
+                        summary = summary,
+                        onEmptyClick = acciones.onCalendar,
+                        onTasksClick = acciones.onSeeTasks,
+                        onWorksClick = acciones.onOpenTemplates,
+                        onSubjectClick = acciones.onSubject
+                    )
+                }
+            }
+
+            HomeSection.SNAPSHOT -> bloque("cifras") {
+                HomeSnapshotRow(
+                    summary = summary,
+                    onAverageClick = acciones.onSeeAllSubjects,
+                    onPendingClick = acciones.onSeeTasks,
+                    onExpensesClick = acciones.onSeeExpenses
+                )
+            }
+
+            HomeSection.SUBJECTS -> if (AppModule.GRADES in summary.enabledModules) {
+                bloque("materias-cabecera") {
+                    HomeSectionHeader(
+                        title = stringResource(R.string.home_block_subjects),
+                        actionLabel = stringResource(R.string.home_block_see_all),
+                        onActionClick = acciones.onSeeAllSubjects
+                    )
+                }
+                bloque("materias") {
+                    HomeSubjectsCard(summary = summary, onSubjectClick = acciones.onSubject, onEmptyClick = acciones.onAddSubject)
+                }
+            }
+
+            HomeSection.WEEK -> if (AppModule.TASKS in summary.enabledModules) {
+                bloque("semana-cabecera") {
+                    HomeSectionHeader(
+                        title = stringResource(R.string.home_block_week),
+                        actionLabel = stringResource(R.string.home_today_view_tasks),
+                        onActionClick = acciones.onSeeTasks
+                    )
+                }
+                bloque("semana") { HomeWeekCard(summary = summary, onClick = acciones.onSeeTasks) }
+            }
+
+            HomeSection.ATTENDANCE -> if (AppModule.GRADES in summary.enabledModules) {
+                bloque("asistencia-cabecera") {
+                    HomeSectionHeader(
+                        title = stringResource(R.string.home_block_attendance),
+                        actionLabel = stringResource(R.string.home_action_schedule_short),
+                        onActionClick = acciones.onCalendar
+                    )
+                }
+                bloque("asistencia") {
+                    HomeAttendanceCard(summary = summary, onSubjectClick = acciones.onSubject, onEmptyClick = acciones.onCalendar)
+                }
+            }
+
+            HomeSection.EXPENSES -> if (AppModule.EXPENSES in summary.enabledModules) {
+                bloque("gastos-cabecera") {
+                    HomeSectionHeader(
+                        title = stringResource(R.string.home_block_expenses),
+                        actionLabel = stringResource(R.string.home_block_see_expenses),
+                        onActionClick = acciones.onSeeExpenses
+                    )
+                }
+                bloque("gastos") { HomeExpensesCard(summary = summary, onClick = acciones.onSeeExpenses) }
+            }
+
+            HomeSection.NOTES -> {
+                bloque("notas-cabecera") {
+                    HomeSectionHeader(
+                        title = stringResource(R.string.home_block_notes),
+                        actionLabel = stringResource(R.string.home_block_see_notes),
+                        onActionClick = acciones.onQuickNotes
+                    )
+                }
+                bloque("notas") {
+                    HomeNotesCard(summary = summary, onNoteClick = acciones.onNote, onEmptyClick = acciones.onQuickNotes)
+                }
+            }
+        }
+    }
 }
 
 // ------------------------------------------------------------------ los bloques opcionales

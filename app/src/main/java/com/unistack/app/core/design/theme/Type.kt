@@ -1,6 +1,7 @@
 package com.unistack.app.core.design.theme
 
 import androidx.compose.material3.Typography
+import com.unistack.app.R
 import android.os.Build
 import androidx.compose.ui.text.font.DeviceFontFamilyName
 import androidx.compose.ui.text.font.Font
@@ -102,22 +103,40 @@ fun appearanceTypography(
  * La familia de letra de cada estilo.
  *
  * Aparte de [appearanceTypography] porque la lista de Apariencia › Tipografía pinta cada nombre
- * con su propia letra, que es como se elige una: leyendo «Serif» en serif y no en la sans.
+ * con su propia letra, que es como se elige una: leyendo «Lora» en Lora y no en la sans.
  */
 fun TypographyStyle.familia(): FontFamily = when (this) {
-    TypographyStyle.SANS -> FontFamily.SansSerif
     TypographyStyle.SYSTEM -> FontFamily.Default
-    TypographyStyle.SERIF -> FontFamily.Serif
-    TypographyStyle.MONO -> FontFamily.Monospace
+    TypographyStyle.SANS -> FontFamily.SansSerif
+    TypographyStyle.INTER -> empaquetada(R.font.inter)
+    TypographyStyle.MANROPE -> empaquetada(R.font.manrope)
+    TypographyStyle.DM_SANS -> empaquetada(R.font.dm_sans)
+    TypographyStyle.OUTFIT -> empaquetada(R.font.outfit)
+    TypographyStyle.SPACE_GROTESK -> empaquetada(R.font.space_grotesk)
+    TypographyStyle.NUNITO -> empaquetada(R.font.nunito)
+    TypographyStyle.LORA -> empaquetada(R.font.lora)
+    TypographyStyle.JETBRAINS_MONO -> empaquetada(R.font.jetbrains_mono)
     /*
-     * Las dos que se piden por nombre de dispositivo.
+     * La que se pide por nombre de dispositivo.
      *
      * `DeviceFontFamilyName` es de API 31, y la app llega hasta la 26. Debajo de eso —y en
      * cualquier telefono que no tenga esa familia instalada— cae en la `sans-serif` normal:
      * la letra no es la elegida pero la app se lee, que es lo que importa.
      */
     TypographyStyle.ESTRECHA -> familiaDelSistema("sans-serif-condensed")
-    TypographyStyle.REDONDEADA -> familiaDelSistema("sans-serif-rounded", "casual")
+}
+
+private val empaquetadas = HashMap<Int, FontFamily>()
+
+/**
+ * Una fuente variable de `res/font`, con un [Font] por cada peso que usa la tipografia.
+ *
+ * Es un solo archivo: [Font] con `weight` aplica el eje `wght` por si solo desde API 26, asi
+ * que registrar seis pesos no cuesta seis fuentes. Se guarda por recurso porque el tema se
+ * rehace a menudo y crear la familia cada vez volvia a abrir el archivo.
+ */
+private fun empaquetada(resId: Int): FontFamily = empaquetadas.getOrPut(resId) {
+    FontFamily(listOf(400, 500, 600, 700, 800, 900).map { peso -> Font(resId, weight = FontWeight(peso)) })
 }
 
 private fun familiaDelSistema(vararg nombres: String): FontFamily {

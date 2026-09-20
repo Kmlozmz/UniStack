@@ -48,6 +48,7 @@ import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.CornerStyle
 import com.unistack.app.feature_user.domain.HomeSection
+import com.unistack.app.feature_user.domain.InitialTab
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.MotionCatalog
 import com.unistack.app.feature_user.domain.TypographyStyle
@@ -107,8 +108,10 @@ fun AppearanceSettingsScreen(
         }
 
         val appearance = current.appearancePreferences
+        // Tres grupos por lo que se hace en cada uno, como en el diseño: cómo se ve, cómo se
+        // mueve, y qué sale en Inicio. Seis filas seguidas se leían como una sola cosa.
         item {
-            SettingsGroup(label = stringResource(R.string.settings_appearance_sections), rowCount = 6) {
+            SettingsGroup(label = stringResource(R.string.settings_appearance_group_look), rowCount = 4) {
                 SettingsRow(
                     icon = Icons.Rounded.Palette,
                     title = stringResource(R.string.settings_appearance_theme_title),
@@ -150,6 +153,10 @@ fun AppearanceSettingsScreen(
                     iconColor = tonosDeAjustes.naranja,
                     onClick = onComponentsClick
                 )
+            }
+        }
+        item {
+            SettingsGroup(label = stringResource(R.string.settings_appearance_group_motion), rowCount = 1) {
                 SettingsRow(
                     icon = Icons.Rounded.Animation,
                     title = stringResource(R.string.settings_appearance_motion_title),
@@ -161,6 +168,10 @@ fun AppearanceSettingsScreen(
                     iconColor = tonosDeAjustes.turquesa,
                     onClick = onMotionClick
                 )
+            }
+        }
+        item {
+            SettingsGroup(label = stringResource(R.string.settings_appearance_group_home), rowCount = 1) {
                 SettingsRow(
                     icon = Icons.Rounded.Home,
                     title = stringResource(R.string.settings_appearance_home_title),
@@ -186,10 +197,19 @@ fun AppearanceSettingsScreen(
 /** «3 de 8 bloques» y no la lista entera: en una fila no caben ocho nombres. */
 private fun AppearancePreferences.resumenDeInicio(): String {
     val encendidos = HomeSection.entries.count(::showsSection)
-    return when (encendidos) {
+    val bloques = when (encendidos) {
         0 -> Textos.get(R.string.settings_appearance_home_0_on)
         else -> Textos.get(R.string.appearance_de_n_bloques, encendidos, HomeSection.entries.size)
     }
+    val abre = Textos.get(
+        when (initialTab) {
+            InitialTab.HOME -> R.string.settings_home_tab_home
+            InitialTab.GRADES, InitialTab.TASKS -> R.string.settings_home_tab_academic
+            InitialTab.SCHEDULE -> R.string.settings_home_tab_schedule
+            InitialTab.EXPENSES -> R.string.settings_home_tab_expenses
+        }
+    )
+    return bloques + " · " + Textos.get(R.string.settings_appearance_home_opens_in, abre)
 }
 
 /** Los cuatro modos que se pueden elegir. */
@@ -339,23 +359,33 @@ internal fun InterfaceDensity.label(): String {
 
 internal fun TypographyStyle.label(): String {
     return when (this) {
-        TypographyStyle.SANS -> "Sans"
         TypographyStyle.SYSTEM -> Textos.get(R.string.appearance_sistema)
-        TypographyStyle.SERIF -> "Serif"
-        TypographyStyle.MONO -> "Mono"
+        TypographyStyle.SANS -> "Sans"
+        TypographyStyle.INTER -> "Inter"
+        TypographyStyle.MANROPE -> "Manrope"
+        TypographyStyle.DM_SANS -> "DM Sans"
+        TypographyStyle.OUTFIT -> "Outfit"
+        TypographyStyle.SPACE_GROTESK -> "Space Grotesk"
+        TypographyStyle.NUNITO -> "Nunito"
+        TypographyStyle.LORA -> "Lora"
+        TypographyStyle.JETBRAINS_MONO -> "JetBrains Mono"
         TypographyStyle.ESTRECHA -> Textos.get(R.string.appearance_estrecha)
-        TypographyStyle.REDONDEADA -> Textos.get(R.string.appearance_redondeada)
     }
 }
 
 internal fun TypographyStyle.explicacion(): String {
     return when (this) {
-        TypographyStyle.SANS -> Textos.get(R.string.appearance_la_sans_serif_del_sistema_es)
         TypographyStyle.SYSTEM -> Textos.get(R.string.appearance_la_que_traiga_tu_telefono_como)
-        TypographyStyle.SERIF -> Textos.get(R.string.appearance_con_remates_se_lee_mejor_en)
-        TypographyStyle.MONO -> Textos.get(R.string.appearance_ancho_fijo_las_cifras_quedan_alineadas)
+        TypographyStyle.SANS -> Textos.get(R.string.appearance_la_sans_serif_del_sistema_es)
+        TypographyStyle.INTER -> Textos.get(R.string.appearance_font_inter)
+        TypographyStyle.MANROPE -> Textos.get(R.string.appearance_font_manrope)
+        TypographyStyle.DM_SANS -> Textos.get(R.string.appearance_font_dm_sans)
+        TypographyStyle.OUTFIT -> Textos.get(R.string.appearance_font_outfit)
+        TypographyStyle.SPACE_GROTESK -> Textos.get(R.string.appearance_font_space_grotesk)
+        TypographyStyle.NUNITO -> Textos.get(R.string.appearance_font_nunito)
+        TypographyStyle.LORA -> Textos.get(R.string.appearance_font_lora)
+        TypographyStyle.JETBRAINS_MONO -> Textos.get(R.string.appearance_font_jetbrains_mono)
         TypographyStyle.ESTRECHA -> Textos.get(R.string.appearance_condensada_cabe_mas_nombre_de_materia)
-        TypographyStyle.REDONDEADA -> Textos.get(R.string.appearance_de_trazo_mas_blando_si_tu)
     }
 }
 
