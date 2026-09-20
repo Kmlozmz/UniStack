@@ -34,6 +34,8 @@ import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.presentation.AccionesDeInicio
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_home.presentation.bloquesDeInicio
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -271,7 +273,9 @@ private fun Modifier.sinToqueCorto(): Modifier = pointerInput(Unit) {
  * Una línea por bloque no bastaba («ese preview no es muy accurate», 20 sep 2026). Aquí se
  * pintan los mismos bloques que Inicio, con [bloquesDeInicio] y el mismo resumen, a un 60 %
  * de densidad: todo —letra, aire, tarjetas— encoge junto, sin escalar un bitmap. Una capa
- * encima se traga los toques, que esto es para mirar.
+ * encima se traga los toques, que esto es para mirar; el desplazamiento va en la caja de
+ * fuera, por encima de esa capa, así que con más de tres bloques se baja dentro de la ventana
+ * y se ven todos.
  */
 @Composable
 private fun MaquetaDeInicio(nombre: String, appearance: AppearancePreferences, summary: HomeSummary) {
@@ -296,7 +300,13 @@ private fun MaquetaDeInicio(nombre: String, appearance: AppearancePreferences, s
             Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(esquema.error))
             Text(stringResource(R.string.settings_home_preview_window).uppercase(), style = SectionLabelStyle, color = esquema.onSurfaceVariant)
         }
-        Box(modifier = Modifier.fillMaxWidth().heightIn(max = 440.dp).clipToBounds()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 440.dp)
+                .clipToBounds()
+                .verticalScroll(rememberScrollState())
+        ) {
             CompositionLocalProvider(
                 LocalDensity provides Density(densidad.density * ESCALA_DE_LA_MAQUETA, densidad.fontScale)
             ) {

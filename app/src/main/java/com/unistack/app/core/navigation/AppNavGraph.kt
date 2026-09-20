@@ -170,7 +170,15 @@ fun MainNavGraph(
         initialValue = userRepository.userProfile.value?.enabledModules ?: DefaultEnabledModules
     )
     val bottomItems = remember(enabledModules) { BottomNavItem.itemsFor(enabledModules) }
-    val resolvedInitialRoute = remember(initialRoute, appearance.initialTab, enabledModules) {
+    /*
+     * Se decide una vez, al montar el grafo, y no se vuelve a mirar.
+     *
+     * Estaba recordado con la pestaña de arranque como clave, y `NavHost` navega en cuanto
+     * le cambia el destino inicial: elegir «Horario» en Apariencia › Tu inicio te llevaba al
+     * horario en el acto («es solo selección, no navegación», 20 sep 2026). El grafo solo se
+     * monta con el perfil cargado, así que aquí la preferencia ya es la de verdad.
+     */
+    val resolvedInitialRoute = remember(initialRoute) {
         if (initialRoute != AppRoutes.Home) {
             initialRoute
         } else {

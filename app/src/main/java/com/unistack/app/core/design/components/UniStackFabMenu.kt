@@ -91,12 +91,6 @@ fun UniStackFabMenu(
                     initialSize = 60.dp,
                     finalSize = 68.dp
                 ),
-                // Más cuadrado en reposo que el de Material (16dp): «lo esquinaría un poco»,
-                // 20 sep 2026. Abierto sigue cerrándose en círculo.
-                containerCornerRadius = ToggleFloatingActionButtonDefaults.containerCornerRadius(
-                    initialSize = 12.dp,
-                    finalSize = 34.dp
-                ),
                 // Con el menú abierto, el lector de pantalla debe llegar antes al botón que
                 // a las opciones: es lo que las cierra.
                 modifier = Modifier.semantics { traversalIndex = -1f }

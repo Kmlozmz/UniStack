@@ -285,9 +285,10 @@ fun HomeScreen(
             }
 
             UniStackFabMenu(
-                // Un poco más adentro que el margen de las tarjetas (20dp): pegado al borde se
-                // sentía fuera de sitio.
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 20.dp),
+                // En la esquina, como el botón de pruebas al otro lado (14dp del borde y de la
+                // barra). El menú de Material ya trae 16dp de aire por dentro, y de ahí el
+                // desplazamiento (16→14 a los lados, 20→14 abajo) para igualarlo.
+                modifier = Modifier.align(Alignment.BottomEnd).offset(x = 2.dp, y = 6.dp),
                 onAddGradeClick = {
                     val subjects = summary.subjects
                     when {
