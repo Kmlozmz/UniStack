@@ -5,6 +5,10 @@ import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_notes.domain.QuickNote
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
+import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
@@ -134,6 +138,105 @@ class HomeSummaryFactoryTest {
         assertEquals("active", summary.nextAcademicWork?.id)
         assertEquals("Ensayo", summary.nextAcademicWork?.title)
         assertEquals(12_000, summary.weeklyExpenseTotal)
+    }
+
+    @Test
+    fun weekDeliveriesKeepsOnlyTheNextSevenDaysWithoutClasses() {
+        val hoy = TaskDateUtils.today()
+        val summary = HomeSummaryFactory.create(
+            content = HomeContent(
+                subjects = listOf(subject(id = "calc", name = "Cálculo")),
+                tasks = listOf(
+                    task(id = "ayer", dueDateMillis = TaskDateUtils.toMillis(hoy.minusDays(1))),
+                    task(id = "hoy", dueDateMillis = TaskDateUtils.toMillis(hoy)),
+                    task(id = "en-7", dueDateMillis = TaskDateUtils.toMillis(hoy.plusDays(7))),
+                    task(id = "en-8", dueDateMillis = TaskDateUtils.toMillis(hoy.plusDays(8)))
+                ),
+                expenses = emptyList(),
+                works = listOf(
+                    academicWork(
+                        id = "ensayo",
+                        title = "Ensayo",
+                        dueDateMillis = TaskDateUtils.toMillis(hoy.plusDays(3)),
+                        status = AcademicWorkStatus.DRAFT
+                    )
+                ),
+                classSessions = listOf(
+                    ClassSession(
+                        id = "s1", subjectId = "calc", daysOfWeek = setOf(1, 2, 3, 4, 5, 6, 7),
+                        startMinute = 8 * 60, endMinute = 10 * 60, createdAt = 1L, updatedAt = 1L
+                    )
+                )
+            ),
+            profile = profile(),
+            user = appUser()
+        )
+
+        // Hoy, el ensayo a tres días y la de dentro de siete; ni la vencida ni la de ocho, y
+        // ninguna clase aunque el horario tenga una diaria.
+        assertEquals(listOf("Resolver taller", "Ensayo", "Resolver taller"), summary.weekDeliveries.map { it.title })
+        assertTrue(summary.weekDeliveries.none { it.kind == HomeTimelineKind.CLASS })
+    }
+
+    @Test
+    fun attendanceLinesCountAbsencesPerSubjectAndPutTheTightestFirst() {
+        val sesionCalc = ClassSession(
+            id = "s-calc", subjectId = "calc", daysOfWeek = setOf(1),
+            startMinute = 8 * 60, endMinute = 10 * 60, createdAt = 1L, updatedAt = 1L
+        )
+        val sesionFis = ClassSession(
+            id = "s-fis", subjectId = "fis", daysOfWeek = setOf(2),
+            startMinute = 8 * 60, endMinute = 10 * 60, createdAt = 1L, updatedAt = 1L
+        )
+        val summary = HomeSummaryFactory.create(
+            content = HomeContent(
+                subjects = listOf(
+                    subject(id = "calc", name = "Cálculo"),
+                    subject(id = "fis", name = "Física"),
+                    subject(id = "sin-horario", name = "Ética")
+                ),
+                tasks = emptyList(),
+                expenses = emptyList(),
+                works = emptyList(),
+                classSessions = listOf(sesionCalc, sesionFis),
+                occurrences = listOf(
+                    ClassOccurrence(id = "o1", sessionId = "s-calc", dateEpochDay = 1L, status = ClassAttendanceStatus.ABSENT, updatedAt = 1L),
+                    ClassOccurrence(id = "o2", sessionId = "s-fis", dateEpochDay = 2L, status = ClassAttendanceStatus.ABSENT, updatedAt = 1L),
+                    ClassOccurrence(id = "o3", sessionId = "s-fis", dateEpochDay = 3L, status = ClassAttendanceStatus.ABSENT, updatedAt = 1L),
+                    ClassOccurrence(id = "o4", sessionId = "s-fis", dateEpochDay = 4L, status = ClassAttendanceStatus.ATTENDED, updatedAt = 1L)
+                )
+            ),
+            profile = profile().copy(absenceLimit = 3),
+            user = appUser()
+        )
+
+        // Ética no tiene horario y no sale; Física va primero porque le queda una sola falta.
+        assertEquals(listOf("Física", "Cálculo"), summary.attendanceLines.map { it.subjectName })
+        assertEquals(listOf(2, 1), summary.attendanceLines.map { it.absent })
+        assertEquals(listOf(1, 2), summary.attendanceLines.map { it.remaining })
+    }
+
+    @Test
+    fun pinnedNotesTakeTheirTitleFromTheBodyWhenTheyHaveNone() {
+        val summary = HomeSummaryFactory.create(
+            content = HomeContent(
+                subjects = emptyList(),
+                tasks = emptyList(),
+                expenses = emptyList(),
+                works = emptyList(),
+                notes = listOf(
+                    QuickNote(id = "n1", body = "Llevar el informe\nY el cable", pinned = true, createdAt = 1L, updatedAt = 1L),
+                    QuickNote(id = "n2", title = "Con título", body = "Cuerpo", pinned = true, createdAt = 2L, updatedAt = 2L),
+                    QuickNote(id = "n3", body = "Sin fijar", pinned = false, createdAt = 3L, updatedAt = 3L)
+                )
+            ),
+            profile = profile(),
+            user = appUser()
+        )
+
+        assertEquals(setOf("Llevar el informe", "Con título"), summary.pinnedNotes.map { it.title }.toSet())
+        assertEquals("Y el cable", summary.pinnedNotes.first { it.id == "n1" }.preview)
+        assertEquals("Cuerpo", summary.pinnedNotes.first { it.id == "n2" }.preview)
     }
 
     private fun appUser(displayName: String? = "Estudiante UniStack"): AppUser {

@@ -183,13 +183,12 @@ fun AppearanceSettingsScreen(
     }
 }
 
-/** «3 de 4 bloques» y no la lista entera: en una fila no caben cuatro nombres. */
+/** «3 de 8 bloques» y no la lista entera: en una fila no caben ocho nombres. */
 private fun AppearancePreferences.resumenDeInicio(): String {
-    val encendidos = listOf(showHomeGreeting, showHomeHero, showHomeAgenda, showHomeSnapshot).count { it }
+    val encendidos = HomeSection.entries.count(::showsSection)
     return when (encendidos) {
-        4 -> Textos.get(R.string.settings_appearance_home_4_on)
         0 -> Textos.get(R.string.settings_appearance_home_0_on)
-        else -> Textos.get(R.string.appearance_de_4_bloques, encendidos)
+        else -> Textos.get(R.string.appearance_de_n_bloques, encendidos, HomeSection.entries.size)
     }
 }
 
@@ -262,7 +261,7 @@ internal fun HomePreviewCard(
                     }
                     if (appearance.showHomeGreeting) {
                         Text(
-                            text = greetingForNow().uppercase(),
+                            text = (if (appearance.greetingWithTimeOfDay) greetingForNow() else stringResource(R.string.home_header_greeting_default)).uppercase(),
                             modifier = Modifier.padding(top = 10.dp),
                             color = MaterialTheme.colorScheme.primary,
                             style = SectionLabelStyle
@@ -308,12 +307,6 @@ internal fun HomePreviewCard(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
-}
-
-internal fun AppearancePreferences.showsSection(section: HomeSection): Boolean = when (section) {
-    HomeSection.HERO -> showHomeHero
-    HomeSection.AGENDA -> showHomeAgenda
-    HomeSection.SNAPSHOT -> showHomeSnapshot
 }
 
 internal fun VisualPreference.label(): String {
@@ -371,6 +364,11 @@ internal fun HomeSection.label(): String {
         HomeSection.HERO -> Textos.get(R.string.appearance_lo_siguiente)
         HomeSection.AGENDA -> Textos.get(R.string.notif_time_today)
         HomeSection.SNAPSHOT -> Textos.get(R.string.appearance_cifras)
+        HomeSection.SUBJECTS -> Textos.get(R.string.home_block_subjects)
+        HomeSection.WEEK -> Textos.get(R.string.home_block_week)
+        HomeSection.ATTENDANCE -> Textos.get(R.string.home_block_attendance)
+        HomeSection.EXPENSES -> Textos.get(R.string.home_block_expenses)
+        HomeSection.NOTES -> Textos.get(R.string.home_block_notes)
     }
 }
 
@@ -379,6 +377,11 @@ internal fun HomeSection.detail(): String {
         HomeSection.HERO -> Textos.get(R.string.appearance_la_tarjeta_con_lo_mas_urgente)
         HomeSection.AGENDA -> Textos.get(R.string.appearance_clases_y_entregas_del_dia)
         HomeSection.SNAPSHOT -> Textos.get(R.string.appearance_promedio_pendientes_y_gasto)
+        HomeSection.SUBJECTS -> Textos.get(R.string.settings_home_block_subjects_desc)
+        HomeSection.WEEK -> Textos.get(R.string.settings_home_block_week_desc)
+        HomeSection.ATTENDANCE -> Textos.get(R.string.settings_home_block_attendance_desc)
+        HomeSection.EXPENSES -> Textos.get(R.string.settings_home_block_expenses_desc)
+        HomeSection.NOTES -> Textos.get(R.string.settings_home_block_notes_desc)
     }
 }
 

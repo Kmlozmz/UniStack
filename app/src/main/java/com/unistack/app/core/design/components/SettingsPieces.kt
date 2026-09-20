@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemShapes
@@ -181,6 +182,8 @@ fun SettingsGroup(
     label: String,
     labelColor: Color,
     rowCount: Int,
+    /** Una línea bajo el rótulo que dice qué hace el grupo, para los que no se explican solos. */
+    explanation: String? = null,
     content: @Composable SettingsGroupScope.() -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -190,6 +193,14 @@ fun SettingsGroup(
             color = labelColor,
             modifier = Modifier.padding(start = 12.dp, top = 8.dp)
         )
+        if (explanation != null) {
+            Text(
+                text = explanation,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp)
+            )
+        }
         // Dos puntos de aire entre filas: lo justo para que se lean como piezas y no tanto
         // como para que dejen de leerse como un grupo.
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -315,6 +326,77 @@ fun SettingsGroupScope.SettingsToggleRow(
         )
     ) {
         Text(text = title, style = MaterialTheme.typography.titleMediumEmphasized)
+    }
+}
+
+/**
+ * La misma entrada que se enciende y se apaga, sin icono.
+ *
+ * Para las listas donde el icono no dice nada —los bloques de Inicio, el saludo— y lo que va
+ * delante, si va algo, es otra cosa: un asa para arrastrar.
+ */
+@Composable
+fun SettingsGroupScope.SettingsToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    leadingContent: (@Composable () -> Unit)? = null
+) {
+    SegmentedListItem(
+        onClick = { onCheckedChange(!checked) },
+        shapes = shapesFor(nextPosition()),
+        modifier = modifier,
+        supportingContent = {
+            Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+        },
+        leadingContent = leadingContent,
+        trailingContent = { UniSwitch(checked = checked, onCheckedChange = onCheckedChange) },
+        colors = ListItemDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMediumEmphasized)
+    }
+}
+
+/**
+ * Una opción entre varias, en lista: la elegida lleva un visto a la derecha.
+ *
+ * Es el [UniChoiceRow] puesto en vertical, para cuando las opciones no caben en una fila o
+ * cada una merece su renglón.
+ */
+@Composable
+fun SettingsGroupScope.SettingsChoiceRow(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    subtitle: String? = null
+) {
+    SegmentedListItem(
+        onClick = onClick,
+        shapes = shapesFor(nextPosition()),
+        supportingContent = subtitle?.let { { Text(text = it, style = MaterialTheme.typography.bodySmall) } },
+        trailingContent = {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        },
+        colors = ListItemDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMediumEmphasized,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

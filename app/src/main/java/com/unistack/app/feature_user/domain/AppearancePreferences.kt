@@ -87,17 +87,48 @@ data class AppearancePreferences(
      */
     val subjectOrder: List<String> = emptyList(),
     val showHomeGreeting: Boolean = true,
+    /** «Buenas tardes» según la hora; apagado, un «Hola» a secas. */
+    val greetingWithTimeOfDay: Boolean = true,
     val showHomeHero: Boolean = true,
     val showHomeAgenda: Boolean = true,
     val showHomeSnapshot: Boolean = true,
+    /*
+     * Los cinco bloques que entraron el 20 sep 2026, apagados de fábrica: Inicio no crece
+     * para nadie sin pedirlo. Se encienden en Apariencia › Tu inicio.
+     */
+    val showHomeSubjects: Boolean = false,
+    val showHomeWeek: Boolean = false,
+    val showHomeAttendance: Boolean = false,
+    val showHomeExpenses: Boolean = false,
+    val showHomeNotes: Boolean = false,
     val homeSectionOrder: List<HomeSection> = HomeSection.entries,
     val heroAutoRotate: Boolean = true,
-    val heroShowsGrades: Boolean = true,
-    val heroShowsTasks: Boolean = true,
-    val heroShowsExpenses: Boolean = true,
     val initialTab: InitialTab = InitialTab.HOME,
     val visualPreset: VisualPreset = VisualPreset.CUSTOM
 ) {
+    /** Si un bloque de Inicio está encendido. El orden va aparte, en [homeSectionOrder]. */
+    fun showsSection(section: HomeSection): Boolean = when (section) {
+        HomeSection.HERO -> showHomeHero
+        HomeSection.AGENDA -> showHomeAgenda
+        HomeSection.SNAPSHOT -> showHomeSnapshot
+        HomeSection.SUBJECTS -> showHomeSubjects
+        HomeSection.WEEK -> showHomeWeek
+        HomeSection.ATTENDANCE -> showHomeAttendance
+        HomeSection.EXPENSES -> showHomeExpenses
+        HomeSection.NOTES -> showHomeNotes
+    }
+
+    fun withSection(section: HomeSection, shown: Boolean): AppearancePreferences = when (section) {
+        HomeSection.HERO -> copy(showHomeHero = shown)
+        HomeSection.AGENDA -> copy(showHomeAgenda = shown)
+        HomeSection.SNAPSHOT -> copy(showHomeSnapshot = shown)
+        HomeSection.SUBJECTS -> copy(showHomeSubjects = shown)
+        HomeSection.WEEK -> copy(showHomeWeek = shown)
+        HomeSection.ATTENDANCE -> copy(showHomeAttendance = shown)
+        HomeSection.EXPENSES -> copy(showHomeExpenses = shown)
+        HomeSection.NOTES -> copy(showHomeNotes = shown)
+    }
+
     fun normalized(): AppearancePreferences = copy(
         decimalPlaces = decimalPlaces.coerceIn(0, 2),
         textScalePercent = textScalePercent.coerceIn(85, 135),
@@ -128,7 +159,6 @@ data class AppearancePreferences(
                 accentIntensity = AccentIntensity.SOFT,
                 interfaceDensity = InterfaceDensity.COMFORTABLE,
                 showHomeSnapshot = false,
-                heroShowsExpenses = false,
                 visualPreset = VisualPreset.FOCUS
             )
             VisualPreset.CUSTOM -> defaults()
@@ -272,16 +302,35 @@ enum class VisualPreset {
     CUSTOM
 }
 
+/**
+ * Los bloques de Inicio, en el orden de fábrica.
+ *
+ * Los tres primeros son los de siempre; los cinco de después entraron el 20 sep 2026 y van
+ * apagados hasta que alguien los encienda. Lo guardado con solo tres se completa al final con
+ * el resto en [AppearancePreferences.normalized].
+ */
 enum class HomeSection {
     HERO,
     AGENDA,
-    SNAPSHOT
+    SNAPSHOT,
+    SUBJECTS,
+    WEEK,
+    ATTENDANCE,
+    EXPENSES,
+    NOTES
 }
 
+/**
+ * La pestaña en la que arranca la app.
+ *
+ * [TASKS] ya no se ofrece —Académico es una sola pestaña de la barra— pero sigue existiendo
+ * para lo guardado antes del 20 sep 2026, que abre Académico igual.
+ */
 enum class InitialTab {
     HOME,
     GRADES,
     TASKS,
+    SCHEDULE,
     EXPENSES
 }
 

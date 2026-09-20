@@ -20,6 +20,10 @@ import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
+import com.unistack.app.feature_notes.domain.NoteGrouping
+import com.unistack.app.feature_notes.domain.NoteText
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
@@ -57,10 +61,12 @@ object HomeSummaryFactory {
         val gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
         val enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         val appearance = profile?.appearancePreferences
-        val heroSubjects = if (appearance?.heroShowsGrades != false) subjects else emptyList()
-        val heroTasks = if (appearance?.heroShowsTasks != false) pendingTasks else emptyList()
-        val heroWorks = if (appearance?.heroShowsTasks != false) works else emptyList()
-        val heroExpenseTotal = if (appearance?.heroShowsExpenses != false) weeklyExpenseTotal else 0
+        // El hero mira siempre las tres cosas —notas, entregas y gastos— y enseña lo más
+        // pronto. Hasta el 20 sep 2026 se podían apagar una a una, y nadie lo hacía.
+        val heroSubjects = subjects
+        val heroTasks = pendingTasks
+        val heroWorks = works
+        val heroExpenseTotal = weeklyExpenseTotal
         val riskSubject = subjectRiskSummary(
             subjects = heroSubjects,
             profile = profile,
@@ -163,6 +169,16 @@ object HomeSummaryFactory {
             nextAcademicWork = nextAcademicWork,
             todayItems = todayItems,
             upcomingItems = upcomingItems,
+            weekDeliveries = weekDeliveries(pendingTasks, works, subjectNameById),
+            attendanceLines = attendanceLines(subjects, classSessions, content.occurrences, profile?.absenceLimit),
+            weeklyBudget = profile?.weeklyBudget ?: 0,
+            pinnedNotes = NoteGrouping.pinned(content.notes).take(3).map { note ->
+                HomePinnedNote(
+                    id = note.id,
+                    title = note.title.ifBlank { NoteText.title(note.body) },
+                    preview = if (note.title.isBlank()) NoteText.preview(note.body, maxLines = 1) else note.body.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+                )
+            },
             weeklyExpenses = weeklyExpenses,
             weeklyExpenseTotal = weeklyExpenseTotal,
             previousWeekExpenseTotal = previousWeekExpenseTotal,
@@ -681,6 +697,67 @@ object HomeSummaryFactory {
             .sortedWith(compareBy({ it.first }, { it.second }))
             .map { it.third }
             .take(3)
+    }
+
+    /**
+     * Las entregas de hoy a siete días, para el bloque «Esta semana». Solo tareas y trabajos:
+     * las clases ya las cuenta «Hoy» y el horario.
+     */
+    private fun weekDeliveries(
+        tasks: List<StudentTask>,
+        works: List<AcademicWork>,
+        subjectNameById: Map<String, String>
+    ): List<HomeUpcomingItem> {
+        val today = LocalDate.now()
+        val hasta = today.plusDays(7)
+        val candidatas = mutableListOf<Pair<LocalDate, HomeUpcomingItem>>()
+        tasks.forEach { task ->
+            val date = TaskDateUtils.fromMillis(task.dueDateMillis)
+            if (date < today || date > hasta) return@forEach
+            candidatas += date to HomeUpcomingItem(
+                dayLabel = weekDayLabel(date, today),
+                timeText = Textos.get(R.string.home_entrega),
+                title = task.title,
+                subtitle = task.type.label(),
+                kind = task.type.timelineKind()
+            )
+        }
+        works.filterNot { it.status == AcademicWorkStatus.SUBMITTED }.forEach { work ->
+            val millis = work.dueDateMillis ?: return@forEach
+            val date = TaskDateUtils.fromMillis(millis)
+            if (date < today || date > hasta) return@forEach
+            candidatas += date to HomeUpcomingItem(
+                dayLabel = weekDayLabel(date, today),
+                timeText = Textos.get(R.string.home_entrega),
+                title = work.title,
+                subtitle = work.subjectId?.let(subjectNameById::get).orEmpty(),
+                kind = HomeTimelineKind.WORK
+            )
+        }
+        return candidatas.sortedBy { it.first }.map { it.second }.take(4)
+    }
+
+    private fun weekDayLabel(date: LocalDate, today: LocalDate): String =
+        if (date == today) Textos.get(R.string.date_today) else upcomingDayLabel(date, today)
+
+    /**
+     * Cuántas faltas lleva cada materia con horario y cuántas le quedan, la más apurada
+     * primero. Sin tope puesto, se ordena por faltas.
+     */
+    private fun attendanceLines(
+        subjects: List<Subject>,
+        sessions: List<ClassSession>,
+        occurrences: List<ClassOccurrence>,
+        absenceLimit: Int?
+    ): List<HomeAttendanceLine> {
+        return subjects.mapNotNull { subject ->
+            val suyas = sessions.filter { it.subjectId == subject.id }.map { it.id }.toSet()
+            if (suyas.isEmpty()) return@mapNotNull null
+            val faltas = occurrences.count { it.sessionId in suyas && it.status == ClassAttendanceStatus.ABSENT }
+            HomeAttendanceLine(subjectId = subject.id, subjectName = subject.name, absent = faltas, limit = absenceLimit)
+        }
+            .sortedWith(compareBy<HomeAttendanceLine> { it.remaining ?: Int.MAX_VALUE }.thenByDescending { it.absent })
+            .take(4)
     }
 
     private fun upcomingDayLabel(date: LocalDate, today: LocalDate): String = when (date) {

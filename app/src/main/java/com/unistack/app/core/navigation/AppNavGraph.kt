@@ -188,6 +188,7 @@ fun MainNavGraph(
                 } else {
                     AppRoutes.Home
                 }
+                InitialTab.SCHEDULE -> AppRoutes.Calendar
                 InitialTab.EXPENSES -> if (AppModule.EXPENSES in enabledModules) AppRoutes.Expenses else AppRoutes.Home
             }
         }
@@ -388,6 +389,7 @@ fun MainNavGraph(
                             onAboutClick = { navController.go(AppRoutes.About) },
                             onGpaClick = { navController.go(AppRoutes.GpaCalculator) },
                             onQuickNotesClick = { navController.go(AppRoutes.QuickNotes) },
+                            onNoteClick = { id -> navController.go(AppRoutes.noteEditor(id)) },
                             onNewNoteClick = { navController.go(AppRoutes.NewNote) },
                             onAiClick = { navController.go(AppRoutes.AiAssistant) },
                             onLabsClick = { navController.go(AppRoutes.Labs) },

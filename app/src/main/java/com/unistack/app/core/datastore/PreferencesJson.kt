@@ -51,14 +51,17 @@ object AppearancePreferencesJson {
         .put("academicIndicatorStyle", value.academicIndicatorStyle.name)
         .put("subjectOrder", JSONArray(value.subjectOrder))
         .put("showHomeGreeting", value.showHomeGreeting)
+        .put("greetingWithTimeOfDay", value.greetingWithTimeOfDay)
         .put("showHomeHero", value.showHomeHero)
         .put("showHomeAgenda", value.showHomeAgenda)
         .put("showHomeSnapshot", value.showHomeSnapshot)
+        .put("showHomeSubjects", value.showHomeSubjects)
+        .put("showHomeWeek", value.showHomeWeek)
+        .put("showHomeAttendance", value.showHomeAttendance)
+        .put("showHomeExpenses", value.showHomeExpenses)
+        .put("showHomeNotes", value.showHomeNotes)
         .put("homeSectionOrder", JSONArray(value.homeSectionOrder.map { it.name }))
         .put("heroAutoRotate", value.heroAutoRotate)
-        .put("heroShowsGrades", value.heroShowsGrades)
-        .put("heroShowsTasks", value.heroShowsTasks)
-        .put("heroShowsExpenses", value.heroShowsExpenses)
         .put("initialTab", value.initialTab.name)
         .put("visualPreset", value.visualPreset.name)
 
@@ -107,9 +110,15 @@ object AppearancePreferencesJson {
             ?.filter { it.isNotBlank() }
             ?: base.subjectOrder,
         showHomeGreeting = json.optBoolean("showHomeGreeting", base.showHomeGreeting),
+        greetingWithTimeOfDay = json.optBoolean("greetingWithTimeOfDay", base.greetingWithTimeOfDay),
         showHomeHero = json.optBoolean("showHomeHero", base.showHomeHero),
         showHomeAgenda = json.optBoolean("showHomeAgenda", base.showHomeAgenda),
         showHomeSnapshot = json.optBoolean("showHomeSnapshot", base.showHomeSnapshot),
+        showHomeSubjects = json.optBoolean("showHomeSubjects", base.showHomeSubjects),
+        showHomeWeek = json.optBoolean("showHomeWeek", base.showHomeWeek),
+        showHomeAttendance = json.optBoolean("showHomeAttendance", base.showHomeAttendance),
+        showHomeExpenses = json.optBoolean("showHomeExpenses", base.showHomeExpenses),
+        showHomeNotes = json.optBoolean("showHomeNotes", base.showHomeNotes),
         homeSectionOrder = json.optJSONArray("homeSectionOrder")
             ?.let { array ->
                 (0 until array.length()).mapNotNull { index ->
@@ -119,9 +128,6 @@ object AppearancePreferencesJson {
             ?.ifEmpty { base.homeSectionOrder }
             ?: base.homeSectionOrder,
         heroAutoRotate = json.optBoolean("heroAutoRotate", base.heroAutoRotate),
-        heroShowsGrades = json.optBoolean("heroShowsGrades", base.heroShowsGrades),
-        heroShowsTasks = json.optBoolean("heroShowsTasks", base.heroShowsTasks),
-        heroShowsExpenses = json.optBoolean("heroShowsExpenses", base.heroShowsExpenses),
         initialTab = json.enumOr("initialTab", base.initialTab),
         visualPreset = json.enumOr("visualPreset", base.visualPreset)
     ).normalized()

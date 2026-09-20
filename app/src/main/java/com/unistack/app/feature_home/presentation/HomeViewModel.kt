@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
@@ -28,22 +29,30 @@ class HomeViewModel @Inject constructor(
     private val expensesRepository: ExpensesRepository,
     private val academicWorksRepository: AcademicWorksRepository,
     private val scheduleRepository: ScheduleRepository,
+    private val notesRepository: NotesRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
     private val homeContent = combine(
-        gradesRepository.subjects,
-        tasksRepository.tasks,
-        expensesRepository.expenses,
-        academicWorksRepository.works,
-        scheduleRepository.sessions
-    ) { subjects, tasks, expenses, works, classSessions ->
-        HomeContent(
-            subjects = subjects,
-            tasks = tasks,
-            expenses = expenses,
-            works = works,
-            classSessions = classSessions
-        )
+        combine(
+            gradesRepository.subjects,
+            tasksRepository.tasks,
+            expensesRepository.expenses,
+            academicWorksRepository.works,
+            scheduleRepository.sessions
+        ) { subjects, tasks, expenses, works, classSessions ->
+            HomeContent(
+                subjects = subjects,
+                tasks = tasks,
+                expenses = expenses,
+                works = works,
+                classSessions = classSessions
+            )
+        },
+        // Los dos que entraron con los bloques opcionales de Inicio: `combine` admite cinco.
+        scheduleRepository.occurrences,
+        notesRepository.notes
+    ) { content, occurrences, notes ->
+        content.copy(occurrences = occurrences, notes = notes)
     }
 
     /*

@@ -2,68 +2,56 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.R
 import com.unistack.app.core.design.components.LargeTitleScaffold
-import com.unistack.app.core.design.components.UniSwitch
-import com.unistack.app.core.design.components.cleanClickable
+import com.unistack.app.core.design.components.SettingsChoiceRow
+import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsToggleRow
+import com.unistack.app.core.design.components.rememberUniReorderState
+import com.unistack.app.core.design.components.uniReorderHandle
+import com.unistack.app.core.design.components.uniReorderableItem
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.greetingForNow
+import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.HomeSection
+import com.unistack.app.feature_user.domain.InitialTab
 
 /**
- * Qué sale en Inicio, en qué orden, y qué cuenta la tarjeta grande.
+ * Qué bloques salen en Inicio, en qué orden, y dónde arranca la app.
  *
- * **Esta pantalla estaba mal hecha y se rehízo entera.** Tenía tres problemas a la vez:
- *
- * 1. **El asa de arrastre no funcionaba bien.** Vive dentro de una tarjeta, dentro de un
- *    `item` de una lista perezosa, y el gesto se peleaba con el scroll de la pantalla: se
- *    arrastraba y la lista se iba, o no se movía nada. Aquí el orden se cambia con **dos
- *    flechas**, que no compiten con ningún otro gesto, funcionan con el pulgar en cualquier
- *    parte de la fila y las lee TalkBack.
- * 2. **No se veía el resultado.** Se encendían y apagaban cuatro cosas a ciegas y había que
- *    salir a Inicio para saber cómo quedaba. Ahora la ventana de arriba enseña el inicio como
- *    va a quedar, con los bloques en el orden elegido.
- * 3. **Estaba desordenada:** el saludo mezclado con los bloques ordenables aunque no se puede
- *    mover, y los tres interruptores del hero como un grupo suelto sin decir de quién dependen.
+ * Rehecha el 20 sep 2026 con lo que quedó del recorte de Apariencia. Arriba, una maqueta de
+ * Inicio con una línea por bloque encendido; el saludo con sus dos interruptores; los ocho
+ * bloques como lista segmentada **con asa** —el asa que aquí no funcionaba se arregló en
+ * [uniReorderHandle], y las flechas que la sustituyeron se van—; y «Al abrir la app», que se
+ * guardaba y se usaba sin ningún mando. Lo que contaba «Lo siguiente» ya no se elige: la
+ * tarjeta mira siempre notas, entregas y gastos, y enseña lo más pronto.
  */
 @Composable
 fun HomeSettingsScreen(
@@ -76,6 +64,8 @@ fun HomeSettingsScreen(
     val current = profile ?: return
     val appearance = current.appearancePreferences
     val orden = appearance.homeSectionOrder
+    val encendidos = orden.count(appearance::showsSection)
+    val modulos = current.enabledModules
 
     LargeTitleScaffold(
         title = stringResource(R.string.settings_home_title),
@@ -88,300 +78,157 @@ fun HomeSettingsScreen(
         itemSpacing = 12.dp
     ) {
         item {
-            VentanaDeInicio(
+            MaquetaDeInicio(
                 nombre = current.preferredName.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_profile_student),
                 appearance = appearance
             )
         }
 
         item {
-            Text(stringResource(R.string.settings_home_greeting_sec), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
-        }
-        item {
-            // Fuera de la lista ordenable: el saludo **siempre encabeza**, y tenerlo dentro con
-            // un asa que no movía nada era prometer algo que no se podía hacer.
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                FilaDeBloque(
-                    titulo = stringResource(R.string.settings_home_greeting_title),
-                    detalle = stringResource(R.string.settings_home_greeting_desc),
-                    marcado = appearance.showHomeGreeting,
-                    onCambio = { valor -> viewModel.updateAppearance { it.copy(showHomeGreeting = valor) } }
+            SettingsGroup(label = stringResource(R.string.settings_home_greeting_sec), rowCount = 2) {
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_home_greeting_title),
+                    subtitle = stringResource(R.string.settings_home_greeting_desc),
+                    checked = appearance.showHomeGreeting,
+                    onCheckedChange = { valor -> viewModel.updateAppearance { it.copy(showHomeGreeting = valor) } }
+                )
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_home_greeting_time_title),
+                    subtitle = stringResource(R.string.settings_home_greeting_time_desc),
+                    checked = appearance.greetingWithTimeOfDay,
+                    onCheckedChange = { valor -> viewModel.updateAppearance { it.copy(greetingWithTimeOfDay = valor) } }
                 )
             }
         }
 
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.settings_home_blocks_order),
-                    style = SectionLabelStyle,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    stringResource(R.string.settings_home_blocks_count, orden.count(appearance::showsSection), orden.size),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
+            ListaDeBloques(
+                orden = orden,
+                encendidos = encendidos,
+                appearance = appearance,
+                onCambio = { seccion, valor -> viewModel.updateAppearance { it.withSection(seccion, valor) } },
+                onOrden = { nuevo -> viewModel.updateAppearance { it.copy(homeSectionOrder = nuevo) } }
+            )
         }
-        itemsIndexedOrden(orden) { posicion, seccion ->
-            BloqueOrdenable(
-                posicion = posicion,
-                total = orden.size,
-                seccion = seccion,
-                marcado = appearance.showsSection(seccion),
-                onCambio = { valor ->
-                    viewModel.updateAppearance { prefs ->
-                        when (seccion) {
-                            HomeSection.HERO -> prefs.copy(showHomeHero = valor)
-                            HomeSection.AGENDA -> prefs.copy(showHomeAgenda = valor)
-                            HomeSection.SNAPSHOT -> prefs.copy(showHomeSnapshot = valor)
+
+        item {
+            /*
+             * Cuatro pestañas y no las cinco de la barra: Ajustes no es un sitio en el que
+             * arrancar. Académico abre en Materias; lo guardado como Tareas antes del 20 sep
+             * sigue abriendo Tareas y aquí se ve como Académico.
+             */
+            val academico = appearance.initialTab == InitialTab.GRADES || appearance.initialTab == InitialTab.TASKS
+            val pestanas = buildList {
+                add(Triple(InitialTab.HOME, R.string.settings_home_tab_home, appearance.initialTab == InitialTab.HOME))
+                if (AppModule.GRADES in modulos || AppModule.TASKS in modulos) {
+                    add(Triple(InitialTab.GRADES, R.string.settings_home_tab_academic, academico))
+                }
+                add(Triple(InitialTab.SCHEDULE, R.string.settings_home_tab_schedule, appearance.initialTab == InitialTab.SCHEDULE))
+                if (AppModule.EXPENSES in modulos) {
+                    add(Triple(InitialTab.EXPENSES, R.string.settings_home_tab_expenses, appearance.initialTab == InitialTab.EXPENSES))
+                }
+            }
+            SettingsGroup(
+                label = stringResource(R.string.settings_home_initial_tab_sec),
+                labelColor = MaterialTheme.colorScheme.primary,
+                rowCount = pestanas.size,
+                explanation = stringResource(R.string.settings_home_initial_tab_desc)
+            ) {
+                pestanas.forEach { (pestana, rotulo, elegida) ->
+                    SettingsChoiceRow(
+                        title = stringResource(rotulo),
+                        selected = elegida,
+                        onClick = {
+                            if (!elegida) viewModel.updateAppearance { it.copy(initialTab = pestana) }
                         }
-                    }
-                },
-                onMover = { desde, hasta ->
-                    viewModel.updateAppearance { prefs ->
-                        prefs.copy(
-                            homeSectionOrder = prefs.homeSectionOrder.toMutableList()
-                                .apply { add(hasta, removeAt(desde)) }
-                        )
-                    }
-                }
-            )
-        }
-
-        if (appearance.showHomeHero) {
-            item {
-                Text(
-                    stringResource(R.string.settings_home_hero_sec),
-                    style = SectionLabelStyle,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
-            item {
-                Text(
-                    text = stringResource(R.string.settings_home_hero_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            item {
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column {
-                        FilaDeBloque(
-                            titulo = stringResource(R.string.settings_home_grades_title),
-                            detalle = stringResource(R.string.settings_home_grades_desc),
-                            marcado = appearance.heroShowsGrades,
-                            onCambio = { valor -> viewModel.updateAppearance { it.copy(heroShowsGrades = valor) } }
-                        )
-                        FilaDeBloque(
-                            titulo = stringResource(R.string.settings_home_tasks_title),
-                            detalle = stringResource(R.string.settings_home_tasks_desc),
-                            marcado = appearance.heroShowsTasks,
-                            onCambio = { valor -> viewModel.updateAppearance { it.copy(heroShowsTasks = valor) } }
-                        )
-                        FilaDeBloque(
-                            titulo = stringResource(R.string.settings_home_expenses_title),
-                            detalle = stringResource(R.string.settings_home_expenses_desc),
-                            marcado = appearance.heroShowsExpenses,
-                            onCambio = { valor -> viewModel.updateAppearance { it.copy(heroShowsExpenses = valor) } }
-                        )
-                    }
+                    )
                 }
             }
         }
     }
 }
 
-/** `itemsIndexed` sobre el orden, con clave estable para que las flechas no repinten de más. */
-private inline fun androidx.compose.foundation.lazy.LazyListScope.itemsIndexedOrden(
+/**
+ * Los ocho bloques, en orden, cada uno con su asa, su interruptor y su línea.
+ *
+ * El orden mientras se arrastra vive aquí: cada permuta mueve la lista local para que la fila
+ * siga al dedo sin esperar al disco, y al soltar se guarda de una vez.
+ */
+@Composable
+private fun ListaDeBloques(
     orden: List<HomeSection>,
-    crossinline fila: @Composable (Int, HomeSection) -> Unit
+    encendidos: Int,
+    appearance: AppearancePreferences,
+    onCambio: (HomeSection, Boolean) -> Unit,
+    onOrden: (List<HomeSection>) -> Unit
 ) {
-    orden.forEachIndexed { indice, seccion ->
-        item(key = "bloque-${seccion.name}") { fila(indice, seccion) }
-    }
-}
+    val reorder = rememberUniReorderState()
+    var enPantalla by remember(orden) { mutableStateOf(orden) }
 
-/**
- * Un bloque con su posición, su interruptor y las dos flechas para moverlo.
- *
- * Las flechas y no un asa: el asa vivía dentro de una lista perezosa que ya arrastra en
- * vertical, así que el gesto se peleaba con el scroll —se arrastraba y la pantalla se iba—.
- * Dos botones no compiten con nada, se pulsan con el pulgar sin apuntar, y TalkBack los lee.
- *
- * La primera fila no lleva flecha de subir y la última no lleva la de bajar: una flecha que no
- * hace nada es peor que no tenerla.
- */
-@Composable
-private fun BloqueOrdenable(
-    posicion: Int,
-    total: Int,
-    seccion: HomeSection,
-    marcado: Boolean,
-    onCambio: (Boolean) -> Unit,
-    onMover: (Int, Int) -> Unit
-) {
-    val atenuado by animateFloatAsState(if (marcado) 1f else 0.5f, label = "bloque")
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth()
+    SettingsGroup(
+        label = stringResource(R.string.settings_home_blocks_order) + " · " +
+            stringResource(R.string.settings_home_blocks_count, encendidos, orden.size),
+        labelColor = MaterialTheme.colorScheme.primary,
+        rowCount = enPantalla.size,
+        explanation = stringResource(R.string.settings_home_blocks_drag)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .cleanClickable { onCambio(!marcado) }
-                .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(11.dp)
-        ) {
-            // El número dice en qué puesto va, que es lo que las flechas cambian.
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "${posicion + 1}",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Column(modifier = Modifier.weight(1f).alpha(atenuado)) {
-                Text(
-                    seccion.label(),
-                    style = MaterialTheme.typography.titleSmallEmphasized,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    seccion.detail(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                FlechaDeOrden(
-                    icono = Icons.Rounded.KeyboardArrowUp,
-                    descripcion = stringResource(R.string.settings_home_move_up, seccion.label()),
-                    activa = posicion > 0,
-                    onClick = { onMover(posicion, posicion - 1) }
-                )
-                FlechaDeOrden(
-                    icono = Icons.Rounded.KeyboardArrowDown,
-                    descripcion = stringResource(R.string.settings_home_move_down, seccion.label()),
-                    activa = posicion < total - 1,
-                    onClick = { onMover(posicion, posicion + 1) }
-                )
-            }
-            UniSwitch(checked = marcado, onCheckedChange = onCambio)
-        }
-    }
-}
-
-@Composable
-private fun FlechaDeOrden(
-    icono: androidx.compose.ui.graphics.vector.ImageVector,
-    descripcion: String,
-    activa: Boolean,
-    onClick: () -> Unit
-) {
-    FilledTonalIconButton(
-        onClick = onClick,
-        enabled = activa,
-        modifier = Modifier.size(30.dp),
-        colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        )
-    ) {
-        Icon(icono, contentDescription = descripcion, modifier = Modifier.size(18.dp))
-    }
-}
-
-@Composable
-private fun FilaDeBloque(
-    titulo: String,
-    detalle: String,
-    marcado: Boolean,
-    onCambio: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .cleanClickable { onCambio(!marcado) }
-            .padding(horizontal = 15.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(titulo, style = MaterialTheme.typography.titleSmallEmphasized)
-            Text(
-                detalle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        enPantalla.forEachIndexed { indice, seccion ->
+            SettingsToggleRow(
+                title = seccion.label(),
+                subtitle = seccion.detail(),
+                checked = appearance.showsSection(seccion),
+                onCheckedChange = { valor -> onCambio(seccion, valor) },
+                modifier = Modifier.uniReorderableItem(reorder, seccion),
+                leadingContent = {
+                    Icon(
+                        imageVector = Icons.Rounded.DragIndicator,
+                        contentDescription = stringResource(R.string.settings_home_move, seccion.label()),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .uniReorderHandle(
+                                state = reorder,
+                                key = seccion,
+                                index = { enPantalla.indexOf(seccion) },
+                                itemCount = { enPantalla.size },
+                                onMove = { desde, hasta ->
+                                    enPantalla = enPantalla.toMutableList().apply { add(hasta, removeAt(desde)) }
+                                },
+                                onSettle = { if (enPantalla != orden) onOrden(enPantalla) }
+                            )
+                    )
+                }
             )
         }
-        UniSwitch(checked = marcado, onCheckedChange = onCambio)
     }
 }
 
 /**
- * El inicio como va a quedar, dentro de una ventana.
+ * Inicio en pequeño: el saludo y una línea por bloque encendido, en el orden elegido.
  *
- * Es lo que faltaba: se encendían y apagaban cuatro bloques a ciegas y para saber el resultado
- * había que salir de ajustes. Los bloques se pintan **en el orden elegido**, así que subir uno
- * con las flechas se ve aquí mismo.
+ * Una línea y no una maqueta de cada tarjeta: lo que aquí se decide es qué sale y en qué
+ * orden, y para eso basta con ver la lista. «Lo siguiente» va en el color del hero, que es
+ * como se distingue en Inicio.
  */
 @Composable
-private fun VentanaDeInicio(nombre: String, appearance: AppearancePreferences) {
+private fun MaquetaDeInicio(nombre: String, appearance: AppearancePreferences) {
     val esquema = MaterialTheme.colorScheme
-    val secciones = LocalSectionColors.current
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(esquema.background)
-            .border(1.dp, esquema.outlineVariant, RoundedCornerShape(16.dp))
+    val visibles = appearance.homeSectionOrder.filter(appearance::showsSection)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = esquema.surfaceContainerLow
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(esquema.surfaceContainerHigh)
-                .padding(horizontal = 12.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(esquema.error))
-            Text("INICIO", style = SectionLabelStyle, color = esquema.onSurfaceVariant)
-        }
-        Column(
-            modifier = Modifier.padding(13.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp)
-        ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (appearance.showHomeGreeting) {
                 Column {
-                    Text(greetingForNow().uppercase(), style = SectionLabelStyle, color = esquema.primary)
                     Text(
-                        nombre,
+                        text = (if (appearance.greetingWithTimeOfDay) greetingForNow() else stringResource(R.string.home_header_greeting_default)).uppercase(),
+                        style = SectionLabelStyle,
+                        color = esquema.primary
+                    )
+                    Text(
+                        text = nombre,
                         style = MaterialTheme.typography.titleLargeEmphasized,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
@@ -389,100 +236,46 @@ private fun VentanaDeInicio(nombre: String, appearance: AppearancePreferences) {
                     )
                 }
             }
-            // En el orden elegido: es lo que hacen las flechas de abajo.
-            appearance.homeSectionOrder.forEach { seccion ->
-                if (!appearance.showsSection(seccion)) return@forEach
-                when (seccion) {
-                    HomeSection.HERO -> BloqueHero(appearance)
-                    HomeSection.AGENDA -> BloqueAgenda()
-                    HomeSection.SNAPSHOT -> BloqueCifras(secciones.expenses)
+            visibles.forEach { seccion ->
+                val hero = seccion == HomeSection.HERO
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (hero) esquema.primaryContainer else esquema.surfaceContainerHigh,
+                    contentColor = if (hero) esquema.onPrimaryContainer else esquema.onSurfaceVariant
+                ) {
+                    Text(
+                        text = seccion.muestra(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                    )
                 }
             }
-            if (!appearance.showHomeGreeting && appearance.homeSectionOrder.none(appearance::showsSection)) {
+            if (!appearance.showHomeGreeting && visibles.isEmpty()) {
                 Text(
-                    stringResource(R.string.settings_home_preview_empty),
+                    text = stringResource(R.string.settings_home_preview_empty),
                     style = MaterialTheme.typography.bodySmall,
-                    color = esquema.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 18.dp)
+                    color = esquema.onSurfaceVariant
                 )
             }
         }
     }
 }
 
+/** La línea de muestra de cada bloque en la maqueta. */
 @Composable
-private fun BloqueHero(appearance: AppearancePreferences) {
-    // El texto sale de lo que esté encendido: es la forma de ver que los tres interruptores
-    // de abajo mandan de verdad en lo que cuenta la tarjeta.
-    val linea = when {
-        appearance.heroShowsTasks -> stringResource(R.string.preview_sample_hero_task)
-        appearance.heroShowsGrades -> stringResource(R.string.preview_sample_hero_grade)
-        appearance.heroShowsExpenses -> stringResource(R.string.preview_sample_hero_expense)
-        else -> stringResource(R.string.preview_sample_class_at_ten)
+private fun HomeSection.muestra(): String = stringResource(
+    when (this) {
+        HomeSection.HERO -> R.string.settings_home_sample_hero
+        HomeSection.AGENDA -> R.string.settings_home_sample_agenda
+        HomeSection.SNAPSHOT -> R.string.settings_home_sample_snapshot
+        HomeSection.SUBJECTS -> R.string.settings_home_sample_subjects
+        HomeSection.WEEK -> R.string.settings_home_sample_week
+        HomeSection.ATTENDANCE -> R.string.settings_home_sample_attendance
+        HomeSection.EXPENSES -> R.string.settings_home_sample_expenses
+        HomeSection.NOTES -> R.string.settings_home_sample_notes
     }
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-            Text(stringResource(R.string.home_hero_later), style = SectionLabelStyle)
-            Text(
-                linea,
-                modifier = Modifier.padding(top = 2.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun BloqueAgenda() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow
-    ) {
-        Column(modifier = Modifier.padding(11.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text(stringResource(R.string.date_today).uppercase(java.util.Locale.getDefault()), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
-            listOf(stringResource(R.string.preview_sample_slot_calculus), stringResource(R.string.preview_sample_slot_physics)).forEach {
-                Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 1)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.BloqueCifras(rojo: androidx.compose.ui.graphics.Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        listOf("4,25" to stringResource(R.string.preview_sample_stat_average), "3" to stringResource(R.string.preview_sample_stat_pending), "$412k" to stringResource(R.string.preview_sample_stat_spent)).forEachIndexed { indice, (cifra, rotulo) ->
-            Surface(
-                modifier = Modifier.weight(1f),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainerLow
-            ) {
-                Column(
-                    modifier = Modifier.padding(vertical = 9.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        cifra,
-                        style = MaterialTheme.typography.titleMediumEmphasized,
-                        color = if (indice == 2) rojo else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
-                    )
-                    Text(
-                        rotulo,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
-    }
-}
+)

@@ -15,7 +15,7 @@ class AppearancePreferencesTest {
 
         assertEquals(2, normalized.decimalPlaces)
         assertEquals(
-            listOf(HomeSection.AGENDA, HomeSection.HERO, HomeSection.SNAPSHOT),
+            listOf(HomeSection.AGENDA) + HomeSection.entries.filterNot { it == HomeSection.AGENDA },
             normalized.homeSectionOrder
         )
     }
@@ -34,7 +34,6 @@ class AppearancePreferencesTest {
         val preset = AppearancePreferences.preset(VisualPreset.FOCUS)
 
         assertFalse(preset.showHomeSnapshot)
-        assertFalse(preset.heroShowsExpenses)
         assertEquals(AccentStyle.TEAL, preset.accentStyle)
     }
 }

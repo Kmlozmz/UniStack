@@ -29,6 +29,15 @@ import com.unistack.app.feature_terms.presentation.InicioSinPeriodo
 import com.unistack.app.feature_terms.presentation.TermsUiState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material.icons.rounded.PushPin
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.res.pluralStringResource
+import com.unistack.app.feature_grades.presentation.SubjectMark
+import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_user.domain.HomeSection
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -147,6 +156,7 @@ fun HomeScreen(
     onAboutClick: () -> Unit = {},
     onGpaClick: () -> Unit = {},
     onQuickNotesClick: () -> Unit = {},
+    onNoteClick: (String) -> Unit = {},
     onNewNoteClick: () -> Unit = {},
     onAiClick: () -> Unit = {},
     onLabsClick: () -> Unit = {},
@@ -250,59 +260,125 @@ fun HomeScreen(
                     }
                 }
 
-                if (appearance.showHomeHero && !sinPeriodo && !porEmpezar) {
-                    item("prioridad") {
-                        HomePriorityCard(
-                            summary = summary,
-                            onPrimaryAction = {
-                                val subjects = summary.subjects
-                                when (summary.priority.action) {
-                                    HomePriorityAction.SUBJECT -> when {
-                                        subjects.isEmpty() -> onAddSubjectClick()
-                                        summary.priority.subjectId != null ->
-                                            onAddGradeClick(summary.priority.subjectId!!)
-                                        subjects.size == 1 -> onAddGradeClick(subjects.first().id)
-                                        else -> pickingSubjectForGrade = true
-                                    }
-                                    HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
-                                    HomePriorityAction.TASKS -> onSeeTasksClick()
-                                    HomePriorityAction.EXPENSES -> onSeeExpensesClick()
-                                    HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
-                                    HomePriorityAction.SCHEDULE -> onCalendarClick()
+                // En el orden de Apariencia › Tu inicio. Los tres de siempre y los cinco
+                // opcionales del 20 sep 2026; cada uno solo si está encendido.
+                if (!sinPeriodo && !porEmpezar) {
+                    appearance.homeSectionOrder.forEach { seccion ->
+                        if (!appearance.showsSection(seccion)) return@forEach
+                        when (seccion) {
+                            HomeSection.HERO -> item("prioridad") {
+                                HomePriorityCard(
+                                    summary = summary,
+                                    onPrimaryAction = {
+                                        val subjects = summary.subjects
+                                        when (summary.priority.action) {
+                                            HomePriorityAction.SUBJECT -> when {
+                                                subjects.isEmpty() -> onAddSubjectClick()
+                                                summary.priority.subjectId != null ->
+                                                    onAddGradeClick(summary.priority.subjectId!!)
+                                                subjects.size == 1 -> onAddGradeClick(subjects.first().id)
+                                                else -> pickingSubjectForGrade = true
+                                            }
+                                            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
+                                            HomePriorityAction.TASKS -> onSeeTasksClick()
+                                            HomePriorityAction.EXPENSES -> onSeeExpensesClick()
+                                            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
+                                            HomePriorityAction.SCHEDULE -> onCalendarClick()
+                                        }
+                                    },
+                                    onSubjectClick = { id -> onSubjectClick(id) }
+                                )
+                            }
+
+                            HomeSection.AGENDA -> {
+                                item("hoy-cabecera") {
+                                    HomeSectionHeader(
+                                        title = todayLabel(),
+                                        actionLabel = stringResource(R.string.home_action_schedule_short),
+                                        onActionClick = onCalendarClick
+                                    )
                                 }
-                            },
-                            onSubjectClick = { id -> onSubjectClick(id) }
-                        )
-                    }
-                }
+                                item("hoy") {
+                                    HomeTodayCard(
+                                        summary = summary,
+                                        onEmptyClick = onCalendarClick,
+                                        onTasksClick = onSeeTasksClick,
+                                        onWorksClick = onOpenTemplatesClick,
+                                        onSubjectClick = onSubjectClick
+                                    )
+                                }
+                            }
 
-                if (appearance.showHomeAgenda && !sinPeriodo && !porEmpezar) {
-                    item("hoy-cabecera") {
-                        HomeSectionHeader(
-                            title = todayLabel(),
-                            actionLabel = stringResource(R.string.home_action_schedule_short),
-                            onActionClick = onCalendarClick
-                        )
-                    }
-                    item("hoy") {
-                        HomeTodayCard(
-                            summary = summary,
-                            onEmptyClick = onCalendarClick,
-                            onTasksClick = onSeeTasksClick,
-                            onWorksClick = onOpenTemplatesClick,
-                            onSubjectClick = onSubjectClick
-                        )
-                    }
-                }
+                            HomeSection.SNAPSHOT -> item("cifras") {
+                                HomeSnapshotRow(
+                                    summary = summary,
+                                    onAverageClick = onSeeAllSubjectsClick,
+                                    onPendingClick = onSeeTasksClick,
+                                    onExpensesClick = onSeeExpensesClick
+                                )
+                            }
 
-                if (appearance.showHomeSnapshot && !sinPeriodo && !porEmpezar) {
-                    item("cifras") {
-                        HomeSnapshotRow(
-                            summary = summary,
-                            onAverageClick = onSeeAllSubjectsClick,
-                            onPendingClick = onSeeTasksClick,
-                            onExpensesClick = onSeeExpensesClick
-                        )
+                            HomeSection.SUBJECTS -> if (AppModule.GRADES in summary.enabledModules) {
+                                item("materias-cabecera") {
+                                    HomeSectionHeader(
+                                        title = stringResource(R.string.home_block_subjects),
+                                        actionLabel = stringResource(R.string.home_block_see_all),
+                                        onActionClick = onSeeAllSubjectsClick
+                                    )
+                                }
+                                item("materias") {
+                                    HomeSubjectsCard(summary = summary, onSubjectClick = onSubjectClick, onEmptyClick = onAddSubjectClick)
+                                }
+                            }
+
+                            HomeSection.WEEK -> if (AppModule.TASKS in summary.enabledModules) {
+                                item("semana-cabecera") {
+                                    HomeSectionHeader(
+                                        title = stringResource(R.string.home_block_week),
+                                        actionLabel = stringResource(R.string.home_today_view_tasks),
+                                        onActionClick = onSeeTasksClick
+                                    )
+                                }
+                                item("semana") { HomeWeekCard(summary = summary, onClick = onSeeTasksClick) }
+                            }
+
+                            HomeSection.ATTENDANCE -> if (AppModule.GRADES in summary.enabledModules) {
+                                item("asistencia-cabecera") {
+                                    HomeSectionHeader(
+                                        title = stringResource(R.string.home_block_attendance),
+                                        actionLabel = stringResource(R.string.home_action_schedule_short),
+                                        onActionClick = onCalendarClick
+                                    )
+                                }
+                                item("asistencia") {
+                                    HomeAttendanceCard(summary = summary, onSubjectClick = onSubjectClick, onEmptyClick = onCalendarClick)
+                                }
+                            }
+
+                            HomeSection.EXPENSES -> if (AppModule.EXPENSES in summary.enabledModules) {
+                                item("gastos-cabecera") {
+                                    HomeSectionHeader(
+                                        title = stringResource(R.string.home_block_expenses),
+                                        actionLabel = stringResource(R.string.home_block_see_expenses),
+                                        onActionClick = onSeeExpensesClick
+                                    )
+                                }
+                                item("gastos") { HomeExpensesCard(summary = summary, onClick = onSeeExpensesClick) }
+                            }
+
+                            HomeSection.NOTES -> {
+                                item("notas-cabecera") {
+                                    HomeSectionHeader(
+                                        title = stringResource(R.string.home_block_notes),
+                                        actionLabel = stringResource(R.string.home_block_see_notes),
+                                        onActionClick = onQuickNotesClick
+                                    )
+                                }
+                                item("notas") {
+                                    HomeNotesCard(summary = summary, onNoteClick = onNoteClick, onEmptyClick = onQuickNotesClick)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -443,7 +519,7 @@ private fun HomeHeader(
          * siete variantes propias en vez de heredar la entrada generica de las listas.
          */
         SaludoAnimado(
-            rotulo = greetingForNow().uppercase(Locale.getDefault()),
+            rotulo = saludoDeInicio().uppercase(Locale.getDefault()),
             nombre = name,
             estiloRotulo = SectionLabelStyle,
             estiloNombre = MaterialTheme.typography.headlineLargeEmphasized,
@@ -1084,4 +1160,224 @@ private fun todayLabel(): String {
     val formatter = DateTimeFormatter.ofPattern("EEEE d", Locale.getDefault())
     val formatted = today.format(formatter).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     return stringResource(R.string.home_today_prefix, formatted)
+}
+
+// ------------------------------------------------------------------ los bloques opcionales
+
+/**
+ * El saludo de Inicio: «Buenas tardes» según la hora o un «Hola» a secas, como se haya
+ * elegido en Apariencia › Tu inicio.
+ */
+@Composable
+fun saludoDeInicio(): String {
+    return if (LocalAppearancePreferences.current.greetingWithTimeOfDay) {
+        greetingForNow()
+    } else {
+        stringResource(R.string.home_header_greeting_default)
+    }
+}
+
+/** La tarjeta base de los bloques opcionales: el mismo lienzo que «Hoy». */
+@Composable
+private fun TarjetaDeBloque(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(modifier = Modifier.padding(6.dp), content = content)
+    }
+}
+
+/** Una fila tocable dentro de un bloque, con el aire de las de «Hoy». */
+@Composable
+private fun FilaDeBloque(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        content = content
+    )
+}
+
+/** Lo que dice un bloque cuando no tiene nada: una línea y a dónde ir. */
+@Composable
+private fun BloqueVacio(texto: String, onClick: () -> Unit) {
+    FilaDeBloque(onClick = onClick) {
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f).padding(vertical = 4.dp)
+        )
+    }
+}
+
+/** Tu lista de materias con el promedio de cada una. */
+@Composable
+private fun HomeSubjectsCard(summary: HomeSummary, onSubjectClick: (String) -> Unit, onEmptyClick: () -> Unit) {
+    TarjetaDeBloque {
+        if (summary.subjects.isEmpty()) {
+            BloqueVacio(stringResource(R.string.home_block_subjects_empty), onEmptyClick)
+            return@TarjetaDeBloque
+        }
+        summary.subjects.forEach { subject ->
+            FilaDeBloque(onClick = { onSubjectClick(subject.id) }) {
+                SubjectMark(
+                    letter = subject.name.take(1).uppercase(),
+                    color = subjectAccent(subject.type),
+                    seed = subject.id,
+                    markSize = 32.dp
+                )
+                Text(
+                    text = subject.name,
+                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = subject.average?.let { GradingScaleUtils.formatGrade(it, summary.gradingScale) } ?: "—",
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    color = if (subject.average != null && subject.average < subject.targetAverage) LocalSectionColors.current.atRisk else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+/** Las entregas de los próximos siete días. */
+@Composable
+private fun HomeWeekCard(summary: HomeSummary, onClick: () -> Unit) {
+    TarjetaDeBloque {
+        if (summary.weekDeliveries.isEmpty()) {
+            BloqueVacio(stringResource(R.string.home_block_week_empty), onClick)
+            return@TarjetaDeBloque
+        }
+        summary.weekDeliveries.forEach { item ->
+            FilaDeBloque(onClick = onClick) { HomeUpcomingRow(item) }
+        }
+    }
+}
+
+/** Las faltas que te quedan en cada materia. */
+@Composable
+private fun HomeAttendanceCard(summary: HomeSummary, onSubjectClick: (String) -> Unit, onEmptyClick: () -> Unit) {
+    val sections = LocalSectionColors.current
+    TarjetaDeBloque {
+        if (summary.attendanceLines.isEmpty()) {
+            BloqueVacio(stringResource(R.string.home_block_attendance_empty), onEmptyClick)
+            return@TarjetaDeBloque
+        }
+        summary.attendanceLines.forEach { line ->
+            val restantes = line.remaining
+            val apurada = restantes != null && restantes <= 1
+            FilaDeBloque(onClick = { onSubjectClick(line.subjectId) }) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = line.subjectName,
+                        style = MaterialTheme.typography.titleSmallEmphasized,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = when {
+                            restantes == null -> pluralStringResource(R.plurals.home_block_absences, line.absent, line.absent)
+                            restantes == 0 -> stringResource(R.string.home_block_absences_none_left)
+                            else -> pluralStringResource(R.plurals.home_block_absences_left, restantes, restantes)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (apurada) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = if (line.limit != null) "${line.absent}/${line.limit}" else line.absent.toString(),
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    color = if (apurada) MaterialTheme.colorScheme.error else if (line.absent == 0) sections.onTrack else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+/** Lo que llevas gastado esta semana y el presupuesto. */
+@Composable
+private fun HomeExpensesCard(summary: HomeSummary, onClick: () -> Unit) {
+    val sections = LocalSectionColors.current
+    val gastado = summary.weeklyExpenseTotal
+    val presupuesto = summary.weeklyBudget
+    val pasado = presupuesto > 0 && gastado > presupuesto
+    TarjetaDeBloque {
+        FilaDeBloque(onClick = onClick) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = formatCurrency(gastado),
+                        style = MaterialTheme.typography.headlineSmallEmphasized,
+                        color = if (pasado) MaterialTheme.colorScheme.error else sections.expenses
+                    )
+                    Text(
+                        text = if (presupuesto > 0) {
+                            stringResource(R.string.home_block_expenses_of, formatCurrency(presupuesto))
+                        } else {
+                            stringResource(R.string.home_block_expenses_no_budget)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 3.dp)
+                    )
+                }
+                if (presupuesto > 0) {
+                    LinearProgressIndicator(
+                        progress = { (gastado.toFloat() / presupuesto).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (pasado) MaterialTheme.colorScheme.error else sections.expenses,
+                        trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Las notas rápidas que dejes fijadas. */
+@Composable
+private fun HomeNotesCard(summary: HomeSummary, onNoteClick: (String) -> Unit, onEmptyClick: () -> Unit) {
+    TarjetaDeBloque {
+        if (summary.pinnedNotes.isEmpty()) {
+            BloqueVacio(stringResource(R.string.home_block_notes_empty), onEmptyClick)
+            return@TarjetaDeBloque
+        }
+        summary.pinnedNotes.forEach { note ->
+            FilaDeBloque(onClick = { onNoteClick(note.id) }) {
+                Icon(
+                    imageVector = Icons.Rounded.PushPin,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = note.title.ifBlank { stringResource(R.string.notes_this_note) },
+                        style = MaterialTheme.typography.titleSmallEmphasized,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (note.preview.isNotBlank()) {
+                        Text(
+                            text = note.preview,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
