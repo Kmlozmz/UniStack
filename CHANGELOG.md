@@ -9,6 +9,31 @@ no va aquí: para eso está el historial de git.
 Lo anterior a esta versión está en `docs/changelog-historico.md`, fuera del APK. La app solo
 enseña la versión que tienes puesta.
 
+## [1.0.1] — 2026-09-20
+
+**Actualizaciones, rehechas.** Se rediseñó toda la interfaz y el flujo del apartado de
+actualizaciones, con un menú de tres puntos y varias opciones de preferencia: Wi-Fi, aviso de
+versión nueva y cada cuánto comprobar.
+
+**Apariencia, más clara.** Se quitaron elementos redundantes o poco útiles en Forma, Componentes
+y Tipografía. Se quedó solo lo que de verdad es pertinente: esquinas y densidad; los iconos de
+Ajustes (de color y su forma) y un aviso de pendientes en la barra de abajo; y la familia de
+letra, ahora en una lista con cada nombre escrito en su propia tipografía, con ocho fuentes
+nuevas incluidas —Inter, Manrope, DM Sans, Outfit, Space Grotesk, Nunito, Lora y JetBrains Mono.
+
+**Tu inicio, a tu gusto.** Cinco bloques nuevos para la pantalla de Inicio: Materias, Esta
+semana, Asistencia, Gastos de la semana y Notas fijadas, con un asa para arrastrarlos al orden
+que prefieras. Elige también en qué pestaña quieres que abra la app por defecto.
+
+**Notas y asistencia.** Ya puedes escribir la nota de un corte a mano, no solo moverla con la
+ruedita. Y marcar asistencia usa ahora la misma animación que elijas en Ajustes › Apariencia ›
+Movimiento.
+
+**El alta, sin prisa.** Ahora es opcional colocar las fechas del periodo, para cuando no las
+sepas en el momento y no quieras que eso te detenga.
+
+**Otros.** Mejoras y optimizaciones menores.
+
 ## [1.0.0] — 2026-09-17
 
 **Release inicial.** La primera versión estable de UniStack: tu vida universitaria en una sola
