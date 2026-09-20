@@ -72,10 +72,10 @@ private const val WEEKLY_CHECK_INTERVAL_MILLIS = 6 * 24 * 60 * 60 * 1000L
  *
  * GitHub contesta en medio segundo y la tarjeta cambiaba antes de que se viera que había
  * pasado algo: «muy rápido y rígido», dijo el 19 sep 2026. Unos segundos de búsqueda dan la
- * sensación de que de verdad se ha mirado. Las comprobaciones automáticas no esperan: nadie
- * las está viendo.
+ * sensación de que de verdad se ha mirado (tres segundos; cinco eran demasiados, dijo el 19 sep).
+ * Las comprobaciones automáticas no esperan: nadie las está viendo.
  */
-private const val MIN_MANUAL_CHECK_MILLIS = 5_000L
+private const val MIN_MANUAL_CHECK_MILLIS = 3_000L
 
 class GitHubReleaseUpdateRepository(
     private val context: Context
