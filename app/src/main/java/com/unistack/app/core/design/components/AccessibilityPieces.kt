@@ -64,7 +64,6 @@ fun UniDivider(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.outlineVariant
 ) {
-    if (!LocalAppearancePreferences.current.listDividers) return
     HorizontalDivider(modifier = modifier, color = color)
 }
 

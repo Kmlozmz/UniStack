@@ -10,7 +10,6 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
-import com.unistack.app.feature_user.domain.SwitchIconStyle
 
 /**
  * El interruptor de la app, con el icono dentro del pulgar.
@@ -24,8 +23,8 @@ import com.unistack.app.feature_user.domain.SwitchIconStyle
  * de la posición del pulgar, que es una diferencia de doce píxeles. Un visto y un aspa no se
  * confunden.
  *
- * Cuál de las tres formas se usa sale de Apariencia ([SwitchIconStyle]), no de quien lo llama:
- * un ajuste que cambia según la pantalla en la que estés no es un ajuste.
+ * Siempre con icono, y no lo decide quien lo llama: un ajuste que cambia según la pantalla en
+ * la que estés no es un ajuste. Hasta el 20 sep 2026 se elegía en Apariencia › Componentes.
  *
  * El icono no lleva `contentDescription`: el propio [Switch] ya anuncia su estado por el rol de
  * interruptor, y describirlo otra vez lo diría dos veces.
@@ -37,11 +36,8 @@ fun UniSwitch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val showIcon = when (LocalAppearancePreferences.current.switchIconStyle) {
-        SwitchIconStyle.BOTH -> true
-        SwitchIconStyle.CHECKED_ONLY -> checked
-        SwitchIconStyle.NONE -> false
-    }
+    // Visto encendido, equis apagado: fijo desde el 20 sep 2026 (era «siempre» entre tres).
+    val showIcon = true
 
     Switch(
         checked = checked,

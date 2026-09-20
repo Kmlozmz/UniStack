@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Contrast
@@ -288,7 +289,15 @@ fun AccessibilitySettingsScreen(
 
             // ------------------------------------------------------------------ INTERACCIÓN Y MOVIMIENTO
             item {
-                SettingsGroup(label = stringResource(R.string.a11y_section_interaction), rowCount = 2) {
+                SettingsGroup(label = stringResource(R.string.a11y_section_interaction), rowCount = 3) {
+                    SettingsToggleRow(
+                        icon = Icons.Rounded.Vibration,
+                        title = stringResource(R.string.a11y_haptics_title),
+                        subtitle = stringResource(R.string.a11y_haptics_subtitle),
+                        checked = a11y.hapticsEnabled,
+                        iconColor = tonosDeAjustes.ambar,
+                        onCheckedChange = { valor -> viewModel.updateAccessibility { it.copy(hapticsEnabled = valor) } }
+                    )
                     SettingsCustomRow(
                         icon = Icons.Rounded.Animation,
                         title = stringResource(R.string.a11y_motion_title),

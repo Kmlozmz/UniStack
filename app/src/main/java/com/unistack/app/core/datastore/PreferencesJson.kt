@@ -6,6 +6,8 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.MotionCatalog
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.SavedGradeScenario
+import com.unistack.app.feature_user.domain.SettingsIconColor
+import com.unistack.app.feature_user.domain.SettingsIconStyle
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -42,15 +44,12 @@ object AppearancePreferencesJson {
         .put("decimalPlaces", value.decimalPlaces)
         .put("bottomBarStyle", value.bottomBarStyle.name)
         .put("buttonSize", value.buttonSize.name)
-        .put("iconStyle", value.iconStyle.name)
-        .put("settingsIconStyle", value.settingsIconStyle.name)
-        .put("listDividers", value.listDividers)
+        .put("settingsIconColor", value.settingsIconColor.name)
+        .put("settingsIconRound", value.settingsIconRound)
+        .put("tabBadges", value.tabBadges)
         .put("firstDayOfWeek", value.firstDayOfWeek.name)
-        .put("sectionColorsEnabled", value.sectionColorsEnabled)
         .put("academicIndicatorStyle", value.academicIndicatorStyle.name)
-        .put("switchIconStyle", value.switchIconStyle.name)
         .put("subjectOrder", JSONArray(value.subjectOrder))
-        .put("academicProgressShape", value.academicProgressShape.name)
         .put("showHomeGreeting", value.showHomeGreeting)
         .put("showHomeHero", value.showHomeHero)
         .put("showHomeAgenda", value.showHomeAgenda)
@@ -86,22 +85,27 @@ object AppearancePreferencesJson {
         // los teléfonos sin que nadie lo eligiera. Con otra clave, todos pasan a la pastilla
         // de ahora y quien quiera los de antes los vuelve a elegir.
         buttonSize = json.enumOr("buttonSize", base.buttonSize),
-        iconStyle = json.enumOr("iconStyle", base.iconStyle),
-        settingsIconStyle = json.enumOr("settingsIconStyle", base.settingsIconStyle),
-        listDividers = json.optBoolean("listDividers", base.listDividers),
+        // Lo guardado antes del 20 sep era una sola elección: «circulares» eran círculos con el
+        // acento. Se reparte en las dos de ahora si las nuevas claves todavía no están.
+        settingsIconColor = json.enumOr(
+            "settingsIconColor",
+            if (json.enumOr("settingsIconStyle", SettingsIconStyle.COLOR) == SettingsIconStyle.CIRCULO) SettingsIconColor.ACENTO else base.settingsIconColor
+        ),
+        settingsIconRound = json.optBoolean(
+            "settingsIconRound",
+            json.enumOr("settingsIconStyle", SettingsIconStyle.COLOR) == SettingsIconStyle.CIRCULO
+        ),
+        tabBadges = json.optBoolean("tabBadges", base.tabBadges),
         firstDayOfWeek = json.enumOr("firstDayOfWeek", base.firstDayOfWeek),
-        sectionColorsEnabled = json.optBoolean("sectionColorsEnabled", base.sectionColorsEnabled),
         // Clave nueva a propósito: la anterior guardaba «FADE» en los teléfonos que
         // pasaron por las alphas, y ese valor —que entonces era el de por defecto, no una
         // elección— se quedaba pisando el empuje. Con otra clave, todos empiezan por el
         // valor de hoy y quien quiera el fundido lo vuelve a elegir.
         academicIndicatorStyle = json.enumOr("academicIndicatorStyle", base.academicIndicatorStyle),
-        switchIconStyle = json.enumOr("switchIconStyle", base.switchIconStyle),
         subjectOrder = json.optJSONArray("subjectOrder")
             ?.let { array -> (0 until array.length()).map(array::optString) }
             ?.filter { it.isNotBlank() }
             ?: base.subjectOrder,
-        academicProgressShape = json.enumOr("academicProgressShape", base.academicProgressShape),
         showHomeGreeting = json.optBoolean("showHomeGreeting", base.showHomeGreeting),
         showHomeHero = json.optBoolean("showHomeHero", base.showHomeHero),
         showHomeAgenda = json.optBoolean("showHomeAgenda", base.showHomeAgenda),
@@ -173,6 +177,7 @@ object AccessibilityPreferencesJson {
         .put("spokenDescriptions", value.spokenDescriptions)
         .put("confirmIrreversible", value.confirmIrreversible)
         .put("keepScreenOn", value.keepScreenOn)
+        .put("hapticsEnabled", value.hapticsEnabled)
         .put("dateFormat", value.dateFormat.name)
         .put("currency", value.currency.name)
 
@@ -196,7 +201,8 @@ object AccessibilityPreferencesJson {
         undoDuration = json.enumOr("undoDuration", base.undoDuration),
         spokenDescriptions = json.optBoolean("spokenDescriptions", base.spokenDescriptions),
         confirmIrreversible = json.optBoolean("confirmIrreversible", base.confirmIrreversible),
-        keepScreenOn = json.optBoolean("keepScreenOn", base.keepScreenOn)
+        keepScreenOn = json.optBoolean("keepScreenOn", base.keepScreenOn),
+        hapticsEnabled = json.optBoolean("hapticsEnabled", base.hapticsEnabled)
     )
 }
 

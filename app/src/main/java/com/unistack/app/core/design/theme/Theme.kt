@@ -56,7 +56,7 @@ fun UniStackTheme(
     AppearanceRuntime.cornerStyle = appearance.cornerStyle
     // La fuerza de vibracion sale de aqui hacia `performSafely`, que se llama desde onClick y
     // no puede leer un CompositionLocal. Con el movimiento apagado del todo, tampoco vibra.
-    HapticRuntime.strength = if (maxOf(appearance.motionPreference, accessibility.motionPreference) == MotionPreference.NONE) {
+    HapticRuntime.strength = if (!accessibility.hapticsEnabled || maxOf(appearance.motionPreference, accessibility.motionPreference) == MotionPreference.NONE) {
         HapticStrength.NINGUNA
     } else {
         appearance.motion.haptics
@@ -75,7 +75,7 @@ fun UniStackTheme(
      */
     val sections = SectionColors.forTheme(darkTheme)
         .conPaleta(accessibility.colorBlindPalette)
-        .let { base -> if (appearance.sectionColorsEnabled) base else base.sinSemaforo(scheme) }
+        // Los colores por sección van siempre (fijo desde el 20 sep 2026).
 
     /*
      * La letra sale de dos sitios, y Accesibilidad manda.

@@ -2,11 +2,6 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,41 +10,30 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
+import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
-import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.components.formaDeDistintivo
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.feature_user.domain.BadgeShape
-import com.unistack.app.feature_user.domain.ProgressShape
 
 /**
  * Las vistas previas de Apariencia, hechas con piezas **de la app** y no con rectángulos.
@@ -128,7 +112,6 @@ internal fun VentanaDeMuestra(
 @Composable
 fun VistaPreviaDeTarjeta(modifier: Modifier = Modifier) {
     val secciones = LocalSectionColors.current
-    val apariencia = LocalAppearancePreferences.current
     VentanaDeMuestra(titulo = stringResource(R.string.preview_win_subjects), modifier = modifier) {
         UniCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -167,33 +150,12 @@ fun VistaPreviaDeTarjeta(modifier: Modifier = Modifier) {
                         color = secciones.onTrack
                     )
                 }
-                BarraDeProgresoReal(progreso = 0.68f)
+                EvaluationBar(fraction = 0.68)
             }
         }
     }
 }
 
-/**
- * La barra de progreso académico, con la forma elegida y avanzando.
- *
- * **Se anima a propósito.** Quieta, la recta y la ondulada se distinguen mal en una barra al
- * 68%: la onda de Material 3 Expressive se reconoce por cómo se mueve, no por su silueta.
- */
-@Composable
-fun BarraDeProgresoReal(progreso: Float = 0.68f, modifier: Modifier = Modifier) {
-    val transicion = rememberInfiniteTransition(label = "progreso")
-    val avance by transicion.animateFloat(
-        initialValue = 0.12f,
-        targetValue = progreso,
-        animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing)),
-        label = "avance"
-    )
-    if (LocalAppearancePreferences.current.academicProgressShape == ProgressShape.WAVY) {
-        LinearWavyProgressIndicator(progress = { avance }, modifier = modifier.fillMaxWidth())
-    } else {
-        LinearProgressIndicator(progress = { avance }, modifier = modifier.fillMaxWidth())
-    }
-}
 
 /**
  * Los dos botones que la app usa de verdad: la acción principal anclada y la de descartar.
@@ -224,37 +186,3 @@ fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
 
 
 
-/** Dos filas de ajustes con sus interruptores, encendida y apagada, como en cualquier pantalla. */
-@Composable
-fun VistaPreviaDeInterruptores(modifier: Modifier = Modifier) {
-    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_settings), modifier = modifier) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column {
-                listOf(
-                    Triple(stringResource(R.string.preview_switch_classes), stringResource(R.string.preview_switch_classes_detail), true),
-                    Triple(stringResource(R.string.preview_switch_tasks), stringResource(R.string.preview_switch_tasks_detail), false)
-                ).forEach { (titulo, detalle, marcado) ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 11.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(titulo, style = MaterialTheme.typography.titleSmallEmphasized)
-                            Text(
-                                detalle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        UniSwitch(checked = marcado, onCheckedChange = {})
-                    }
-                }
-            }
-        }
-    }
-}

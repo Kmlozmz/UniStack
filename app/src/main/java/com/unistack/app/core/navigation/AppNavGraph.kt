@@ -23,6 +23,8 @@ import androidx.compose.material3.NavigationItemIconPosition
 import androidx.compose.material3.ShortNavigationBarArrangement
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -1603,10 +1605,22 @@ fun UniStackBottomBar(
     val selectedBottomRoute = bottomRouteFor(currentRoute)
     val showBottomBar = selectedBottomRoute != null && items.any { it.route == selectedBottomRoute }
 
+    // Las entregas sin completar, para el punto de aviso sobre Académico. Se cuenta aquí y no
+    // en cada pestaña porque el número es uno solo y la barra ya está en todas.
+    val tasksRepository = rememberUniStackEntryPoint().tasksRepository()
+    val pendingTasks by remember {
+        tasksRepository.tasks
+            .map { tasks -> tasks.count { !it.completed } }
+            .distinctUntilChanged()
+    }.collectAsStateWithLifecycle(
+        initialValue = tasksRepository.tasks.value.count { !it.completed }
+    )
+
     if (showBottomBar) {
         UniStackBottomBarContent(
             selectedRoute = selectedBottomRoute ?: currentRoute,
             items = items,
+            pendingTasks = pendingTasks,
             onNavigate = { route ->
                 navController.navigateToBottomRoute(
                     currentRoute = currentRoute,
@@ -1622,6 +1636,7 @@ fun UniStackBottomBar(
 private fun UniStackBottomBarContent(
     selectedRoute: String,
     items: List<BottomNavItem>,
+    pendingTasks: Int,
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1753,12 +1768,22 @@ private fun UniStackBottomBarContent(
                         contentAlignment = Alignment.Center
                     ) {
                         val itemLabel = if (item.labelResId != 0) stringResource(item.labelResId) else item.label
-                        Icon(
-                            // Redondeado, lineal o relleno: lo que se haya elegido en Componentes.
-                            imageVector = item.iconFor(selected, appearance.iconStyle),
-                            contentDescription = itemLabel,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        // Un contador sobre Académico con las entregas pendientes, si se
+                        // quiere (Componentes › Puntos de aviso).
+                        val pendientes = if (appearance.tabBadges && item.route == AppRoutes.Academic) pendingTasks else 0
+                        BadgedBox(
+                            badge = {
+                                if (pendientes > 0) {
+                                    Badge { Text(if (pendientes > 99) "99+" else pendientes.toString()) }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = item.iconFor(selected),
+                                contentDescription = itemLabel,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 },
                 label = if (showLabels) {

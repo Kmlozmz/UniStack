@@ -4,16 +4,12 @@ package com.unistack.app.core.design.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
-import com.unistack.app.feature_user.domain.ProgressShape
 
 /**
  * Cuánto se ha evaluado ya de una materia o de un corte.
@@ -23,10 +19,10 @@ import com.unistack.app.feature_user.domain.ProgressShape
  * mide avance, así que pintarla de rojo por ir mal hacía que dijera dos cosas a la vez; pero
  * en gris parecía apagada, como si no avanzara. El rendimiento lo lleva la cifra.
  *
- * **La forma sale de Apariencia.** Ondulada por defecto —la de Material 3 Expressive, con la
- * parte recorrida ondulando y la que falta plana— y recta para quien prefiera algo más sobrio
- * en un dato que se consulta a diario. Las dos gestionan el punto del final de la pista, que es
- * lo que en su día obligó a pintar esto a mano con dos cajas.
+ * Recta. Fue ondulada y elegible en Apariencia › Componentes hasta el 20 sep 2026; en un dato
+ * que se consulta a diario, la onda distraía más de lo que decía, y la elección era de diseño,
+ * no de quien usa la app. El indicador de Material gestiona el punto del final de la pista, que
+ * es lo que en su día obligó a pintar esto a mano con dos cajas.
  *
  * Esto es progreso **académico**. El del sistema —descargas, guardado— usa `SystemProgress`,
  * que no se configura.
@@ -46,29 +42,20 @@ fun EvaluationBar(
     // vez de como un tercio de algo.
     val track = trackColor ?: MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
 
-    when (LocalAppearancePreferences.current.academicProgressShape) {
-        ProgressShape.WAVY -> LinearWavyProgressIndicator(
-            progress = progress,
-            modifier = modifier.fillMaxWidth(),
-            color = accent,
-            trackColor = track
-        )
-
-        ProgressShape.FLAT -> LinearProgressIndicator(
-            progress = progress,
-            modifier = modifier.fillMaxWidth(),
-            color = accent,
-            trackColor = track
-        )
-    }
+    // Recta, fijo desde el 20 sep 2026: la onda se elegía en Componentes y era decisión de
+    // diseño. Las barras de descarga siguen onduladas, que ese es su gesto.
+    LinearProgressIndicator(
+        progress = progress,
+        modifier = modifier.fillMaxWidth(),
+        color = accent,
+        trackColor = track
+    )
 }
 
 /**
  * El mismo progreso académico, en anillo.
  *
- * Existe para que el aro de una materia y su barra respeten la misma preferencia: si se elige
- * recto, tiene que quedar recto en los dos sitios, y no ondulado en el anillo porque ese se
- * dibujó en otra pantalla.
+ * Existe para que el aro de una materia y su barra vayan iguales: rectos los dos.
  */
 @Composable
 fun EvaluationRing(
@@ -81,20 +68,11 @@ fun EvaluationRing(
     val progress = { fraction.coerceIn(0.0, 1.0).toFloat() }
     val track = trackColor ?: MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
 
-    when (LocalAppearancePreferences.current.academicProgressShape) {
-        ProgressShape.WAVY -> CircularWavyProgressIndicator(
-            progress = progress,
-            modifier = modifier,
-            color = accent,
-            trackColor = track
-        )
-
-        ProgressShape.FLAT -> CircularProgressIndicator(
-            progress = progress,
-            modifier = modifier,
-            color = accent,
-            trackColor = track
-        )
-    }
+    CircularProgressIndicator(
+        progress = progress,
+        modifier = modifier,
+        color = accent,
+        trackColor = track
+    )
 }
 

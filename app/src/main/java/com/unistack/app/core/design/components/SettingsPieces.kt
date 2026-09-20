@@ -32,7 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.SectionLabelStyle
-import com.unistack.app.feature_user.domain.SettingsIconStyle
+import com.unistack.app.feature_user.domain.SettingsIconColor
 
 /*
  * Las piezas con las que están hechas las nueve pantallas de ajustes.
@@ -199,22 +199,25 @@ fun SettingsGroup(
 }
 
 /**
- * El icono a la izquierda de cada fila, en la forma que se haya elegido en Apariencia.
+ * El icono a la izquierda de cada fila, con el color y la forma elegidos en Componentes.
  *
- * - **De colores**: cuadrado relleno del color de lo que hace la fila y el icono en el color del
- *   fondo, no al revés. En una lista de ocho filas, ocho iconos teñidos sobre pastillas pálidas
- *   se leen como ocho manchas del mismo peso, y el relleno sólido es lo que deja distinguirlos.
- * - **Circulares**: círculo un tono por encima de la fila y el icono en el acento, como en la
+ * - **De colores**: relleno del color de lo que hace la fila y el icono en el color del fondo,
+ *   no al revés. En una lista de ocho filas, ocho iconos teñidos sobre pastillas pálidas se
+ *   leen como ocho manchas del mismo peso, y el relleno sólido es lo que deja distinguirlos.
+ * - **Con el acento**: un tono por encima de la fila y el icono en el acento, como en la
  *   simulación del histórico. Todos del mismo color, así que ahí manda el dibujo.
+ * - La forma va aparte: cuadrado con las esquinas redondeadas, o círculo.
  *
  * Apagado —un interruptor sin encender— pierde el color en las dos, que es lo que deja ver de
  * un vistazo cuáles están encendidos sin leer fila a fila.
  */
 @Composable
 fun SettingsRowIcon(icon: ImageVector, color: Color, activo: Boolean = true) {
-    when (LocalAppearancePreferences.current.settingsIconStyle) {
-        SettingsIconStyle.COLOR -> Surface(
-            shape = MaterialTheme.shapes.small,
+    val apariencia = LocalAppearancePreferences.current
+    val forma = if (apariencia.settingsIconRound) CircleShape else MaterialTheme.shapes.small
+    when (apariencia.settingsIconColor) {
+        SettingsIconColor.COLORES -> Surface(
+            shape = forma,
             color = if (activo) color else MaterialTheme.colorScheme.surfaceContainerHighest,
             contentColor = MaterialTheme.colorScheme.surface,
             modifier = Modifier.size(40.dp)
@@ -223,10 +226,10 @@ fun SettingsRowIcon(icon: ImageVector, color: Color, activo: Boolean = true) {
                 Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
             }
         }
-        SettingsIconStyle.CIRCULO -> Box(
+        SettingsIconColor.ACENTO -> Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(CircleShape)
+                .clip(forma)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
         ) {

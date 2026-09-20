@@ -82,7 +82,13 @@ data class AccessibilityPreferences(
     val confirmIrreversible: Boolean = true,
 
     /** Mantener la pantalla encendida mientras hay una nota abierta. */
-    val keepScreenOn: Boolean = false
+    val keepScreenOn: Boolean = false,
+
+    /**
+     * Vibrar al tocar: marcar asistencia, completar una tarea, cerrar un corte. Va aquí y no en
+     * Componentes porque es de cómo se siente la app, no de cómo se ve (él, 20 sep 2026).
+     */
+    val hapticsEnabled: Boolean = true
 )
 
 enum class AppLanguage {

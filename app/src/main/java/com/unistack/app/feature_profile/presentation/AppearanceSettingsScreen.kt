@@ -50,8 +50,6 @@ import com.unistack.app.feature_user.domain.CornerStyle
 import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.MotionCatalog
-import com.unistack.app.feature_user.domain.ProgressShape
-import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.core.utils.Textos
@@ -146,8 +144,8 @@ fun AppearanceSettingsScreen(
                     title = stringResource(R.string.settings_appearance_components_title),
                     subtitle = stringResource(
                         R.string.settings_appearance_components_sub,
-                        appearance.bottomBarStyle.label().lowercase(),
-                        appearance.academicProgressShape.label().lowercase()
+                        appearance.settingsIconColor.label().lowercase(),
+                        appearance.bottomBarStyle.label().lowercase()
                     ),
                     iconColor = tonosDeAjustes.naranja,
                     onClick = onComponentsClick
@@ -399,20 +397,7 @@ internal fun BottomBarStyle.label(): String {
     }
 }
 
-internal fun ProgressShape.label(): String {
-    return when (this) {
-        ProgressShape.FLAT -> Textos.get(R.string.appearance_rectas)
-        ProgressShape.WAVY -> Textos.get(R.string.appearance_onduladas)
-    }
-}
 
-internal fun SwitchIconStyle.label(): String {
-    return when (this) {
-        SwitchIconStyle.BOTH -> Textos.get(R.string.appearance_siempre)
-        SwitchIconStyle.CHECKED_ONLY -> Textos.get(R.string.appearance_al_encender)
-        SwitchIconStyle.NONE -> Textos.get(R.string.appearance_nunca)
-    }
-}
 
 internal fun CornerStyle.label(): String {
     return when (this) {

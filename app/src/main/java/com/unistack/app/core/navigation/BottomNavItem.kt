@@ -14,7 +14,6 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unistack.app.R
 import com.unistack.app.feature_user.domain.AppModule
-import com.unistack.app.feature_user.domain.IconStyle
 
 object AppRoutes {
     const val Home = "home"
@@ -233,8 +232,5 @@ data class BottomNavItem(
  * «Relleno» usa el redondeado en los dos estados —activo e inactivo—, que es lo que deja la
  * barra distinguiendose solo por el color, sin cambio de peso.
  */
-fun BottomNavItem.iconFor(selected: Boolean, style: IconStyle): ImageVector = when (style) {
-    IconStyle.REDONDEADO -> if (selected) selectedIcon else unselectedIcon
-    IconStyle.LINEAL -> unselectedIcon
-    IconStyle.RELLENO -> selectedIcon
-}
+/** Relleno el elegido, contorno los demás: el trazo dejó de elegirse el 20 sep 2026. */
+fun BottomNavItem.iconFor(selected: Boolean): ImageVector = if (selected) selectedIcon else unselectedIcon

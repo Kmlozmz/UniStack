@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material.icons.rounded.Circle
+import com.unistack.app.core.design.components.SettingsSoloRow
+import com.unistack.app.core.design.components.SettingsToggleRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -48,14 +51,11 @@ import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.ButtonSizeStyle
 import com.unistack.app.feature_user.domain.CornerStyle
+import com.unistack.app.feature_user.domain.SettingsIconColor
 import com.unistack.app.feature_user.domain.SubjectsLayout
 import com.unistack.app.feature_user.domain.FirstDayOfWeek
-import com.unistack.app.feature_user.domain.IconStyle
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.LineHeightStyle
-import com.unistack.app.feature_user.domain.ProgressShape
-import com.unistack.app.feature_user.domain.SettingsIconStyle
-import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.core.utils.Textos
 
@@ -322,11 +322,12 @@ private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
 // ------------------------------------------------------------------ componentes
 
 /**
- * Lo que no es forma sino comportamiento: tamaños, barra, iconos, progreso e interruptores.
+ * Las piezas: los iconos de Ajustes, la barra de abajo y dos detalles.
  *
- * Las formas se mudaron a «Forma y superficie», que es donde las buscaba cualquiera. Aquí
- * queda lo que decide cómo se comporta o cuánto ocupa un control, y cada grupo lleva su
- * muestra: la de progreso **animada**, porque la onda de M3E se reconoce por su movimiento.
+ * Quedó así el 20 sep 2026. El tamaño de los botones se mudó a Forma; barras de progreso,
+ * iconos de los interruptores, separadores y colores por sección eran decisiones de diseño y
+ * van con lo suyo. Entran la forma de los iconos aparte del color, los puntos de aviso en las
+ * pestañas y el primer día de la semana, que se guardaba y se usaba sin ningún mando.
  */
 @Composable
 fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -337,93 +338,51 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        Rotulo(stringResource(R.string.settings_components_sec_bottom_bar))
+        Rotulo(stringResource(R.string.settings_components_sec_settings_icons))
+        MuestraDeIconosDeAjustes()
+        UniSegmentedControl(
+            selected = appearance.settingsIconColor,
+            options = SettingsIconColor.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(settingsIconColor = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        SettingsSoloRow {
+            SettingsToggleRow(
+                icon = Icons.Rounded.Circle,
+                title = stringResource(R.string.settings_components_icons_round_title),
+                subtitle = stringResource(R.string.settings_components_icons_round_desc),
+                checked = appearance.settingsIconRound,
+                iconColor = tonosDeAjustes.indigo,
+                onCheckedChange = { valor -> viewModel.updateAppearance { it.copy(settingsIconRound = valor) } }
+            )
+        }
+
+        Rotulo(stringResource(R.string.settings_components_sec_bottom_bar), arriba = true)
         UniSegmentedControl(
             selected = appearance.bottomBarStyle,
             options = BottomBarStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
             onSelected = { valor -> viewModel.updateAppearance { it.copy(bottomBarStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        UniSegmentedControl(
-            selected = appearance.iconStyle,
-            options = IconStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(iconStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        // La barra de abajo está a la vista mientras se elige: una muestra suya aquí sería la
-        // misma cosa dos veces en la misma pantalla.
-        Explicacion(stringResource(R.string.settings_components_bottom_bar_desc))
-
-        Rotulo(stringResource(R.string.settings_components_sec_settings_icons), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.settingsIconStyle,
-            options = SettingsIconStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(settingsIconStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        MuestraDeIconosDeAjustes()
-        Explicacion(stringResource(R.string.settings_components_settings_icons_desc))
-
-        Rotulo(stringResource(R.string.settings_components_sec_progress), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.academicProgressShape,
-            options = ProgressShape.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(academicProgressShape = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        BarraDeProgresoReal(progreso = 0.68f)
-        Explicacion(stringResource(R.string.settings_components_progress_desc))
-
-        Rotulo(stringResource(R.string.settings_components_sec_switches), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.switchIconStyle,
-            options = SwitchIconStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(switchIconStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        VistaPreviaDeInterruptores()
-
-        Rotulo(stringResource(R.string.settings_components_sec_details), arriba = true)
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column {
-                FilaDeInterruptor(
-                    titulo = stringResource(R.string.settings_components_list_dividers),
-                    detalle = stringResource(R.string.settings_components_list_dividers_desc),
-                    marcado = appearance.listDividers,
-                    onCambio = { valor -> viewModel.updateAppearance { it.copy(listDividers = valor) } }
-                )
-                FilaDeInterruptor(
-                    titulo = stringResource(R.string.settings_components_section_colors),
-                    detalle = stringResource(R.string.settings_components_section_colors_desc),
-                    marcado = appearance.sectionColorsEnabled,
-                    onCambio = { valor -> viewModel.updateAppearance { it.copy(sectionColorsEnabled = valor) } }
-                )
-            }
+        SettingsSoloRow {
+            SettingsToggleRow(
+                icon = Icons.Rounded.Notifications,
+                title = stringResource(R.string.settings_components_tab_badges_title),
+                subtitle = stringResource(R.string.settings_components_tab_badges_desc),
+                checked = appearance.tabBadges,
+                iconColor = tonosDeAjustes.rojo,
+                onCheckedChange = { valor -> viewModel.updateAppearance { it.copy(tabBadges = valor) } }
+            )
         }
-    }
-}
 
-@Composable
-private fun FilaDeInterruptor(
-    titulo: String,
-    detalle: String,
-    marcado: Boolean,
-    onCambio: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(titulo, style = MaterialTheme.typography.titleSmallEmphasized)
-            Explicacion(detalle)
-        }
-        UniSwitch(checked = marcado, onCheckedChange = onCambio)
+        Rotulo(stringResource(R.string.settings_components_sec_first_day), arriba = true)
+        UniSegmentedControl(
+            selected = appearance.firstDayOfWeek,
+            options = FirstDayOfWeek.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(firstDayOfWeek = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Explicacion(stringResource(R.string.settings_components_first_day_desc))
     }
 }
 
@@ -455,9 +414,9 @@ internal fun ButtonSizeStyle.label(): String {
 
 
 
-internal fun SettingsIconStyle.label(): String = when (this) {
-    SettingsIconStyle.COLOR -> Textos.get(R.string.appearance_iconos_de_colores)
-    SettingsIconStyle.CIRCULO -> Textos.get(R.string.appearance_iconos_circulares)
+internal fun SettingsIconColor.label(): String = when (this) {
+    SettingsIconColor.COLORES -> Textos.get(R.string.appearance_iconos_de_colores)
+    SettingsIconColor.ACENTO -> Textos.get(R.string.appearance_iconos_con_el_acento)
 }
 
 /**
@@ -488,13 +447,6 @@ private fun MuestraDeIconosDeAjustes() {
     }
 }
 
-internal fun IconStyle.label(): String {
-    return when (this) {
-        IconStyle.REDONDEADO -> Textos.get(R.string.appearance_redondeado)
-        IconStyle.LINEAL -> Textos.get(R.string.appearance_lineal)
-        IconStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
-    }
-}
 
 
 internal fun FirstDayOfWeek.label(): String {

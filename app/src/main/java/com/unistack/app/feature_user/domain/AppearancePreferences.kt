@@ -61,27 +61,22 @@ data class AppearancePreferences(
     /** Cuanto ocupan. */
     val buttonSize: ButtonSizeStyle = ButtonSizeStyle.MEDIO,
 
-    /** Redondeado, lineal o relleno: los iconos de la barra de abajo. */
-    val iconStyle: IconStyle = IconStyle.REDONDEADO,
-
     /** Cómo van los iconos de las filas de Ajustes: de colores o en círculo con el acento. */
-    val settingsIconStyle: SettingsIconStyle = SettingsIconStyle.COLOR,
+    /**
+     * Los iconos de Ajustes: de qué color van y qué forma tienen, por separado (20 sep 2026).
+     *
+     * Eran una sola elección —cuadrados de colores o círculos con el acento— y él quiso poder
+     * cruzarlas: el color como estaba, y un interruptor aparte para la forma.
+     */
+    val settingsIconColor: SettingsIconColor = SettingsIconColor.COLORES,
+    val settingsIconRound: Boolean = false,
 
-    /** La linea fina entre filas de una lista. */
-    val listDividers: Boolean = true,
+    /** Un contador sobre Académico con las entregas pendientes. */
+    val tabBadges: Boolean = true,
 
     /** Con que dia empieza la semana en el calendario y en el grafico semanal. */
     val firstDayOfWeek: FirstDayOfWeek = FirstDayOfWeek.LUNES,
-
-    /**
-     * Verde, ambar y rojo en las notas, o todo del color de acento.
-     *
-     * Apagado, la app deja de decir «bien o mal» con el color y lo dice solo con el numero.
-     * Es lo que pide quien no distingue ese par.
-     */
-    val sectionColorsEnabled: Boolean = true,
     val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
-    val switchIconStyle: SwitchIconStyle = SwitchIconStyle.BOTH,
     /**
      * El orden en el que quieres ver tus materias, por identificador.
      *
@@ -91,7 +86,6 @@ data class AppearancePreferences(
      * Vacía significa el orden en que se crearon, que es lo que había hasta ahora.
      */
     val subjectOrder: List<String> = emptyList(),
-    val academicProgressShape: ProgressShape = ProgressShape.FLAT,
     val showHomeGreeting: Boolean = true,
     val showHomeHero: Boolean = true,
     val showHomeAgenda: Boolean = true,
@@ -255,44 +249,7 @@ enum class BottomBarStyle {
     ICONS_ONLY
 }
 
-/**
- * Si el pulgar del interruptor lleva un icono dentro, y en qué estados.
- *
- * Material 3 Expressive lo permite con `thumbContent`, y es lo que deja leer un interruptor sin
- * depender solo del color: quien no distingue el violeta encendido del gris apagado sí distingue
- * un visto de un aspa.
- *
- * Es preferencia y no decisión cerrada porque el icono añade ruido a una lista larga de
- * interruptores, y hay a quien le estorba. Por defecto va en los dos estados.
- */
-enum class SwitchIconStyle {
-    /** Visto al encender, aspa al apagar. */
-    BOTH,
 
-    /** Visto solo al encender; apagado, el pulgar va liso. */
-    CHECKED_ONLY,
-
-    /** Sin icono, como estuvo hasta ahora. */
-    NONE
-}
-
-/**
- * La forma de las barras y anillos de progreso **académico**.
- *
- * Solo el académico: semestre, materia, checklist de un trabajo, presupuesto. El progreso del
- * sistema —descargas, guardado, carga de una imagen— se queda fijo en ondulado y no se ofrece,
- * porque nadie quiere configurar cómo se ve una descarga.
- */
-enum class ProgressShape {
-    /** La onda de Material 3 Expressive. */
-    WAVY,
-
-    /**
-     * Línea recta con indicador de parada al final. Es la de por defecto: la onda tiene
-     * gracia la primera vez y estorba en un dato que se mira todos los días.
-     */
-    FLAT
-}
 
 /**
  * Cómo cambia una pantalla por otra.
@@ -346,24 +303,21 @@ enum class ButtonSizeStyle {
 
 
 
-/**
- * El trazo de los iconos de la barra de abajo.
- *
- * Redondeado y relleno son los dos juegos que Material trae —`Rounded` y `Filled`—; lineal es
- * el contorno fino, que en la barra deja la pestana activa distinguiendose por el color y no
- * por el peso.
- */
-enum class IconStyle {
-    REDONDEADO,
-    LINEAL,
-    RELLENO
-}
 
 /**
  * Los iconos de las filas de Ajustes. Por ahora solo esos; el resto de la app no cambia.
  *
  * Los dos se pidieron el 16 sep 2026, para poder elegir entre ellos.
  */
+enum class SettingsIconColor {
+    /** Cada uno lleva el color de lo que hace su fila. */
+    COLORES,
+
+    /** Todos con el acento. */
+    ACENTO
+}
+
+/** El valor guardado antes del 20 sep 2026, que solo sirve para migrarlo al arrancar. */
 enum class SettingsIconStyle {
     /** Cuadrado relleno, un color por lo que hace cada fila. El de siempre. */
     COLOR,
