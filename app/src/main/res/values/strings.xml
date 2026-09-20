@@ -1223,9 +1223,6 @@
     <string name="settings_appearance_reset">Restablecer apariencia</string>
     <string name="settings_appearance_home_4_on">Los 4 bloques encendidos</string>
     <string name="settings_appearance_home_0_on">Sin bloques: solo el logo</string>
-    <string name="settings_appearance_grade_sample_0">notas como 3</string>
-    <string name="settings_appearance_grade_sample_1">notas como 3,5</string>
-    <string name="settings_appearance_grade_sample_2">notas como 3,50</string>
     <string name="settings_surface_title">Forma</string>
     <string name="settings_surface_subtitle">Esquinas, aire y tamaños</string>
     <string name="settings_surface_sec_corners">ESQUINAS</string>
@@ -1241,12 +1238,14 @@
     <string name="settings_typo_subtitle">La letra de la app, su tamaño y su aire</string>
     <string name="settings_typo_sec_family">FAMILIA</string>
     <string name="settings_typo_sec_size">TAMAÑO</string>
+    <string name="settings_typo_size_desc">Multiplica toda la letra de la app. La muestra de arriba va con él.</string>
+    <string name="settings_typo_size_value">%1$d %%</string>
     <string name="settings_typo_sec_line_height">INTERLINEADO</string>
-    <string name="settings_typo_line_height_desc">El aire entre renglones. Se nota en textos largos como este, y no tanto en una lista de materias donde cada fila lleva una línea.</string>
+    <string name="settings_typo_line_height_desc">El aire entre renglones. Se nota en textos largos como la muestra, y no tanto en una lista de materias.</string>
     <string name="settings_typo_sec_decimals">DECIMALES EN LAS NOTAS</string>
-    <string name="settings_typo_decimals_desc">Cuántos decimales enseña un promedio.</string>
+    <string name="settings_typo_decimals_desc">Cuántos decimales enseña un promedio. Mira el promedio de la muestra.</string>
     <string name="settings_typo_sample_title">Cálculo III</string>
-    <string name="settings_typo_sample_sub">Promedio 4,25 · 3 cortes · 128 h</string>
+    <string name="settings_typo_sample_sub">Promedio %1$s · 3 cortes · 128 h</string>
     <string name="settings_typo_sample_desc">Con 3,10 en el tercer corte cierras en 4,00. El segundo corte pesa el 35%.</string>
     <string name="settings_components_title">Componentes</string>
     <string name="settings_components_subtitle">Iconos de Ajustes, barra de abajo y detalles</string>
@@ -2532,7 +2531,6 @@
     <string name="auth_google_credential_unreadable">No se pudo leer la credencial de Google.</string>
     <string name="auth_google_credential_foreign">La credencial recibida no es de Google.</string>
     <string name="selection_marked_many">%1$d marcadas</string>
-    <string name="appearance_text_scale_note">Al %1$d %%. Vale para toda la app, no solo para esta pantalla.</string>
     <string name="backup_write_failed">No se pudo escribir en el archivo elegido.</string>
     <string name="setup_optional">Opcional</string>
     <string name="backup_summary_average">Promedio</string>

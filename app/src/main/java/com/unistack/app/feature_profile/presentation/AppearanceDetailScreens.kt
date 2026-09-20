@@ -11,6 +11,23 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material.icons.rounded.Circle
 import com.unistack.app.core.design.components.SettingsSoloRow
 import com.unistack.app.core.design.components.SettingsToggleRow
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
+import com.unistack.app.core.design.theme.familia
+import java.util.Locale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -42,7 +59,6 @@ import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsRowIcon
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
-import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -186,6 +202,14 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
 
 // ------------------------------------------------------------------ tipografía
 
+/**
+ * La letra: familia, tamaño, interlineado y decimales, en ese orden, con una sola muestra.
+ *
+ * Los cuatro mandos son los de siempre; lo que cambió el 20 sep 2026 es el orden y el aire. La
+ * familia va en una lista desplegable con cada nombre escrito en su letra —en dos filas de
+ * fichas, «Redondeada» y «Estrecha» no cabían— y la muestra de arriba responde a los cuatro:
+ * la letra, el tamaño, el aire entre renglones y el promedio con sus decimales.
+ */
 @Composable
 fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ProfileViewModel = hiltViewModel()
@@ -195,30 +219,20 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        MuestraDeLetra()
+        MuestraDeLetra(decimales = appearance.decimalPlaces)
 
         Rotulo(stringResource(R.string.settings_typo_sec_family), arriba = true)
-        // Seis familias en dos filas: en una sola de seis, «Redondeada» y «Estrecha» se
-        // parten por la mitad y no se leen.
-        UniSegmentedControl(
-            selected = appearance.typographyStyle,
-            options = TypographyStyle.entries.take(3).map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(typographyStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
+        SelectorDeFamilia(
+            elegida = appearance.typographyStyle,
+            onElegir = { valor -> viewModel.updateAppearance { it.copy(typographyStyle = valor) } }
         )
-        UniSegmentedControl(
-            selected = appearance.typographyStyle,
-            options = TypographyStyle.entries.drop(3).map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(typographyStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Explicacion(appearance.typographyStyle.explicacion())
 
         Rotulo(stringResource(R.string.settings_typo_sec_size), arriba = true)
         DeslizadorDeTamano(
             porcentaje = appearance.textScalePercent,
             onSoltar = { valor -> viewModel.updateAppearance { it.copy(textScalePercent = valor) } }
         )
+        Explicacion(stringResource(R.string.settings_typo_size_desc))
 
         Rotulo(stringResource(R.string.settings_typo_sec_line_height), arriba = true)
         UniSegmentedControl(
@@ -227,11 +241,7 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
             onSelected = { valor -> viewModel.updateAppearance { it.copy(lineHeightStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Text(
-            text = stringResource(R.string.settings_typo_line_height_desc),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Explicacion(stringResource(R.string.settings_typo_line_height_desc))
 
         Rotulo(stringResource(R.string.settings_typo_sec_decimals), arriba = true)
         UniSegmentedControl(
@@ -248,17 +258,23 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
     }
 }
 
-/** Un trozo de materia con cifras: donde se nota una familia de letra y no en el abecedario. */
+/**
+ * Un trozo de materia con cifras: donde se nota una familia de letra y no en el abecedario.
+ *
+ * La familia, el tamaño y el interlineado le llegan solos por el tema; el promedio se escribe
+ * aquí con los decimales elegidos, para que ese mando también se vea en la muestra.
+ */
 @Composable
-private fun MuestraDeLetra() {
+private fun MuestraDeLetra(decimales: Int) {
+    val promedio = String.format(Locale.getDefault(), "%.${decimales.coerceIn(0, 2)}f", 4.25)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.settings_typo_sample_title), style = MaterialTheme.typography.headlineSmallEmphasized)
-            Text(stringResource(R.string.settings_typo_sample_sub), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_typo_sample_sub, promedio), style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(R.string.settings_typo_sample_desc),
                 style = MaterialTheme.typography.bodyMedium,
@@ -269,7 +285,94 @@ private fun MuestraDeLetra() {
 }
 
 /**
- * El deslizador del tamaño de texto, que **arrastra de verdad**.
+ * La familia como lista desplegable: la fila enseña la elegida con su explicación y, al tocar,
+ * se abren las seis, cada una escrita en su propia letra.
+ *
+ * La lista mide lo que la fila —se toma el ancho de la fila al medirla— y cuelga seis puntos
+ * por debajo, que es como venía dibujada.
+ */
+@Composable
+private fun SelectorDeFamilia(elegida: TypographyStyle, onElegir: (TypographyStyle) -> Unit) {
+    var abierto by remember { mutableStateOf(false) }
+    var anchoDeLaFila by remember { mutableIntStateOf(0) }
+    val densidad = LocalDensity.current
+
+    Box(modifier = Modifier.fillMaxWidth().onSizeChanged { anchoDeLaFila = it.width }) {
+        Surface(
+            onClick = { abierto = true },
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = elegida.label(),
+                        style = MaterialTheme.typography.titleMediumEmphasized,
+                        fontFamily = elegida.familia()
+                    )
+                    Explicacion(elegida.explicacion())
+                }
+                Icon(
+                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+        DropdownMenu(
+            expanded = abierto,
+            onDismissRequest = { abierto = false },
+            shape = RoundedCornerShape(18.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            offset = DpOffset(0.dp, 6.dp),
+            modifier = Modifier.width(with(densidad) { anchoDeLaFila.toDp() })
+        ) {
+            Column(modifier = Modifier.padding(6.dp)) {
+                TypographyStyle.entries.forEach { estilo ->
+                    val esLaElegida = estilo == elegida
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                abierto = false
+                                if (!esLaElegida) onElegir(estilo)
+                            }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = estilo.label(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontFamily = estilo.familia(),
+                            color = if (esLaElegida) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (esLaElegida) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * El deslizador del tamaño de texto, que **arrastra de verdad**, con el porcentaje al lado.
  *
  * Quitar los `steps` no bastó: seguía enganchándose al primer movimiento. La causa era otra —
  * cada píxel del arrastre escribía en las preferencias, eso viaja al disco, y el valor volvía
@@ -299,7 +402,7 @@ private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
     // esto, un gesto de punta a punta daria cincuenta golpecitos seguidos.
     var ultimoTramo by remember(porcentaje) { mutableIntStateOf(porcentaje / 5) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Slider(
             value = arrastre,
             onValueChange = { valor ->
@@ -313,9 +416,15 @@ private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
             onValueChangeFinished = { onSoltar(arrastre.toInt()) },
             valueRange = 85f..135f,
             steps = pasos,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.weight(1f)
         )
-        Explicacion(stringResource(R.string.appearance_text_scale_note, arrastre.toInt()))
+        // Ancho fijo para que «85 %» y «135 %» no muevan el deslizador al pasar de una a otra.
+        Text(
+            text = stringResource(R.string.settings_typo_size_value, arrastre.toInt()),
+            style = MaterialTheme.typography.titleSmallEmphasized,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(44.dp)
+        )
     }
 }
 

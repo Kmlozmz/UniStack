@@ -135,7 +135,7 @@ fun AppearanceSettingsScreen(
                     icon = Icons.Rounded.TextFields,
                     title = stringResource(R.string.settings_appearance_typo_title),
                     subtitle = appearance.typographyStyle.label() + " · " +
-                        appearance.decimalPlaces.ejemploDeNota(),
+                        stringResource(R.string.settings_typo_size_value, appearance.textScalePercent),
                     iconColor = tonosDeAjustes.indigo,
                     onClick = onTypographyClick
                 )
@@ -190,14 +190,6 @@ private fun AppearancePreferences.resumenDeInicio(): String {
         4 -> Textos.get(R.string.settings_appearance_home_4_on)
         0 -> Textos.get(R.string.settings_appearance_home_0_on)
         else -> Textos.get(R.string.appearance_de_4_bloques, encendidos)
-    }
-}
-
-private fun Int.ejemploDeNota(): String {
-    return when (this) {
-        0 -> Textos.get(R.string.settings_appearance_grade_sample_0)
-        1 -> Textos.get(R.string.settings_appearance_grade_sample_1)
-        else -> Textos.get(R.string.settings_appearance_grade_sample_2)
     }
 }
 

@@ -52,21 +52,7 @@ fun appearanceTypography(
     estilo: TypographyStyle,
     negrita: Boolean = false
 ): Typography {
-    val family = when (estilo) {
-        TypographyStyle.SANS -> FontFamily.SansSerif
-        TypographyStyle.SYSTEM -> FontFamily.Default
-        TypographyStyle.SERIF -> FontFamily.Serif
-        TypographyStyle.MONO -> FontFamily.Monospace
-        /*
-         * Las dos que se piden por nombre de dispositivo.
-         *
-         * `DeviceFontFamilyName` es de API 31, y la app llega hasta la 26. Debajo de eso —y en
-         * cualquier telefono que no tenga esa familia instalada— cae en la `sans-serif` normal:
-         * la letra no es la elegida pero la app se lee, que es lo que importa.
-         */
-        TypographyStyle.ESTRECHA -> familiaDelSistema("sans-serif-condensed")
-        TypographyStyle.REDONDEADA -> familiaDelSistema("sans-serif-rounded", "casual")
-    }
+    val family = estilo.familia()
     fun TextStyle.ajustada(): TextStyle {
         return copy(
             fontFamily = family,
@@ -112,6 +98,28 @@ fun appearanceTypography(
  * @param nombres se prueban en orden. Android no dice si una familia existe, asi que el
  *   respaldo va dentro del propio [FontFamily]: si la primera no resuelve, usa la siguiente.
  */
+/**
+ * La familia de letra de cada estilo.
+ *
+ * Aparte de [appearanceTypography] porque la lista de Apariencia › Tipografía pinta cada nombre
+ * con su propia letra, que es como se elige una: leyendo «Serif» en serif y no en la sans.
+ */
+fun TypographyStyle.familia(): FontFamily = when (this) {
+    TypographyStyle.SANS -> FontFamily.SansSerif
+    TypographyStyle.SYSTEM -> FontFamily.Default
+    TypographyStyle.SERIF -> FontFamily.Serif
+    TypographyStyle.MONO -> FontFamily.Monospace
+    /*
+     * Las dos que se piden por nombre de dispositivo.
+     *
+     * `DeviceFontFamilyName` es de API 31, y la app llega hasta la 26. Debajo de eso —y en
+     * cualquier telefono que no tenga esa familia instalada— cae en la `sans-serif` normal:
+     * la letra no es la elegida pero la app se lee, que es lo que importa.
+     */
+    TypographyStyle.ESTRECHA -> familiaDelSistema("sans-serif-condensed")
+    TypographyStyle.REDONDEADA -> familiaDelSistema("sans-serif-rounded", "casual")
+}
+
 private fun familiaDelSistema(vararg nombres: String): FontFamily {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return FontFamily.SansSerif
     return FontFamily(nombres.map { Font(DeviceFontFamilyName(it)) })
