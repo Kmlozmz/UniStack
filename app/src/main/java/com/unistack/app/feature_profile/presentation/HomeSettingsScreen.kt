@@ -2,6 +2,8 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -196,10 +199,24 @@ private fun ListaDeBloques(
                                 },
                                 onSettle = { if (enPantalla != orden) onOrden(enPantalla) }
                             )
+                            .sinToqueCorto()
                     )
                 }
             )
         }
+    }
+}
+
+/**
+ * El asa se arrastra; un toque corto sobre ella no enciende ni apaga la fila.
+ *
+ * Va el último de la cadena, que es el primero en ver el dedo: se traga la bajada y la fila,
+ * que la necesita sin tocar para contarla como toque, no hace nada. El arrastre tras mantener
+ * pulsado no la necesita y sigue funcionando.
+ */
+private fun Modifier.sinToqueCorto(): Modifier = pointerInput(Unit) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false).consume()
     }
 }
 
