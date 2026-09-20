@@ -411,6 +411,37 @@ fun SettingsGroupScope.SettingsChoiceRow(
 }
 
 /**
+ * Una fila que solo informa, sin llevar a ningún sitio.
+ *
+ * Mismo alto y misma forma que [SettingsRow], pero sin flecha ni `onClick`: en un grupo donde
+ * casi todo se toca, una fila sin chevron es lo que dice «esto no navega a ningún lado» sin
+ * necesidad de escribirlo. [trailing] es el hueco para un aviso —un «PRONTO», por ejemplo—.
+ */
+@Composable
+fun SettingsGroupScope.SettingsStaticRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    iconColor: Color,
+    trailing: (@Composable () -> Unit)? = null
+) {
+    SegmentedListItem(
+        onClick = {},
+        shapes = shapesFor(nextPosition()),
+        supportingContent = {
+            Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+        },
+        leadingContent = { SettingsRowIcon(icon = icon, color = iconColor) },
+        trailingContent = trailing,
+        colors = ListItemDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMediumEmphasized)
+    }
+}
+
+/**
  * Una fila de ajustes que aloja un bloque personalizado (como un selector segmentado).
  *
  * Mantiene la misma forma morfológica (18dp/4dp) y color de contenedor que el resto de las

@@ -4,6 +4,8 @@ package com.unistack.app.feature_support.presentation
 
 import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Copyright
+import androidx.compose.material.icons.rounded.AutoAwesome
+import com.unistack.app.core.design.components.SettingsStaticRow
 import androidx.compose.material.icons.rounded.Gavel
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.BrandPurple
@@ -786,13 +788,11 @@ private fun openSupportTopic(context: android.content.Context, kind: TicketKind)
 fun AboutScreen(
     onBackClick: () -> Unit,
     onLicensesClick: () -> Unit,
+    onWhatsNewClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val localTitle = stringResource(R.string.support_about_local_title)
-    val localDesc = stringResource(R.string.support_about_local_desc)
-    val cloudTitle = stringResource(R.string.support_about_cloud_title)
-    val cloudDesc = stringResource(R.string.support_about_cloud_desc)
+    val tonos = tonosDeAjustes
     SupportScaffold(
         title = stringResource(R.string.support_about_title),
         subtitle = stringResource(R.string.support_about_subtitle),
@@ -831,60 +831,61 @@ fun AboutScreen(
                 AboutChip(BuildConfig.VERSION_NAME, highlighted = true)
             }
         }
-        item(key = "datos-titulo") { AboutSectionLabel(stringResource(R.string.support_about_data_header)) }
-        item(key = "datos-local") {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-                color = LocalSectionColors.current.onTrackContainer
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                    Icon(
-                        Icons.Rounded.VerifiedUser,
-                        contentDescription = null,
-                        tint = LocalSectionColors.current.onOnTrackContainer,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) {
-                                append("$localTitle ")
-                            }
-                            append(localDesc)
-                        },
-                        color = LocalSectionColors.current.onOnTrackContainer,
-                        style = MaterialTheme.typography.bodySmall,
-                        lineHeight = 19.sp
-                    )
-                }
+        /*
+         * «Tus datos», en la misma lista segmentada que Información: eran dos tarjetas
+         * sueltas con su propio color, y la de la nube prometía el respaldo con Google como
+         * si ya existiera —está al 45 % y aplazado—. Ahora lleva el mismo «PRONTO» que usa el
+         * resto de la app, y la de hoy no promete una sincronización que ninguna función hace
+         * todavía (20 sep 2026, rediseño de Acerca de).
+         */
+        item(key = "datos") {
+            SettingsGroup(label = stringResource(R.string.support_about_data_header), rowCount = 2) {
+                SettingsStaticRow(
+                    icon = Icons.Rounded.VerifiedUser,
+                    title = stringResource(R.string.support_about_local_title),
+                    subtitle = stringResource(R.string.support_about_local_desc),
+                    iconColor = tonos.verde
+                )
+                SettingsStaticRow(
+                    icon = Icons.Rounded.CloudQueue,
+                    title = stringResource(R.string.support_about_cloud_title),
+                    subtitle = stringResource(R.string.support_about_cloud_desc),
+                    iconColor = tonos.gris,
+                    trailing = {
+                        Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                            Text(
+                                text = stringResource(R.string.common_soon),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                )
             }
         }
-        item(key = "datos-nube") {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                    Icon(
-                        Icons.Rounded.CloudQueue,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(
-                                SpanStyle(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            ) {
-                                append("$cloudTitle ")
-                            }
-                            append(cloudDesc)
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
-                        lineHeight = 19.sp
-                    )
-                }
+        item(key = "novedades") {
+            SettingsGroup(label = stringResource(R.string.support_about_updates_header), rowCount = 1) {
+                SettingsRow(
+                    icon = Icons.Rounded.AutoAwesome,
+                    title = stringResource(R.string.support_about_whats_new_title),
+                    subtitle = stringResource(R.string.support_about_whats_new_desc),
+                    iconColor = tonos.indigo,
+                    onClick = onWhatsNewClick
+                )
+            }
+        }
+        item(key = "soporte") {
+            SettingsGroup(label = stringResource(R.string.support_about_support_header), rowCount = 1) {
+                SettingsRow(
+                    icon = Icons.AutoMirrored.Rounded.Chat,
+                    title = stringResource(R.string.support_btn_write),
+                    subtitle = stringResource(R.string.support_btn_write_desc),
+                    iconColor = tonos.azul,
+                    onClick = { openSupportTopic(context, TicketKind.OTHER) },
+                    external = true
+                )
             }
         }
         item(key = "info") {

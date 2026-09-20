@@ -870,7 +870,8 @@ fun MainNavGraph(
             screen(AppRoutes.About) {
                 AboutScreen(
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
-                    onLicensesClick = { navController.go(AppRoutes.Licenses) }
+                    onLicensesClick = { navController.go(AppRoutes.Licenses) },
+                    onWhatsNewClick = { navController.go(AppRoutes.updateVersion(BuildConfig.VERSION_NAME)) }
                 )
             }
             screen(AppRoutes.Licenses) {

@@ -1690,9 +1690,9 @@
     <string name="support_about_subtitle">Version, data, and conditions</string>
     <string name="support_about_data_header">YOUR DATA</string>
     <string name="support_about_local_title">Your data is stored locally.</string>
-    <string name="support_about_local_desc">Your information stays on this device and only syncs when explicitly needed.</string>
-    <string name="support_about_cloud_title">Protect your data with cloud backup.</string>
-    <string name="support_about_cloud_desc">Linking Google allows you to back up and protect your data. You can unlink your account anytime.</string>
+    <string name="support_about_local_desc">Everything you register lives on this device, for now.</string>
+    <string name="support_about_cloud_title">Back up to the cloud.</string>
+    <string name="support_about_cloud_desc">Link your Google account to protect your information elsewhere.</string>
     <string name="support_about_info_header">INFORMATION</string>
     <string name="support_about_terms_title">Terms of use</string>
     <string name="support_about_terms_desc">What you can do with the app and what we ask of you</string>
@@ -1700,6 +1700,10 @@
     <string name="support_about_privacy_desc">What the app handles, where it is stored and when it connects</string>
     <string name="support_about_licenses_title">Licenses</string>
     <string name="support_about_licenses_desc">The typefaces and libraries the app ships with</string>
+    <string name="support_about_updates_header">WHAT\'S NEW</string>
+    <string name="support_about_whats_new_title">What changed in this version</string>
+    <string name="support_about_whats_new_desc">This version\'s notes, without leaving Settings</string>
+    <string name="support_about_support_header">SUPPORT</string>
     <string name="licenses_title">Licenses</string>
     <string name="licenses_subtitle">What the app takes from others, and on what terms</string>
     <string name="licenses_fonts_header">TYPEFACES</string>
