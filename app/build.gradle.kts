@@ -14,6 +14,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.21"
     id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.kapt")
+    // Genera la lista de bibliotecas y sus licencias (R.raw.aboutlibraries) para Acerca de › Licencias.
+    id("com.mikepenz.aboutlibraries.plugin") version "14.2.1"
 }
 
 if (file("google-services.json").exists()) {

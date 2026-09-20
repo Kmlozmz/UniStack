@@ -3,6 +3,7 @@
 package com.unistack.app.feature_support.presentation
 
 import androidx.compose.material.icons.rounded.PrivacyTip
+import androidx.compose.material.icons.rounded.Copyright
 import androidx.compose.material.icons.rounded.Gavel
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.BrandPurple
@@ -70,6 +71,7 @@ import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_support.domain.changelogFor
 import com.unistack.app.feature_support.domain.SupportChannel
+import com.unistack.app.feature_support.domain.LegalPages
 import com.unistack.app.feature_support.domain.TicketContext
 import com.unistack.app.feature_support.domain.TicketKind
 import com.unistack.app.feature_support.domain.buildTicket
@@ -780,8 +782,10 @@ private fun openSupportTopic(context: android.content.Context, kind: TicketKind)
 @Composable
 fun AboutScreen(
     onBackClick: () -> Unit,
+    onLicensesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val localTitle = stringResource(R.string.support_about_local_title)
     val localDesc = stringResource(R.string.support_about_local_desc)
     val cloudTitle = stringResource(R.string.support_about_cloud_title)
@@ -893,23 +897,30 @@ fun AboutScreen(
                     // no ahorra un toque, solo obliga a leer dos veces para descubrir que da
                     // igual cu\u00e1l elijas.
                     /*
-                     * Los dos documentos, visibles y apagados.
-                     *
-                     * Todavía no existen: cuando la web esté en pie, estas dos filas la abrirán.
-                     * Salen igualmente, con su etiqueta, porque una app que guarda datos sin
-                     * decir bajo qué condiciones deja esa pregunta sin sitio donde hacerse.
+                     * Los dos documentos viven en la web y se abren en el navegador del
+                     * teléfono, no dentro de la app: es lo que él pidió (20 sep 2026), y así la
+                     * página se ve como es, con su índice y su tema. Estuvieron apagados con
+                     * «Pronto» hasta que la web los tuvo.
                      */
                     AboutRow(
                         icon = Icons.Rounded.Gavel,
                         title = stringResource(R.string.support_about_terms_title),
                         subtitle = stringResource(R.string.support_about_terms_desc),
-                        onClick = null
+                        onClick = { abrirEnElNavegador(context, LegalPages.TERMS) }
                     )
                     AboutRow(
                         icon = Icons.Rounded.PrivacyTip,
                         title = stringResource(R.string.support_about_privacy_title),
                         subtitle = stringResource(R.string.support_about_privacy_desc),
-                        onClick = null
+                        onClick = { abrirEnElNavegador(context, LegalPages.PRIVACY) }
+                    )
+                    // Lo que la app lleva de otros: las fuentes (OFL) y las bibliotecas. La OFL
+                    // exige que su texto viaje con las fuentes, y esta es la puerta.
+                    AboutRow(
+                        icon = Icons.Rounded.Copyright,
+                        title = stringResource(R.string.support_about_licenses_title),
+                        subtitle = stringResource(R.string.support_about_licenses_desc),
+                        onClick = onLicensesClick
                     )
                 }
             }
@@ -954,7 +965,7 @@ private fun AboutChip(text: String, highlighted: Boolean = false) {
 }
 
 @Composable
-private fun AboutRow(
+internal fun AboutRow(
     icon: ImageVector,
     title: String,
     subtitle: String,

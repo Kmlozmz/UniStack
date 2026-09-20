@@ -120,6 +120,7 @@ import com.unistack.app.feature_profile.presentation.AccessibilitySettingsScreen
 import com.unistack.app.feature_profile.presentation.SettingsHubScreen
 import com.unistack.app.feature_schedule.presentation.CalendarScheduleScreen
 import com.unistack.app.feature_support.presentation.AboutScreen
+import com.unistack.app.feature_support.presentation.LicensesScreen
 import com.unistack.app.feature_support.presentation.AiAssistantScreen
 import com.unistack.app.feature_support.presentation.GpaCalculatorScreen
 import com.unistack.app.feature_support.presentation.LabsScreen
@@ -868,8 +869,12 @@ fun MainNavGraph(
             }
             screen(AppRoutes.About) {
                 AboutScreen(
-                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) }
+                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
+                    onLicensesClick = { navController.go(AppRoutes.Licenses) }
                 )
+            }
+            screen(AppRoutes.Licenses) {
+                LicensesScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.About) })
             }
             screen(AppRoutes.GpaCalculator) {
                 GpaCalculatorScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
