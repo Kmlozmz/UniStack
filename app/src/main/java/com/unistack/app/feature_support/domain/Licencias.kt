@@ -4,7 +4,7 @@ import org.json.JSONObject
 
 /** Las dos páginas legales de la web. Se abren en el navegador del teléfono, no dentro de la app. */
 object LegalPages {
-    const val SITE = "https://unistack.srkmlo16.workers.dev"
+    const val SITE = "https://unistack.srk-lab.workers.dev"
     const val TERMS = "$SITE/terminos.html"
     const val PRIVACY = "$SITE/privacidad.html"
 }
