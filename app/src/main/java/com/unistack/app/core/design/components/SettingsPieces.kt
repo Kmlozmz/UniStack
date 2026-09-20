@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -267,7 +268,12 @@ fun SettingsGroupScope.SettingsRow(
     title: String,
     subtitle: String,
     iconColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    /**
+     * Abre algo fuera de la app —una página web— en vez de otra pantalla. La flecha de la
+     * derecha lo dice antes de tocar: ↗ en vez de ›, que promete una pantalla que no llega.
+     */
+    external: Boolean = false
 ) {
     SegmentedListItem(
         onClick = onClick,
@@ -278,9 +284,10 @@ fun SettingsGroupScope.SettingsRow(
         leadingContent = { SettingsRowIcon(icon = icon, color = iconColor) },
         trailingContent = {
             Icon(
-                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                if (external) Icons.AutoMirrored.Rounded.OpenInNew else Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = if (external) Modifier.size(20.dp) else Modifier
             )
         },
         colors = ListItemDefaults.colors(

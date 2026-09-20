@@ -64,6 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.components.LargeTitleScaffold
+import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsRow
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackWordmark
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
@@ -884,45 +887,37 @@ fun AboutScreen(
                 }
             }
         }
-        item(key = "info-titulo") { AboutSectionLabel(stringResource(R.string.support_about_info_header)) }
         item(key = "info") {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                Column {
-                    // Ni \u00abNovedades\u00bb ni \u00abActualizaciones\u00bb: la primera es una fila del panel
-                    // lateral y la segunda tiene su propio apartado en Ajustes. Repetir la puerta
-                    // no ahorra un toque, solo obliga a leer dos veces para descubrir que da
-                    // igual cu\u00e1l elijas.
-                    /*
-                     * Los dos documentos viven en la web y se abren en el navegador del
-                     * teléfono, no dentro de la app: es lo que él pidió (20 sep 2026), y así la
-                     * página se ve como es, con su índice y su tema. Estuvieron apagados con
-                     * «Pronto» hasta que la web los tuvo.
-                     */
-                    AboutRow(
-                        icon = Icons.Rounded.Gavel,
-                        title = stringResource(R.string.support_about_terms_title),
-                        subtitle = stringResource(R.string.support_about_terms_desc),
-                        onClick = { abrirEnElNavegador(context, LegalPages.TERMS) }
-                    )
-                    AboutRow(
-                        icon = Icons.Rounded.PrivacyTip,
-                        title = stringResource(R.string.support_about_privacy_title),
-                        subtitle = stringResource(R.string.support_about_privacy_desc),
-                        onClick = { abrirEnElNavegador(context, LegalPages.PRIVACY) }
-                    )
-                    // Lo que la app lleva de otros: las fuentes (OFL) y las bibliotecas. La OFL
-                    // exige que su texto viaje con las fuentes, y esta es la puerta.
-                    AboutRow(
-                        icon = Icons.Rounded.Copyright,
-                        title = stringResource(R.string.support_about_licenses_title),
-                        subtitle = stringResource(R.string.support_about_licenses_desc),
-                        onClick = onLicensesClick
-                    )
-                }
+            /*
+             * Los dos documentos viven en la web y se abren en el navegador del teléfono, no
+             * dentro de la app: es lo que él pidió (20 sep 2026), y así la página se ve como
+             * es, con su índice y su tema. La flecha ↗ lo avisa. Licencias sí es una pantalla.
+             */
+            val tonos = tonosDeAjustes
+            SettingsGroup(label = stringResource(R.string.support_about_info_header), rowCount = 3) {
+                SettingsRow(
+                    icon = Icons.Rounded.Gavel,
+                    title = stringResource(R.string.support_about_terms_title),
+                    subtitle = stringResource(R.string.support_about_terms_desc),
+                    iconColor = tonos.ambar,
+                    onClick = { abrirEnElNavegador(context, LegalPages.TERMS) },
+                    external = true
+                )
+                SettingsRow(
+                    icon = Icons.Rounded.PrivacyTip,
+                    title = stringResource(R.string.support_about_privacy_title),
+                    subtitle = stringResource(R.string.support_about_privacy_desc),
+                    iconColor = tonos.verde,
+                    onClick = { abrirEnElNavegador(context, LegalPages.PRIVACY) },
+                    external = true
+                )
+                SettingsRow(
+                    icon = Icons.Rounded.Copyright,
+                    title = stringResource(R.string.support_about_licenses_title),
+                    subtitle = stringResource(R.string.support_about_licenses_desc),
+                    iconColor = tonos.violeta,
+                    onClick = onLicensesClick
+                )
             }
         }
     }
@@ -964,84 +959,3 @@ private fun AboutChip(text: String, highlighted: Boolean = false) {
     }
 }
 
-@Composable
-internal fun AboutRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: (() -> Unit)?
-) {
-    val enabled = onClick != null
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            Modifier
-                .size(40.dp)
-                .clip(MaterialTheme.shapes.small)
-                .background(
-                    if (enabled) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = if (enabled) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.outline
-                },
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Spacer(Modifier.width(13.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                title,
-                color = if (enabled) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.outline
-                },
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                subtitle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
-                lineHeight = 15.sp
-            )
-        }
-        if (enabled) {
-            Icon(
-                Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(20.dp)
-            )
-        } else {
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ) {
-                Text(
-                    stringResource(R.string.common_soon),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                )
-            }
-        }
-    }
-}

@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -33,11 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.unistack.app.R
-import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsRow
+import com.unistack.app.core.design.components.SettingsSoloRow
+import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.feature_support.domain.Biblioteca
@@ -76,42 +76,28 @@ fun LicensesScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
         onBackClick = onBackClick,
         modifier = modifier
     ) {
-        item(key = "fuentes-titulo") { LicensesSectionLabel(stringResource(R.string.licenses_fonts_header)) }
         item(key = "fuentes") {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                Column {
-                    FuentesEmpaquetadas.todas.forEach { fuente ->
-                        AboutRow(
-                            icon = Icons.Rounded.TextFields,
-                            title = fuente.nombre,
-                            subtitle = stringResource(R.string.licenses_ofl_short),
-                            onClick = { abierta = Licencia.DeFuente(fuente) }
-                        )
-                    }
+            SettingsGroup(label = stringResource(R.string.licenses_fonts_header), rowCount = FuentesEmpaquetadas.todas.size) {
+                FuentesEmpaquetadas.todas.forEach { fuente ->
+                    SettingsRow(
+                        icon = Icons.Rounded.TextFields,
+                        title = fuente.nombre,
+                        subtitle = stringResource(R.string.licenses_ofl_short),
+                        iconColor = tonosDeAjustes.indigo,
+                        onClick = { abierta = Licencia.DeFuente(fuente) }
+                    )
                 }
             }
         }
-        item(key = "librerias-titulo") {
-            LicensesSectionLabel(
-                if (librerias.isEmpty()) {
-                    stringResource(R.string.licenses_libraries_header)
-                } else {
-                    stringResource(R.string.licenses_libraries_header_count, librerias.size)
-                }
-            )
-        }
         item(key = "librerias") {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                Column {
-                    if (librerias.isEmpty()) {
+            val rotulo = if (librerias.isEmpty()) {
+                stringResource(R.string.licenses_libraries_header)
+            } else {
+                stringResource(R.string.licenses_libraries_header_count, librerias.size)
+            }
+            SettingsGroup(label = rotulo, rowCount = maxOf(1, librerias.size)) {
+                if (librerias.isEmpty()) {
+                    SettingsSoloRow {
                         Text(
                             text = stringResource(R.string.licenses_libraries_loading),
                             style = MaterialTheme.typography.bodySmall,
@@ -119,14 +105,15 @@ fun LicensesScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
                         )
                     }
-                    librerias.forEach { lib ->
-                        AboutRow(
-                            icon = Icons.Rounded.Extension,
-                            title = lib.nombre,
-                            subtitle = listOfNotNull(lib.version, lib.licencia?.nombre).joinToString(" · "),
-                            onClick = { abierta = Licencia.DeLibreria(lib) }
-                        )
-                    }
+                }
+                librerias.forEach { lib ->
+                    SettingsRow(
+                        icon = Icons.Rounded.Extension,
+                        title = lib.nombre,
+                        subtitle = listOfNotNull(lib.version, lib.licencia?.nombre).joinToString(" · "),
+                        iconColor = tonosDeAjustes.turquesa,
+                        onClick = { abierta = Licencia.DeLibreria(lib) }
+                    )
                 }
             }
         }
@@ -143,17 +130,6 @@ private sealed interface Licencia {
     data class DeLibreria(val libreria: Biblioteca) : Licencia
 }
 
-@Composable
-private fun LicensesSectionLabel(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.primary,
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 1.sp,
-        modifier = Modifier.padding(start = 2.dp, top = 6.dp)
-    )
-}
 
 /**
  * La licencia entera, en una hoja.
