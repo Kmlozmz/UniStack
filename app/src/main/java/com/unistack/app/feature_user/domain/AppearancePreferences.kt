@@ -18,15 +18,16 @@ data class AppearancePreferences(
     val accentStyle: AccentStyle = AccentStyle.VIOLET,
     val customAccentColor: Int? = null,
     val accentIntensity: AccentIntensity = AccentIntensity.BALANCED,
-    val surfaceStyle: SurfaceStyle = SurfaceStyle.OUTLINED,
-
-    /** Cuanta sombra proyecta una tarjeta. Solo cuenta con [SurfaceStyle.ELEVATED]. */
-    val shadowIntensity: ShadowIntensity = ShadowIntensity.MEDIA,
-
-    /** Lo grueso que es el filete. Solo cuenta con [SurfaceStyle.OUTLINED]. */
-    val outlineWeight: OutlineWeight = OutlineWeight.FINO,
     val cornerStyle: CornerStyle = CornerStyle.BALANCED,
     val interfaceDensity: InterfaceDensity = InterfaceDensity.BALANCED,
+
+    /**
+     * Cómo se ven las materias en Académico: tarjeta con su barra, o fila de lista.
+     *
+     * Con ocho materias, la lista cabe en una pantalla. Es de las pocas cosas de forma que
+     * cambian de una persona a otra (20 sep 2026).
+     */
+    val subjectsLayout: SubjectsLayout = SubjectsLayout.CARDS,
     val motionPreference: MotionPreference = MotionPreference.FULL,
 
     /**
@@ -57,37 +58,14 @@ data class AppearancePreferences(
     val decimalPlaces: Int = 1,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
 
-    /**
-     * La forma de los botones de accion.
-     *
-     * Pastilla por defecto desde el 16 sep 2026: se pidieron redondos del todo, y que al
-     * pulsarlos quedaran como estaban hasta entonces.
-     */
-    val buttonShape: ButtonShapeStyle = ButtonShapeStyle.PASTILLA,
-
     /** Cuanto ocupan. */
     val buttonSize: ButtonSizeStyle = ButtonSizeStyle.MEDIO,
-
-    /** Como se ven los campos de texto. */
-    val textFieldStyle: TextFieldStyle = TextFieldStyle.RELLENO,
-
-    /** Como se ven los chips de filtro. */
-    val chipStyle: ChipStyle = ChipStyle.FILETE,
 
     /** Redondeado, lineal o relleno: los iconos de la barra de abajo. */
     val iconStyle: IconStyle = IconStyle.REDONDEADO,
 
     /** Cómo van los iconos de las filas de Ajustes: de colores o en círculo con el acento. */
     val settingsIconStyle: SettingsIconStyle = SettingsIconStyle.COLOR,
-
-    /**
-     * La forma del distintivo de cada materia.
-     *
-     * Con [BadgeShape.ALEATORIO] cada materia se queda con una forma propia, sacada de su
-     * identificador: no cambia al reabrir la app, y dos materias del mismo color se distinguen
-     * de un vistazo por la forma.
-     */
-    val badgeShape: BadgeShape = BadgeShape.CIRCULO,
 
     /** La linea fina entre filas de una lista. */
     val listDividers: Boolean = true,
@@ -140,7 +118,6 @@ data class AppearancePreferences(
         fun preset(preset: VisualPreset): AppearancePreferences = when (preset) {
             VisualPreset.DEFAULT -> defaults().copy(visualPreset = VisualPreset.DEFAULT)
             VisualPreset.MINIMAL -> defaults().copy(
-                surfaceStyle = SurfaceStyle.FLAT,
                 cornerStyle = CornerStyle.COMPACT,
                 interfaceDensity = InterfaceDensity.COMPACT,
                 bottomBarStyle = BottomBarStyle.ICONS_ONLY,
@@ -149,7 +126,6 @@ data class AppearancePreferences(
             )
             VisualPreset.OLED -> defaults().copy(
                 backgroundStyle = BackgroundStyle.PURE,
-                surfaceStyle = SurfaceStyle.OUTLINED,
                 accentIntensity = AccentIntensity.VIBRANT,
                 visualPreset = VisualPreset.OLED
             )
@@ -208,11 +184,16 @@ enum class AccentIntensity {
     VIBRANT
 }
 
-enum class SurfaceStyle {
-    FLAT,
-    OUTLINED,
-    ELEVATED,
-    TRANSLUCENT
+
+/**
+ * Materias como tarjetas (con su barra y su pronóstico) o como filas de lista.
+ *
+ * Fijado el 20 sep 2026 como lo único que sigue eligiéndose de la forma de Académico: lo
+ * demás —superficie, campos, chips, distintivos— es decisión de diseño y va con lo suyo.
+ */
+enum class SubjectsLayout {
+    CARDS,
+    LIST
 }
 
 enum class CornerStyle {
@@ -347,24 +328,7 @@ enum class InitialTab {
     EXPENSES
 }
 
-/**
- * Cuanta sombra, cuando la superficie es «Sombra».
- *
- * **No hay «nada».** Una sombra de cero es una superficie plana, y plana ya es una de las
- * cuatro superficies: ofrecerla aqui otra vez daba dos caminos al mismo pixel.
- */
-enum class ShadowIntensity {
-    SUAVE,
-    MEDIA,
-    FUERTE
-}
 
-/** Lo grueso que es el filete, cuando la superficie es «Filete». */
-enum class OutlineWeight {
-    FINO,
-    MEDIO,
-    GRUESO
-}
 
 /** El aire entre renglones de un parrafo. */
 enum class LineHeightStyle {
@@ -373,11 +337,6 @@ enum class LineHeightStyle {
     AMPLIO
 }
 
-enum class ButtonShapeStyle {
-    RECTO,
-    MEDIO,
-    PASTILLA
-}
 
 enum class ButtonSizeStyle {
     PEQUENO,
@@ -385,17 +344,7 @@ enum class ButtonSizeStyle {
     GRANDE
 }
 
-enum class TextFieldStyle {
-    RELLENO,
-    FILETE,
-    SUBRAYADO
-}
 
-enum class ChipStyle {
-    FILETE,
-    RELLENO,
-    TEXTO
-}
 
 /**
  * El trazo de los iconos de la barra de abajo.

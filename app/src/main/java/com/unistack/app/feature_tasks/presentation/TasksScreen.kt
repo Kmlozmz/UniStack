@@ -56,7 +56,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.toPath
 import androidx.compose.ui.graphics.drawscope.withTransform
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.feature_user.domain.BadgeShape
 import com.unistack.app.feature_grades.presentation.formaDeMateria
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -2527,7 +2527,7 @@ fun SubjectShapeIcon(
     modifier: Modifier = Modifier,
     size: Dp = 18.dp
 ) {
-    val estilo = LocalAppearancePreferences.current.badgeShape
+    val estilo = BadgeShape.ALEATORIO
     val polygon = remember(seed, estilo) { formaDeMateria(estilo, seed) }
     val path = polygon.toPath()
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {

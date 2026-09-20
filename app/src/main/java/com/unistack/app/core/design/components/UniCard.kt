@@ -15,12 +15,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.feature_user.domain.SurfaceStyle
-import com.unistack.app.feature_user.domain.ShadowIntensity
-import com.unistack.app.feature_user.domain.OutlineWeight
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
-import androidx.compose.ui.draw.shadow
 
 /**
  * La superficie sobre la que se apoya casi todo en la app.
@@ -52,69 +48,23 @@ fun UniCard(
     val resolvedContentPadding = contentPadding ?: PaddingValues(LocalInterfaceSpacing.current.cardPadding)
     val apariencia = LocalAppearancePreferences.current
     /*
-     * «Reducir transparencias» gana al estilo de superficie.
+     * La superficie es plana, siempre (20 sep 2026).
      *
-     * Es un ajuste de accesibilidad y el otro es de gusto: quien pide que no haya cristal lo
-     * pide porque el texto sobre un fondo que se ve por debajo no se le lee, y eso no lo
-     * arregla elegir otra superficie en otra pantalla.
+     * Hubo cuatro estilos —plana, filete, sombra, cristal— con su grosor y su intensidad, y
+     * se fueron: era una decisión de diseño puesta delante del usuario. La tarjeta se distingue
+     * solo por su tono. Un borde pedido a mano —`borderWidth` puesto por quien llama— sigue
+     * mandando: es un borde con intención, como el de una materia en riesgo.
      */
-    val superficie = if (
-        LocalAccessibilityPreferences.current.reduceTransparency &&
-        apariencia.surfaceStyle == SurfaceStyle.TRANSLUCENT
-    ) {
-        SurfaceStyle.OUTLINED
-    } else {
-        apariencia.surfaceStyle
-    }
-
-    /*
-     * El estilo de superficie decide aqui, no en cada pantalla.
-     *
-     * `surfaceStyle` se elegia en Apariencia, se guardaba y viajaba en la copia de seguridad
-     * sin cambiar un pixel: «plana» y «con sombra» daban el mismo resultado porque nadie
-     * miraba el ajuste. La tarjeta es el sitio donde tiene que mirarse, porque es la pieza que
-     * se repite en las once pantallas.
-     *
-     * Un borde pedido a mano —`borderWidth` puesto por quien llama— manda sobre el estilo: es
-     * un borde con intencion, como el de una materia en riesgo, y no la decoracion general.
-     */
-    val filete = when (apariencia.outlineWeight) {
-        OutlineWeight.FINO -> 1.dp
-        OutlineWeight.MEDIO -> 1.5.dp
-        OutlineWeight.GRUESO -> 2.5.dp
-    }
-    val anchoDeBorde = when {
-        borderWidth > 0.dp -> borderWidth
-        superficie == SurfaceStyle.OUTLINED -> filete
-        // Cristal: un filete tenue es lo que da el borde del vidrio; sin el, la tarjeta
-        // semitransparente se pierde contra el fondo.
-        superficie == SurfaceStyle.TRANSLUCENT -> 1.dp
-        else -> 0.dp
-    }
+    val anchoDeBorde = borderWidth
     val border = if (anchoDeBorde > 0.dp) {
         BorderStroke(
             width = anchoDeBorde,
-            color = if (borderColor != Color.Transparent) {
-                borderColor
-            } else if (superficie == SurfaceStyle.TRANSLUCENT) {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant
-            }
+            color = if (borderColor != Color.Transparent) borderColor else MaterialTheme.colorScheme.outlineVariant
         )
     } else {
         null
     }
-    val sombra = if (superficie != SurfaceStyle.ELEVATED) {
-        0.dp
-    } else {
-        when (apariencia.shadowIntensity) {
-            ShadowIntensity.SUAVE -> 2.dp
-            ShadowIntensity.MEDIA -> 6.dp
-            ShadowIntensity.FUERTE -> 12.dp
-        }
-    }
-    val conSombra = if (sombra > 0.dp) modifier.shadow(sombra, resolvedShape) else modifier
+    val conSombra = modifier
 
     // Con degradado, el Surface va transparente y el pincel se pinta dentro: Surface solo
     // acepta un color liso, y perder el degradado cambiaría lo que dibujan las pantallas
@@ -129,8 +79,6 @@ fun UniCard(
 
     val effectiveColor = if (brush != null) {
         Color.Transparent
-    } else if (superficie == SurfaceStyle.TRANSLUCENT) {
-        color.copy(alpha = 0.72f)
     } else {
         color
     }

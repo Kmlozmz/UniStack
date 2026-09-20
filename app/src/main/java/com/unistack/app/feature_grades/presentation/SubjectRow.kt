@@ -10,6 +10,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.getValue
 import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.feature_user.domain.BadgeShape
+import com.unistack.app.feature_user.domain.SubjectsLayout
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import androidx.compose.foundation.background
@@ -100,7 +101,13 @@ fun SubjectRow(
      * y esa fue la primera versión de esto: mantener pulsada la fila servía para marcar y para
      * mover a la vez, y cuál de las dos obtenías dependía de si tu dedo se movía.
      */
-    dragHandle: (@Composable () -> Unit)? = null
+    dragHandle: (@Composable () -> Unit)? = null,
+    /**
+     * Como fila de lista: la marca, el nombre y el promedio en un renglón, sin barra ni
+     * pronóstico. Es «Materias: lista» de Apariencia › Forma: con ocho materias, cabe en una
+     * pantalla.
+     */
+    compact: Boolean = LocalAppearancePreferences.current.subjectsLayout == SubjectsLayout.LIST
 ) {
     val sections = LocalSectionColors.current
     val accent = subjectAccent(subject)
@@ -168,6 +175,26 @@ fun SubjectRow(
         animationSpec = tweenDeMovimiento(baseMs = 700),
         label = "pronostico"
     )
+
+    if (compact) {
+        FilaDeMateria(
+            subject = subject,
+            calculation = calculation,
+            gradingScale = gradingScale,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            selected = selected,
+            container = container,
+            onContainer = onContainer,
+            support = support,
+            accent = accent,
+            colorDelPronostico = colorDelPronostico,
+            alerta = alerta,
+            dragHandle = dragHandle,
+            modifier = modifier
+        )
+        return
+    }
 
     Surface(
         modifier = modifier
@@ -294,6 +321,91 @@ fun SubjectRow(
 }
 
 /**
+ * La materia como fila de lista: marca pequeña, nombre y una línea de apoyo, promedio a la
+ * derecha. Sin barra de evaluación ni pronóstico con palabras: para eso se abre la materia.
+ */
+@Composable
+private fun FilaDeMateria(
+    subject: Subject,
+    calculation: SubjectGradeCalculation,
+    gradingScale: GradingScale,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
+    selected: Boolean,
+    container: Color,
+    onContainer: Color,
+    support: Color,
+    accent: Color,
+    colorDelPronostico: Color,
+    alerta: GradeAlertLevel,
+    dragHandle: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+                onLongClickLabel = if (onLongClick != null) stringResource(R.string.subject_row_mark) else null
+            ),
+        shape = MaterialTheme.shapes.medium,
+        color = container,
+        contentColor = onContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = stringResource(R.string.subject_row_marked),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                SubjectMark(letter = subject.name.take(1).uppercase(), color = accent, seed = subject.id, markSize = 36.dp)
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = subject.name,
+                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = supportLine(subject, calculation, gradingScale),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = support,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Text(
+                text = calculation.currentAverage
+                    ?.let { GradingScaleUtils.formatGrade(it, gradingScale) }
+                    ?: "—",
+                style = MaterialTheme.typography.titleMediumEmphasized,
+                // El color del pronóstico en la cifra: es lo único que aquí dice cómo va.
+                color = if (alerta == GradeAlertLevel.NONE) onContainer else colorDelPronostico
+            )
+            dragHandle?.invoke()
+        }
+    }
+}
+
+/**
  * La marca de la materia: su inicial dentro de una forma de nueve lóbulos.
  *
  * Se dibuja con [Canvas] y no recortando una caja con la forma. Recortando no funcionaba —lo
@@ -311,7 +423,8 @@ internal fun SubjectMark(letter: String, color: Color, seed: String, markSize: D
      * de las seis opciones —y sigue siendo la interesante, porque es la que deja distinguir
      * dos materias del mismo color— pero ya no es la unica.
      */
-    val estilo = LocalAppearancePreferences.current.badgeShape
+    // Cada materia con la suya, fijo desde el 20 sep 2026.
+    val estilo = BadgeShape.ALEATORIO
     val polygon = remember(seed, estilo) { formaDeMateria(estilo, seed) }
     val path = polygon.toPath()
 

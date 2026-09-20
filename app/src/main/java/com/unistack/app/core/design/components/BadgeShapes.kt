@@ -17,7 +17,6 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.feature_user.domain.BadgeShape
 
 /**
@@ -95,4 +94,4 @@ fun formaDeDistintivo(estilo: BadgeShape, id: String): Shape {
 @Composable
 @ReadOnlyComposable
 fun formaDeDistintivo(id: String): Shape =
-    formaDeDistintivo(LocalAppearancePreferences.current.badgeShape, id)
+    formaDeDistintivo(BadgeShape.ALEATORIO, id)

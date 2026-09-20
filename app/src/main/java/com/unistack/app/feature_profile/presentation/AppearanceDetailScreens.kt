@@ -45,23 +45,17 @@ import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.theme.tonosDeAjustes
 import com.unistack.app.feature_user.domain.AppearancePreferences
-import com.unistack.app.feature_user.domain.BadgeShape
 import com.unistack.app.feature_user.domain.BottomBarStyle
-import com.unistack.app.feature_user.domain.ButtonShapeStyle
 import com.unistack.app.feature_user.domain.ButtonSizeStyle
-import com.unistack.app.feature_user.domain.ChipStyle
 import com.unistack.app.feature_user.domain.CornerStyle
+import com.unistack.app.feature_user.domain.SubjectsLayout
 import com.unistack.app.feature_user.domain.FirstDayOfWeek
 import com.unistack.app.feature_user.domain.IconStyle
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.LineHeightStyle
-import com.unistack.app.feature_user.domain.OutlineWeight
 import com.unistack.app.feature_user.domain.ProgressShape
 import com.unistack.app.feature_user.domain.SettingsIconStyle
-import com.unistack.app.feature_user.domain.ShadowIntensity
-import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.SwitchIconStyle
-import com.unistack.app.feature_user.domain.TextFieldStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.core.utils.Textos
 
@@ -129,16 +123,16 @@ private fun PantallaDeAjustes(
     }
 }
 
-// ------------------------------------------------------------------ forma y superficie
+// ------------------------------------------------------------------ forma
 
 /**
- * Todo lo que decide **qué forma tienen las cosas**: tarjetas, botones, campos y distintivos.
+ * Lo que decide **qué forma tienen las cosas**, con lo que cambia de una persona a otra.
  *
- * `surfaceStyle` llevaba aquí desde el principio, guardado y viajando en la copia de
- * seguridad, **sin pintar nada**: elegir «plana» o «con sombra» daba exactamente el mismo
- * resultado. Ahora decide de verdad, y los dos ajustes que lo afinan —cuánta sombra, qué
- * grosor de filete— solo aparecen cuando el estilo elegido los usa: un selector de sombra bajo
- * una superficie plana es un mando desconectado.
+ * Fue «Forma y superficie», con nueve mandos. El 20 sep 2026 se quedó con cuatro: esquinas y
+ * densidad, el tamaño de los botones (que vivía en Componentes y es de dedos, no de diseño) y
+ * las materias como tarjetas o como lista. Superficie, forma de botones, campos, chips y
+ * distintivos eran decisiones de diseño puestas delante del usuario, y van con lo suyo: plana,
+ * pastilla, filete, filete y cada materia con la suya.
  */
 @Composable
 fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -150,36 +144,6 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         modifier = modifier
     ) { appearance ->
         VistaPreviaDeTarjeta()
-
-        Rotulo(stringResource(R.string.settings_surface_sec_surface), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.surfaceStyle,
-            options = SurfaceStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(surfaceStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Explicacion(appearance.surfaceStyle.explicacion())
-
-        // Solo con «Sombra»: no hay opción «nada» porque una sombra de cero es una superficie
-        // plana, y plana ya es una de las cuatro de arriba.
-        if (appearance.surfaceStyle == SurfaceStyle.ELEVATED) {
-            Rotulo(stringResource(R.string.settings_surface_sec_shadow))
-            UniSegmentedControl(
-                selected = appearance.shadowIntensity,
-                options = ShadowIntensity.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-                onSelected = { valor -> viewModel.updateAppearance { it.copy(shadowIntensity = valor) } },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        if (appearance.surfaceStyle == SurfaceStyle.OUTLINED) {
-            Rotulo(stringResource(R.string.settings_surface_sec_outline))
-            UniSegmentedControl(
-                selected = appearance.outlineWeight,
-                options = OutlineWeight.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-                onSelected = { valor -> viewModel.updateAppearance { it.copy(outlineWeight = valor) } },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
 
         Rotulo(stringResource(R.string.settings_surface_sec_corners), arriba = true)
         UniSegmentedControl(
@@ -199,48 +163,24 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         )
         Explicacion(stringResource(R.string.settings_surface_density_desc))
 
-        Rotulo(stringResource(R.string.settings_surface_sec_button_shape), arriba = true)
+        Rotulo(stringResource(R.string.settings_components_sec_button_size), arriba = true)
         UniSegmentedControl(
-            selected = appearance.buttonShape,
-            options = ButtonShapeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonShape = valor) } },
+            selected = appearance.buttonSize,
+            options = ButtonSizeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonSize = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
         VistaPreviaDeBotones()
+        Explicacion(stringResource(R.string.settings_surface_button_size_desc))
 
-        Rotulo(stringResource(R.string.settings_surface_sec_field_shape), arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_subjects), arriba = true)
         UniSegmentedControl(
-            selected = appearance.textFieldStyle,
-            options = TextFieldStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(textFieldStyle = valor) } },
+            selected = appearance.subjectsLayout,
+            options = SubjectsLayout.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(subjectsLayout = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        VistaPreviaDeCampo()
-
-        Rotulo(stringResource(R.string.settings_surface_sec_chip_shape), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.chipStyle,
-            options = ChipStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(chipStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        VistaPreviaDeChips()
-
-        Rotulo(stringResource(R.string.settings_surface_sec_badge_shape), arriba = true)
-        UniSegmentedControl(
-            selected = appearance.badgeShape,
-            options = BadgeShape.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(badgeShape = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        VistaPreviaDeDistintivos()
-        Explicacion(
-            if (appearance.badgeShape == BadgeShape.ALEATORIO) {
-                stringResource(R.string.settings_surface_badge_desc_unique)
-            } else {
-                stringResource(R.string.settings_surface_badge_desc_same)
-            }
-        )
+        Explicacion(stringResource(R.string.settings_surface_subjects_desc))
     }
 }
 
@@ -397,16 +337,7 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        Rotulo(stringResource(R.string.settings_components_sec_button_size))
-        UniSegmentedControl(
-            selected = appearance.buttonSize,
-            options = ButtonSizeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonSize = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Explicacion(stringResource(R.string.settings_components_button_size_desc))
-
-        Rotulo(stringResource(R.string.settings_components_sec_bottom_bar), arriba = true)
+        Rotulo(stringResource(R.string.settings_components_sec_bottom_bar))
         UniSegmentedControl(
             selected = appearance.bottomBarStyle,
             options = BottomBarStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -498,21 +429,7 @@ private fun FilaDeInterruptor(
 
 // ------------------------------------------------------------------ rótulos
 
-internal fun ShadowIntensity.label(): String {
-    return when (this) {
-        ShadowIntensity.SUAVE -> Textos.get(R.string.settings_accent_soft)
-        ShadowIntensity.MEDIA -> Textos.get(R.string.templates_priority_medium)
-        ShadowIntensity.FUERTE -> Textos.get(R.string.appearance_fuerte)
-    }
-}
 
-internal fun OutlineWeight.label(): String {
-    return when (this) {
-        OutlineWeight.FINO -> Textos.get(R.string.appearance_fino)
-        OutlineWeight.MEDIO -> Textos.get(R.string.settings_accent_balanced)
-        OutlineWeight.GRUESO -> Textos.get(R.string.appearance_grueso)
-    }
-}
 
 internal fun LineHeightStyle.label(): String {
     return when (this) {
@@ -522,12 +439,10 @@ internal fun LineHeightStyle.label(): String {
     }
 }
 
-internal fun ButtonShapeStyle.label(): String {
-    return when (this) {
-        ButtonShapeStyle.RECTO -> Textos.get(R.string.appearance_rectos)
-        ButtonShapeStyle.MEDIO -> Textos.get(R.string.appearance_medios)
-        ButtonShapeStyle.PASTILLA -> Textos.get(R.string.appearance_pastilla)
-    }
+
+internal fun SubjectsLayout.label(): String = when (this) {
+    SubjectsLayout.CARDS -> Textos.get(R.string.appearance_subjects_cards)
+    SubjectsLayout.LIST -> Textos.get(R.string.appearance_subjects_list)
 }
 
 internal fun ButtonSizeStyle.label(): String {
@@ -538,21 +453,7 @@ internal fun ButtonSizeStyle.label(): String {
     }
 }
 
-internal fun TextFieldStyle.label(): String {
-    return when (this) {
-        TextFieldStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
-        TextFieldStyle.FILETE -> Textos.get(R.string.appearance_filete)
-        TextFieldStyle.SUBRAYADO -> Textos.get(R.string.appearance_subrayado)
-    }
-}
 
-internal fun ChipStyle.label(): String {
-    return when (this) {
-        ChipStyle.FILETE -> Textos.get(R.string.appearance_filete)
-        ChipStyle.RELLENO -> Textos.get(R.string.appearance_relleno)
-        ChipStyle.TEXTO -> Textos.get(R.string.appearance_solo_texto)
-    }
-}
 
 internal fun SettingsIconStyle.label(): String = when (this) {
     SettingsIconStyle.COLOR -> Textos.get(R.string.appearance_iconos_de_colores)
@@ -595,16 +496,6 @@ internal fun IconStyle.label(): String {
     }
 }
 
-internal fun BadgeShape.label(): String {
-    return when (this) {
-        BadgeShape.CIRCULO -> Textos.get(R.string.appearance_circulo)
-        BadgeShape.GALLETA -> Textos.get(R.string.appearance_galleta)
-        BadgeShape.TREBOL -> Textos.get(R.string.appearance_trebol)
-        BadgeShape.SOL -> Textos.get(R.string.appearance_sol)
-        BadgeShape.ROMBO -> Textos.get(R.string.appearance_rombo)
-        BadgeShape.ALEATORIO -> Textos.get(R.string.appearance_aleatorio)
-    }
-}
 
 internal fun FirstDayOfWeek.label(): String {
     return when (this) {

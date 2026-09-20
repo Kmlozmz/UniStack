@@ -20,7 +20,6 @@ import com.unistack.app.feature_user.domain.LineHeightStyle
 import com.unistack.app.feature_user.domain.ReadingFont
 import com.unistack.app.feature_user.domain.ContrastLevel
 import com.unistack.app.feature_user.domain.CornerStyle
-import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.AccentIntensity
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppearancePreferences
@@ -63,11 +62,7 @@ fun UniStackTheme(
         appearance.motion.haptics
     }
 
-    val effectiveAppearance = if (accessibility.reduceTransparency && appearance.surfaceStyle == SurfaceStyle.TRANSLUCENT) {
-        appearance.copy(surfaceStyle = SurfaceStyle.OUTLINED)
-    } else {
-        appearance
-    }
+    val effectiveAppearance = appearance
 
     val scheme = expressiveColorScheme(darkTheme = darkTheme, oledTheme = oledTheme, appearance = effectiveAppearance)
         .conContraste(accessibility.contrast, accessibility.highContrastEnabled, darkTheme)
@@ -272,7 +267,7 @@ private fun expressiveColorScheme(
             surfaceVariant = tema.surface,
             outline = tema.ink.copy(alpha = 0.34f).compuestoSobre(tema.background),
             outlineVariant = tema.ink.copy(alpha = 0.16f).compuestoSobre(tema.background)
-        ).conSuperficie(appearance.surfaceStyle, tema, darkTheme)
+        ).conSuperficiePlana(tema, darkTheme)
     }
 
     // OLED apaga el píxel: el fondo y el contenedor más bajo van a negro puro, y el resto de
@@ -361,38 +356,20 @@ internal fun Color.saturado(fuerza: Float): Color {
  * color de tarjeta del tema en los cuatro, y el estilo decide solo el borde: `UniCard` pone el
  * filete, la sombra o la transparencia, y aquí se ajusta el contraste de ese filete.
  */
-internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: ThemePalette, oscuro: Boolean = false): ColorScheme = if (oscuro) {
+/**
+ * La superficie plana, la única desde el 20 sep 2026.
+ *
+ * En oscuro la tarjeta va del color del tema sin rebajar (16 sep) y lo que queda de la línea
+ * son los separadores de dentro: tienen que verse más claros que la tarjeta, no más oscuros.
+ * En claro, sin filete, la tarjeta se distingue del fondo solo por su tono.
+ */
+internal fun ColorScheme.conSuperficiePlana(tema: ThemePalette, oscuro: Boolean = false): ColorScheme = if (oscuro) {
+    copy(outlineVariant = tema.surface.mezclaCon(tema.ink, 0.08f))
+} else {
     copy(
-        outlineVariant = when (estilo) {
-            // Sin borde en la tarjeta, lo que queda de esta línea son los separadores de dentro:
-            // tienen que verse más claros que la tarjeta, no más oscuros.
-            SurfaceStyle.FLAT, SurfaceStyle.ELEVATED -> tema.surface.mezclaCon(tema.ink, 0.08f)
-            SurfaceStyle.OUTLINED -> tema.ink.copy(alpha = 0.28f).compuestoSobre(tema.background)
-            SurfaceStyle.TRANSLUCENT -> tema.ink.copy(alpha = 0.20f).compuestoSobre(tema.background)
-        }
-    )
-} else when (estilo) {
-    SurfaceStyle.FLAT -> copy(
         surfaceContainer = tema.background.mezclaCon(tema.surface, 0.55f),
         surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.75f),
         outlineVariant = tema.background.mezclaCon(tema.ink, 0.05f)
-    )
-    // El grosor del filete no se puede meter en un ColorScheme, asi que lo que se ajusta aqui
-    // es su contraste: un filete «grueso» que ademas se ve mas oscuro se lee como mas grueso.
-    SurfaceStyle.OUTLINED -> copy(
-        surfaceContainer = tema.background.mezclaCon(tema.surface, 0.35f),
-        surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.6f),
-        outlineVariant = tema.ink.copy(alpha = 0.28f).compuestoSobre(tema.background)
-    )
-    SurfaceStyle.ELEVATED -> copy(
-        surfaceContainer = tema.surface.mezclaCon(tema.ink, 0.04f),
-        surfaceContainerHigh = tema.surface.mezclaCon(tema.ink, 0.10f),
-        outlineVariant = tema.ink.copy(alpha = 0.10f).compuestoSobre(tema.background)
-    )
-    SurfaceStyle.TRANSLUCENT -> copy(
-        surfaceContainer = tema.background.mezclaCon(tema.surface, 0.7f),
-        surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.85f),
-        outlineVariant = tema.ink.copy(alpha = 0.20f).compuestoSobre(tema.background)
     )
 }
 

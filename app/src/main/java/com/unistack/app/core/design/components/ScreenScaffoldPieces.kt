@@ -26,8 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unistack.app.feature_user.domain.ChipStyle
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.CircleShape
 data class UniFilterOption<T>(
@@ -126,49 +124,23 @@ fun <T> UniFilterChipRow(
                 },
                 shape = CircleShape,
                 /*
-                 * El estilo de chip sale de Apariencia, y estos son **los chips de la app**:
-                 * los filtros de Tareas y de Gastos pasan todos por aqui.
-                 *
-                 * Estuvo escrito a mano —relleno tonal siempre— asi que «Filete» y «Solo
-                 * texto» se elegian y no cambiaban nada. La diferencia esta en como se marca
-                 * el activo: relleno lo tine, filete lo rodea, y solo texto deja el color de
-                 * la letra como unica senal.
+                 * Estos son **los chips de la app**: los filtros de Tareas y de Gastos pasan
+                 * todos por aqui. Filete, fijo desde el 20 sep 2026: hubo relleno y «solo
+                 * texto» elegibles, y era una decision de diseno puesta delante del usuario. El
+                 * elegido se marca por el borde y el tono.
                  */
-                colors = when (LocalAppearancePreferences.current.chipStyle) {
-                    ChipStyle.RELLENO -> FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    ChipStyle.FILETE -> FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        containerColor = Color.Transparent,
-                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    ChipStyle.TEXTO -> FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.Transparent,
-                        selectedLabelColor = MaterialTheme.colorScheme.primary,
-                        containerColor = Color.Transparent,
-                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                border = when (LocalAppearancePreferences.current.chipStyle) {
-                    ChipStyle.FILETE -> FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = option.value == selected,
-                        borderColor = MaterialTheme.colorScheme.outlineVariant,
-                        selectedBorderColor = MaterialTheme.colorScheme.primary
-                    )
-                    // Sin contorno: en relleno lo dice el fondo y en texto, la letra.
-                    else -> FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = option.value == selected,
-                        borderColor = Color.Transparent,
-                        selectedBorderColor = Color.Transparent
-                    )
-                }
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = Color.Transparent,
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = option.value == selected,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary
+                ),
             )
         }
     }

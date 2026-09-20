@@ -49,9 +49,7 @@ import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.feature_user.domain.BadgeShape
-import com.unistack.app.feature_user.domain.ChipStyle
 import com.unistack.app.feature_user.domain.ProgressShape
-import com.unistack.app.feature_user.domain.TextFieldStyle
 
 /**
  * Las vistas previas de Apariencia, hechas con piezas **de la app** y no con rectángulos.
@@ -138,7 +136,7 @@ fun VistaPreviaDeTarjeta(modifier: Modifier = Modifier) {
                     Box(
                         modifier = Modifier
                             .size(42.dp)
-                            .clip(formaDeDistintivo(apariencia.badgeShape, "calculo-iii"))
+                            .clip(formaDeDistintivo(BadgeShape.ALEATORIO, "calculo-iii"))
                             .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
@@ -223,163 +221,8 @@ fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Los chips de filtro tal como salen en Tareas, con uno marcado.
- *
- * Uno marcado y dos sin marcar, que es el estado normal: con los tres iguales no se veía la
- * diferencia entre «relleno» y «filete», que está justo en cómo se marca el activo.
- */
-@Composable
-fun VistaPreviaDeChips(modifier: Modifier = Modifier) {
-    val esquema = MaterialTheme.colorScheme
-    val estilo = LocalAppearancePreferences.current.chipStyle
-    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_tasks), modifier = modifier) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            run {
-            listOf((stringResource(R.string.tasks_tab_overdue)) to true, (stringResource(R.string.notif_time_today)) to false, (stringResource(R.string.appearance_sin_materia)) to false)
-        }.forEach { (texto, activo) ->
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(percent = 50))
-                        .then(
-                            when (estilo) {
-                                ChipStyle.RELLENO -> Modifier.background(
-                                    if (activo) esquema.primary else esquema.surfaceContainerHighest
-                                )
-                                ChipStyle.FILETE -> Modifier
-                                    .background(if (activo) esquema.primaryContainer else Color.Transparent)
-                                    .border(1.dp, esquema.outlineVariant, RoundedCornerShape(percent = 50))
-                                ChipStyle.TEXTO -> Modifier
-                            }
-                        )
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    if (activo) {
-                        Icon(
-                            Icons.Rounded.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(15.dp),
-                            tint = when {
-                                estilo == ChipStyle.RELLENO -> esquema.onPrimary
-                                else -> esquema.primary
-                            }
-                        )
-                    }
-                    Text(
-                        texto,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = if (activo) FontWeight.Bold else FontWeight.Normal,
-                        color = when {
-                            estilo == ChipStyle.RELLENO && activo -> esquema.onPrimary
-                            activo -> esquema.primary
-                            else -> esquema.onSurface
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
 
-/** El campo de «Nombre de la materia» del formulario, con su rótulo y su texto escrito. */
-@Composable
-fun VistaPreviaDeCampo(modifier: Modifier = Modifier) {
-    val esquema = MaterialTheme.colorScheme
-    val estilo = LocalAppearancePreferences.current.textFieldStyle
-    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_new_subject), modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    when (estilo) {
-                        TextFieldStyle.RELLENO -> Modifier
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(esquema.surfaceContainerHighest)
-                        TextFieldStyle.FILETE -> Modifier
-                            .clip(MaterialTheme.shapes.medium)
-                            .border(1.5.dp, esquema.primary, MaterialTheme.shapes.medium)
-                        TextFieldStyle.SUBRAYADO -> Modifier
-                    }
-                )
-                .padding(horizontal = 14.dp, vertical = 9.dp)
-        ) {
-            Text(stringResource(R.string.preview_subject_name), style = MaterialTheme.typography.labelSmall, color = esquema.primary)
-            Text(stringResource(R.string.preview_calculus), style = MaterialTheme.typography.bodyLarge, color = esquema.onSurface)
-        }
-        if (estilo == TextFieldStyle.SUBRAYADO) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(esquema.primary)
-            )
-        }
-    }
-}
 
-/**
- * Cinco materias con sus distintivos, como se ven en la lista.
- *
- * Cinco y no una: la gracia de «Aleatorio» es que dos materias del mismo color se distinguen
- * por la forma, y eso solo se ve con varias juntas.
- */
-@Composable
-fun VistaPreviaDeDistintivos(modifier: Modifier = Modifier) {
-    val apariencia = LocalAppearancePreferences.current
-    val esquema = MaterialTheme.colorScheme
-    val secciones = LocalSectionColors.current
-    val materias = listOf(
-        Triple("calculo", stringResource(R.string.preview_calculus), esquema.primary),
-        Triple("fisica", stringResource(R.string.preview_physics), secciones.schedule),
-        Triple("progra", stringResource(R.string.preview_programming), secciones.onTrack),
-        Triple("estad", stringResource(R.string.preview_statistics), secciones.expenses),
-        Triple("ingles", stringResource(R.string.preview_english), esquema.tertiary)
-    )
-    VentanaDeMuestra(titulo = stringResource(R.string.preview_win_subjects), modifier = modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            materias.take(3).forEach { (id, nombre, color) ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(formaDeDistintivo(apariencia.badgeShape, id))
-                            .background(color),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            nombre.first().toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = esquema.surface
-                        )
-                    }
-                    Text(nombre, style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-            // Las otras dos, solo la marca: es donde se ve el reparto de formas de un vistazo.
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.padding(top = 2.dp)) {
-                materias.forEach { (id, _, color) ->
-                    Box(
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clip(formaDeDistintivo(apariencia.badgeShape, id))
-                            .background(color)
-                    )
-                }
-                if (apariencia.badgeShape != BadgeShape.ALEATORIO) {
-                    Text(
-                        stringResource(R.string.preview_all_same),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = esquema.outline,
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
-                }
-            }
-        }
-    }
-}
 
 /** Dos filas de ajustes con sus interruptores, encendida y apagada, como en cualquier pantalla. */
 @Composable

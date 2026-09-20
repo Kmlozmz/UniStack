@@ -51,7 +51,6 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.MotionCatalog
 import com.unistack.app.feature_user.domain.ProgressShape
-import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
@@ -128,8 +127,7 @@ fun AppearanceSettingsScreen(
                     title = stringResource(R.string.settings_appearance_surface_title),
                     subtitle = stringResource(
                         R.string.settings_appearance_surface_sub,
-                        appearance.surfaceStyle.label(),
-                        appearance.cornerStyle.label().lowercase(),
+                        appearance.cornerStyle.label(),
                         appearance.interfaceDensity.label().lowercase()
                     ),
                     iconColor = tonosDeAjustes.violeta,
@@ -413,24 +411,6 @@ internal fun SwitchIconStyle.label(): String {
         SwitchIconStyle.BOTH -> Textos.get(R.string.appearance_siempre)
         SwitchIconStyle.CHECKED_ONLY -> Textos.get(R.string.appearance_al_encender)
         SwitchIconStyle.NONE -> Textos.get(R.string.appearance_nunca)
-    }
-}
-
-internal fun SurfaceStyle.label(): String {
-    return when (this) {
-        SurfaceStyle.FLAT -> Textos.get(R.string.appearance_plana)
-        SurfaceStyle.OUTLINED -> Textos.get(R.string.appearance_filete)
-        SurfaceStyle.ELEVATED -> Textos.get(R.string.appearance_sombra)
-        SurfaceStyle.TRANSLUCENT -> Textos.get(R.string.appearance_cristal)
-    }
-}
-
-internal fun SurfaceStyle.explicacion(): String {
-    return when (this) {
-        SurfaceStyle.FLAT -> Textos.get(R.string.appearance_sin_bordes_ni_sombra_la_tarjeta)
-        SurfaceStyle.OUTLINED -> Textos.get(R.string.appearance_un_filete_fino_marca_donde_acaba)
-        SurfaceStyle.ELEVATED -> Textos.get(R.string.appearance_las_tarjetas_proyectan_sombra_y_se)
-        SurfaceStyle.TRANSLUCENT -> Textos.get(R.string.appearance_semitransparentes_dejando_ver_el_fondo_por)
     }
 }
 

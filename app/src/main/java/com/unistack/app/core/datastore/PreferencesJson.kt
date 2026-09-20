@@ -30,10 +30,8 @@ object AppearancePreferencesJson {
         .put("accentStyle", value.accentStyle.name)
         .put("customAccentColor", value.customAccentColor)
         .put("accentIntensity", value.accentIntensity.name)
-        .put("surfaceStyle", value.surfaceStyle.name)
-        .put("shadowIntensity", value.shadowIntensity.name)
-        .put("outlineWeight", value.outlineWeight.name)
         .put("cornerStyle", value.cornerStyle.name)
+        .put("subjectsLayout", value.subjectsLayout.name)
         .put("interfaceDensity", value.interfaceDensity.name)
         .put("motionPreference", value.motionPreference.name)
         .put("motion", encodeMotion(value.motion))
@@ -43,13 +41,9 @@ object AppearancePreferencesJson {
         .put("lineHeightStyle", value.lineHeightStyle.name)
         .put("decimalPlaces", value.decimalPlaces)
         .put("bottomBarStyle", value.bottomBarStyle.name)
-        .put("buttonShapeV2", value.buttonShape.name)
         .put("buttonSize", value.buttonSize.name)
-        .put("textFieldStyle", value.textFieldStyle.name)
-        .put("chipStyle", value.chipStyle.name)
         .put("iconStyle", value.iconStyle.name)
         .put("settingsIconStyle", value.settingsIconStyle.name)
-        .put("badgeShape", value.badgeShape.name)
         .put("listDividers", value.listDividers)
         .put("firstDayOfWeek", value.firstDayOfWeek.name)
         .put("sectionColorsEnabled", value.sectionColorsEnabled)
@@ -77,10 +71,8 @@ object AppearancePreferencesJson {
         accentStyle = json.enumOr("accentStyle", base.accentStyle),
         customAccentColor = json.intOrNull("customAccentColor"),
         accentIntensity = json.enumOr("accentIntensity", base.accentIntensity),
-        surfaceStyle = json.enumOr("surfaceStyle", base.surfaceStyle),
-        shadowIntensity = json.enumOr("shadowIntensity", base.shadowIntensity),
-        outlineWeight = json.enumOr("outlineWeight", base.outlineWeight),
         cornerStyle = json.enumOr("cornerStyle", base.cornerStyle),
+        subjectsLayout = json.enumOr("subjectsLayout", base.subjectsLayout),
         interfaceDensity = json.enumOr("interfaceDensity", base.interfaceDensity),
         motionPreference = json.enumOr("motionPreference", base.motionPreference),
         motion = decodeMotion(json.optJSONObject("motion"), base.motion),
@@ -93,13 +85,9 @@ object AppearancePreferencesJson {
         // Clave nueva a propósito: «Medios» era el de por defecto y quedó guardado en todos
         // los teléfonos sin que nadie lo eligiera. Con otra clave, todos pasan a la pastilla
         // de ahora y quien quiera los de antes los vuelve a elegir.
-        buttonShape = json.enumOr("buttonShapeV2", base.buttonShape),
         buttonSize = json.enumOr("buttonSize", base.buttonSize),
-        textFieldStyle = json.enumOr("textFieldStyle", base.textFieldStyle),
-        chipStyle = json.enumOr("chipStyle", base.chipStyle),
         iconStyle = json.enumOr("iconStyle", base.iconStyle),
         settingsIconStyle = json.enumOr("settingsIconStyle", base.settingsIconStyle),
-        badgeShape = json.enumOr("badgeShape", base.badgeShape),
         listDividers = json.optBoolean("listDividers", base.listDividers),
         firstDayOfWeek = json.enumOr("firstDayOfWeek", base.firstDayOfWeek),
         sectionColorsEnabled = json.optBoolean("sectionColorsEnabled", base.sectionColorsEnabled),

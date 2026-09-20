@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
-import com.unistack.app.feature_user.domain.ButtonShapeStyle
 import com.unistack.app.feature_user.domain.ButtonSizeStyle
 
 /**
@@ -52,20 +51,11 @@ object UniStackButtonDefaults {
      */
     val shapes: ButtonShapes
         @Composable
-        get() = when (LocalAppearancePreferences.current.buttonShape) {
-            ButtonShapeStyle.RECTO -> ButtonDefaults.shapes(
-                shape = RoundedCornerShape(6.dp),
-                pressedShape = ButtonDefaults.pressedShape
-            )
-            ButtonShapeStyle.MEDIO -> ButtonDefaults.shapes(
-                shape = ButtonDefaults.squareShape,
-                pressedShape = ButtonDefaults.pressedShape
-            )
-            // Pastilla: la mitad del alto, que es lo que la deja siempre redonda del todo sea
-            // cual sea el tamano elegido.
-            ButtonShapeStyle.PASTILLA -> ButtonDefaults.shapes(
-                shape = RoundedCornerShape(percent = 50),
-                pressedShape = ButtonDefaults.squareShape
-            )
-        }
+        // Pastilla, la única desde el 20 sep 2026: la mitad del alto, que es lo que la deja
+        // siempre redonda del todo sea cual sea el tamano elegido. Al pulsar se cierra hasta
+        // la forma cuadrada que los botones tenian en reposo hasta el 16 sep.
+        get() = ButtonDefaults.shapes(
+            shape = RoundedCornerShape(percent = 50),
+            pressedShape = ButtonDefaults.squareShape
+        )
 }
