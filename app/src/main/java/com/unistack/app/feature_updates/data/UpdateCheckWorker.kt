@@ -59,7 +59,7 @@ class UpdateCheckWorker(
                 workManager.cancelUniqueWork(WORK_NAME)
                 return
             }
-            val hours = if (interval == CheckInterval.DAILY) 24L else 2L
+            val hours = if (interval == CheckInterval.WEEKLY) 7L * 24L else 24L
             val request = PeriodicWorkRequestBuilder<UpdateCheckWorker>(hours, TimeUnit.HOURS)
                 .setConstraints(
                     Constraints.Builder()

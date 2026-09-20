@@ -64,8 +64,18 @@ private const val KEY_INSTALL_HISTORY = "install_history"
  * al día siguiente. Consultar es una petición diminuta; lo que hay que evitar es repetirla en
  * cada vuelta a la app, no espaciarla medio día. Con «cada día» elegido, se espacia de verdad.
  */
-private const val AUTO_CHECK_INTERVAL_MILLIS = 45 * 60 * 1000L
 private const val DAILY_CHECK_INTERVAL_MILLIS = 20 * 60 * 60 * 1000L
+private const val WEEKLY_CHECK_INTERVAL_MILLIS = 6 * 24 * 60 * 60 * 1000L
+
+/**
+ * Lo mínimo que dura «Comprobando…» cuando lo pide el usuario.
+ *
+ * GitHub contesta en medio segundo y la tarjeta cambiaba antes de que se viera que había
+ * pasado algo: «muy rápido y rígido», dijo el 19 sep 2026. Unos segundos de búsqueda dan la
+ * sensación de que de verdad se ha mirado. Las comprobaciones automáticas no esperan: nadie
+ * las está viendo.
+ */
+private const val MIN_MANUAL_CHECK_MILLIS = 5_000L
 
 class GitHubReleaseUpdateRepository(
     private val context: Context
@@ -150,7 +160,7 @@ class GitHubReleaseUpdateRepository(
         if (interval == CheckInterval.MANUAL) return
         val lastCheckedAt = prefs.getLong(KEY_LAST_CHECKED_AT, 0L)
         val now = System.currentTimeMillis()
-        val gap = if (interval == CheckInterval.DAILY) DAILY_CHECK_INTERVAL_MILLIS else AUTO_CHECK_INTERVAL_MILLIS
+        val gap = if (interval == CheckInterval.WEEKLY) WEEKLY_CHECK_INTERVAL_MILLIS else DAILY_CHECK_INTERVAL_MILLIS
         if (now - lastCheckedAt < gap) return
         if (!runCheck(automatic = true)) {
             // Solo una comprobación real cuenta como comprobación. Si GitHub o la red fallan,
@@ -166,14 +176,29 @@ class GitHubReleaseUpdateRepository(
      */
     private suspend fun runCheck(automatic: Boolean): Boolean {
         // Con una escena fingida puesta, GitHub no la pisa: se sale con «volver a lo real».
-        if (fingiendo) return true
+        // Pero comprobar a mano sí se ve: los segundos de «Comprobando…» y vuelta a la escena.
+        if (fingiendo) {
+            if (!automatic) {
+                val escena = _state.value
+                _state.value = UpdateState.Checking
+                delay(MIN_MANUAL_CHECK_MILLIS)
+                if (fingiendo && _state.value == UpdateState.Checking) _state.value = escena
+            }
+            return true
+        }
         val sinNadieDelante = automatic && !appEnPrimerPlano()
         // Una descarga en marcha o ya lista no se pisa con «hay una versión disponible»: lo
         // que hay que contar es que ya está bajando, o que ya está.
         val current = _state.value
         if (current is UpdateState.Downloading) return true
         if (current !is UpdateState.ReadyToInstall) _state.value = UpdateState.Checking
-        return runCatching { fetchReleases() }
+        val empezo = System.currentTimeMillis()
+        val resultado = runCatching { fetchReleases() }
+        if (!automatic) {
+            val falta = MIN_MANUAL_CHECK_MILLIS - (System.currentTimeMillis() - empezo)
+            if (falta > 0) delay(falta)
+        }
+        return resultado
             .onSuccess { published ->
                 _releases.value = published
                 val now = System.currentTimeMillis()

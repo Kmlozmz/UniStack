@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +54,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -66,14 +68,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
 import com.unistack.app.core.design.components.SystemProgress
-import com.unistack.app.core.design.components.UniChoiceRow
-import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniLoadingIndicator
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -85,6 +86,7 @@ import com.unistack.app.feature_updates.domain.UpdateSettings
 import com.unistack.app.feature_updates.domain.UpdateState
 import kotlinx.coroutines.delay
 import java.io.File
+import kotlin.math.exp
 
 /**
  * Actualizaciones, como la eligió el 19 sep 2026 (artifact «Flujo de actualizaciones», F).
@@ -203,10 +205,36 @@ fun UpdateSettingsScreen(
              * el mismo gesto, se convertía en una comprobación que nadie había pedido.
              */
             var pullAllowed by remember { mutableStateOf(true) }
+            /*
+             * El hueco sigue al dedo mientras no lo sueltes (19 sep): uno a uno hasta el
+             * umbral y, pasado, con goma —cada vez cede menos y nunca se va de la pantalla—.
+             * Al soltar, vuelve; y comprobando se queda en 56. Material mueve la mitad de lo
+             * que recorre el dedo, así que el hueco lo dobla.
+             */
+            fun huecoDelTiron(f: Float): Dp =
+                if (f <= 1f) UMBRAL_DEL_TIRON * 2 * f
+                else UMBRAL_DEL_TIRON * 2 + GOMA_DEL_TIRON * (1f - exp(-(f - 1f) * 1.5f))
+            var anclaF by remember { mutableFloatStateOf(1f) }
+            var anclaHueco by remember { mutableStateOf(HUECO_COMPROBANDO) }
+            LaunchedEffect(checking) {
+                if (checking) {
+                    anclaF = 1f
+                    anclaHueco = HUECO_COMPROBANDO
+                }
+            }
             LaunchedEffect(listState) {
                 listState.interactionSource.interactions.collect { interaction ->
-                    if (interaction is DragInteraction.Start) {
-                        pullAllowed = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                    when (interaction) {
+                        is DragInteraction.Start -> {
+                            pullAllowed = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                        }
+                        is DragInteraction.Stop, is DragInteraction.Cancel -> {
+                            // De aquí parte la vuelta: se encoge en proporción desde donde se soltó.
+                            val f = pullState.distanceFraction.coerceAtLeast(0.01f)
+                            anclaF = f
+                            anclaHueco = huecoDelTiron(f)
+                        }
+                        else -> Unit
                     }
                 }
             }
@@ -219,6 +247,7 @@ fun UpdateSettingsScreen(
                         isRefreshing = checking,
                         state = pullState,
                         enabled = pullAllowed,
+                        threshold = UMBRAL_DEL_TIRON,
                         onRefresh = viewModel::checkForUpdates
                     ),
                 contentPadding = PaddingValues(
@@ -230,15 +259,14 @@ fun UpdateSettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item("tirar") {
-                    /*
-                     * El hueco sigue al dedo casi uno a uno hasta el umbral (80 dp) y un poco
-                     * más allá: con 42 dp de tope se sentía pesado, como tirar de algo que no
-                     * quiere bajar. Comprobando, se queda en 56.
-                     */
-                    val pulled = pullState.distanceFraction.coerceIn(0f, 1.3f)
-                    val fraction = if (checking) 1f else pulled.coerceAtMost(1f)
-                    val gap = if (checking) 56.dp else 72.dp * pulled
-                    if (checking || pulled > 0f) {
+                    val f = pullState.distanceFraction.coerceAtLeast(0f)
+                    val fraction = if (checking) 1f else f.coerceAtMost(1f)
+                    val gap = when {
+                        checking -> HUECO_COMPROBANDO
+                        pullState.isAnimating -> anclaHueco * (f / anclaF).coerceIn(0f, 1f)
+                        else -> huecoDelTiron(f)
+                    }
+                    if (checking || f > 0f) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -344,8 +372,9 @@ fun UpdateSettingsScreen(
 /**
  * «Comprobar»: un diálogo con las tres opciones, no un chip que rueda.
  *
- * Tocar el chip cambiaba el valor sin decir cuáles había; él pidió (19 sep) poder elegir. Es
- * [UniChoiceRow] —contorno y visto— porque acota un ajuste, no cambia de vista.
+ * Tocar el chip cambiaba el valor sin decir cuáles había; él pidió (19 sep) poder elegir. Van
+ * en filas con su círculo y su explicación debajo, una bajo otra: en una fila segmentada las
+ * tres se veían apretadas.
  */
 @Composable
 private fun DialogoDeIntervalo(
@@ -357,27 +386,32 @@ private fun DialogoDeIntervalo(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.updates_check_dialog_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                UniChoiceRow(
-                    selected = selected,
-                    options = listOf(
-                        UniSegmentedOption(CheckInterval.EVERY_2H, stringResource(R.string.updates_interval_2h)),
-                        UniSegmentedOption(CheckInterval.DAILY, stringResource(R.string.updates_interval_daily)),
-                        UniSegmentedOption(CheckInterval.MANUAL, stringResource(R.string.updates_interval_manual))
-                    ),
-                    onSelected = onSelected
-                )
-                Text(
-                    text = stringResource(
-                        when (selected) {
-                            CheckInterval.EVERY_2H -> R.string.updates_menu_check_2h
-                            CheckInterval.DAILY -> R.string.updates_menu_check_daily
-                            CheckInterval.MANUAL -> R.string.updates_menu_check_manual
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                CheckInterval.entries.forEach { interval ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable { onSelected(interval) }
+                            .padding(horizontal = 4.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        RadioButton(selected = interval == selected, onClick = { onSelected(interval) })
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = stringResource(interval.titulo()),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(interval.descripcion()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -388,6 +422,23 @@ private fun DialogoDeIntervalo(
         containerColor = MaterialTheme.colorScheme.background
     )
 }
+
+private fun CheckInterval.titulo(): Int = when (this) {
+    CheckInterval.DAILY -> R.string.updates_interval_daily_title
+    CheckInterval.WEEKLY -> R.string.updates_interval_weekly_title
+    CheckInterval.MANUAL -> R.string.updates_interval_manual_title
+}
+
+private fun CheckInterval.descripcion(): Int = when (this) {
+    CheckInterval.DAILY -> R.string.updates_menu_check_daily
+    CheckInterval.WEEKLY -> R.string.updates_menu_check_weekly
+    CheckInterval.MANUAL -> R.string.updates_menu_check_manual
+}
+
+/** Cuánto hay que tirar para que cuente, y lo que el hueco cede pasado ese punto. */
+private val UMBRAL_DEL_TIRON = 56.dp
+private val GOMA_DEL_TIRON = 64.dp
+private val HUECO_COMPROBANDO = 56.dp
 
 /**
  * Con datos móviles se pregunta antes de gastar. Con «Descargar sola con Wi-Fi» encendido, la
@@ -639,20 +690,14 @@ private fun MenuDeActualizaciones(
             FilaDeMenu(
                 icon = Icons.Rounded.Schedule,
                 title = stringResource(R.string.updates_menu_check_title),
-                subtitle = stringResource(
-                    when (settings.checkInterval) {
-                        CheckInterval.EVERY_2H -> R.string.updates_menu_check_2h
-                        CheckInterval.DAILY -> R.string.updates_menu_check_daily
-                        CheckInterval.MANUAL -> R.string.updates_menu_check_manual
-                    }
-                ),
+                subtitle = stringResource(settings.checkInterval.descripcion()),
                 onClick = onIntervalClick
             ) {
                 Sello(
                     text = stringResource(
                         when (settings.checkInterval) {
-                            CheckInterval.EVERY_2H -> R.string.updates_interval_2h
                             CheckInterval.DAILY -> R.string.updates_interval_daily
+                            CheckInterval.WEEKLY -> R.string.updates_interval_weekly
                             CheckInterval.MANUAL -> R.string.updates_interval_manual
                         }
                     ),
