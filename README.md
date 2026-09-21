@@ -4,10 +4,17 @@
 
 UniStack es una aplicación Android para organizar la vida universitaria sin repartirla entre hojas de cálculo, calendarios y notas sueltas. Reúne tus materias, calificaciones, entregas, horario, asistencia, apuntes, gastos y periodos académicos en una experiencia coherente, clara y pensada para el día a día.
 
-[![Android](https://img.shields.io/badge/Android-26%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/about/versions/oreo)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
-[![Licencia](https://img.shields.io/badge/licencia-propietaria-lightgrey)](#licencia)
+<p align="center">
+  <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/LANGUAGE-KOTLIN-7D57EA?style=for-the-badge&logo=kotlin&logoColor=white" alt="Language: Kotlin"></a>
+  <br>
+  <a href="https://developer.android.com/compose"><img src="https://img.shields.io/badge/UI-JETPACK%20COMPOSE-4088F2?style=for-the-badge&logo=android&logoColor=white" alt="UI: Jetpack Compose"></a>
+  <br>
+  <a href="https://m3.material.io/"><img src="https://img.shields.io/badge/DESIGN-MATERIAL%203-757575?style=for-the-badge&logo=materialdesign&logoColor=white" alt="Design: Material 3"></a>
+  <br>
+  <a href="https://developer.android.com/about/versions/13"><img src="https://img.shields.io/badge/ANDROID-13%2B%20(API%2033%2B)-3CDB88?style=for-the-badge&logo=android&logoColor=white" alt="Android: 13+ (API 33+)"></a>
+  <br>
+  <img src="https://img.shields.io/badge/STATUS-ACTIVO%20EN%20DESARROLLO-F29A13?style=for-the-badge" alt="Status: Activo en Desarrollo">
+</p>
 
 ## Por qué existe
 
