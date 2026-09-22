@@ -13,8 +13,12 @@ import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
+import com.unistack.app.feature_notes.domain.NotesRepository
+import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_tasks.data.TaskAttachmentSamples
@@ -34,6 +38,11 @@ import com.unistack.app.feature_updates.domain.SimulatedUpdates
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
+import com.unistack.app.feature_user.domain.CornerStyle
+import com.unistack.app.feature_user.domain.HomeSection
+import com.unistack.app.feature_user.domain.InterfaceDensity
+import com.unistack.app.feature_user.domain.SyncStatus
+import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
@@ -66,6 +75,7 @@ class BancoDePruebasViewModel @Inject constructor(
     private val expensesRepository: ExpensesRepository,
     private val tasksRepository: TasksRepository,
     private val userRepository: UserRepository,
+    private val notesRepository: NotesRepository,
     private val taskAttachmentStore: TaskAttachmentStore,
     private val updateRepository: UpdateRepository
 ) : ViewModel() {
@@ -947,13 +957,220 @@ class BancoDePruebasViewModel @Inject constructor(
         )
     }
 
+    // ------------------------------------------------------------------ notas
+
+    /**
+     * Cinco apuntes repartidos por la semana, uno por materia cuando las hay.
+     *
+     * Con fechas distintas a propósito: la lista se agrupa por día, y sembrarlas todas a la
+     * misma hora deja un solo montón que no enseña esa agrupación.
+     */
+    fun sembrarNotas() {
+        recogerNotas()
+        val ahora = System.currentTimeMillis()
+        val materias = gradesRepository.subjects.value
+        val apuntes = listOf(
+            Triple("Fórmulas del parcial", "Gauss: Φ = q/ε₀\nPotencial: V = kq/r\nCapacitancia: C = Q/V", 0L),
+            Triple("Pendiente de la clase", "Preguntar por el criterio de la segunda derivada en el caso de punto silla.", 1L),
+            Triple("Del laboratorio", "El montaje del péndulo pide 1,2 m de cuerda. Traer cronómetro propio.", 2L),
+            Triple("Lectura marcada", "Cap. 4 completo, y del 5 sólo lo de recorridos en anchura.", 4L),
+            Triple("Recordatorio suelto", "La entrega del avance 2 se movió al viernes, lo dijo en clase.", 6L)
+        )
+        apuntes.forEachIndexed { indice, (titulo, cuerpo, diasAtras) ->
+            notesRepository.addNote(
+                QuickNote(
+                    id = "${MARCA}nota-$indice",
+                    title = titulo,
+                    body = cuerpo,
+                    subjectId = materias.getOrNull(indice)?.id,
+                    createdAt = ahora - diasAtras * 86400000L,
+                    updatedAt = ahora - diasAtras * 86400000L
+                )
+            )
+        }
+    }
+
+    /** Fija las tres primeras: es lo que llena el bloque «Notas fijadas» de Inicio. */
+    fun fijarNotas() {
+        val fabricadas = notesRepository.notes.value.filter { it.id.startsWith(MARCA) }
+        val aFijar = fabricadas.take(3).ifEmpty {
+            sembrarNotas()
+            notesRepository.notes.value.filter { it.id.startsWith(MARCA) }.take(3)
+        }
+        aFijar.forEach { notesRepository.setPinned(it.id, true) }
+    }
+
+    fun recogerNotas() {
+        notesRepository.notes.value
+            .filter { it.id.startsWith(MARCA) }
+            .forEach { notesRepository.deleteNote(it.id) }
+    }
+
+    // ------------------------------------------------------------------ asistencias
+
+    /**
+     * Marca la clase de hoy como vista.
+     *
+     * Las marcas cuelgan de la clase (`sessionId:diaEpoch`), así que marcar una clase fabricada
+     * deja una marca que también lleva la marca delante y se recoge con ella. Si no hay ninguna
+     * clase de prueba se fabrica una: marcar la de verdad tocaría su asistencia real.
+     */
+    fun marcarAsistenciaDeHoy() {
+        val clase = claseDePruebaParaMarcar() ?: return
+        marcar(clase.id, LocalDate.now(), ClassAttendanceStatus.ATTENDED)
+    }
+
+    /** Cinco días seguidos vistos, para la racha y para las cuentas del periodo. */
+    fun rachaDeAsistencias() {
+        val clase = claseDePruebaParaMarcar() ?: return
+        (1..5).forEach { atras ->
+            marcar(clase.id, LocalDate.now().minusDays(atras.toLong()), ClassAttendanceStatus.ATTENDED)
+        }
+    }
+
+    /** Una falta, que es lo que dispara el aviso del tope de fallas. */
+    fun faltaDeAsistencia() {
+        val clase = claseDePruebaParaMarcar() ?: return
+        marcar(clase.id, LocalDate.now().minusDays(1), ClassAttendanceStatus.ABSENT)
+    }
+
+    private fun claseDePruebaParaMarcar(): ClassSession? {
+        scheduleRepository.sessions.value.firstOrNull { it.id.startsWith(MARCA) }?.let { return it }
+        claseEnCursoAhora()
+        return scheduleRepository.sessions.value.firstOrNull { it.id.startsWith(MARCA) }
+    }
+
+    private fun marcar(sessionId: String, dia: LocalDate, estado: ClassAttendanceStatus) {
+        scheduleRepository.saveOccurrence(
+            ClassOccurrence(
+                id = ClassOccurrence.idFor(sessionId, dia.toEpochDay()),
+                sessionId = sessionId,
+                dateEpochDay = dia.toEpochDay(),
+                status = estado,
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    fun recogerAsistencias() {
+        scheduleRepository.occurrences.value
+            .filter { it.id.startsWith(MARCA) }
+            .forEach { scheduleRepository.deleteOccurrence(it.id) }
+    }
+
+    // ------------------------------------------------------------------ apariencia
+
+    /*
+     * Apariencia, Inicio, el alta y el respaldo escriben todos en el mismo perfil, así que se
+     * guarda **una sola copia** del original la primera vez que se toca cualquiera de ellos y
+     * se restaura entera. Guardar un original por dominio dejaba cuatro fotos del mismo objeto
+     * pisándose entre sí: la de Apariencia devolvía también los bloques de Inicio.
+     */
+    private var perfilOriginal: UserProfile? = null
+
+    private fun tocandoElPerfil(cambio: (UserProfile) -> UserProfile) {
+        val actual = userRepository.userProfile.value ?: return
+        if (perfilOriginal == null) perfilOriginal = actual
+        userRepository.saveUserProfile(cambio(actual).copy(updatedAt = System.currentTimeMillis()))
+    }
+
+    /** Devuelve el perfil a como estaba antes de la primera palanca que lo tocó. */
+    fun perfilDeFabrica() {
+        val original = perfilOriginal ?: return
+        userRepository.saveUserProfile(original.copy(updatedAt = System.currentTimeMillis()))
+        perfilOriginal = null
+    }
+
+    /** Si el perfil está tocado por alguna palanca: lo que enseña la cuenta de Estado. */
+    fun perfilTocado(): Boolean = perfilOriginal != null
+
+    fun densidadCompacta() = tocandoElPerfil { p ->
+        p.copy(appearancePreferences = p.appearancePreferences.copy(interfaceDensity = InterfaceDensity.COMPACT))
+    }
+
+    fun densidadComoda() = tocandoElPerfil { p ->
+        p.copy(appearancePreferences = p.appearancePreferences.copy(interfaceDensity = InterfaceDensity.COMFORTABLE))
+    }
+
+    fun esquinasCompactas() = tocandoElPerfil { p ->
+        p.copy(appearancePreferences = p.appearancePreferences.copy(cornerStyle = CornerStyle.COMPACT))
+    }
+
+    fun esquinasSuaves() = tocandoElPerfil { p ->
+        p.copy(appearancePreferences = p.appearancePreferences.copy(cornerStyle = CornerStyle.SOFT))
+    }
+
+    // ------------------------------------------------------------------ inicio
+
+    /** Los bloques en otro orden, para ver que el asa de arrastrar los respeta. */
+    fun bloquesAlAzar() = tocandoElPerfil { p ->
+        p.copy(appearancePreferences = p.appearancePreferences.copy(homeSectionOrder = HomeSection.entries.shuffled()))
+    }
+
+    /** Inicio sin un solo bloque: el estado vacío, que sin esto pide apagarlos de siete en siete. */
+    fun vaciarInicio() = tocandoElPerfil { p ->
+        var apariencia = p.appearancePreferences
+        HomeSection.entries.forEach { apariencia = apariencia.withSection(it, false) }
+        p.copy(appearancePreferences = apariencia)
+    }
+
+    /** Todos encendidos y en su orden, para volver sin pasar por Ajustes. */
+    fun inicioCompleto() = tocandoElPerfil { p ->
+        var apariencia = p.appearancePreferences.copy(homeSectionOrder = HomeSection.entries)
+        HomeSection.entries.forEach { apariencia = apariencia.withSection(it, true) }
+        p.copy(appearancePreferences = apariencia)
+    }
+
+    /**
+     * Toda la app llena de una vez: datos, apuntes y asistencia.
+     *
+     * Es [sembrarAppCompleta] más lo que ella no tocaba. Existe como una sola palanca y no como
+     * tres seguidas porque el estado que se quiere mirar —la app de alguien que lleva semanas
+     * usándola— es el de las tres juntas, y encadenarlas a mano deja fuera siempre alguna.
+     */
+    fun simularActividadCompleta() {
+        sembrarAppCompleta()
+        sembrarTareasDelArtifact()
+        sembrarNotas()
+        fijarNotas()
+        rachaDeAsistencias()
+        faltaDeAsistencia()
+        inicioCompleto()
+    }
+
+    // ------------------------------------------------------------------ el alta
+
+    /** Vuelve a pedir el recorrido inicial. Nada se borra: sólo se baja la bandera. */
+    fun repetirElAlta() = tocandoElPerfil { p -> p.copy(setupCompleted = false) }
+
+    fun altaHecha() = tocandoElPerfil { p -> p.copy(setupCompleted = true) }
+
+    // ------------------------------------------------------------------ copias de seguridad
+
+    fun respaldoReciente() = tocandoElPerfil { p ->
+        p.copy(syncStatus = SyncStatus.SYNCED, lastSyncAt = System.currentTimeMillis())
+    }
+
+    fun respaldoDesactualizado() = tocandoElPerfil { p ->
+        p.copy(syncStatus = SyncStatus.SYNCED, lastSyncAt = System.currentTimeMillis() - 35L * 86400000L)
+    }
+
+    fun respaldoConFallo() = tocandoElPerfil { p -> p.copy(syncStatus = SyncStatus.SYNC_ERROR) }
+
+    fun respaldoSinHacer() = tocandoElPerfil { p ->
+        p.copy(syncStatus = SyncStatus.LOCAL_ONLY, lastSyncAt = null)
+    }
+
     // ------------------------------------------------------------------ deshacer
 
     data class ResumenDePruebas(
         val horario: Int,
         val academico: Int,
         val gastos: Int,
-        val tareas: Int
+        val tareas: Int,
+        val notas: Int,
+        val asistencias: Int,
+        val perfil: Int
     )
 
     /**
@@ -966,7 +1183,10 @@ class BancoDePruebasViewModel @Inject constructor(
         horario = scheduleRepository.sessions.value.count { it.id.startsWith(MARCA) },
         academico = gradesRepository.subjects.value.sumOf { m -> m.grades.count { it.id.startsWith(MARCA) } },
         gastos = expensesRepository.expenses.value.count { it.id.startsWith(MARCA) },
-        tareas = tasksRepository.tasks.value.count { it.id.startsWith(MARCA) }
+        tareas = tasksRepository.tasks.value.count { it.id.startsWith(MARCA) },
+        notas = notesRepository.notes.value.count { it.id.startsWith(MARCA) },
+        asistencias = scheduleRepository.occurrences.value.count { it.id.startsWith(MARCA) },
+        perfil = if (perfilTocado()) 1 else 0
     )
 
     /** Deshace solo lo de Horario. */
@@ -1012,5 +1232,8 @@ class BancoDePruebasViewModel @Inject constructor(
         recogerAcademico()
         recogerGastos()
         recogerTareas()
+        recogerNotas()
+        recogerAsistencias()
+        perfilDeFabrica()
     }
 }

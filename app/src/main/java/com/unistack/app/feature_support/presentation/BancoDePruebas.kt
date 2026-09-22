@@ -32,20 +32,27 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Brush
+import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.HowToReg
 import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -680,15 +687,22 @@ private fun seccionesDeSimular(
 
     return listOf(
         Seccion(
-            rotulo = "Capturas y demo",
-            icono = Icons.Rounded.PhotoCamera,
+            rotulo = "Inicio",
+            icono = Icons.Rounded.Home,
             color = tonos.violeta,
             cuenta = 0,
             palancas = listOf(
                 Palanca(
+                    "Simular actividad completa",
+                    "Llena TODA la app a la vez —materias, horario, tareas, gastos, notas, asistencias— como si llevaras semanas usándola"
+                ) { vm.simularActividadCompleta() },
+                Palanca(
                     "Llenar app con datos reales (para capturas)",
-                    "Siembra 5 materias con notas, horario semanal L-V, tareas con subtareas, gastos de la semana y presupuesto. Todo lleva «prueba-»."
-                ) { vm.sembrarAppCompleta() }
+                    "Sólo lo académico: 5 materias con notas, horario L-V, tareas con subtareas, gastos y presupuesto"
+                ) { vm.sembrarAppCompleta() },
+                Palanca("Bloques de Inicio al azar", "Materias, Esta semana, Asistencia, Gastos, Notas") { vm.bloquesAlAzar() },
+                Palanca("Vaciar todos los bloques", "Para ver el estado vacío de Inicio, cuenta nueva") { vm.vaciarInicio() },
+                Palanca("Bloques de fábrica", "Todos encendidos y en su orden", Tono.SUAVE) { vm.inicioCompleto() }
             )
         ),
         Seccion(
@@ -828,6 +842,99 @@ private fun seccionesDeSimular(
             )
         ),
         Seccion(
+            rotulo = "Notas",
+            icono = Icons.Rounded.EditNote,
+            color = tonos.ambar,
+            cuenta = resumen.notas,
+            palancas = listOf(
+                Palanca("Sembrar notas de muestra", "Cinco apuntes repartidos por la semana, uno por materia") { vm.sembrarNotas() },
+                Palanca("Fijar 3 notas", "Para ver el bloque de Notas fijadas en Inicio") { vm.fijarNotas() },
+                Palanca(
+                    "Cambiar la escala de notas",
+                    "Lleva al ajuste de verdad: borra todas las notas, y esa doble confirmación no se salta desde aquí",
+                    Tono.PELIGRO
+                ) { onNavegar(AppRoutes.AcademicScale) },
+                Palanca("Deshacer lo de Notas", "Sólo los apuntes fabricados", Tono.SUAVE) { vm.recogerNotas() }
+            )
+        ),
+        Seccion(
+            rotulo = "Asistencias",
+            icono = Icons.Rounded.HowToReg,
+            color = tonos.verde,
+            cuenta = resumen.asistencias,
+            palancas = listOf(
+                Palanca("Marcar asistencia de hoy", "Usa la animación que tengas puesta en Movimiento") { vm.marcarAsistenciaDeHoy() },
+                Palanca("Simular una racha de 5", "Cinco días seguidos vistos, para la racha y las cuentas") { vm.rachaDeAsistencias() },
+                Palanca("Dejar una falta", "Lo que dispara el aviso del tope de fallas") { vm.faltaDeAsistencia() },
+                Palanca("Deshacer asistencias", "Sólo las marcas fabricadas", Tono.SUAVE) { vm.recogerAsistencias() }
+            )
+        ),
+        Seccion(
+            rotulo = "Apariencia",
+            icono = Icons.Rounded.Brush,
+            color = tonos.rosa,
+            cuenta = 0,
+            palancas = listOf(
+                Palanca("Densidad compacta", "De Forma y superficie, sin pasar por Ajustes") { vm.densidadCompacta() },
+                Palanca("Densidad cómoda", "La contraria, para comparar de un toque") { vm.densidadComoda() },
+                Palanca("Esquinas compactas", "El otro extremo de la escala de esquinas") { vm.esquinasCompactas() },
+                Palanca("Esquinas suaves", "Y el otro") { vm.esquinasSuaves() },
+                Palanca("Apariencia de fábrica", "Devuelve el perfil a como estaba", Tono.SUAVE) { vm.perfilDeFabrica() }
+            )
+        ),
+        Seccion(
+            rotulo = "Copias de seguridad",
+            icono = Icons.Rounded.Backup,
+            color = tonos.cian,
+            cuenta = 0,
+            palancas = listOf(
+                Palanca("Respaldo local reciente", "Hecho hace unos segundos") { vm.respaldoReciente() },
+                Palanca("Respaldo desactualizado", "Hace 35 días: sale el aviso") { vm.respaldoDesactualizado() },
+                Palanca("Forzar fallo del respaldo", "Deja la cuenta en error, para ver el mensaje", Tono.PELIGRO) { vm.respaldoConFallo() },
+                Palanca("Respaldo sin hacer", "Como una cuenta recién instalada", Tono.SUAVE) { vm.respaldoSinHacer() }
+            )
+        ),
+        Seccion(
+            rotulo = "Onboarding (el alta)",
+            icono = Icons.Rounded.Flag,
+            color = tonos.naranja,
+            cuenta = 0,
+            palancas = listOf(
+                Palanca(
+                    "Repetir el recorrido inicial",
+                    "Vuelve a pedir el alta. No borra nada: sólo baja la bandera",
+                    Tono.PELIGRO
+                ) { vm.repetirElAlta() },
+                Palanca("Dar el alta por hecha", "Sale del recorrido sin completarlo", Tono.SUAVE) { vm.altaHecha() }
+            )
+        ),
+        Seccion(
+            rotulo = "Configuración académica",
+            icono = Icons.Rounded.Tune,
+            color = tonos.indigo,
+            cuenta = 0,
+            palancas = listOf(
+                Palanca("Periodo listo para cerrar", "La simulación del histórico, con 2026-2 repartido") {
+                    HistoricoDeMuestra.empezar()
+                    onNavegar(AppRoutes.AcademicHistory)
+                },
+                Palanca("Periodo por empezar", "2027-1 creado, con la materia traída") {
+                    HistoricoDeMuestra.saltarAPorEmpezar()
+                    onNavegar(AppRoutes.Home)
+                },
+                Palanca("Ir a los cortes", "La pantalla de verdad, para tocarlos a mano") { onNavegar(AppRoutes.AcademicCuts) }
+            )
+        ),
+        Seccion(
+            rotulo = "Herramientas",
+            icono = Icons.Rounded.Build,
+            color = tonos.turquesa,
+            cuenta = 0,
+            palancas = listOf(
+                Palanca("Calculadora de promedio", "Con las materias que haya sembradas") { onNavegar(AppRoutes.GpaCalculator) }
+            )
+        ),
+        Seccion(
             rotulo = "Ir a",
             icono = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
             color = tonos.gris,
@@ -954,7 +1061,7 @@ private fun LazyListScope.caraEstado(
 }
 
 /** Las categorías cuya cuenta sabe dar el ViewModel: el resto no se enseña vacía por no mentir. */
-private val SITIOS_CON_CUENTA = setOf("Horario", "Académico", "Gastos", "Tareas", "Histórico")
+private val SITIOS_CON_CUENTA = setOf("Horario", "Académico", "Gastos", "Tareas", "Histórico", "Notas", "Asistencias")
 
 @Composable
 private fun Cifra(rotulo: String, cuantos: Int, modifier: Modifier = Modifier) {
