@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.EventBusy
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
@@ -267,10 +271,7 @@ private fun FilaPendiente(
 ) {
     // Los colores fijos de la asistencia, no el acento: con el tema lila, el visto salia lila
     // y «asisti» y «falta» dejaban de distinguirse de un vistazo.
-    val verde = AttendanceAttended
-    val rojo = AttendanceAbsent
-    val asistio = respuesta == ClassAttendanceStatus.ATTENDED
-    val tono = if (asistio) verde else rojo
+    val tono = respuesta?.attendanceColor() ?: AttendanceAbsent
     val aula = entrada.session.location.split('•', limit = 2).first().trim()
         .ifBlank { stringResource(R.string.schedule_detail_no_room) }
 
@@ -315,35 +316,59 @@ private fun FilaPendiente(
             RuedaDeAsistencia(
                 marcada = respuesta != null,
                 color = tono,
-                icono = if (asistio) Icons.Rounded.Check else Icons.Rounded.Close
+                icono = iconoDeEstado(respuesta ?: ClassAttendanceStatus.ABSENT)
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BotonDeRespuesta(
-                icono = Icons.Rounded.Check,
-                texto = stringResource(R.string.schedule_status_attended),
-                tono = verde,
-                elegido = respuesta == ClassAttendanceStatus.ATTENDED,
-                modifier = Modifier.weight(1f),
-                onClick = { onMark(ClassAttendanceStatus.ATTENDED) }
-            )
-            BotonDeRespuesta(
-                icono = Icons.Rounded.Close,
-                texto = stringResource(R.string.schedule_status_absent),
-                tono = rojo,
-                elegido = respuesta == ClassAttendanceStatus.ABSENT,
-                modifier = Modifier.weight(1f),
-                onClick = { onMark(ClassAttendanceStatus.ABSENT) }
-            )
+        /*
+         * Los cuatro estados en 2x2, no los dos de antes.
+         * `ClassAttendanceStatus` siempre tuvo cancelada y reprogramada, y el calendario y el
+         * historial ya las pintaban: esta hoja era el único sitio donde una clase que no se
+         * dio había que marcarla como falta o dejarla sin marcar para siempre. En dos filas
+         * porque cuatro en una no caben en 400 dp sin cortar «Reprogramada» (22 sep 2026).
+         */
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                ClassAttendanceStatus.ATTENDED to ClassAttendanceStatus.ABSENT,
+                ClassAttendanceStatus.CANCELLED to ClassAttendanceStatus.RESCHEDULED
+            ).forEach { (izquierda, derecha) ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(izquierda, derecha).forEach { estado ->
+                        BotonDeRespuesta(
+                            icono = iconoDeEstado(estado),
+                            texto = stringResource(rotuloDeEstado(estado)),
+                            tono = estado.attendanceColor() ?: AttendanceAbsent,
+                            elegido = respuesta == estado,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onMark(estado) }
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
-/** Una de las dos respuestas. Se apaga cuando la otra queda elegida. */
+/** El icono de cada estado, el mismo que usan el calendario y el historial. */
+private fun iconoDeEstado(estado: ClassAttendanceStatus): ImageVector = when (estado) {
+    ClassAttendanceStatus.ATTENDED -> Icons.Rounded.Check
+    ClassAttendanceStatus.ABSENT -> Icons.Rounded.Close
+    ClassAttendanceStatus.CANCELLED -> Icons.Rounded.EventBusy
+    ClassAttendanceStatus.RESCHEDULED, ClassAttendanceStatus.PENDING -> Icons.Rounded.Schedule
+}
+
+@StringRes
+private fun rotuloDeEstado(estado: ClassAttendanceStatus): Int = when (estado) {
+    ClassAttendanceStatus.ATTENDED -> R.string.schedule_status_attended
+    ClassAttendanceStatus.ABSENT -> R.string.schedule_status_absent
+    ClassAttendanceStatus.CANCELLED -> R.string.schedule_status_canceled
+    ClassAttendanceStatus.RESCHEDULED, ClassAttendanceStatus.PENDING -> R.string.schedule_status_rescheduled
+}
+
+/** Una de las cuatro respuestas. Se apaga cuando otra queda elegida. */
 @Composable
 private fun BotonDeRespuesta(
-    icono: androidx.compose.ui.graphics.vector.ImageVector,
+    icono: ImageVector,
     texto: String,
     tono: Color,
     elegido: Boolean,
