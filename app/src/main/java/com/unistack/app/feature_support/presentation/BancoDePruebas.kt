@@ -1052,9 +1052,11 @@ private fun LazyListScope.caraEstado(
     }
     item {
         FilaDePalanca(
-            palanca = Palanca("Recogerlo todo", "Se lleva lo fabricado y el presupuesto de prueba", Tono.PELIGRO) {
-                vm.recogerlo()
-            },
+            palanca = Palanca(
+                "Recogerlo todo",
+                "Los datos fabricados, la escena de actualización y los avisos sembrados",
+                Tono.PELIGRO
+            ) { contexto -> vm.recogerlo(contexto) },
             onPalanca = onRecoger
         )
     }

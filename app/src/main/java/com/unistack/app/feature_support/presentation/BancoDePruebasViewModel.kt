@@ -170,7 +170,7 @@ class BancoDePruebasViewModel @Inject constructor(
      * Todo lleva la marca `MARCA` para poder eliminarse limpiamente con [recogerlo].
      */
     fun sembrarAppCompleta() {
-        recogerlo()
+        recogerDatosFabricados()
 
         val perfil = userRepository.userProfile.value
         val maximo = perfil?.let { GradingScaleUtils.maxGradeFor(it) } ?: 5.0
@@ -1226,7 +1226,14 @@ class BancoDePruebasViewModel @Inject constructor(
             .forEach { gradesRepository.deleteSubject(it.id) }
     }
 
-    fun recogerlo() {
+    /**
+     * Lo fabricado que vive en la base y en el perfil.
+     *
+     * Va aparte de [recogerlo] porque sembrar vuelve a pasar por aquí para no acumular dos
+     * siembras encima, y sembrar datos no tiene por qué cancelar una escena de actualización
+     * que se estaba mirando: son cosas distintas aunque las dos sean de mentira.
+     */
+    private fun recogerDatosFabricados() {
         com.unistack.app.feature_terms.presentation.HistoricoDeMuestra.salir()
         recogerHorario()
         recogerAcademico()
@@ -1235,5 +1242,19 @@ class BancoDePruebasViewModel @Inject constructor(
         recogerNotas()
         recogerAsistencias()
         perfilDeFabrica()
+    }
+
+    /**
+     * Todo: los datos, la escena de actualización y los avisos sembrados.
+     *
+     * Decía «recogerlo todo» y dejaba dos cosas puestas —la versión fingida y las quince
+     * notificaciones—, porque las dos viven fuera de la base y se recogían cada una por su
+     * lado. Un botón que dice «todo» tiene que dejar la app como si nunca se hubiera abierto
+     * esta ventana (22 sep 2026).
+     */
+    fun recogerlo(context: Context) {
+        recogerDatosFabricados()
+        actualizacionReal()
+        recogerNotificaciones(context)
     }
 }
