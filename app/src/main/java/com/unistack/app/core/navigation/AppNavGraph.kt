@@ -1198,21 +1198,16 @@ fun MainNavGraph(
          * version publicada esta linea no pinta nada.
          */
         /*
-         * La ventana se ancla abajo y ocupa el ancho; el boton, mientras esta cerrada, se
-         * queda en la esquina. Los dos por encima de la barra de navegacion: este `Box`
-         * ocupa la pantalla entera y pegados al borde quedaban debajo de ella.
+         * Ocupa la pantalla entera porque la burbuja y la ventana se arrastran por ella y se
+         * anclan a la esquina que se elija: el sitio lo decide el propio panel, no este `Box`.
+         * Lo que ocupa la barra de abajo se le pasa para que nada quede debajo de ella.
          */
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(bottom = contentPadding.calculateBottomPadding() + 14.dp)
-        ) {
-            BancoDePruebas(
-                modifier = Modifier.padding(start = 14.dp),
-                onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) },
-                onNavegar = { ruta -> navController.go(ruta) }
-            )
-        }
+        BancoDePruebas(
+            modifier = Modifier.fillMaxSize(),
+            insetInferior = contentPadding.calculateBottomPadding(),
+            onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) },
+            onNavegar = { ruta -> navController.go(ruta) }
+        )
         }
     }
 }
