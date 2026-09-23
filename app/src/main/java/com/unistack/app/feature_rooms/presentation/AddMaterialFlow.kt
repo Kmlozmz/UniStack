@@ -61,6 +61,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import com.unistack.app.core.design.components.cleanClickable
@@ -179,7 +180,7 @@ private fun MaterialDetailSheet(room: WorkRoom, vm: RoomsViewModel, t: MaterialT
                 }
                 Tile(materialIcon(t), t.tone.color)
                 Column(Modifier.weight(1f)) {
-                    Text(singular, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                    Text(singular, fontSize = 19.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
                     Text(stringResource(R.string.rooms_seen_by_all), fontSize = 12.sp, color = cs.onSurfaceVariant)
                 }
             }

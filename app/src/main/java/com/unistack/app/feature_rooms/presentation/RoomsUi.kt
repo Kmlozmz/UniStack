@@ -45,6 +45,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -60,10 +61,12 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.feature_rooms.domain.RoomMember
@@ -77,6 +80,24 @@ import com.unistack.app.feature_rooms.domain.WorkRoom
  * s-pri = primary, s-pricont = primaryContainer, s-onvar = onSurfaceVariant, s-out =
  * outlineVariant y el fondo = background.
  */
+
+/**
+ * La letra de Trabajos como la de los artifacts. Material le pone a todo texto el `bodyLarge`:
+ * 0,5 sp de tracking y 24 sp de renglón, y con letras de 12-14 sp eso la estiraba hacia los
+ * lados (lo notó el 23 sep: «está todo muy ancho»). Aquí el tracking es 0 y el renglón 1,45 em,
+ * como el CSS; los títulos grandes llevan su propio renglón.
+ */
+@Composable
+fun RoomsText(content: @Composable () -> Unit) {
+    val base = LocalTextStyle.current
+    CompositionLocalProvider(
+        LocalTextStyle provides base.copy(
+            letterSpacing = 0.sp, lineHeight = 1.45.em,
+            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+        ),
+        content = content
+    )
+}
 
 /** color-mix(in srgb, c p%, base). */
 fun mix(c: Color, p: Float, base: Color): Color = c.copy(alpha = p).compositeOver(base)
@@ -296,7 +317,7 @@ fun RoomSheet(
             else if (title != null) {
                 Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 2.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Column(Modifier.weight(1f)) {
-                        Text(title, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                        Text(title, fontSize = 19.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
                         if (!subtitle.isNullOrBlank()) Text(subtitle, fontSize = 12.sp, color = cs.onSurfaceVariant)
                     }
                     trailing?.invoke()

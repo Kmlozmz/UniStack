@@ -93,6 +93,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
@@ -189,7 +190,7 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
         selected?.let { id -> room.messages.firstOrNull { it.id == id } }?.let { m ->
             Row(Modifier.fillMaxWidth().background(cs.surfaceContainerHigh).padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    CHAT_REACTIONS.forEach { e -> Text(e, fontSize = 19.sp, modifier = Modifier.clip(CircleShape).cleanClickable { vm.reactMessage(room.id, m.id, e); selected = null }.padding(horizontal = 5.dp, vertical = 4.dp)) }
+                    CHAT_REACTIONS.forEach { e -> Text(e, fontSize = 19.sp, lineHeight = 1.2.em, modifier = Modifier.clip(CircleShape).cleanClickable { vm.reactMessage(room.id, m.id, e); selected = null }.padding(horizontal = 5.dp, vertical = 4.dp)) }
                 }
                 PlainIcon(Icons.AutoMirrored.Rounded.Reply, stringResource(R.string.rooms_reply), 36) { replyTo = m.id; selected = null }
                 PlainIcon(Icons.Rounded.PushPin, stringResource(R.string.rooms_pin), 36) { vm.pin(room.id, m.id); selected = null; context.roomToast(context.getString(R.string.rooms_pinned_for_all)) }

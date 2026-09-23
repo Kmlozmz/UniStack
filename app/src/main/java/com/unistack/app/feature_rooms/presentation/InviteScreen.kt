@@ -1,6 +1,7 @@
 package com.unistack.app.feature_rooms.presentation
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.QrCode2
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import com.unistack.app.core.design.components.cleanClickable
@@ -53,7 +54,8 @@ import com.unistack.app.feature_rooms.domain.WorkRoom
 
 /**
  * «¡La sala está lista!» — el final de Crear sala (artifact cerrado el 23 sep): el código en un
- * boleto con copiar y compartir, los atajos (WhatsApp, Telegram, correo y QR), quién ya entró y qué pasa con
+ * boleto con copiar y compartir, los atajos con el icono real de cada app instalada (WhatsApp,
+ * Telegram y el correo; el QR ya va en el boleto), quién ya entró y qué pasa con
  * las partes según cómo se repartan.
  */
 @Composable
@@ -73,16 +75,14 @@ fun InviteScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, onGoRoo
                 Box(Modifier.size(56.dp).clip(CircleShape).background(mix(RoomTone.VERDE.color, 0.2f, Color.Transparent)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.CheckCircle, null, tint = RoomTone.VERDE.color, modifier = Modifier.size(30.dp))
                 }
-                Text(stringResource(R.string.rooms_ready_title), fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp))
+                Text(stringResource(R.string.rooms_ready_title), fontSize = 21.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp))
                 Text(room.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 3.dp))
                 Text(stringResource(R.string.rooms_ready_sub), fontSize = 13.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 19.sp, modifier = Modifier.padding(top = 4.dp))
             }
             InviteTicket(room, stripe, onCopy = { context.copyText("invite", text); context.roomToast(copied) }, onShare = { context.shareText(text) }, onQr = { qr = true })
-            Row(Modifier.padding(top = 14.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ShareShortcut("WhatsApp", "W", FormatColors.whatsapp) { context.shareText(text, "com.whatsapp") }
-                ShareShortcut("Telegram", "T", FormatColors.telegram) { context.shareText(text, "org.telegram.messenger") }
-                ShareShortcut(stringResource(R.string.rooms_email), stringResource(R.string.rooms_email).take(1), FormatColors.mail) { context.emailText(room.title, text) }
-                ShareShortcut("QR", null, FormatColors.text) { qr = true }
+            val apps = rememberShareApps(room.title, text)
+            if (apps.isNotEmpty()) Row(Modifier.padding(top = 16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                apps.forEach { ShareShortcut(it) }
             }
             RoomLabel(stringResource(R.string.rooms_who_joined), trailing = if (room.split == SplitMode.DRAW) stringResource(R.string.rooms_x_of_y, room.activeMembers.size, room.capacity) else "${room.activeMembers.size}")
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -132,7 +132,7 @@ private fun InviteTicket(room: WorkRoom, stripe: Color, onCopy: () -> Unit, onSh
         Row(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.rooms_room_code).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = on.copy(alpha = 0.7f))
-                Text(room.code, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 6.sp, color = on, maxLines = 1, modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
+                Text(room.code, fontSize = 30.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, letterSpacing = 6.sp, color = on, maxLines = 1, modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
                 Text(meta, fontSize = 12.sp, color = on.copy(alpha = 0.75f), lineHeight = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             Box(Modifier.clip(RoundedCornerShape(14.dp)).cleanClickable(onClick = onQr)) { QrView("unistack://sala/${room.code}", size = 84.dp) }
@@ -148,20 +148,18 @@ private fun InviteTicket(room: WorkRoom, stripe: Color, onCopy: () -> Unit, onSh
             Box(Modifier.align(Alignment.CenterEnd).offset(x = 11.dp).size(22.dp).clip(CircleShape).background(cs.background))
         }
         Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Pill(stringResource(R.string.rooms_copy), onCopy, Modifier.weight(1f), icon = Icons.Rounded.ContentCopy, style = PillStyle.TONAL, small = true)
-            Pill(stringResource(R.string.rooms_share), onShare, Modifier.weight(1f), icon = Icons.Rounded.Share, small = true)
+            Pill(stringResource(R.string.rooms_copy), onCopy, Modifier.weight(1f), icon = Icons.Rounded.ContentCopy, style = PillStyle.TONAL, big = true)
+            Pill(stringResource(R.string.rooms_share), onShare, Modifier.weight(1f), icon = Icons.Rounded.Share, big = true)
         }
     }
 }
 
+/** Atajo para compartir: el icono de la app tal como está en el teléfono y su nombre debajo. */
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.ShareShortcut(label: String, letter: String?, color: Color, onClick: () -> Unit) {
+private fun androidx.compose.foundation.layout.RowScope.ShareShortcut(app: ShareApp) {
     val cs = MaterialTheme.colorScheme
-    Column(Modifier.weight(1f).cleanClickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.size(48.dp).clip(CircleShape).background(color), contentAlignment = Alignment.Center) {
-            if (letter != null) Text(letter, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = FormatColors.onLogo)
-            else Icon(Icons.Rounded.QrCode2, null, tint = FormatColors.onLogo, modifier = Modifier.size(22.dp))
-        }
-        Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurface, modifier = Modifier.heightIn(min = 14.dp))
+    Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).cleanClickable(onClick = app.open).padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Image(app.icon, app.label, Modifier.size(52.dp))
+        Text(app.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurface, maxLines = 1)
     }
 }

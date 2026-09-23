@@ -14,7 +14,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.content.FileProvider
 import com.unistack.app.R
 import com.unistack.app.core.utils.Textos
@@ -32,6 +36,34 @@ fun Context.shareText(text: String, pkg: String? = null) {
     val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text); if (pkg != null) setPackage(pkg) }
     val ok = runCatching { startActivity(if (pkg == null) Intent.createChooser(send, null) else send) }.isSuccess
     if (!ok) runCatching { startActivity(Intent.createChooser(send.setPackage(null), null)) }
+}
+
+/** Una app a la que se comparte directo, con el icono que tiene en el teléfono. */
+class ShareApp(val label: String, val icon: ImageBitmap, val open: () -> Unit)
+
+/**
+ * WhatsApp, Telegram y la app de correo, sólo las que estén instaladas y con su icono de verdad
+ * (sacado del sistema, no dibujado): así no hay logos inventados ni atajos que no llevan a nada.
+ */
+@Composable
+fun rememberShareApps(subject: String, text: String): List<ShareApp> {
+    val context = LocalContext.current
+    val mail = stringResource(R.string.rooms_email)
+    return remember(subject, text) {
+        val pm = context.packageManager
+        fun icon(pkg: String) = runCatching { pm.getApplicationIcon(pkg).toBitmap(144, 144).asImageBitmap() }.getOrNull()
+        fun first(vararg pkgs: String) = pkgs.firstNotNullOfOrNull { p -> icon(p)?.let { p to it } }
+        val mailto = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+        val mailPkg = runCatching {
+            pm.resolveActivity(mailto, 0)?.activityInfo?.packageName?.takeIf { it != "android" }
+                ?: pm.queryIntentActivities(mailto, 0).firstOrNull()?.activityInfo?.packageName
+        }.getOrNull()
+        buildList {
+            first("com.whatsapp", "com.whatsapp.w4b")?.let { (p, i) -> add(ShareApp("WhatsApp", i) { context.shareText(text, p) }) }
+            first("org.telegram.messenger", "org.telegram.messenger.web", "org.thunderdog.challegram")?.let { (p, i) -> add(ShareApp("Telegram", i) { context.shareText(text, p) }) }
+            mailPkg?.let { icon(it) }?.let { i -> add(ShareApp(mail, i) { context.emailText(subject, text) }) }
+        }
+    }
 }
 
 fun Context.emailText(subject: String, text: String) {

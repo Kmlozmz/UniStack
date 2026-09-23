@@ -95,6 +95,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.R
@@ -167,7 +168,7 @@ fun RoomsHomeScreen(
                     VSpace(9.dp)
                     Row(verticalAlignment = Alignment.Top) {
                         Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.rooms_title), fontSize = 29.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, letterSpacing = (-0.4).sp)
+                            Text(stringResource(R.string.rooms_title), fontSize = 29.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, letterSpacing = (-0.4).sp)
                             val sub = if (rooms.isEmpty()) stringResource(R.string.rooms_home_subtitle_empty) else {
                                 val a = rooms.count { !it.isClosed }; val d = rooms.count { it.isClosed }
                                 (if (a == 1) stringResource(R.string.rooms_home_counts_one_active) else stringResource(R.string.rooms_home_counts_active, a)) +
@@ -549,7 +550,7 @@ fun RoomCard(r: WorkRoom, subject: Subject?, today: Long, onClick: () -> Unit) {
 private fun EmptyState(onCreate: () -> Unit, onJoin: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     Column {
-        Text(stringResource(R.string.rooms_empty_title), fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(top = 6.dp, bottom = 8.dp))
+        Text(stringResource(R.string.rooms_empty_title), fontSize = 21.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(top = 6.dp, bottom = 8.dp))
         Text(stringResource(R.string.rooms_empty_body), fontSize = 13.5.sp, color = cs.onSurfaceVariant, lineHeight = 21.sp, modifier = Modifier.padding(bottom = 14.dp))
         Box {
             ExampleCard()
@@ -645,7 +646,7 @@ private fun PeriodBlock(per: String, current: Boolean, ws: List<WorkRoom>, subje
         Row(Modifier.fillMaxWidth().cleanClickable(onClick = onToggle).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.width(52.dp).height(56.dp).clip(RoundedCornerShape(16.dp)).background(if (current) cs.primary else cs.surfaceContainerHighest), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text(year, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (current) cs.onPrimary else cs.onSurfaceVariant, letterSpacing = 0.5.sp)
-                Text(sem, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = if (current) cs.onPrimary else cs.onSurface)
+                Text(sem, fontSize = 24.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = if (current) cs.onPrimary else cs.onSurface)
             }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -659,7 +660,7 @@ private fun PeriodBlock(per: String, current: Boolean, ws: List<WorkRoom>, subje
                 }
             }
             if (avg != null) Column(horizontalAlignment = Alignment.End) {
-                Text(avg, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                Text(avg, fontSize = 21.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
                 Text(stringResource(R.string.rooms_average), fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant)
             }
             Box(Modifier.size(32.dp).clip(CircleShape).background(cs.surfaceContainer), contentAlignment = Alignment.Center) { Chevron(open, 20.dp) }
@@ -743,7 +744,7 @@ private fun GuideSheet(onDismiss: () -> Unit) {
                     Icon(icons.getOrElse(i) { Icons.Rounded.QuestionMark }, null, tint = c, modifier = Modifier.size(46.dp))
                 }
                 Text(stringResource(R.string.rooms_guide_step, i + 1, ts.size), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = cs.onSurfaceVariant)
-                Text(ts[i], fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+                Text(ts[i], fontSize = 21.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
                 Text(ds.getOrElse(i) { "" }, fontSize = 14.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 21.sp)
             }
         }
@@ -801,7 +802,7 @@ private fun ClosedDialog(r: WorkRoom, asked: Boolean, onDismiss: () -> Unit, onR
         containerColor = cs.background,
         shape = RoundedCornerShape(28.dp),
         icon = { Box(Modifier.size(52.dp).clip(RoundedCornerShape(17.dp)).background(cs.surfaceContainerHighest), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Lock, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(26.dp)) } },
-        title = { Text(stringResource(R.string.rooms_closed_title), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = { Text(stringResource(R.string.rooms_closed_title), fontSize = 19.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
         text = {
             Column {
                 Text(stringResource(R.string.rooms_closed_body, r.title), fontSize = 13.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 20.sp, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp))

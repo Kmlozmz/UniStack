@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniBackButton
@@ -136,7 +137,7 @@ fun ManageScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (St
                     Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(cs.background).then(if (on) Modifier.border(2.dp, nc.second, RoundedCornerShape(16.dp)) else Modifier)
                         .cleanClickable { filter = if (on) null else k; tab = 0; if (!on) openBlocks = openBlocks + k }.padding(horizontal = 4.dp, vertical = 10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("${nc.first}", fontSize = 21.sp, fontWeight = FontWeight.Black, color = nc.second)
+                        Text("${nc.first}", fontSize = 21.sp, lineHeight = 1.2.em, fontWeight = FontWeight.Black, color = nc.second)
                         Text(stringResource(l), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, maxLines = 1)
                     }
                 }

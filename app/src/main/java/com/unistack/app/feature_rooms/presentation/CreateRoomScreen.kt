@@ -4,6 +4,18 @@ package com.unistack.app.feature_rooms.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInParent
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -99,6 +111,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -176,14 +189,14 @@ fun CreateRoomScreen(
     val cs = MaterialTheme.colorScheme
 
     Column(Modifier.fillMaxSize().background(cs.background).statusBarsPadding().imePadding()) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             UniBackButton(onClick = { back() })
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.rooms_new_room), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
                 Text(stringResource(R.string.rooms_stage_of, stringResource(stages[cur.stage]), cur.stage + 1, stages.size), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
             }
         }
-        StretchDots(stages.size, cur.stage, Modifier.padding(start = 20.dp, top = 2.dp, bottom = 14.dp))
+        StretchDots(stages.size, cur.stage, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp, bottom = 20.dp))
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 110.dp)) {
                 // Lo respondido en esta etapa se encoge y queda detrás de la pregunta, como una baraja.
@@ -367,7 +380,7 @@ private fun QuestionCard(
         when (key) {
             "name" -> {
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(mix(on, 0.10f, cs.primaryContainer)).padding(horizontal = 13.dp, vertical = 11.dp)) {
-                    if (d.title.isEmpty()) Text(stringResource(R.string.rooms_name_hint), color = on.copy(alpha = 0.5f), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                    if (d.title.isEmpty()) Text(stringResource(R.string.rooms_name_hint), color = on.copy(alpha = 0.5f), fontSize = 18.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold)
                     BasicTextField(d.title, { onChange(d.copy(title = it)) }, singleLine = true, cursorBrush = SolidColor(on),
                         textStyle = TextStyle(color = on, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold), modifier = Modifier.fillMaxWidth())
                 }
@@ -480,7 +493,7 @@ private fun <T> OptionRows(items: List<T>, sel: (T) -> Boolean, tile: Color, ico
 private fun PartsPanel(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, onChange: (RoomDraft) -> Unit, newKey: () -> Long, today: Long) {
     val cs = MaterialTheme.colorScheme
     val unit = unitName(d.produces)
-    Text(stringResource(R.string.rooms_parts_title), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp))
+    Text(stringResource(R.string.rooms_parts_title), fontSize = 23.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp))
     Text((d.type?.takeIf { it != RoomType.CERO }?.let { stringResource(R.string.rooms_parts_hint_type, stringResource(RoomTemplates.typeNameRes(it)).lowercase()) } ?: "") + stringResource(R.string.rooms_parts_hint),
         fontSize = 12.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 12.dp), lineHeight = 18.sp)
     val total = d.parts.sumOf { it.extent }
@@ -677,15 +690,51 @@ fun StepBtn(t: String, enabled: Boolean, tint: Color? = null, onClick: () -> Uni
 @Composable
 fun <T> Segmented(items: List<Pair<T, Int>>, sel: T, full: Boolean = false, tone: Color? = null, onPick: (T) -> Unit) {
     val cs = MaterialTheme.colorScheme
+    SlidingSegments(items, sel, Modifier.then(if (full) Modifier.fillMaxWidth() else Modifier).clip(CircleShape).background(cs.background).padding(3.dp), full,
+        tone ?: cs.primary, if (tone != null) cs.background else cs.onPrimary, 12.5.sp, PaddingValues(horizontal = 12.dp, vertical = 7.dp), onPick)
+}
+
+/**
+ * Segmentos con una sola pastilla que viaja hasta la opción elegida: se pasa un poco y vuelve a su
+ * sitio con muelle (pedido el 23 sep: «que se desplaza y hace un efecto tipo slide back»).
+ */
+@Composable
+private fun <T> SlidingSegments(
+    items: List<Pair<T, Int>>, sel: T, modifier: Modifier, full: Boolean, fill: Color, onFill: Color,
+    fontSize: androidx.compose.ui.unit.TextUnit, padding: PaddingValues, onPick: (T) -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
     val haptic = LocalHapticFeedback.current
-    Row(Modifier.then(if (full) Modifier.fillMaxWidth() else Modifier).clip(CircleShape).background(cs.background).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        items.forEach { (v, r) ->
-            val on = v == sel
-            Text(stringResource(r), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) (if (tone != null) cs.background else cs.onPrimary) else cs.onSurfaceVariant, textAlign = TextAlign.Center, maxLines = 1,
-                modifier = Modifier.then(if (full) Modifier.weight(1f) else Modifier).clip(CircleShape).background(if (on) tone ?: cs.primary else Color.Transparent).cleanClickable { if (!on) haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(v) }.padding(horizontal = 12.dp, vertical = 7.dp))
+    val bounds = remember(items.size) { mutableStateListOf<Pair<Float, Float>>().apply { repeat(items.size) { add(0f to 0f) } } }
+    val idx = items.indexOfFirst { it.first == sel }
+    val x = remember { Animatable(0f) }
+    val w = remember { Animatable(0f) }
+    var placed by remember { mutableStateOf(false) }
+    val target = bounds.getOrNull(idx)
+    LaunchedEffect(target) {
+        val (tx, tw) = target ?: return@LaunchedEffect
+        if (tw <= 0f) return@LaunchedEffect
+        if (!placed) { x.snapTo(tx); w.snapTo(tw); placed = true }
+        else coroutineScope { launch { x.animateTo(tx, SLIDE) }; launch { w.animateTo(tw, SLIDE) } }
+    }
+    Row(
+        modifier.drawBehind {
+            if (idx >= 0 && w.value > 0f) drawRoundRect(fill, Offset(x.value, 0f), Size(w.value, size.height), CornerRadius(size.height / 2))
+        },
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        items.forEachIndexed { i, (v, r) ->
+            val on = i == idx
+            val fg by animateColorAsState(if (on) onFill else cs.onSurfaceVariant, label = "segmento")
+            Text(stringResource(r), fontSize = fontSize, fontWeight = FontWeight.Bold, color = fg, textAlign = TextAlign.Center, maxLines = 1,
+                modifier = Modifier.then(if (full) Modifier.weight(1f) else Modifier)
+                    .onPlaced { c -> val b = c.positionInParent().x to c.size.width.toFloat(); if (bounds.getOrNull(i) != b) bounds[i] = b }
+                    .clip(CircleShape).cleanClickable { if (!on) haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(v) }.padding(padding))
         }
     }
 }
+
+private val SLIDE = spring<Float>(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)
 
 @Composable
 fun Switchy(on: Boolean, tone: Color? = null) {
@@ -739,7 +788,7 @@ private fun MinePanel(d: RoomDraft, onChange: (RoomDraft) -> Unit) {
 private fun DatesPanel(d: RoomDraft, today: Long, onChange: (RoomDraft) -> Unit) {
     val cs = MaterialTheme.colorScheme
     val due = today + d.dueInDays
-    Text(stringResource(R.string.rooms_dates_title), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp))
+    Text(stringResource(R.string.rooms_dates_title), fontSize = 23.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp))
     Text(stringResource(R.string.rooms_dates_hint), fontSize = 12.5.sp, color = cs.onSurfaceVariant, lineHeight = 18.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 12.dp))
     RoomRow(RoundedCornerShape(20.dp), onClick = { onChange(d.copy(internalDates = !d.internalDates)) }) {
         RowTexts(stringResource(R.string.rooms_dates_toggle), stringResource(R.string.rooms_dates_toggle_d, shortDate(due)), subtitleLines = 2)
@@ -788,7 +837,7 @@ fun materialName(t: MaterialType): Int = when (t) {
 @Composable
 private fun MorePanel(d: RoomDraft, subjects: List<Subject>, today: Long, open: String?, onOpen: (String) -> Unit, onChange: (RoomDraft) -> Unit, newKey: () -> Long, onJump: (String) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Text(stringResource(R.string.rooms_preview_title), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp))
+    Text(stringResource(R.string.rooms_preview_title), fontSize = 23.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp))
     Text(stringResource(R.string.rooms_preview_hint), fontSize = 12.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
     RoomPreview(d, subjects.firstOrNull { it.id == d.subjectId }, today, onJump)
     RoomLabel(stringResource(R.string.rooms_add_if_you_want))
@@ -926,13 +975,7 @@ fun RulesEditor(rules: RoomRules, entryOpen: Boolean, onRules: (RoomRules) -> Un
 @Composable
 private fun <T> SegmentedFull(items: List<Pair<T, Int>>, sel: T, onPick: (T) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Row(Modifier.fillMaxWidth().padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        items.forEach { (v, r) ->
-            val on = v == sel
-            Text(stringResource(r), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (on) cs.onPrimary else cs.onSurfaceVariant, textAlign = TextAlign.Center, maxLines = 1,
-                modifier = Modifier.weight(1f).clip(CircleShape).background(if (on) cs.primary else Color.Transparent).cleanClickable { onPick(v) }.padding(horizontal = 4.dp, vertical = 8.dp))
-        }
-    }
+    SlidingSegments(items, sel, Modifier.fillMaxWidth().padding(3.dp), true, cs.primary, cs.onPrimary, 12.sp, PaddingValues(horizontal = 4.dp, vertical = 8.dp), onPick)
 }
 
 /** «Así queda tu sala»: la tarjeta de la sala, sin degradados. */

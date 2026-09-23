@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniBackButton
@@ -213,7 +214,7 @@ fun InviteCard(room: WorkRoom, vm: RoomsViewModel, onQr: () -> Unit) {
     val on = cs.onSurface
     Column(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cs.primaryContainer).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.rooms_room_code), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = on)
-        Text(room.code, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 8.sp, color = on, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp))
+        Text(room.code, fontSize = 32.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, letterSpacing = 8.sp, color = on, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp))
         if (free > 0) Row(Modifier.padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             repeat(minOf(free, 6)) {
                 Canvas(Modifier.size(30.dp)) {
@@ -271,7 +272,7 @@ fun QrSheet(room: WorkRoom, onDismiss: () -> Unit) {
     RoomSheet(onDismiss, stringResource(R.string.rooms_qr_title), stringResource(R.string.rooms_qr_d)) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             QrView("unistack://sala/${room.code}")
-            Text(room.code, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 6.sp, color = cs.onSurface, modifier = Modifier.padding(top = 12.dp))
+            Text(room.code, fontSize = 22.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, letterSpacing = 6.sp, color = cs.onSurface, modifier = Modifier.padding(top = 12.dp))
         }
     }
 }
