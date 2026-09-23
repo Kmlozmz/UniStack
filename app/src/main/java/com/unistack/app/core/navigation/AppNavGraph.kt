@@ -131,7 +131,6 @@ import com.unistack.app.feature_support.presentation.HelpScreen
 import com.unistack.app.feature_support.presentation.ResourcesScreen
 import com.unistack.app.feature_support.presentation.WhatsNewScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
-import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_templates.presentation.AcademicWorkScreen
 import com.unistack.app.feature_updates.domain.UpdateState
 import com.unistack.app.feature_updates.presentation.UpdateDetailSheet
@@ -1165,13 +1164,45 @@ fun MainNavGraph(
                 )
             }
             screen(AppRoutes.AcademicTemplates) {
-                AcademicTemplatesScreen(
+                com.unistack.app.feature_rooms.presentation.RoomsHomeScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Home)
                         }
                     },
-                    onWorkClick = { workId -> navController.go(AppRoutes.academicWork(workId)) }
+                    onOpenRoom = { roomId -> navController.go(AppRoutes.room(roomId)) },
+                    onCreateRoom = { navController.go(AppRoutes.RoomsCreate) }
+                )
+            }
+            screen(AppRoutes.RoomsCreate) {
+                com.unistack.app.feature_rooms.presentation.CreateRoomScreen(
+                    onBackClick = { navController.navigateUp() },
+                    onCreated = { roomId ->
+                        navController.navigateUp()
+                        navController.go(AppRoutes.room(roomId, "invitar"))
+                    }
+                )
+            }
+            screen(
+                route = AppRoutes.Room,
+                arguments = listOf(
+                    navArgument(AppRoutes.RoomIdArg) { type = NavType.StringType },
+                    navArgument(AppRoutes.RoomSectionArg) { type = NavType.StringType },
+                    navArgument(AppRoutes.RoomItemArg) { type = NavType.StringType }
+                )
+            ) { entry ->
+                com.unistack.app.feature_rooms.presentation.RoomRouter(
+                    roomId = entry.arguments?.getString(AppRoutes.RoomIdArg).orEmpty(),
+                    section = entry.arguments?.getString(AppRoutes.RoomSectionArg).orEmpty(),
+                    item = entry.arguments?.getString(AppRoutes.RoomItemArg).orEmpty(),
+                    onBack = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.AcademicTemplates)
+                    },
+                    onNavigate = { roomId, section, item -> navController.go(AppRoutes.room(roomId, section, item)) },
+                    onReplace = { roomId, section, item ->
+                        navController.navigateUp()
+                        navController.go(AppRoutes.room(roomId, section, item))
+                    }
                 )
             }
             screen(
@@ -1458,6 +1489,8 @@ internal fun moduleForRoute(route: String?): AppModule? {
         routeBelongsTo(route, AppRoutes.AddExpense) -> AppModule.EXPENSES
         routeBelongsTo(route, AppRoutes.EditExpense) -> AppModule.EXPENSES
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppModule.ACADEMIC_TEMPLATES
+        routeBelongsTo(route, AppRoutes.RoomsCreate) -> AppModule.ACADEMIC_TEMPLATES
+        routeBelongsTo(route, AppRoutes.Room) -> AppModule.ACADEMIC_TEMPLATES
         else -> null
     }
 }

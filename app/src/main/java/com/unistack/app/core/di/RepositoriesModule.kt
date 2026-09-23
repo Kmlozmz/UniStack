@@ -95,6 +95,11 @@ object RepositoriesModule {
 
     @Provides
     @Singleton
+    fun provideRoomFileStore(@ApplicationContext context: Context): com.unistack.app.feature_rooms.data.RoomFileStore =
+        com.unistack.app.feature_rooms.data.RoomFileStore(context)
+
+    @Provides
+    @Singleton
     fun provideNotesRepository(
         noteDao: NoteDao,
         attachmentDao: NoteAttachmentDao,
@@ -128,6 +133,14 @@ object RepositoriesModule {
         academicWorkDao = academicWorkDao,
         userRepository = userRepository
     )
+
+    @Provides
+    @Singleton
+    fun provideWorkRoomsRepository(
+        workRoomDao: com.unistack.app.feature_rooms.data.local.WorkRoomDao,
+        userRepository: UserRepository
+    ): com.unistack.app.feature_rooms.domain.WorkRoomsRepository =
+        com.unistack.app.feature_rooms.data.RoomWorkRoomsRepository(workRoomDao, userRepository)
 
     @Provides
     @Singleton

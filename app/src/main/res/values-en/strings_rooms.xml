@@ -1,0 +1,1143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado: Trabajos (salas). Mismas claves en values y values-en. -->
+<resources>
+    <string name="rooms_you">You</string>
+    <string name="rooms_untitled">Untitled work</string>
+    <string name="rooms_title">Group work</string>
+    <string name="rooms_close">Close</string>
+    <string name="rooms_cancel">Cancel</string>
+    <string name="rooms_save">Save</string>
+    <string name="rooms_done">Done</string>
+    <string name="rooms_next">Next</string>
+    <string name="rooms_back">Back</string>
+    <string name="rooms_more">More</string>
+    <string name="rooms_help">How it works</string>
+    <string name="rooms_search">Search</string>
+    <string name="rooms_copy">Copy</string>
+    <string name="rooms_share">Share</string>
+    <string name="rooms_copied">Copied</string>
+    <string name="rooms_no_subject">No subject</string>
+    <string name="rooms_today">today</string>
+    <string name="rooms_tomorrow">tomorrow</string>
+    <string name="rooms_yesterday">yesterday</string>
+    <string name="rooms_in_days">in %d days</string>
+    <string name="rooms_days_ago">%d days ago</string>
+    <string name="rooms_needs_cloud">Joining by code arrives with the cloud</string>
+    <string name="rooms_type_ensayo">Essay</string>
+    <string name="rooms_type_lab">Lab report</string>
+    <string name="rooms_type_expo">Presentation</string>
+    <string name="rooms_type_proyecto">Project / software</string>
+    <string name="rooms_type_inv">Research</string>
+    <string name="rooms_type_resena">Review</string>
+    <string name="rooms_type_campo">Fieldwork / survey</string>
+    <string name="rooms_type_maqueta">Model / handmade</string>
+    <string name="rooms_type_cero">From scratch</string>
+    <string name="rooms_task_rehearse">Rehearse the presentation</string>
+    <string name="rooms_task_bring_model">Bring the model to class</string>
+    <string name="rooms_home_subtitle_empty">Group work, each with its own room</string>
+    <string name="rooms_home_counts_active">%d active</string>
+    <string name="rooms_home_counts_one_active">1 active</string>
+    <string name="rooms_home_counts_done"> · %d finished</string>
+    <string name="rooms_home_counts_one_done"> · 1 finished</string>
+    <string name="rooms_empty_title">No rooms yet</string>
+    <string name="rooms_empty_body">Someone creates the room and shares the code. Everyone joins, takes a part and adds their work. At the end it all comes together in one document. This is what one looks like inside:</string>
+    <string name="rooms_how_label">How it works</string>
+    <string name="rooms_flow_create">You create the room</string>
+    <string name="rooms_flow_join">They join with the code</string>
+    <string name="rooms_flow_start">The work begins</string>
+    <string name="rooms_create_room">Create a room</string>
+    <string name="rooms_have_code">I have a code</string>
+    <string name="rooms_example_subject">Sociology</string>
+    <string name="rooms_example_title">Essay: the city as a text</string>
+    <string name="rooms_example_parts">3 of 6 parts</string>
+    <string name="rooms_example_mine">Your part: Counterargument</string>
+    <string name="rooms_split_assigned">assigned</string>
+    <string name="rooms_split_free">free choice</string>
+    <string name="rooms_parts_of">%1$d of %2$d parts</string>
+    <string name="rooms_new">New</string>
+    <string name="rooms_hero_late">You\'re late</string>
+    <string name="rooms_hero_yours">Your turn</string>
+    <string name="rooms_hero_upload">Upload my part</string>
+    <string name="rooms_hero_no_group">Group missing</string>
+    <string name="rooms_hero_no_group_t">Nobody has joined yet</string>
+    <string name="rooms_hero_no_group_d">%s · open it and share the code so they can join.</string>
+    <string name="rooms_hero_open_invite">Open and invite</string>
+    <string name="rooms_hero_free">Free parts available</string>
+    <string name="rooms_hero_free_t">%1$d unowned in %2$s</string>
+    <string name="rooms_hero_free_d">%s · free choice, take the one you like</string>
+    <string name="rooms_hero_pick">Pick one</string>
+    <string name="rooms_hero_no_part">No part yet</string>
+    <string name="rooms_hero_no_part_t">Nothing assigned to you yet</string>
+    <string name="rooms_hero_no_part_d">%1$s · %2$d unowned sections. Open it and take one.</string>
+    <string name="rooms_hero_enter_pick">Open and pick</string>
+    <string name="rooms_hero_half">Split unfinished</string>
+    <string name="rooms_hero_half_t">%d unowned sections</string>
+    <string name="rooms_hero_finish_split">Finish splitting</string>
+    <string name="rooms_hero_other_late">%s is late</string>
+    <string name="rooms_hero_was_for">%1$s · was due %2$s</string>
+    <string name="rooms_hero_for">%1$s · %2$s · due %3$s</string>
+    <string name="rooms_hero_was">%1$s · %2$s · was due %3$s</string>
+    <string name="rooms_hero_see">See work</string>
+    <string name="rooms_hero_calm">You\'re up to date</string>
+    <string name="rooms_hero_calm_t">Nothing pending for you</string>
+    <string name="rooms_hero_calm_d">You have %d works going, but none of your parts is waiting.</string>
+    <string name="rooms_hero_calm_t0">No active works</string>
+    <string name="rooms_hero_calm_d0">When you open or join a room, it shows up here.</string>
+    <string name="rooms_sort_urgency">Urgency</string>
+    <string name="rooms_sort_date">Date</string>
+    <string name="rooms_sort_subject">Subject</string>
+    <string name="rooms_sort_mine">Yours</string>
+    <string name="rooms_filter">Filter</string>
+    <string name="rooms_search_hint">Search by title or subject…</string>
+    <string name="rooms_filter_count">%d works</string>
+    <string name="rooms_filter_state">Status</string>
+    <string name="rooms_filter_subject">Subject</string>
+    <string name="rooms_filter_all">All</string>
+    <string name="rooms_filter_active">Active</string>
+    <string name="rooms_filter_done">Finished</string>
+    <string name="rooms_filter_all_subjects">All</string>
+    <string name="rooms_nothing_here">Nothing here with that.</string>
+    <string name="rooms_group_active">Active</string>
+    <string name="rooms_group_week">This week</string>
+    <string name="rooms_group_two">In two weeks</string>
+    <string name="rooms_group_later">Later</string>
+    <string name="rooms_group_mine">Your turn</string>
+    <string name="rooms_group_rest">Ongoing, nothing yours</string>
+    <string name="rooms_card_closed">Delivered and closed</string>
+    <string name="rooms_card_closed_d">You can open the final document</string>
+    <string name="rooms_card_your_part">Your part: %s</string>
+    <string name="rooms_card_was_for">Was due %s</string>
+    <string name="rooms_card_for">Due %s</string>
+    <string name="rooms_card_and_more"> · and %d more</string>
+    <string name="rooms_card_invite">Invite the group</string>
+    <string name="rooms_card_invite_d">Open it and share the code</string>
+    <string name="rooms_card_take">Take a part</string>
+    <string name="rooms_card_take_d">%d free · nobody assigns</string>
+    <string name="rooms_card_no_part">You don\'t have a part yet</string>
+    <string name="rooms_card_no_part_d">%d unowned sections</string>
+    <string name="rooms_card_late">%s is late</string>
+    <string name="rooms_card_late_d">%1$s was due %2$s</string>
+    <string name="rooms_card_all_good">Nothing of yours pending</string>
+    <string name="rooms_card_delivered_of">%1$d of %2$d parts delivered</string>
+    <string name="rooms_state_done">Finished</string>
+    <string name="rooms_state_late">Late</string>
+    <string name="rooms_state_complete">Complete</string>
+    <string name="rooms_state_active">Active</string>
+    <string name="rooms_foot_delivered">Delivered %s</string>
+    <string name="rooms_foot_due">Due %s</string>
+    <string name="rooms_foot_late">%1$s is late · due %2$s</string>
+    <string name="rooms_done_title">Finished</string>
+    <string name="rooms_done_sub">%1$d works · %2$d terms</string>
+    <string name="rooms_done_sub1">%1$d works · 1 term</string>
+    <string name="rooms_period_first">First semester</string>
+    <string name="rooms_period_second">Second semester</string>
+    <string name="rooms_period_now">Current</string>
+    <string name="rooms_period_works">%d works</string>
+    <string name="rooms_average">average</string>
+    <string name="rooms_folder_sub">%d works</string>
+    <string name="rooms_folder_avg"> · average %s</string>
+    <string name="rooms_no_grade">no grade</string>
+    <string name="rooms_closed_title">This work is closed</string>
+    <string name="rooms_closed_body">%s was delivered. Nothing can be uploaded or changed anymore; you can only see the final document.</string>
+    <string name="rooms_closed_leader">You closed it, so only you can reopen it. When you do, the group can contribute again.</string>
+    <string name="rooms_closed_member">Only %s, who created the room, can reopen it. If you need to fix something, ask from here.</string>
+    <string name="rooms_reopen">Reopen work</string>
+    <string name="rooms_ask_reopen">Ask %s to reopen it</string>
+    <string name="rooms_asked_reopen">Request sent to %s</string>
+    <string name="rooms_see_final">See final document</string>
+    <string name="rooms_reopened">Work reopened · back in Active</string>
+    <string name="rooms_menu_create_d">Pick the type and whether you assign or it is free</string>
+    <string name="rooms_menu_join">Join with a code</string>
+    <string name="rooms_menu_join_d">Someone in the group already created it</string>
+    <string name="rooms_join_title">Join a room</string>
+    <string name="rooms_join_sub">Type the six-character code you were given</string>
+    <string name="rooms_join_name">Your name in the room</string>
+    <string name="rooms_join_go">Join</string>
+    <string name="rooms_guide_title">How a room works</string>
+    <string name="rooms_guide_sub">From creating it to delivering it, in seven steps</string>
+    <string name="rooms_guide_ok">Got it</string>
+    <string name="rooms_new_room">New room</string>
+    <string name="rooms_stage_of">%1$s · %2$d of %3$d</string>
+    <string name="rooms_stage_basic">The basics</string>
+    <string name="rooms_stage_parts">The parts</string>
+    <string name="rooms_stage_split">The split</string>
+    <string name="rooms_stage_dates">Dates</string>
+    <string name="rooms_stage_more">The rest</string>
+    <string name="rooms_create_now">Create now</string>
+    <string name="rooms_create_room_btn">Create room</string>
+    <string name="rooms_q_name">What\'s the work called?</string>
+    <string name="rooms_q_name_d">If it\'s for a subject, add it; if not, no need.</string>
+    <string name="rooms_name_hint">Name</string>
+    <string name="rooms_add_subject">Add subject</string>
+    <string name="rooms_subject_sheet_sub">It shows up in the subject and takes its color</string>
+    <string name="rooms_no_subject_d">A standalone work, a club, a free course…</string>
+    <string name="rooms_q_type">What is it like?</string>
+    <string name="rooms_q_type_d">Only to suggest parts. You can change everything later.</string>
+    <string name="rooms_type_none">It\'s not like any of these, I\'ll build it →</string>
+    <string name="rooms_q_produce">What will you hand in at the end?</string>
+    <string name="rooms_q_produce_d">So we know how to put it together when you\'re done.</string>
+    <string name="rooms_produce_doc">A document</string>
+    <string name="rooms_produce_doc_d">Word, PDF or Docs</string>
+    <string name="rooms_produce_slides">A presentation</string>
+    <string name="rooms_produce_slides_d">PowerPoint or Slides</string>
+    <string name="rooms_produce_both">Document and presentation</string>
+    <string name="rooms_produce_both_d">Report + talk of the same work</string>
+    <string name="rooms_produce_nothing">Nothing to put together</string>
+    <string name="rooms_produce_nothing_d">A model, software or something physical</string>
+    <string name="rooms_short_doc">Document</string>
+    <string name="rooms_short_slides">Slides</string>
+    <string name="rooms_short_both">Doc + slides</string>
+    <string name="rooms_short_nothing">Nothing</string>
+    <string name="rooms_q_split">How do you split it?</string>
+    <string name="rooms_q_split_d">Parts are handed out as people join with the code.</string>
+    <string name="rooms_split_assign">I assign</string>
+    <string name="rooms_split_assign_d">You assign each part as they join</string>
+    <string name="rooms_split_free_t">Free choice</string>
+    <string name="rooms_split_free_d">Everyone takes theirs when joining</string>
+    <string name="rooms_split_draw">By draw</string>
+    <string name="rooms_split_draw_d">When everyone is in, the app splits evenly</string>
+    <string name="rooms_split_mixed">Mixed</string>
+    <string name="rooms_split_mixed_d">You keep yours; the rest stay free</string>
+    <string name="rooms_q_capacity">How many for the draw?</string>
+    <string name="rooms_q_capacity_d">Counting you. When everyone is in, the app draws the parts evenly.</string>
+    <string name="rooms_cap_more">More</string>
+    <string name="rooms_cap_more_long">6 or more</string>
+    <string name="rooms_q_due">When is it due?</string>
+    <string name="rooms_due_1w">1 week</string>
+    <string name="rooms_due_2w">2 weeks</string>
+    <string name="rooms_due_3w">3 weeks</string>
+    <string name="rooms_due_1m">1 month</string>
+    <string name="rooms_pick_date">Pick date</string>
+    <string name="rooms_parts_title">The parts of the work</string>
+    <string name="rooms_parts_hint_type">A starting point for %s. </string>
+    <string name="rooms_parts_hint">Drag to reorder, tap one to adjust it.</string>
+    <string name="rooms_parts_word">parts</string>
+    <string name="rooms_parts_total">%ss in total</string>
+    <string name="rooms_parts_shared">shared</string>
+    <string name="rooms_parts_empty">No parts yet. Add the first one or take a suggestion.</string>
+    <string name="rooms_add_part">Add part</string>
+    <string name="rooms_suggestions">Useful? · suggestions for %s</string>
+    <string name="rooms_unit_page">pg</string>
+    <string name="rooms_unit_slide">slide</string>
+    <string name="rooms_drag">Drag to move</string>
+    <string name="rooms_part_unnamed">Unnamed</string>
+    <string name="rooms_part_tap">tap to adjust</string>
+    <string name="rooms_shared_two">done by 2</string>
+    <string name="rooms_shared_all">done by all</string>
+    <string name="rooms_part_yours">yours</string>
+    <string name="rooms_part_has_note">with notes</string>
+    <string name="rooms_field_name">Name</string>
+    <string name="rooms_field_extent">Suggested length</string>
+    <string name="rooms_extent_free">Free</string>
+    <string name="rooms_field_howmany">How many do it?</string>
+    <string name="rooms_one">One</string>
+    <string name="rooms_two">Two</string>
+    <string name="rooms_all">All</string>
+    <string name="rooms_field_mine">I\'ll take it</string>
+    <string name="rooms_field_note">What it should include (optional)</string>
+    <string name="rooms_note_hint">E.g. two authors, a local example, at most one long quote…</string>
+    <string name="rooms_remove_part">Remove part</string>
+    <string name="rooms_mine_title">Which ones do you do?</string>
+    <string name="rooms_mine_hint">Mark them now.</string>
+    <string name="rooms_mine_hint_assign">You assign the rest from the room as they join.</string>
+    <string name="rooms_mine_hint_mixed">The rest stay free for whoever joins.</string>
+    <string name="rooms_draw_title">It\'ll be drawn when the group is complete</string>
+    <string name="rooms_draw_hint">When the %1$s are in, the app splits the %2$d parts evenly and lets each one know. You can draw earlier from the room.</string>
+    <string name="rooms_draw_ilus">%1$d parts · %2$s people</string>
+    <string name="rooms_draw_each">≈ %d each</string>
+    <string name="rooms_free_title">Everyone will take theirs</string>
+    <string name="rooms_free_hint">When joining with the code, everyone sees the free parts and takes the one they want.</string>
+    <string name="rooms_free_ilus">%d free parts</string>
+    <string name="rooms_free_first">first come, first served</string>
+    <string name="rooms_dates_title">Dates per part?</string>
+    <string name="rooms_dates_hint">They keep it from piling up at the end. They\'re suggested and each one can be moved.</string>
+    <string name="rooms_dates_toggle">Staggered internal dates</string>
+    <string name="rooms_dates_toggle_d">The last one is 3 days before the due date (%s)</string>
+    <string name="rooms_dates_result">This is how they look</string>
+    <string name="rooms_final_due">Final due date</string>
+    <string name="rooms_preview_title">This is your room</string>
+    <string name="rooms_preview_hint">Tap any item to change it.</string>
+    <string name="rooms_stat_due">Due</string>
+    <string name="rooms_stat_split">Split</string>
+    <string name="rooms_stat_delivers">Delivered as</string>
+    <string name="rooms_n_parts">%d parts</string>
+    <string name="rooms_n_yours">%d yours</string>
+    <string name="rooms_n_tasks">%d tasks</string>
+    <string name="rooms_n_material">%d material</string>
+    <string name="rooms_edit_parts">Edit parts</string>
+    <string name="rooms_add_if_you_want">Add if you want</string>
+    <string name="rooms_tasks_title">Loose tasks</string>
+    <string name="rooms_tasks_hint">Print, bring something, proofread…</string>
+    <string name="rooms_task_yours">yours</string>
+    <string name="rooms_task_later">assigned in the room</string>
+    <string name="rooms_me_short">Me</string>
+    <string name="rooms_task_hint">Print, bring the poster, proofread…</string>
+    <string name="rooms_task_spell">Proofread</string>
+    <string name="rooms_task_print">Print</string>
+    <string name="rooms_task_rehearse_short">Rehearse</string>
+    <string name="rooms_material_title">Support material</string>
+    <string name="rooms_material_hint">Rubric, brief, readings…</string>
+    <string name="rooms_things">%d items</string>
+    <string name="rooms_material_create_hint">What you upload here is seen by the whole group in Support material from day one: the rubric, the brief, readings…</string>
+    <string name="rooms_mt_link">Link</string>
+    <string name="rooms_mt_doc">Document</string>
+    <string name="rooms_mt_photo">Photo</string>
+    <string name="rooms_mt_video">Video</string>
+    <string name="rooms_mt_audio">Audio</string>
+    <string name="rooms_mt_source">Source</string>
+    <string name="rooms_mt_note">Note</string>
+    <string name="rooms_sample_rubric">Work rubric.pdf</string>
+    <string name="rooms_sample_rubric_d">PDF · 2 pages</string>
+    <string name="rooms_sample_link">Reference article</string>
+    <string name="rooms_sample_link_d">link</string>
+    <string name="rooms_sample_photo">Whiteboard photo</string>
+    <string name="rooms_sample_photo_d">today</string>
+    <string name="rooms_sample_video">Recorded class</string>
+    <string name="rooms_sample_video_d">video</string>
+    <string name="rooms_sample_audio">Teacher\'s instructions</string>
+    <string name="rooms_sample_audio_d">voice note</string>
+    <string name="rooms_sample_note">Ideas to get started</string>
+    <string name="rooms_sample_note_d">note</string>
+    <string name="rooms_rules_title">Room rules</string>
+    <string name="rooms_rules_default">6 rules · the usual</string>
+    <string name="rooms_rules_changed">%d changed · 6 rules</string>
+    <string name="rooms_rule_change">Switching parts</string>
+    <string name="rooms_rule_no">No</string>
+    <string name="rooms_rule_asking">On request</string>
+    <string name="rooms_rule_free">Free</string>
+    <string name="rooms_rule_change_no">Everyone keeps the part they got.</string>
+    <string name="rooms_rule_change_ask">They can ask to switch and you approve it.</string>
+    <string name="rooms_rule_change_free">Anyone can drop theirs or swap with someone.</string>
+    <string name="rooms_rule_late">Late submissions</string>
+    <string name="rooms_rule_marked">Yes, marked</string>
+    <string name="rooms_rule_grace">2 extra days</string>
+    <string name="rooms_rule_late_no">When due passes, the part locks and lets you know.</string>
+    <string name="rooms_rule_late_marked">They\'re accepted, but marked in red.</string>
+    <string name="rooms_rule_late_grace">There\'s a 2-day margin before marking it.</string>
+    <string name="rooms_rule_structure">Adding or removing parts</string>
+    <string name="rooms_rule_only_you">Only you</string>
+    <string name="rooms_rule_everyone">Everyone</string>
+    <string name="rooms_rule_structure_leader">Only you change the structure.</string>
+    <string name="rooms_rule_structure_all">Anyone proposes and changes parts.</string>
+    <string name="rooms_rule_visibility">Seeing others\' work</string>
+    <string name="rooms_rule_always">Always</string>
+    <string name="rooms_rule_on_submit">When delivered</string>
+    <string name="rooms_rule_visibility_always">Everyone\'s progress is visible while they write.</string>
+    <string name="rooms_rule_visibility_submit">Each part becomes visible when its owner delivers it.</string>
+    <string name="rooms_rule_reminders">Reminders</string>
+    <string name="rooms_rule_1day">1 day before</string>
+    <string name="rooms_rule_3days">3 days before</string>
+    <string name="rooms_rule_rem_none">Nobody gets automatic reminders.</string>
+    <string name="rooms_rule_rem_1">Everyone gets a reminder one day before their date.</string>
+    <string name="rooms_rule_rem_3">A reminder three days before and another the day before.</string>
+    <string name="rooms_rule_entry">Joining the room</string>
+    <string name="rooms_rule_with_code">With the code</string>
+    <string name="rooms_rule_you_approve">You approve</string>
+    <string name="rooms_rule_entry_code">Whoever has the code joins directly.</string>
+    <string name="rooms_rule_entry_approve">Each join request comes to you to accept.</string>
+    <string name="rooms_chat">Chat</string>
+    <string name="rooms_news">Updates</string>
+    <string name="rooms_group">Group</string>
+    <string name="rooms_manage">Manage</string>
+    <string name="rooms_sections_delivered">%1$d of %2$d sections delivered</string>
+    <string name="rooms_due_in">Due %s</string>
+    <string name="rooms_all_delivered">All delivered</string>
+    <string name="rooms_can_create">You can build the work now</string>
+    <string name="rooms_can_create_d">All %d sections are ready. Building it puts everything together and closes the room.</string>
+    <string name="rooms_nothing_left">You\'re all done</string>
+    <string name="rooms_leader_must_create">%s still has to build the final work.</string>
+    <string name="rooms_and_late">and %1$s is late with %2$s</string>
+    <string name="rooms_toca_draft">you have an undelivered draft</string>
+    <string name="rooms_toca_unstarted">not started yet</string>
+    <string name="rooms_poke_to">Nudge %s</string>
+    <string name="rooms_take_x">Take %s</string>
+    <string name="rooms_take_one_title">Take a part</string>
+    <string name="rooms_no_part_yet">You don\'t have a part yet</string>
+    <string name="rooms_joined">%s joined the room</string>
+    <string name="rooms_joined_no_part">Doesn\'t have a part yet</string>
+    <string name="rooms_give_one">Give one</string>
+    <string name="rooms_waiting_for">waiting for %s</string>
+    <string name="rooms_req_sent_time">You asked for more time</string>
+    <string name="rooms_req_sent_swap">You asked to swap parts</string>
+    <string name="rooms_req_sent_help">You asked for help</string>
+    <string name="rooms_req_sent_drop">You asked to drop your part</string>
+    <string name="rooms_needs_attention">Needs attention</string>
+    <string name="rooms_in_progress">In progress</string>
+    <string name="rooms_delivered_group">Delivered</string>
+    <string name="rooms_chip_ready">Ready ✓</string>
+    <string name="rooms_chip_delivered">Delivered</string>
+    <string name="rooms_chip_overdue">Overdue</string>
+    <string name="rooms_chip_progress">In progress</string>
+    <string name="rooms_chip_free">Free</string>
+    <string name="rooms_chip_pending">Pending</string>
+    <string name="rooms_delivered_when">delivered %s</string>
+    <string name="rooms_overdue_when">was due %s</string>
+    <string name="rooms_no_owner">No owner</string>
+    <string name="rooms_no_contrib">No contributions in this section yet.</string>
+    <string name="rooms_assign">Assign</string>
+    <string name="rooms_take_this">Take this part</string>
+    <string name="rooms_give_poke">Nudge</string>
+    <string name="rooms_open_part">Open my part</string>
+    <string name="rooms_add_short">Add</string>
+    <string name="rooms_comments">Comments</string>
+    <string name="rooms_ask_leader">Ask the leader</string>
+    <string name="rooms_comment_in">Comment on %s…</string>
+    <string name="rooms_review_word">review</string>
+    <string name="rooms_is_yours">%s is yours</string>
+    <string name="rooms_poke_sent">Nudge sent to %s</string>
+    <string name="rooms_material_entry_t">Everything useful for the work</string>
+    <string name="rooms_material_entry_d">Links, documents, photos, videos, audio…</string>
+    <string name="rooms_add_to_work">Add to the work</string>
+    <string name="rooms_create_work">Build the work</string>
+    <string name="rooms_leader_tag">LEADER</string>
+    <string name="rooms_owner_and_date">Owner and date</string>
+    <string name="rooms_owner">Owner</string>
+    <string name="rooms_date">Date</string>
+    <string name="rooms_tap_to_change">Tap to change it</string>
+    <string name="rooms_give_part_to">Give %s a part</string>
+    <string name="rooms_give_part_d">Free ones first; you can also hand over someone else’s</string>
+    <string name="rooms_free_label">Free</string>
+    <string name="rooms_others_unstarted">Others’ · not started</string>
+    <string name="rooms_now_of">Now %s’s</string>
+    <string name="rooms_you_obj">you</string>
+    <string name="rooms_part_is_of">%1$s is now %2$s’s</string>
+    <string name="rooms_part_from_to">%1$s: from %2$s to %3$s</string>
+    <string name="rooms_later">Later</string>
+    <string name="rooms_later_d">Joins the group without a part</string>
+    <string name="rooms_enters_without_part">%s joins without a part</string>
+    <string name="rooms_sent_to">Sent to %s</string>
+    <string name="rooms_help_chat">I need help with %s 🙏</string>
+    <string name="rooms_swap_with">Swap it for which one?</string>
+    <string name="rooms_ask_leader_d">Ask %s, the leader</string>
+    <string name="rooms_note_optional">A note (optional)</string>
+    <string name="rooms_ask_time">Ask for more time</string>
+    <string name="rooms_ask_time_d">%s decides how many days</string>
+    <string name="rooms_ask_swap">Ask to swap parts</string>
+    <string name="rooms_ask_swap_d">If the rule allows it</string>
+    <string name="rooms_ask_help">Ask for help</string>
+    <string name="rooms_ask_help_d">Goes to %s and the chat</string>
+    <string name="rooms_drop_part">Drop this part</string>
+    <string name="rooms_drop_part_d">It becomes free again</string>
+    <string name="rooms_yours">Yours</string>
+    <string name="rooms_of_x">%s\'s</string>
+    <string name="rooms_read_part">Read the part</string>
+    <string name="rooms_read_part_d1">As delivered</string>
+    <string name="rooms_read_part_d2">Draft</string>
+    <string name="rooms_move_to">Move to someone else</string>
+    <string name="rooms_move_to_d">Its progress goes with the part</string>
+    <string name="rooms_assign_to">Assign to someone</string>
+    <string name="rooms_assign_to_d">Choose who does it</string>
+    <string name="rooms_poke">Nudge</string>
+    <string name="rooms_poke_d">%s gets a reminder</string>
+    <string name="rooms_ask_changes">Ask for changes</string>
+    <string name="rooms_ask_changes_d">Like a review, without being asked</string>
+    <string name="rooms_change_due">Change its date</string>
+    <string name="rooms_change_due_d">More time just for this part</string>
+    <string name="rooms_mark_ready">Mark ready to merge</string>
+    <string name="rooms_mark_ready_d">Your OK before building the work</string>
+    <string name="rooms_ready_to_join">%s ready to merge</string>
+    <string name="rooms_changes_asked">Changes requested</string>
+    <string name="rooms_comment_sent">Comment sent</string>
+    <string name="rooms_to_x">to %s</string>
+    <string name="rooms_changes_hint">What would you change…</string>
+    <string name="rooms_only_comment">Just comment</string>
+    <string name="rooms_due_of">Date for %s</string>
+    <string name="rooms_due_now_only">Now: %s · only this part changes</string>
+    <string name="rooms_now_x">Now: %s</string>
+    <string name="rooms_move_internal">Move the internal dates too</string>
+    <string name="rooms_move_internal_d">Each part shifts by the same amount</string>
+    <string name="rooms_save_and_tell">Save and notify</string>
+    <string name="rooms_due_saved">Date saved · group notified</string>
+    <string name="rooms_add_material">Add material</string>
+    <string name="rooms_add_to_x">Add to %s</string>
+    <string name="rooms_what_add">What are you adding?</string>
+    <string name="rooms_md_link">A page, article or online video</string>
+    <string name="rooms_md_doc">PDF, Word or slides</string>
+    <string name="rooms_md_photo">From the board, a book, the street</string>
+    <string name="rooms_md_video">A file or a YouTube link</string>
+    <string name="rooms_md_audio">Record now or upload a note</string>
+    <string name="rooms_md_source">Book or article · builds the bibliography</string>
+    <string name="rooms_md_note">An idea written right here</string>
+    <string name="rooms_from_camera">Camera</string>
+    <string name="rooms_from_gallery">Gallery</string>
+    <string name="rooms_from_files">Phone files</string>
+    <string name="rooms_from_drive">Google Drive or another app</string>
+    <string name="rooms_paste_link">Paste a link</string>
+    <string name="rooms_record_now">Record now</string>
+    <string name="rooms_upload_file">Upload a file</string>
+    <string name="rooms_seen_by_all">The whole group sees it</string>
+    <string name="rooms_add_x">Add %s</string>
+    <string name="rooms_added_to_part">Added to the section</string>
+    <string name="rooms_added_to_material">Added to Support material</string>
+    <string name="rooms_from_where">From where</string>
+    <string name="rooms_source_data">Source details</string>
+    <string name="rooms_name">Name</string>
+    <string name="rooms_author">Author</string>
+    <string name="rooms_author_hint">Surname, N.</string>
+    <string name="rooms_book_title">Title</string>
+    <string name="rooms_year">Year</string>
+    <string name="rooms_publisher">Publisher or journal</string>
+    <string name="rooms_optional_hint">Otherwise the site is used</string>
+    <string name="rooms_note_text">Text</string>
+    <string name="rooms_note_field">Note</string>
+    <string name="rooms_note_placeholder">What it’s for, what to look at…</string>
+    <string name="rooms_optional_word">optional</string>
+    <string name="rooms_cite_preview">It will read:</string>
+    <string name="rooms_for_which_part">For which part</string>
+    <string name="rooms_notify">Notify</string>
+    <string name="rooms_notify_d">they get a notice and it shows in “For me”</string>
+    <string name="rooms_voice_note">Voice note</string>
+    <string name="rooms_voice_note_len">Voice note · %1$d:%2$02d</string>
+    <string name="rooms_whole_work">The whole work</string>
+    <string name="rooms_nobody_yet">nobody yet</string>
+    <string name="rooms_not_a_part">Not for one specific part</string>
+    <string name="rooms_search_person">Search someone in the group (%d)</string>
+    <string name="rooms_nobody_else">Nobody else is in the room yet.</string>
+    <string name="rooms_everyone">Everyone</string>
+    <string name="rooms_nobody_named">Nobody with that name</string>
+    <string name="rooms_their_part">their part</string>
+    <string name="rooms_file_error">Couldn\'t copy the file (25 MB max)</string>
+    <string name="rooms_photo_of_today">Today\'s photo</string>
+    <string name="rooms_mg_link">Links</string>
+    <string name="rooms_mg_doc">Documents</string>
+    <string name="rooms_mg_photo">Photos</string>
+    <string name="rooms_mg_video">Videos</string>
+    <string name="rooms_mg_audio">Audio</string>
+    <string name="rooms_mg_source">Sources</string>
+    <string name="rooms_mg_note">Notes</string>
+    <string name="rooms_sort">Sort</string>
+    <string name="rooms_sort_new">Newest</string>
+    <string name="rooms_sort_type">By type</string>
+    <string name="rooms_sort_person">By person</string>
+    <string name="rooms_search_material">Search by name, person or note…</string>
+    <string name="rooms_for_me">For me</string>
+    <string name="rooms_all_items">All</string>
+    <string name="rooms_see_the_n">See all %d</string>
+    <string name="rooms_see_less">See less</string>
+    <string name="rooms_pinned">Pinned</string>
+    <string name="rooms_pinned_d">pinned by the leader</string>
+    <string name="rooms_bibliography">Bibliography</string>
+    <string name="rooms_builds_itself">builds itself</string>
+    <string name="rooms_bib_in">Bibliography in %s</string>
+    <string name="rooms_bib_goes_end">goes at the end of the work</string>
+    <string name="rooms_material_empty">No material yet. Add links, documents, photos or sources for the group.</string>
+    <string name="rooms_nothing_filter">Nothing with this filter.</string>
+    <string name="rooms_tagged_you_in">tagged you in</string>
+    <string name="rooms_new_for">New for</string>
+    <string name="rooms_dismiss">Dismiss</string>
+    <string name="rooms_for_you_chip">FOR YOU</string>
+    <string name="rooms_bib_copied">Bibliography copied</string>
+    <string name="rooms_bib_sheet_d">Built from the sources</string>
+    <string name="rooms_bib_pasted">It is added at the end when the work is built.</string>
+    <string name="rooms_downloaded">Saved</string>
+    <string name="rooms_which_part_q">Which part is it for?</string>
+    <string name="rooms_which_part_d">It shows as related material in that part</string>
+    <string name="rooms_who_helps_q">Who is it useful for?</string>
+    <string name="rooms_for_part">For the part</string>
+    <string name="rooms_helps">Useful for</string>
+    <string name="rooms_you_obj_cap">You</string>
+    <string name="rooms_tag">\@ Tag</string>
+    <string name="rooms_reactions">Reactions</string>
+    <string name="rooms_seen_by">Seen by</string>
+    <string name="rooms_x_of_y">%1$d of %2$d</string>
+    <string name="rooms_comment_hint2">Comment…</string>
+    <string name="rooms_download">Download</string>
+    <string name="rooms_open">Open</string>
+    <string name="rooms_pin">Pin</string>
+    <string name="rooms_unpin">Unpin</string>
+    <string name="rooms_delete">Delete</string>
+    <string name="rooms_page_1_of">Page 1 of %d</string>
+    <string name="rooms_first_write">Write or upload your part first</string>
+    <string name="rooms_delivered_toast">Delivered · the group can see it</string>
+    <string name="rooms_slides_uploaded">Slides uploaded · draft</string>
+    <string name="rooms_file_uploaded">File uploaded · saved as draft</string>
+    <string name="rooms_images_n">%d images</string>
+    <string name="rooms_my_part">My part</string>
+    <string name="rooms_the_part">The part</string>
+    <string name="rooms_your_slides">Your slides</string>
+    <string name="rooms_your_text">Your text</string>
+    <string name="rooms_shared_part">shared part</string>
+    <string name="rooms_attachments">Attachments</string>
+    <string name="rooms_attach_go_with">%d · go with your part</string>
+    <string name="rooms_what_you_used">what you used</string>
+    <string name="rooms_delivered_group_sees">Delivered · the group sees it</string>
+    <string name="rooms_edit_again">Edit again</string>
+    <string name="rooms_deliver_my_part">Deliver my part</string>
+    <string name="rooms_review">Review</string>
+    <string name="rooms_st_draft">Draft</string>
+    <string name="rooms_st_pending">Not started</string>
+    <string name="rooms_st_review">In review</string>
+    <string name="rooms_st_delivered">Delivered</string>
+    <string name="rooms_due_short">Due</string>
+    <string name="rooms_extent">Length</string>
+    <string name="rooms_who">Who</string>
+    <string name="rooms_with">With</string>
+    <string name="rooms_only_you">Just you</string>
+    <string name="rooms_what_to_include">What it should include</string>
+    <string name="rooms_ok_from">OK from %s</string>
+    <string name="rooms_changes_from">%s asked for changes</string>
+    <string name="rooms_pieces">Each their piece</string>
+    <string name="rooms_one_writes">One writes, one reviews</string>
+    <string name="rooms_piece_n">Piece %1$d of %2$d</string>
+    <string name="rooms_you_write">You write</string>
+    <string name="rooms_x_writes">%s writes</string>
+    <string name="rooms_others_review">%s reads and comments before delivery</string>
+    <string name="rooms_nothing_yet">Nothing here yet.</string>
+    <string name="rooms_write_here">Write here</string>
+    <string name="rooms_write_here_d">Saves itself as you type</string>
+    <string name="rooms_upload_file_d">Word, PDF or Docs · text is pulled out when possible</string>
+    <string name="rooms_delivered_edit_hint">Delivered: to change it, tap “Edit again”</string>
+    <string name="rooms_file_text_extracted">%s · text extracted</string>
+    <string name="rooms_file_as_is">%s · as you uploaded it</string>
+    <string name="rooms_written_in_app">Written in the app</string>
+    <string name="rooms_tap_to_open_file">This file goes as is: tap to open it.</string>
+    <string name="rooms_edit">Edit</string>
+    <string name="rooms_saved_moment">saved a moment ago</string>
+    <string name="rooms_file_kept">The group will see it as a file</string>
+    <string name="rooms_upload_other_version">Upload another version</string>
+    <string name="rooms_upload_ppt">Upload PowerPoint</string>
+    <string name="rooms_upload_ppt_d">or Google Slides / PDF</string>
+    <string name="rooms_upload_images">Upload images</string>
+    <string name="rooms_upload_images_d">one per slide</string>
+    <string name="rooms_slide_n">slide %d</string>
+    <string name="rooms_replace">Replace</string>
+    <string name="rooms_presents">Presents</string>
+    <string name="rooms_lasts">Length</string>
+    <string name="rooms_n_min">%d min</string>
+    <string name="rooms_script">Speaking script</string>
+    <string name="rooms_only_you_see">only you see it</string>
+    <string name="rooms_script_hint">What you will say in your part…</string>
+    <string name="rooms_x_reading">%s is reading your part</string>
+    <string name="rooms_someone">Someone in the group</string>
+    <string name="rooms_reading_d">You\'ll get their OK or what they\'d change.</string>
+    <string name="rooms_x_asked_changes">%s asked for changes</string>
+    <string name="rooms_fix">Fix it</string>
+    <string name="rooms_see_in_comments">See in comments</string>
+    <string name="rooms_x_gave_ok">%s gave it the OK</string>
+    <string name="rooms_can_deliver_now">You can deliver it now.</string>
+    <string name="rooms_remove">Remove</string>
+    <string name="rooms_attach">Attach</string>
+    <string name="rooms_attach_d">source, photo, table…</string>
+    <string name="rooms_no_attachments">No attachments.</string>
+    <string name="rooms_no_indications">No instructions: whatever the group agrees.</string>
+    <string name="rooms_tap_see_what">Tap to see what it should include</string>
+    <string name="rooms_write_placeholder">Write your part here…</string>
+    <string name="rooms_saved_alone">Saved</string>
+    <string name="rooms_upload">Upload</string>
+    <string name="rooms_notes">Notes</string>
+    <string name="rooms_deliver">Deliver</string>
+    <string name="rooms_review_wait_d">When they finish you\'ll get their OK or what they\'d change, here and in the comments.</string>
+    <string name="rooms_review_note_hint">What works and what you\'d change…</string>
+    <string name="rooms_give_ok">Give the OK</string>
+    <string name="rooms_ok_default">Looks good.</string>
+    <string name="rooms_review_asked">Asked %s</string>
+    <string name="rooms_ask_review_again">Ask for another review</string>
+    <string name="rooms_ask_review">Ask for a review</string>
+    <string name="rooms_ask_review_d">Have someone read it before delivering</string>
+    <string name="rooms_ask_review_hint">They get a notice, read your part and send back an OK or changes with a note. It’s optional: you can deliver anyway.</string>
+    <string name="rooms_shares_part">Shares this part with you</string>
+    <string name="rooms_builds_final">Builds the final work</string>
+    <string name="rooms_leader_word">leader</string>
+    <string name="rooms_anyone">Anyone in the group</string>
+    <string name="rooms_anyone_d">Whoever can first</string>
+    <string name="rooms_the_group">the group</string>
+    <string name="rooms_about_part_group">About %s · the group sees them</string>
+    <string name="rooms_no_comments">No comments yet.</string>
+    <string name="rooms_comment_your_part">Comment on your part…</string>
+    <string name="rooms_help_sent">Notice sent to the group</string>
+    <string name="rooms_ask_help_group_d">Tell the group you\'re stuck</string>
+    <string name="rooms_swap_leader_d">As leader, you hand it to someone</string>
+    <string name="rooms_swap_rule_d">The leader approves it (room rule)</string>
+    <string name="rooms_drop_confirm">Tap again to drop it</string>
+    <string name="rooms_attached">Attached</string>
+    <string name="rooms_attach_to_part">For %s</string>
+    <string name="rooms_name_optional">Name (optional)</string>
+    <string name="rooms_attach_to_your_part">Attach to your part</string>
+    <string name="rooms_what_you_used_d">What you used to make it</string>
+    <string name="rooms_mt_table">Table</string>
+    <string name="rooms_group_chat">Group chat</string>
+    <string name="rooms_search_chat">Search the chat</string>
+    <string name="rooms_pinned_msg">Pinned</string>
+    <string name="rooms_reply">Reply</string>
+    <string name="rooms_pinned_for_all">Message pinned for everyone</string>
+    <string name="rooms_save_material">Save to Support material</string>
+    <string name="rooms_saved_material">Saved to Support material</string>
+    <string name="rooms_chat_muted">Chat muted: no notices unless you are mentioned</string>
+    <string name="rooms_chat_empty">No messages yet. Write to the group.</string>
+    <string name="rooms_link_part">Link a part</string>
+    <string name="rooms_link_part_d">Opens when tapped</string>
+    <string name="rooms_look_part">Look how %s turned out</string>
+    <string name="rooms_send">Send</string>
+    <string name="rooms_quick_poll">Quick poll</string>
+    <string name="rooms_poll_q_hint">Which day do we rehearse?</string>
+    <string name="rooms_option_n">Option %d</string>
+    <string name="rooms_add_option">+ Add option</string>
+    <string name="rooms_send_poll">Send poll</string>
+    <string name="rooms_unmute_chat">Turn notices on</string>
+    <string name="rooms_mute_chat">Mute the chat</string>
+    <string name="rooms_unmute_chat_d">You get every message again</string>
+    <string name="rooms_mute_chat_d">You stay in the room; only mentions notify you</string>
+    <string name="rooms_notifs_on">Notices on</string>
+    <string name="rooms_chat_muted_toast">Chat muted</string>
+    <string name="rooms_chat_media">Photos, files and links</string>
+    <string name="rooms_chat_media_d">Everything that was sent</string>
+    <string name="rooms_chat_media_empty">Nothing has been sent yet.</string>
+    <string name="rooms_day_today">Today</string>
+    <string name="rooms_day_yesterday">Yesterday</string>
+    <string name="rooms_moved_final_to">moved the final due date to</string>
+    <string name="rooms_delivered_verb">delivered</string>
+    <string name="rooms_in_material">In Support material</string>
+    <string name="rooms_tap_to_vote">tap to vote</string>
+    <string name="rooms_replying_to">Replying to</string>
+    <string name="rooms_recording">Recording… release to send</string>
+    <string name="rooms_write_group">Write to the group…</string>
+    <string name="rooms_hold_to_record">Hold the mic to record a voice note</string>
+    <string name="rooms_file">File</string>
+    <string name="rooms_a_part">A part</string>
+    <string name="rooms_poll">Poll</string>
+    <string name="rooms_send_to_chat">Send to the chat</string>
+    <string name="rooms_mark_all_seen">Mark all as seen</string>
+    <string name="rooms_all_seen">All seen</string>
+    <string name="rooms_deliveries">Deliveries</string>
+    <string name="rooms_changes">Changes</string>
+    <string name="rooms_for_you">For you</string>
+    <string name="rooms_news_empty">What happens in the room shows up here: deliveries, comments, dates and material.</string>
+    <string name="rooms_while_away">While you were away</string>
+    <string name="rooms_and">and</string>
+    <string name="rooms_sum_due">the final due date moved to</string>
+    <string name="rooms_ev_delivered">delivered</string>
+    <string name="rooms_ev_commented">commented on</string>
+    <string name="rooms_your_part">your part</string>
+    <string name="rooms_ev_mentioned_you">mentioned you in the chat</string>
+    <string name="rooms_ev_mentioned">mentioned someone in the chat</string>
+    <string name="rooms_ev_uploaded">uploaded material</string>
+    <string name="rooms_ev_for">for</string>
+    <string name="rooms_ev_tagged_you">tagged you in</string>
+    <string name="rooms_ev_tagged">tagged someone in</string>
+    <string name="rooms_ev_joined">joined the room</string>
+    <string name="rooms_ev_assigned">assigned</string>
+    <string name="rooms_ev_review_asked">asked for a review of</string>
+    <string name="rooms_before_was">was %s before</string>
+    <string name="rooms_n_of_cap">%1$d of %2$d</string>
+    <string name="rooms_invite">Invite</string>
+    <string name="rooms_people">People</string>
+    <string name="rooms_you_in_room">You in the room</string>
+    <string name="rooms_you_paren">(you)</string>
+    <string name="rooms_all_can_invite">Everyone can invite</string>
+    <string name="rooms_name_changed">Name changed</string>
+    <string name="rooms_your_name_here">Your name here</string>
+    <string name="rooms_your_name_here_d">How the group sees you in this room</string>
+    <string name="rooms_your_notifs">Your notices</string>
+    <string name="rooms_only_this_room">Only for this room</string>
+    <string name="rooms_notify_all">Everything</string>
+    <string name="rooms_notify_all_d">Messages, deliveries and updates</string>
+    <string name="rooms_notify_mine">Only mine</string>
+    <string name="rooms_notify_mine_d">Your parts and when you are mentioned</string>
+    <string name="rooms_notify_mine_short">Only mine and mentions</string>
+    <string name="rooms_notify_none">Mute</string>
+    <string name="rooms_notify_none_d">Nothing unless you are mentioned</string>
+    <string name="rooms_notify_muted">Muted</string>
+    <string name="rooms_leave_room">Leave the room</string>
+    <string name="rooms_leave_leader_d">Hand the leadership to someone first</string>
+    <string name="rooms_leave_d">Your contributions stay; your parts become free</string>
+    <string name="rooms_leave_alone_d">You\'re the only one here: leaving removes it from your list.</string>
+    <string name="rooms_leave_q">Leave the room?</string>
+    <string name="rooms_yes_leave">Yes, leave</string>
+    <string name="rooms_left_room">You left the room</string>
+    <string name="rooms_code_copied">Invite copied</string>
+    <string name="rooms_room_code">Room code</string>
+    <string name="rooms_room_full">The room is full</string>
+    <string name="rooms_entry_direct">They join straight away with the code</string>
+    <string name="rooms_entry_you_approve">You approve each entry</string>
+    <string name="rooms_entry_direct_all">Anyone with the code joins straight away</string>
+    <string name="rooms_entry_x_approves">%s approves each entry</string>
+    <string name="rooms_qr_title">QR code</string>
+    <string name="rooms_qr_d">Scan it to get the code</string>
+    <string name="rooms_room_leader">Room leader</string>
+    <string name="rooms_member">Member</string>
+    <string name="rooms_their_parts">Their parts</string>
+    <string name="rooms_no_parts_yet">No parts yet.</string>
+    <string name="rooms_contributions">Contributions</string>
+    <string name="rooms_write_in_chat">Message in the chat</string>
+    <string name="rooms_remove_member">Remove from the room</string>
+    <string name="rooms_remove_member_d">Their parts become free; their contributions stay</string>
+    <string name="rooms_remove_confirm">Tap again to remove</string>
+    <string name="rooms_removed_x">%s left the room · their parts are free</string>
+    <string name="rooms_pass_before_leave">Before leaving, choose the new leader</string>
+    <string name="rooms_pass_leadership">Hand over leadership</string>
+    <string name="rooms_pass_leadership_d">Choose the new leader</string>
+    <string name="rooms_leader_passed">%s is now the leader</string>
+    <string name="rooms_invite_text">Join my room “%1$s” on UniStack: in Group work, tap “I have a code” and type %2$s</string>
+    <string name="rooms_only_you_leader">Only you see this, as leader</string>
+    <string name="rooms_due_on">due %s</string>
+    <string name="rooms_all_up_to_date">All up to date</string>
+    <string name="rooms_you_have">You have</string>
+    <string name="rooms_requests">Requests</string>
+    <string name="rooms_overdue_pl">Overdue</string>
+    <string name="rooms_free_pl">Free</string>
+    <string name="rooms_to_approve">To approve</string>
+    <string name="rooms_pending">Pending</string>
+    <string name="rooms_parts">Parts</string>
+    <string name="rooms_settings">Settings</string>
+    <string name="rooms_no_requests">No requests.</string>
+    <string name="rooms_nothing_overdue">Nothing overdue.</string>
+    <string name="rooms_free_parts">Free parts</string>
+    <string name="rooms_all_have_owner">Every part has an owner.</string>
+    <string name="rooms_draw_least">Draw among those with fewest</string>
+    <string name="rooms_drawn">Drawn</string>
+    <string name="rooms_nothing_to_approve">Nothing waiting for your OK.</string>
+    <string name="rooms_see_all_pending">See everything pending</string>
+    <string name="rooms_tap_part_options">Tap a part for its options.</string>
+    <string name="rooms_load_each">Everyone\'s load</string>
+    <string name="rooms_load_legend">green delivered · red overdue</string>
+    <string name="rooms_new_code_q">New code?</string>
+    <string name="rooms_new_code_d">Anyone with the old one can\'t join anymore. Those inside stay.</string>
+    <string name="rooms_create_new_code">Create a new code</string>
+    <string name="rooms_new_code_done">New code ready</string>
+    <string name="rooms_ready">Ready</string>
+    <string name="rooms_answer_in_chat">Answer in the chat</string>
+    <string name="rooms_accept">Accept</string>
+    <string name="rooms_reject">Reject</string>
+    <string name="rooms_accepted_x">Accepted · %s knows</string>
+    <string name="rooms_rejected_x">Rejected · %s is told</string>
+    <string name="rooms_answered_chat">Answered in the chat</string>
+    <string name="rooms_rejected">Rejected</string>
+    <string name="rooms_rq_time_a">asks for</string>
+    <string name="rooms_rq_time_b">2 more days</string>
+    <string name="rooms_rq_for">for</string>
+    <string name="rooms_rq_swap_a">wants to swap</string>
+    <string name="rooms_rq_swap_b">for</string>
+    <string name="rooms_rq_other">another part</string>
+    <string name="rooms_rq_help_a">asks for</string>
+    <string name="rooms_rq_help_b">help</string>
+    <string name="rooms_rq_with">with</string>
+    <string name="rooms_rq_drop">wants to drop</string>
+    <string name="rooms_rq_join">asks to join the room</string>
+    <string name="rooms_the_room">The room</string>
+    <string name="rooms_name_and_subject">Name and subject</string>
+    <string name="rooms_capacity">Capacity</string>
+    <string name="rooms_capacity_d">%1$d inside · max %2$d</string>
+    <string name="rooms_entry">Entry</string>
+    <string name="rooms_entry_free">Open</string>
+    <string name="rooms_entry_free_d">With the code they join straight away</string>
+    <string name="rooms_entry_approval">With approval</string>
+    <string name="rooms_entry_approval_d">You get each request</string>
+    <string name="rooms_new_code">New code</string>
+    <string name="rooms_new_code_now">Current: %s · the old one stops working</string>
+    <string name="rooms_rules">Rules</string>
+    <string name="rooms_room_rules">Room rules</string>
+    <string name="rooms_dates_leadership">Dates and leadership</string>
+    <string name="rooms_final_due_d">%s · you can move the internal ones too</string>
+    <string name="rooms_danger_zone">Danger zone</string>
+    <string name="rooms_delete_room">Delete the room</string>
+    <string name="rooms_delete_room_d">Deleted for everyone · asks twice</string>
+    <string name="rooms_rs_change_no">No part swaps</string>
+    <string name="rooms_rs_change_ask">Swaps on request</string>
+    <string name="rooms_rs_change_free">Free swaps</string>
+    <string name="rooms_rs_late_no">no late deliveries</string>
+    <string name="rooms_rs_late_marked">late ones marked</string>
+    <string name="rooms_rs_late_grace">2 grace days</string>
+    <string name="rooms_rs_rem_none">no reminder</string>
+    <string name="rooms_rs_rem_one">reminder 1 day before</string>
+    <string name="rooms_rs_rem_three">reminder 3 days before</string>
+    <string name="rooms_rules_same">The same as when you created it</string>
+    <string name="rooms_opt_no">No</string>
+    <string name="rooms_opt_asking">On request</string>
+    <string name="rooms_opt_free">Free</string>
+    <string name="rooms_opt_marked">Marked</string>
+    <string name="rooms_opt_grace">2 more days</string>
+    <string name="rooms_opt_only_you">Only you</string>
+    <string name="rooms_opt_everyone">Everyone</string>
+    <string name="rooms_opt_always">Always</string>
+    <string name="rooms_opt_on_submit">On delivery</string>
+    <string name="rooms_opt_1day">1 day before</string>
+    <string name="rooms_opt_3days">3 days before</string>
+    <string name="rooms_rules_entry_note">Entry (open or with approval) is above, in Settings.</string>
+    <string name="rooms_subject">Subject</string>
+    <string name="rooms_saved">Saved</string>
+    <string name="rooms_delete_q">Delete the room?</string>
+    <string name="rooms_delete_sure">Sure? There is no undo</string>
+    <string name="rooms_yes_delete">Yes, delete</string>
+    <string name="rooms_delete_final">Delete forever</string>
+    <string name="rooms_deleted">Room deleted</string>
+    <string name="rooms_fmt_word">Word</string>
+    <string name="rooms_fmt_word_d">To keep editing it</string>
+    <string name="rooms_fmt_pdf">PDF</string>
+    <string name="rooms_fmt_pdf_d">As is, ready to hand in</string>
+    <string name="rooms_fmt_ppt">PowerPoint</string>
+    <string name="rooms_fmt_ppt_d">One slide per section</string>
+    <string name="rooms_fmt_gdoc">Google Docs</string>
+    <string name="rooms_fmt_gdoc_d">Document to open in your Drive</string>
+    <string name="rooms_fmt_gslides">Google Slides</string>
+    <string name="rooms_fmt_gslides_d">Presentation to open in your Drive</string>
+    <string name="rooms_fmt_txt">Plain text</string>
+    <string name="rooms_fmt_txt_d">No formatting, paste it anywhere</string>
+    <string name="rooms_saved_downloads">Saved to your phone</string>
+    <string name="rooms_choose_format_lead">Choose how you want the work. Before sharing anything, you will see how it looks.</string>
+    <string name="rooms_slide_i_of">slide %1$d of %2$d</string>
+    <string name="rooms_page_i_of">page %1$d of %2$d</string>
+    <string name="rooms_change_format">Change format</string>
+    <string name="rooms_also">Also</string>
+    <string name="rooms_open_file">Open the file</string>
+    <string name="rooms_back_to_preview">Back to the preview</string>
+    <string name="rooms_see_preview">See preview</string>
+    <string name="rooms_fix_something">Fix something</string>
+    <string name="rooms_approve">Approve</string>
+    <string name="rooms_done_back_room">Done, back to the room</string>
+    <string name="rooms_due_label">Due</string>
+    <string name="rooms_see_file">(This part was delivered as a file: %s)</string>
+    <string name="rooms_step_format">Format</string>
+    <string name="rooms_step_preview">Preview</string>
+    <string name="rooms_step_share">Share</string>
+    <string name="rooms_approved">approved</string>
+    <string name="rooms_room_closed_note">The room is closed. Only you can reopen it.</string>
+    <string name="rooms_to_group">To the group</string>
+    <string name="rooms_sent_to_group">Sent to the group chat</string>
+    <string name="rooms_drive">Google Drive</string>
+    <string name="rooms_canvas">Canvas</string>
+    <string name="rooms_classroom">Classroom</string>
+    <string name="rooms_teams">Teams</string>
+    <string name="rooms_email">Email</string>
+    <string name="rooms_whatsapp">WhatsApp</string>
+    <string name="rooms_save_phone">Save</string>
+    <string name="rooms_ready_title">The room is ready!</string>
+    <string name="rooms_ready_sub">Now invite your group. Nobody needs an account: just the code and their name.</string>
+    <string name="rooms_code_where">Type it in Group work › I have a code</string>
+    <string name="rooms_copy_invite">Copy invite</string>
+    <string name="rooms_who_joined">Who has joined</string>
+    <string name="rooms_just_joined">just joined</string>
+    <string name="rooms_hint_assign">When they join, you assign their parts from the room.</string>
+    <string name="rooms_hint_draw">Parts are drawn once the group is complete.</string>
+    <string name="rooms_hint_draw_done">Group complete! You can draw the parts now.</string>
+    <string name="rooms_hint_mixed">Your parts are already yours; the rest are free for whoever joins.</string>
+    <string name="rooms_hint_free">Everyone takes their part when they join.</string>
+    <string name="rooms_go_to_room">Go to the room</string>
+    <string-array name="rooms_tpl_ensayo">
+        <item>Introduction</item>
+        <item>Theoretical framework</item>
+        <item>Argument 1</item>
+        <item>Argument 2</item>
+        <item>Conclusion</item>
+        <item>Bibliography</item>
+    </string-array>
+    <string-array name="rooms_tpl_lab">
+        <item>Objectives</item>
+        <item>Theoretical framework</item>
+        <item>Materials</item>
+        <item>Procedure</item>
+        <item>Data and results</item>
+        <item>Analysis</item>
+        <item>Conclusions</item>
+        <item>Bibliography</item>
+    </string-array>
+    <string-array name="rooms_tpl_expo">
+        <item>Cover and introduction</item>
+        <item>Topic 1</item>
+        <item>Topic 2</item>
+        <item>Topic 3</item>
+        <item>Wrap-up and questions</item>
+    </string-array>
+    <string-array name="rooms_tpl_proyecto">
+        <item>Planning</item>
+        <item>Design</item>
+        <item>Module A</item>
+        <item>Module B</item>
+        <item>Testing</item>
+        <item>Documentation</item>
+    </string-array>
+    <string-array name="rooms_tpl_inv">
+        <item>Problem statement</item>
+        <item>State of the art</item>
+        <item>Methodology</item>
+        <item>Results</item>
+        <item>Discussion</item>
+        <item>Conclusions</item>
+        <item>References</item>
+    </string-array>
+    <string-array name="rooms_tpl_resena">
+        <item>About the work</item>
+        <item>Summary</item>
+        <item>Analysis</item>
+        <item>Critical opinion</item>
+    </string-array>
+    <string-array name="rooms_tpl_campo">
+        <item>Instrument design</item>
+        <item>Data collection</item>
+        <item>Tabulation</item>
+        <item>Analysis</item>
+        <item>Final report</item>
+    </string-array>
+    <string-array name="rooms_tpl_maqueta">
+        <item>Design and plans</item>
+        <item>Materials</item>
+        <item>Construction</item>
+        <item>Finishing</item>
+    </string-array>
+    <string-array name="rooms_sug_ensayo">
+        <item>Abstract</item>
+        <item>Counterargument</item>
+        <item>Appendices</item>
+    </string-array>
+    <string-array name="rooms_sug_lab">
+        <item>Calculations</item>
+        <item>Sources of error</item>
+        <item>Setup photos</item>
+    </string-array>
+    <string-array name="rooms_sug_expo">
+        <item>Speaking script</item>
+        <item>Video or demo</item>
+        <item>Audience activity</item>
+    </string-array>
+    <string-array name="rooms_sug_proyecto">
+        <item>User manual</item>
+        <item>Final presentation</item>
+        <item>Demo video</item>
+    </string-array>
+    <string-array name="rooms_sug_inv">
+        <item>Abstract</item>
+        <item>Hypothesis</item>
+        <item>Appendices</item>
+    </string-array>
+    <string-array name="rooms_sug_resena">
+        <item>Author\'s context</item>
+        <item>Key quotes</item>
+    </string-array>
+    <string-array name="rooms_sug_campo">
+        <item>Consent forms</item>
+        <item>Field photos</item>
+        <item>Results presentation</item>
+    </string-array>
+    <string-array name="rooms_sug_maqueta">
+        <item>Shopping list</item>
+        <item>Process photos</item>
+        <item>Presentation</item>
+    </string-array>
+    <string-array name="rooms_sug_cero">
+        <item>Introduction</item>
+        <item>Body</item>
+        <item>Conclusion</item>
+        <item>Bibliography</item>
+    </string-array>
+    <string-array name="rooms_guide_t">
+        <item>What this is</item>
+        <item>You create the room</item>
+        <item>You invite the group</item>
+        <item>The parts get split</item>
+        <item>Everyone uploads their part</item>
+        <item>It all comes together</item>
+        <item>Shared and closed</item>
+    </string-array>
+    <string-array name="rooms_guide_d">
+        <item>One room per group work. It is not a reminder: it is where you all actually build it and where the final document comes from.</item>
+        <item>You pick the subject, the type of work —essay, report, presentation— and whether you assign the parts or everyone takes one.</item>
+        <item>Inside the work there is a six-character code. Whoever has it joins with just their name: no account, nothing else to install.</item>
+        <item>The type of work already brings its sections. Each one is in charge of someone, with its own date —not just the final one.</item>
+        <item>A Word file, a photo, a source, a link. The text is pulled out of the Word file, and what you upload shows up instantly on everyone else’s phone.</item>
+        <item>Whoever created the room taps “Create work”: the document is put together with the sections in order and the bibliography in the chosen style.</item>
+        <item>It reaches everyone in the group and the room becomes read-only. Anyone who opens it later sees the finished work, not the organizer.</item>
+    </string-array>
+    <plurals name="rooms_n_members_leader">
+        <item quantity="one">%d member · leader</item>
+        <item quantity="other">%d members · leader</item>
+    </plurals>
+    <plurals name="rooms_toca_contribs">
+        <item quantity="one">%d contribution so far, text missing</item>
+        <item quantity="other">%d contributions so far, text missing</item>
+    </plurals>
+    <plurals name="rooms_free_parts_n">
+        <item quantity="one">There is %d free part: take it before someone else does.</item>
+        <item quantity="other">There are %d free parts: take one before they are gone.</item>
+    </plurals>
+    <plurals name="rooms_things_n">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <plurals name="rooms_plus_days">
+        <item quantity="one">+%d day</item>
+        <item quantity="other">+%d days</item>
+    </plurals>
+    <plurals name="rooms_n_sources">
+        <item quantity="one">%d source</item>
+        <item quantity="other">%d sources</item>
+    </plurals>
+    <plurals name="rooms_bib_builds_n">
+        <item quantity="one">Built from %d source</item>
+        <item quantity="other">Built from %d sources</item>
+    </plurals>
+    <plurals name="rooms_words">
+        <item quantity="one">%d word</item>
+        <item quantity="other">%d words</item>
+    </plurals>
+    <plurals name="rooms_n_slides">
+        <item quantity="one">%d slide</item>
+        <item quantity="other">%d slides</item>
+    </plurals>
+    <plurals name="rooms_n_people">
+        <item quantity="one">%d person</item>
+        <item quantity="other">%d people</item>
+    </plurals>
+    <plurals name="rooms_n_votes">
+        <item quantity="one">%d vote</item>
+        <item quantity="other">%d votes</item>
+    </plurals>
+    <plurals name="rooms_sum_deliveries">
+        <item quantity="one">%d delivery</item>
+        <item quantity="other">%d deliveries</item>
+    </plurals>
+    <plurals name="rooms_sum_materials">
+        <item quantity="one">%d new material</item>
+        <item quantity="other">%d new materials</item>
+    </plurals>
+    <plurals name="rooms_sum_comments">
+        <item quantity="one">%d comment</item>
+        <item quantity="other">%d comments</item>
+    </plurals>
+    <plurals name="rooms_sum_joined">
+        <item quantity="one">%d new person</item>
+        <item quantity="other">%d new people</item>
+    </plurals>
+    <plurals name="rooms_sum_other">
+        <item quantity="one">%d update</item>
+        <item quantity="other">%d updates</item>
+    </plurals>
+    <plurals name="rooms_sum_for_you">
+        <item quantity="one">There is %d thing for you.</item>
+        <item quantity="other">There are %d things for you.</item>
+    </plurals>
+    <plurals name="rooms_spots_left">
+        <item quantity="one">%d spot left</item>
+        <item quantity="other">%d spots left</item>
+    </plurals>
+    <plurals name="rooms_parts_n">
+        <item quantity="one">%d part</item>
+        <item quantity="other">%d parts</item>
+    </plurals>
+    <plurals name="rooms_n_delivered">
+        <item quantity="one">%d delivered</item>
+        <item quantity="other">%d delivered</item>
+    </plurals>
+    <plurals name="rooms_n_overdue">
+        <item quantity="one">%d overdue</item>
+        <item quantity="other">%d overdue</item>
+    </plurals>
+    <plurals name="rooms_spots_of">
+        <item quantity="one">%1$d spot left of %2$d</item>
+        <item quantity="other">%1$d spots left of %2$d</item>
+    </plurals>
+    <plurals name="rooms_things_to_attend">
+        <item quantity="one">thing to handle</item>
+        <item quantity="other">things to handle</item>
+    </plurals>
+    <plurals name="rooms_delete_d">
+        <item quantity="one">Deleted for %d member, with every part and the chat. It can’t be undone.</item>
+        <item quantity="other">Deleted for all %d members, with every part and the chat. It can’t be undone.</item>
+    </plurals>
+    <plurals name="rooms_n_sections">
+        <item quantity="one">%d section</item>
+        <item quantity="other">%d sections</item>
+    </plurals>
+    <plurals name="rooms_waiting_n">
+        <item quantity="one">Waiting for %d more…</item>
+        <item quantity="other">Waiting for %d more…</item>
+    </plurals>
+</resources>

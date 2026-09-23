@@ -30,6 +30,8 @@ import com.unistack.app.feature_terms.data.local.AcademicTermEntity
 import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
 
 import com.unistack.app.feature_tasks.data.local.TaskSubtaskEntity
+import com.unistack.app.feature_rooms.data.local.WorkRoomDao
+import com.unistack.app.feature_rooms.data.local.WorkRoomEntity
 
 @Database(
     entities = [
@@ -46,9 +48,10 @@ import com.unistack.app.feature_tasks.data.local.TaskSubtaskEntity
         AcademicBreakEntity::class,
         NoteEntity::class,
         NoteAttachmentEntity::class,
-        TaskAttachmentEntity::class
+        TaskAttachmentEntity::class,
+        WorkRoomEntity::class
     ],
-    version = 24,
+    version = 25,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -65,6 +68,7 @@ abstract class UniStackDatabase : RoomDatabase() {
     abstract fun academicBreakDao(): AcademicBreakDao
     abstract fun noteDao(): NoteDao
     abstract fun noteAttachmentDao(): NoteAttachmentDao
+    abstract fun workRoomDao(): WorkRoomDao
 
     companion object {
         @Volatile
@@ -531,6 +535,28 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Las salas de Trabajos: una fila por sala con su documento entero.
+         *
+         * Tabla nueva, así que no toca nada de lo que ya había.
+         */
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS work_rooms (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        json TEXT NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_work_rooms_userId ON work_rooms(userId)")
+            }
+        }
+
         val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -591,7 +617,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_20_21,
             MIGRATION_21_22,
             MIGRATION_22_23,
-            MIGRATION_23_24
+            MIGRATION_23_24,
+            MIGRATION_24_25
         )
     }
 }

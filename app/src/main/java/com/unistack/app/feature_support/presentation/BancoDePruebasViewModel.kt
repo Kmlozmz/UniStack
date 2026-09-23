@@ -77,7 +77,8 @@ class BancoDePruebasViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val notesRepository: NotesRepository,
     private val taskAttachmentStore: TaskAttachmentStore,
-    private val updateRepository: UpdateRepository
+    private val updateRepository: UpdateRepository,
+    private val workRoomsRepository: com.unistack.app.feature_rooms.domain.WorkRoomsRepository
 ) : ViewModel() {
     private companion object {
         /** Lo que distingue lo fabricado de lo real. Nada se borra sin esto delante. */
@@ -1161,6 +1162,60 @@ class BancoDePruebasViewModel @Inject constructor(
         p.copy(syncStatus = SyncStatus.LOCAL_ONLY, lastSyncAt = null)
     }
 
+    // ------------------------------------------------------------------ trabajos
+
+    /*
+     * Trabajos vive en local: sin nube nadie más puede entrar a una sala. Estas palancas
+     * fabrican la sala de los artifacts con cuatro compañeros para poder mirar la vista del
+     * líder, la del compañero, el «Crear trabajo» y lo que pasa cuando alguien entra.
+     */
+    private fun hoyEpoch() = LocalDate.now().toEpochDay()
+    private fun materiaDePrueba() = gradesRepository.subjects.value.firstOrNull()?.id
+
+    fun salaComoLider() {
+        workRoomsRepository.save(com.unistack.app.feature_rooms.data.RoomSamples.leaderRoom(hoyEpoch(), System.currentTimeMillis(), materiaDePrueba()))
+    }
+
+    fun salaComoCompanero() {
+        workRoomsRepository.save(com.unistack.app.feature_rooms.data.RoomSamples.memberRoom(hoyEpoch(), System.currentTimeMillis(), materiaDePrueba()))
+    }
+
+    fun salaTodoEntregado() {
+        val id = "${com.unistack.app.feature_rooms.data.RoomSamples.PREFIX}-lider"
+        if (workRoomsRepository.rooms.value.none { it.id == id }) salaComoLider()
+        workRoomsRepository.update(id) { com.unistack.app.feature_rooms.data.RoomSamples.allDelivered(it, System.currentTimeMillis()) }
+    }
+
+    fun alguienEntraALaSala() {
+        val nombres = listOf("Juan", "Mafe", "Leo", "Caro", "Tomi")
+        workRoomsRepository.rooms.value.filter { it.id.startsWith(MARCA) }.forEach { sala ->
+            val libre = nombres.firstOrNull { n -> sala.members.none { it.name == n } } ?: return@forEach
+            workRoomsRepository.update(sala.id) { r ->
+                val m = com.unistack.app.feature_rooms.domain.RoomMember("prueba-m-" + libre.lowercase() + "-" + UUID.randomUUID().toString().take(4), libre, r.members.size % 12, System.currentTimeMillis())
+                r.copy(members = r.members + m, events = r.events + com.unistack.app.feature_rooms.domain.RoomLogic.event(
+                    com.unistack.app.feature_rooms.domain.EventType.JOINED, m.id, libre, now = System.currentTimeMillis()))
+            }
+        }
+    }
+
+    /** Quien revisa contesta: la primera vez pide cambios y la segunda da el visto bueno. */
+    fun llegaUnaRevision() {
+        workRoomsRepository.rooms.value.filter { it.id.startsWith(MARCA) }.forEach { sala ->
+            val parte = sala.parts.firstOrNull { sala.meId in it.ownerIds && it.state == com.unistack.app.feature_rooms.domain.PartState.REVIEW }
+                ?: sala.parts.firstOrNull { sala.meId in it.ownerIds && it.state != com.unistack.app.feature_rooms.domain.PartState.DELIVERED } ?: return@forEach
+            val quien = parte.reviewerId ?: sala.activeMembers.first { it.id != sala.meId }.id
+            val ok = parte.review != null
+            val nota = if (ok) "Ahora sí, quedó muy bien." else "Acorta la segunda cita y enlázala con el marco de Sam."
+            workRoomsRepository.update(sala.id) { r ->
+                com.unistack.app.feature_rooms.domain.RoomLogic.review(r, parte.id, quien, ok, nota, System.currentTimeMillis())
+            }
+        }
+    }
+
+    fun recogerSalas() {
+        workRoomsRepository.rooms.value.filter { it.id.startsWith(MARCA) }.forEach { workRoomsRepository.delete(it.id) }
+    }
+
     // ------------------------------------------------------------------ deshacer
 
     data class ResumenDePruebas(
@@ -1170,7 +1225,8 @@ class BancoDePruebasViewModel @Inject constructor(
         val tareas: Int,
         val notas: Int,
         val asistencias: Int,
-        val perfil: Int
+        val perfil: Int,
+        val salas: Int = 0
     )
 
     /**
@@ -1186,7 +1242,8 @@ class BancoDePruebasViewModel @Inject constructor(
         tareas = tasksRepository.tasks.value.count { it.id.startsWith(MARCA) },
         notas = notesRepository.notes.value.count { it.id.startsWith(MARCA) },
         asistencias = scheduleRepository.occurrences.value.count { it.id.startsWith(MARCA) },
-        perfil = if (perfilTocado()) 1 else 0
+        perfil = if (perfilTocado()) 1 else 0,
+        salas = workRoomsRepository.rooms.value.count { it.id.startsWith(MARCA) }
     )
 
     /** Deshace solo lo de Horario. */
@@ -1241,6 +1298,7 @@ class BancoDePruebasViewModel @Inject constructor(
         recogerTareas()
         recogerNotas()
         recogerAsistencias()
+        recogerSalas()
         perfilDeFabrica()
     }
 

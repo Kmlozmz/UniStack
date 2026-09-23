@@ -62,6 +62,9 @@ object AppModule {
     fun provideAcademicWorkDao(db: UniStackDatabase): AcademicWorkDao = db.academicWorkDao()
 
     @Provides
+    fun provideWorkRoomDao(db: UniStackDatabase): com.unistack.app.feature_rooms.data.local.WorkRoomDao = db.workRoomDao()
+
+    @Provides
     @Singleton
     fun provideClassSessionDao(db: UniStackDatabase): ClassSessionDao = db.classSessionDao()
 

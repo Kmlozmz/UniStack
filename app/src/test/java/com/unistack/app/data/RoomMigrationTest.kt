@@ -402,6 +402,19 @@ class RoomMigrationTest {
     }
 
     @Test
+    fun migrationTwentyFourToTwentyFiveCreatesWorkRoomsTable() {
+        val database = createDatabaseWithSchema(version = 24)
+
+        UniStackDatabase.MIGRATION_24_25.migrate(database)
+
+        assertTrue(database.hasTable("work_rooms"))
+        assertTrue(database.hasColumn("work_rooms", "json"))
+        assertTrue(database.hasColumn("work_rooms", "updatedAt"))
+        assertTrue(database.hasIndex("index_work_rooms_userId"))
+        database.close()
+    }
+
+    @Test
     fun migrationTwentyThreeToTwentyFourAddsTheCutSchemeCopyToTerms() {
         val database = createDatabaseWithSchema(version = 23)
         assertTrue(database.hasTable("academic_terms"))
@@ -490,6 +503,7 @@ class RoomMigrationTest {
         if (targetVersion >= 22) UniStackDatabase.MIGRATION_21_22.migrate(db)
         if (targetVersion >= 23) UniStackDatabase.MIGRATION_22_23.migrate(db)
         if (targetVersion >= 24) UniStackDatabase.MIGRATION_23_24.migrate(db)
+        if (targetVersion >= 25) UniStackDatabase.MIGRATION_24_25.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

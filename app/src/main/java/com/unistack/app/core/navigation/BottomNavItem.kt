@@ -63,6 +63,14 @@ object AppRoutes {
     const val AcademicWork = "academic_work/{workId}"
 
     fun academicWork(workId: String): String = "academic_work/" + workId
+
+    /** Trabajos en grupo: crear una sala y lo de dentro de cada sala (sección + un id opcional). */
+    const val RoomsCreate = "rooms_create"
+    const val RoomIdArg = "roomId"
+    const val RoomSectionArg = "section"
+    const val RoomItemArg = "item"
+    const val Room = "room/{roomId}/{section}/{item}"
+    fun room(roomId: String, section: String = "sala", item: String = "-"): String = "room/$roomId/$section/${android.net.Uri.encode(item.ifBlank { "-" })}"
     const val GpaCalculator = "gpa_calculator"
     const val QuickNotes = "quick_notes"
 

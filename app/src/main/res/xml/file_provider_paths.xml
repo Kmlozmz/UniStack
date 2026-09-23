@@ -11,4 +11,6 @@
       abrir fuera no hacía nada, con ningún tipo de adjunto.
     -->
     <files-path name="task_attachments" path="task_attachments/" />
+    <!-- Los archivos de las salas de Trabajos: partes subidas, aportes, material y fotos del chat. -->
+    <files-path name="room_files" path="room_files/" />
 </paths>

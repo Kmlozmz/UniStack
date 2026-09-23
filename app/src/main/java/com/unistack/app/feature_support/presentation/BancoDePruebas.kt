@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.HowToReg
 import androidx.compose.material.icons.rounded.Notifications
@@ -923,6 +924,21 @@ private fun seccionesDeSimular(
                     onNavegar(AppRoutes.Home)
                 },
                 Palanca("Ir a los cortes", "La pantalla de verdad, para tocarlos a mano") { onNavegar(AppRoutes.AcademicCuts) }
+            )
+        ),
+        Seccion(
+            rotulo = "Trabajos",
+            icono = Icons.Rounded.Groups,
+            color = tonos.violeta,
+            cuenta = resumen.salas,
+            palancas = listOf(
+                Palanca("Sala como líder", "«La ciudad como texto» con Sam, Nico y Dani: pedidos, una vencida, una libre y Vale que acaba de entrar") { vm.salaComoLider() },
+                Palanca("Sala como compañero", "La misma sala vista por Dani, con un pedido suyo esperando al líder") { vm.salaComoCompanero() },
+                Palanca("Todo entregado", "Las seis secciones listas: sale «Crear trabajo» al líder") { vm.salaTodoEntregado() },
+                Palanca("Alguien entra a la sala", "Llega una persona nueva a las salas de prueba") { vm.alguienEntraALaSala() },
+                Palanca("Llega una revisión", "A tu parte: la primera pide cambios, la segunda da el visto bueno") { vm.llegaUnaRevision() },
+                Palanca("Ir a Trabajos", "La pantalla de verdad") { onNavegar(AppRoutes.AcademicTemplates) },
+                Palanca("Deshacer lo de Trabajos", "Borra sólo las salas de prueba", Tono.SUAVE) { vm.recogerSalas() }
             )
         ),
         Seccion(
