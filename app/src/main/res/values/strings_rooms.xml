@@ -585,7 +585,7 @@
     <string name="rooms_nothing_yet">Todavía no hay nada.</string>
     <string name="rooms_write_here">Escribir aquí</string>
     <string name="rooms_write_here_d">Se guarda solo mientras escribes</string>
-    <string name="rooms_upload_file_d">Word, PDF o Docs · se saca el texto si se puede</string>
+    <string name="rooms_upload_file_d">Word o PDF · del Word se saca el texto</string>
     <string name="rooms_delivered_edit_hint">Entregada: para cambiarla, «Volver a editar»</string>
     <string name="rooms_file_text_extracted">%s · texto extraído</string>
     <string name="rooms_file_as_is">%s · tal cual lo subiste</string>

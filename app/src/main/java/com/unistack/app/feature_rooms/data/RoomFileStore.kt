@@ -62,9 +62,33 @@ class RoomFileStore(private val context: Context) {
         FileProvider.getUriForFile(context, context.packageName + ".provider", file(storedName))
     }.getOrNull()
 
-    /** Lee el texto de un .txt/.md; de un Word o PDF no se puede sin librerías, así que null. */
-    fun readText(storedName: String, mime: String): String? =
-        if (mime.startsWith("text/")) runCatching { file(storedName).readText().take(60_000) }.getOrNull() else null
+    /**
+     * Saca el texto de lo subido: un .txt/.md tal cual y un Word (.docx) leyendo sus párrafos
+     * del XML de dentro. Un PDF no se puede sin librerías: va tal cual y devuelve null.
+     */
+    fun readText(storedName: String, mime: String): String? = runCatching {
+        val f = file(storedName)
+        when {
+            mime.startsWith("text/") -> f.readText().take(60_000)
+            mime.contains("wordprocessingml") || f.name.endsWith(".docx") -> docxText(f)
+            else -> null
+        }
+    }.getOrNull()?.takeIf { it.isNotBlank() }
+
+    private fun docxText(f: File): String? = java.util.zip.ZipFile(f).use { z ->
+        val entry = z.getEntry("word/document.xml") ?: return null
+        val xml = z.getInputStream(entry).bufferedReader().readText()
+        val run = Regex("""<w:t(?:\s[^>]*)?>([^<]*)</w:t>|<w:tab/>|<w:br/>""")
+        xml.split("</w:p>").map { p ->
+            run.findAll(p).joinToString("") { m ->
+                when {
+                    m.value == "<w:tab/>" -> "\t"
+                    m.value == "<w:br/>" -> "\n"
+                    else -> m.groupValues[1]
+                }
+            }.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&")
+        }.filter { it.isNotBlank() }.joinToString("\n\n").take(60_000)
+    }
 
     /** Cuántas diapositivas trae: las cuenta dentro del .pptx o por páginas en un PDF. */
     fun countSlides(storedName: String, mime: String): Int = runCatching {

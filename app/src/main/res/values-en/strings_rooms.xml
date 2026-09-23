@@ -585,7 +585,7 @@
     <string name="rooms_nothing_yet">Nothing here yet.</string>
     <string name="rooms_write_here">Write here</string>
     <string name="rooms_write_here_d">Saves itself as you type</string>
-    <string name="rooms_upload_file_d">Word, PDF or Docs · text is pulled out when possible</string>
+    <string name="rooms_upload_file_d">Word or PDF · text is pulled from Word</string>
     <string name="rooms_delivered_edit_hint">Delivered: to change it, tap “Edit again”</string>
     <string name="rooms_file_text_extracted">%s · text extracted</string>
     <string name="rooms_file_as_is">%s · as you uploaded it</string>

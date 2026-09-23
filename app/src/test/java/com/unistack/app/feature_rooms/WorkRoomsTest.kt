@@ -108,6 +108,26 @@ class WorkRoomsTest {
     }
 
     @Test
+    fun exportedWordAndPowerPointReadBack() {
+        val store = com.unistack.app.feature_rooms.data.RoomFileStore(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        val doc = com.unistack.app.feature_rooms.data.WorkDoc(
+            "La ciudad", "Sociología · Ensayo", "Ensayo", listOf("Alex", "Sam"), "30 sep", "Entrega",
+            listOf(com.unistack.app.feature_rooms.data.WorkSection("Introducción", "La ciudad se lee. Los muros responden & contestan.", "Alex"),
+                com.unistack.app.feature_rooms.data.WorkSection("Marco", "Lefebvre y De Certeau leen la calle como texto.", "Sam")),
+            "Bibliografía", listOf("Silva, A. (2006). Imaginarios urbanos. Arango."), 0xFFD9652B.toInt()
+        )
+        val (docName, docFile) = store.newFileFor("docx")
+        com.unistack.app.feature_rooms.data.WorkExport.writeDocx(doc, docFile)
+        val text = store.readText(docName, "application/vnd.openxmlformats-officedocument.wordprocessingml.document").orEmpty()
+        assertTrue(text, text.contains("Los muros responden & contestan."))
+        assertTrue(text.contains("2. Marco"))
+        val (pptName, pptFile) = store.newFileFor("pptx")
+        val slides = com.unistack.app.feature_rooms.data.WorkExport.writePptx(doc, pptFile)
+        assertEquals(4, slides) // portada + 2 secciones + bibliografía
+        assertEquals(4, store.countSlides(pptName, "application/vnd.openxmlformats-officedocument.presentationml.presentation"))
+    }
+
+    @Test
     fun qrHasTheFixedPatterns() {
         val qr = QrCode.encode("unistack://sala/7K4P2M")
         assertEquals(25, qr.size) // versión 2
