@@ -1,5 +1,6 @@
 package com.unistack.app.feature_rooms.presentation
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -24,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,21 +35,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import com.unistack.app.core.design.components.cleanClickable
+import com.unistack.app.feature_rooms.domain.RoomType
 import com.unistack.app.feature_rooms.domain.SplitMode
 import com.unistack.app.feature_rooms.domain.WorkRoom
 
 /**
- * «¡La sala está lista!» — el final de Crear sala (artifact cerrado el 23 sep): el código grande,
- * copiar y compartir, los atajos (WhatsApp, Telegram, correo y QR), quién ya entró y qué pasa con
+ * «¡La sala está lista!» — el final de Crear sala (artifact cerrado el 23 sep): el código en un
+ * boleto con copiar y compartir, los atajos (WhatsApp, Telegram, correo y QR), quién ya entró y qué pasa con
  * las partes según cómo se repartan.
  */
 @Composable
@@ -56,6 +64,8 @@ fun InviteScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, onGoRoo
     val copied = stringResource(R.string.rooms_code_copied)
     val text = inviteText(context, room)
     val waiting = if (room.split == SplitMode.DRAW) (minOf(room.capacity, 6) - room.activeMembers.size).coerceAtLeast(0) else 0
+    val subjects by vm.subjects.collectAsState()
+    val stripe = subjects.firstOrNull { it.id == room.subjectId }?.let { subjectColor(it) } ?: RoomTemplates.tone(room.type)
 
     Box(Modifier.fillMaxSize().background(cs.background)) {
         Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 110.dp)) {
@@ -64,18 +74,10 @@ fun InviteScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, onGoRoo
                     Icon(Icons.Rounded.CheckCircle, null, tint = RoomTone.VERDE.color, modifier = Modifier.size(30.dp))
                 }
                 Text(stringResource(R.string.rooms_ready_title), fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp))
-                Text(room.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 3.dp))
+                Text(room.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 3.dp))
                 Text(stringResource(R.string.rooms_ready_sub), fontSize = 13.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 19.sp, modifier = Modifier.padding(top = 4.dp))
             }
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(cs.primaryContainer).padding(horizontal = 16.dp, vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(R.string.rooms_room_code), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onSurface.copy(alpha = 0.85f))
-                Text(room.code, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 8.sp, color = cs.onSurface, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
-                Text(stringResource(R.string.rooms_code_where), fontSize = 12.5.sp, color = cs.onSurface.copy(alpha = 0.8f), textAlign = TextAlign.Center)
-                Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Pill(stringResource(R.string.rooms_copy_invite), { context.copyText("invite", text); context.roomToast(copied) }, icon = Icons.Rounded.ContentCopy, style = PillStyle.TONAL, small = true)
-                    Pill(stringResource(R.string.rooms_share), { context.shareText(text) }, icon = Icons.Rounded.Share, small = true)
-                }
-            }
+            InviteTicket(room, stripe, onCopy = { context.copyText("invite", text); context.roomToast(copied) }, onShare = { context.shareText(text) }, onQr = { qr = true })
             Row(Modifier.padding(top = 14.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ShareShortcut("WhatsApp", "W", FormatColors.whatsapp) { context.shareText(text, "com.whatsapp") }
                 ShareShortcut("Telegram", "T", FormatColors.telegram) { context.shareText(text, "org.telegram.messenger") }
@@ -109,8 +111,47 @@ fun InviteScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, onGoRoo
         }
     }
     if (qr) QrSheet(room) { qr = false }
-    @Suppress("UNUSED_EXPRESSION") vm
     @Suppress("UNUSED_EXPRESSION") onBack
+}
+
+/**
+ * El código como un boleto (artifact «Crear sala, segunda vuelta», opción A): franja del color
+ * de la materia, el código grande con su QR al lado, el corte con muescas y, abajo, copiar y compartir.
+ */
+@Composable
+private fun InviteTicket(room: WorkRoom, stripe: Color, onCopy: () -> Unit, onShare: () -> Unit, onQr: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val on = cs.onSurface
+    val meta = listOfNotNull(
+        room.title,
+        room.type.takeIf { it != RoomType.CERO }?.let { stringResource(RoomTemplates.typeNameRes(it)) },
+        room.parts.size.takeIf { it > 0 }?.let { pluralText(R.plurals.rooms_parts_n, it) }
+    ).joinToString(" · ")
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(cs.primaryContainer)) {
+        Box(Modifier.fillMaxWidth().height(8.dp).background(stripe))
+        Row(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.rooms_room_code).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = on.copy(alpha = 0.7f))
+                Text(room.code, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 6.sp, color = on, maxLines = 1, modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
+                Text(meta, fontSize = 12.sp, color = on.copy(alpha = 0.75f), lineHeight = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            Box(Modifier.clip(RoundedCornerShape(14.dp)).cleanClickable(onClick = onQr)) { QrView("unistack://sala/${room.code}", size = 84.dp) }
+        }
+        // el corte del boleto: línea de puntos con una muesca a cada lado
+        Box(Modifier.fillMaxWidth().height(22.dp)) {
+            val dash = on.copy(alpha = 0.25f)
+            Canvas(Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 16.dp).height(2.dp)) {
+                drawLine(dash, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), strokeWidth = size.height,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())))
+            }
+            Box(Modifier.align(Alignment.CenterStart).offset(x = (-11).dp).size(22.dp).clip(CircleShape).background(cs.background))
+            Box(Modifier.align(Alignment.CenterEnd).offset(x = 11.dp).size(22.dp).clip(CircleShape).background(cs.background))
+        }
+        Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Pill(stringResource(R.string.rooms_copy), onCopy, Modifier.weight(1f), icon = Icons.Rounded.ContentCopy, style = PillStyle.TONAL, small = true)
+            Pill(stringResource(R.string.rooms_share), onShare, Modifier.weight(1f), icon = Icons.Rounded.Share, small = true)
+        }
+    }
 }
 
 @Composable

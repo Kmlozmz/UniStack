@@ -4,6 +4,11 @@ package com.unistack.app.feature_rooms.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -91,6 +96,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -177,14 +183,15 @@ fun CreateRoomScreen(
                 Text(stringResource(R.string.rooms_stage_of, stringResource(stages[cur.stage]), cur.stage + 1, stages.size), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
             }
         }
-        Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            stages.indices.forEach { i -> Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(if (i <= cur.stage) cs.primary else cs.surfaceContainerHighest)) }
-        }
+        StretchDots(stages.size, cur.stage, Modifier.padding(start = 20.dp, top = 2.dp, bottom = 14.dp))
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 110.dp)) {
-                // lo respondido en esta etapa
-                FLOW.take(step).forEachIndexed { i, s ->
-                    if (s is Q && s.stage == cur.stage && valid(i)) Answered(questionTitle(s.key), answerOf(s.key, d, subjects, today)) { step = i }
+                // Lo respondido en esta etapa se encoge y queda detrás de la pregunta, como una baraja.
+                val behind = FLOW.take(step).withIndex().filter { (i, s) -> s is Q && s.stage == cur.stage && valid(i) }
+                behind.forEachIndexed { j, (i, s) ->
+                    androidx.compose.runtime.key(i) {
+                        Behind(questionTitle((s as Q).key), answerOf(s.key, d, subjects, today), depth = behind.size - j, lift = LAP * j) { step = i }
+                    }
                 }
                 when (cur) {
                     is Q -> QuestionCard(cur.key, d, subjects, today,
@@ -193,7 +200,8 @@ fun CreateRoomScreen(
                         onPick = { d = it; advance() },
                         onMateria = { sheet = "subject" },
                         onCalendar = { sheet = "calendar" },
-                        onNext = { advance() })
+                        onNext = { advance() },
+                        modifier = if (behind.isEmpty()) Modifier else Modifier.offset(y = -(LAP * behind.size) - 10.dp))
                     is Panel -> when (cur.key) {
                         "parts" -> PartsPanel(d, openPart, onOpen = { openPart = if (openPart == it) null else it }, onChange = { d = it },
                             newKey = { keySeq++ }, today = today)
@@ -308,16 +316,29 @@ private fun splitIcon(s: SplitMode) = when (s) {
     SplitMode.MIXED -> Icons.Rounded.Shuffle
 }
 
+/** Lo que tapa la carta de encima: cada respondida asoma por arriba sólo esto. */
+private val LAP = 14.dp
+
+/**
+ * Una pregunta ya respondida, encogida detrás de la actual: sólo asoma su respuesta. Cuanto más
+ * atrás, más estrecha y más oscura; al tocarla vuelve al frente.
+ */
 @Composable
-private fun Answered(q: String, v: String, onClick: () -> Unit) {
+private fun Behind(q: String, v: String, depth: Int, lift: Dp, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Row(
-        Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(cs.surfaceContainerLow).cleanClickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Box(Modifier.size(18.dp).clip(CircleShape).background(RoomTone.VERDE.color), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Check, null, tint = cs.background, modifier = Modifier.size(12.dp)) }
-        Text(q, fontSize = 11.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(v, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+    val haptic = LocalHapticFeedback.current
+    val seen = remember { MutableTransitionState(false).apply { targetState = true } }
+    AnimatedVisibility(seen, enter = expandVertically(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn()) {
+        Row(
+            Modifier.offset(y = -lift).padding(horizontal = 8.dp * depth.coerceAtMost(3)).fillMaxWidth()
+                .clip(RoundedCornerShape(22.dp)).background(mix(cs.background, (0.22f * depth).coerceAtMost(0.55f), cs.primaryContainer))
+                .cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onClick() }
+                .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp + LAP),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(q, fontSize = 12.sp, color = cs.onSurface.copy(alpha = 0.6f), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(v, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+        }
     }
 }
 
@@ -326,13 +347,13 @@ private fun Answered(q: String, v: String, onClick: () -> Unit) {
 private fun QuestionCard(
     key: String, d: RoomDraft, subjects: List<Subject>, today: Long,
     onChange: (RoomDraft) -> Unit, onType: (RoomType) -> Unit, onPick: (RoomDraft) -> Unit,
-    onMateria: () -> Unit, onCalendar: () -> Unit, onNext: () -> Unit
+    onMateria: () -> Unit, onCalendar: () -> Unit, onNext: () -> Unit, modifier: Modifier = Modifier
 ) {
     val cs = MaterialTheme.colorScheme
     val on = cs.onSurface
     val tile = mix(on, 0.06f, cs.primaryContainer)
     val haptic = LocalHapticFeedback.current
-    Column(Modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(cs.primaryContainer).padding(horizontal = 16.dp, vertical = 18.dp)) {
+    Column(modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(cs.primaryContainer).padding(horizontal = 16.dp, vertical = 18.dp)) {
         Text(questionTitle(key), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = on, lineHeight = 24.sp)
         val sub = when (key) {
             "name" -> R.string.rooms_q_name_d
@@ -517,6 +538,7 @@ private fun SummaryChip(b: String, t: String) {
 fun unitName(p: RoomProduce): String = stringResource(if (p == RoomProduce.SLIDES) R.string.rooms_unit_slide else R.string.rooms_unit_page)
 
 /** Tarjetas de parte con asa: se arrastran para ordenar; al tocar se abre su editor. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ReorderableParts(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, onChange: (RoomDraft) -> Unit, unit: String) {
     val cs = MaterialTheme.colorScheme
@@ -530,12 +552,13 @@ private fun ReorderableParts(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, 
         d.parts.forEachIndexed { i, p -> androidx.compose.runtime.key(p.key) {
             val dragging = dragKey == p.key
             val ab = open == p.key
+            val c = partTone(p.key)
             Column(
                 Modifier.zIndex(if (dragging) 1f else 0f)
                     .offset { IntOffset(0, if (dragging) dragDy.roundToInt() else 0) }
                     .then(if (dragging) Modifier.shadow(12.dp, RoundedCornerShape(20.dp)) else Modifier)
                     .fillMaxWidth().clip(RoundedCornerShape(20.dp))
-                    .background(if (dragging) cs.surfaceContainerHighest else if (ab) cs.surfaceContainerHigh else cs.surfaceContainerLow)
+                    .background(mix(c, if (dragging) 0.22f else if (ab) 0.16f else 0.11f, if (dragging) cs.surfaceContainerHighest else cs.surfaceContainerLow))
                     .onSizeChanged { heights[p.key] = it.height }
             ) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 62.dp).padding(start = 2.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -561,37 +584,48 @@ private fun ReorderableParts(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, 
                             )
                         },
                         contentAlignment = Alignment.Center
-                    ) { Icon(Icons.Rounded.DragIndicator, stringResource(R.string.rooms_drag), tint = cs.outlineVariant, modifier = Modifier.size(20.dp)) }
+                    ) { Icon(Icons.Rounded.DragIndicator, stringResource(R.string.rooms_drag), tint = c.copy(alpha = 0.55f), modifier = Modifier.size(20.dp)) }
                     Row(Modifier.weight(1f).cleanClickable { onOpen(p.key) }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                        Box(Modifier.size(26.dp).clip(CircleShape).background(if (ab) cs.primary else cs.surfaceContainerHighest), contentAlignment = Alignment.Center) {
-                            Text("${i + 1}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (ab) cs.onPrimary else cs.onSurfaceVariant)
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(c), contentAlignment = Alignment.Center) {
+                            Text("${i + 1}", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = cs.background)
                         }
                         Column(Modifier.weight(1f)) {
                             Text(p.name.ifBlank { stringResource(R.string.rooms_part_unnamed) }, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(partMeta(p, d.produces, unit), fontSize = 12.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                            FlowRow(Modifier.padding(top = 5.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                partTags(p, d.produces, unit).forEach { t ->
+                                    Text(t, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c, maxLines = 1,
+                                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(c.copy(alpha = 0.18f)).padding(horizontal = 7.dp, vertical = 2.dp))
+                                }
+                            }
                         }
                     }
                     Box(Modifier.size(38.dp).clip(CircleShape).cleanClickable { onOpen(p.key) }, contentAlignment = Alignment.Center) { Chevron(ab) }
                 }
-                AnimatedVisibility(ab) { PartEditor(p, d, unit, onChange) { onOpen(p.key) } }
+                AnimatedVisibility(ab) { PartEditor(p, d, unit, c, onChange) { onOpen(p.key) } }
             }
         } }
     }
 }
 
+/** Cada parte con su color, que la sigue al arrastrarla (va por su clave, no por su puesto). */
 @Composable
-private fun partMeta(p: DraftPart, produces: RoomProduce, unit: String): String {
+private fun partTone(key: Long): Color = PART_TONES[((key - 1).coerceAtLeast(0) % PART_TONES.size).toInt()].color
+
+private val PART_TONES = listOf(RoomTone.ROSA, RoomTone.AZUL, RoomTone.VERDE, RoomTone.AMBAR, RoomTone.VIOLETA, RoomTone.CIAN, RoomTone.NARANJA, RoomTone.INDIGO)
+
+/** Lo que se ve de la parte sin abrirla: extensión, cuántos la hacen y si es tuya o lleva nota. */
+@Composable
+private fun partTags(p: DraftPart, produces: RoomProduce, unit: String): List<String> {
     val b = mutableListOf<String>()
     if (produces != RoomProduce.NOTHING && p.extent > 0) b += "~${p.extent} $unit${if (p.extent > 1) "s" else ""}"
-    if (p.sharers == 2) b += stringResource(R.string.rooms_shared_two)
-    if (p.sharers == -1) b += stringResource(R.string.rooms_shared_all)
+    b += stringResource(when (p.sharers) { 2 -> R.string.rooms_two; -1 -> R.string.rooms_all; else -> R.string.rooms_one })
     if (p.mine) b += stringResource(R.string.rooms_part_yours)
     if (p.note.isNotBlank()) b += stringResource(R.string.rooms_part_has_note)
-    return if (b.isEmpty()) stringResource(R.string.rooms_part_tap) else b.joinToString(" · ")
+    return b
 }
 
 @Composable
-private fun PartEditor(p: DraftPart, d: RoomDraft, unit: String, onChange: (RoomDraft) -> Unit, onDone: () -> Unit) {
+private fun PartEditor(p: DraftPart, d: RoomDraft, unit: String, tone: Color, onChange: (RoomDraft) -> Unit, onDone: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     fun set(f: (DraftPart) -> DraftPart) = onChange(d.copy(parts = d.parts.map { if (it.key == p.key) f(it) else it }))
     Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -603,19 +637,19 @@ private fun PartEditor(p: DraftPart, d: RoomDraft, unit: String, onChange: (Room
         if (d.produces != RoomProduce.NOTHING) Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.rooms_field_extent), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
             Row(Modifier.clip(CircleShape).background(cs.background).padding(3.dp), verticalAlignment = Alignment.CenterVertically) {
-                StepBtn("−", p.extent > 0) { set { it.copy(extent = (it.extent - 1).coerceAtLeast(0)) } }
+                StepBtn("−", p.extent > 0, tone) { set { it.copy(extent = (it.extent - 1).coerceAtLeast(0)) } }
                 Text(if (p.extent > 0) "~${p.extent} $unit${if (p.extent > 1) "s" else ""}" else stringResource(R.string.rooms_extent_free),
                     fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.width(78.dp))
-                StepBtn("+", true) { set { it.copy(extent = it.extent + 1) } }
+                StepBtn("+", true, tone) { set { it.copy(extent = it.extent + 1) } }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.rooms_field_howmany), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
-            Segmented(listOf(1 to R.string.rooms_one, 2 to R.string.rooms_two, -1 to R.string.rooms_all), p.sharers) { v -> set { it.copy(sharers = v) } }
+            Segmented(listOf(1 to R.string.rooms_one, 2 to R.string.rooms_two, -1 to R.string.rooms_all), p.sharers, tone = tone) { v -> set { it.copy(sharers = v) } }
         }
         if (d.split == SplitMode.ASSIGN || d.split == SplitMode.MIXED) Row(Modifier.cleanClickable { set { it.copy(mine = !it.mine) } }, verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.rooms_field_mine), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
-            Switchy(p.mine)
+            Switchy(p.mine, tone)
         }
         Text(stringResource(R.string.rooms_field_note), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
         Box(Modifier.offset(y = (-6).dp).fillMaxWidth().heightIn(min = 70.dp).clip(RoundedCornerShape(14.dp)).background(cs.background).padding(12.dp)) {
@@ -633,31 +667,31 @@ private fun PartEditor(p: DraftPart, d: RoomDraft, unit: String, onChange: (Room
 }
 
 @Composable
-fun StepBtn(t: String, enabled: Boolean, onClick: () -> Unit) {
+fun StepBtn(t: String, enabled: Boolean, tint: Color? = null, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Box(Modifier.size(32.dp).clip(CircleShape).background(cs.surfaceContainer).then(if (enabled) Modifier.cleanClickable(onClick = onClick) else Modifier), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(32.dp).clip(CircleShape).background(if (tint != null) mix(tint, 0.26f, cs.surfaceContainer) else cs.surfaceContainer).then(if (enabled) Modifier.cleanClickable(onClick = onClick) else Modifier), contentAlignment = Alignment.Center) {
         Text(t, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = cs.onSurface.copy(alpha = if (enabled) 1f else 0.35f))
     }
 }
 
 @Composable
-fun <T> Segmented(items: List<Pair<T, Int>>, sel: T, full: Boolean = false, onPick: (T) -> Unit) {
+fun <T> Segmented(items: List<Pair<T, Int>>, sel: T, full: Boolean = false, tone: Color? = null, onPick: (T) -> Unit) {
     val cs = MaterialTheme.colorScheme
     val haptic = LocalHapticFeedback.current
     Row(Modifier.then(if (full) Modifier.fillMaxWidth() else Modifier).clip(CircleShape).background(cs.background).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         items.forEach { (v, r) ->
             val on = v == sel
-            Text(stringResource(r), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) cs.onPrimary else cs.onSurfaceVariant, textAlign = TextAlign.Center, maxLines = 1,
-                modifier = Modifier.then(if (full) Modifier.weight(1f) else Modifier).clip(CircleShape).background(if (on) cs.primary else Color.Transparent).cleanClickable { if (!on) haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(v) }.padding(horizontal = 12.dp, vertical = 7.dp))
+            Text(stringResource(r), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) (if (tone != null) cs.background else cs.onPrimary) else cs.onSurfaceVariant, textAlign = TextAlign.Center, maxLines = 1,
+                modifier = Modifier.then(if (full) Modifier.weight(1f) else Modifier).clip(CircleShape).background(if (on) tone ?: cs.primary else Color.Transparent).cleanClickable { if (!on) haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(v) }.padding(horizontal = 12.dp, vertical = 7.dp))
         }
     }
 }
 
 @Composable
-fun Switchy(on: Boolean) {
+fun Switchy(on: Boolean, tone: Color? = null) {
     val cs = MaterialTheme.colorScheme
-    Box(Modifier.width(44.dp).height(26.dp).clip(CircleShape).background(if (on) cs.primary else cs.surfaceContainerHighest).padding(4.dp), contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart) {
-        Box(Modifier.size(18.dp).clip(CircleShape).background(if (on) cs.onPrimary else cs.onSurfaceVariant))
+    Box(Modifier.width(44.dp).height(26.dp).clip(CircleShape).background(if (on) tone ?: cs.primary else cs.surfaceContainerHighest).padding(4.dp), contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart) {
+        Box(Modifier.size(18.dp).clip(CircleShape).background(if (on) (if (tone != null) cs.background else cs.onPrimary) else cs.onSurfaceVariant))
     }
 }
 

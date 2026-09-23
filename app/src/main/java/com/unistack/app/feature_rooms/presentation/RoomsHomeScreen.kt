@@ -19,6 +19,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Upload
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.unistack.app.core.utils.performSafely
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -703,27 +718,42 @@ private fun Receipt(w: WorkRoom, s: Subject?, shape: androidx.compose.ui.graphic
 
 // ---------------------------------------------------------------- hojas y ventanas
 
+/**
+ * «Cómo funciona una sala» en carrusel (artifact «Crear sala, segunda vuelta», opción A): un paso
+ * por página con su icono grande de color; se pasa deslizando o con Siguiente hasta Entendido.
+ */
 @Composable
 private fun GuideSheet(onDismiss: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     val ts = stringArrayResource(R.array.rooms_guide_t)
     val ds = stringArrayResource(R.array.rooms_guide_d)
-    val colors = listOf(0, 0, 2, 2, 10, 10, 6).map { MemberColors.of(it) }
-    RoomSheet(onDismiss, stringResource(R.string.rooms_guide_title), stringResource(R.string.rooms_guide_sub), tall = true,
+    val icons = listOf(Icons.Rounded.Flag, Icons.Rounded.Add, Icons.Rounded.Key, Icons.Rounded.PanTool, Icons.Rounded.Upload, Icons.Rounded.Build, Icons.Rounded.Share)
+    val tones = listOf(RoomTone.VIOLETA, RoomTone.VIOLETA, RoomTone.CIAN, RoomTone.CIAN, RoomTone.VERDE, RoomTone.VERDE, RoomTone.AMBAR).map { it.color }
+    val pager = rememberPagerState { ts.size }
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(pager) { snapshotFlow { pager.currentPage }.drop(1).collect { haptic.performSafely(HapticFeedbackType.SegmentTick) } }
+    val last = pager.currentPage == ts.lastIndex
+    RoomSheet(onDismiss, stringResource(R.string.rooms_guide_title), stringResource(R.string.rooms_guide_sub),
         trailing = { RoundButton(Icons.Rounded.Close, stringResource(R.string.rooms_close), onDismiss, tint = cs.onSurfaceVariant) }, showClose = false) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ts.forEachIndexed { i, t ->
-                Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                    Box(Modifier.padding(top = 1.dp).size(28.dp).clip(CircleShape).background(colors[i]), contentAlignment = Alignment.Center) { Text("${i + 1}", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = cs.background) }
-                    Column(Modifier.weight(1f)) {
-                        Text(t, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
-                        Text(ds.getOrElse(i) { "" }, fontSize = 12.5.sp, color = cs.onSurfaceVariant, lineHeight = 19.sp, modifier = Modifier.padding(top = 3.dp))
-                    }
+        HorizontalPager(pager, Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) { i ->
+            val c = tones.getOrElse(i) { cs.primary }
+            Column(Modifier.fillMaxWidth().heightIn(min = 300.dp).padding(horizontal = 10.dp, vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.padding(top = 8.dp, bottom = 16.dp).size(96.dp).clip(RoundedCornerShape(30.dp)).background(mix(c, 0.2f, cs.surfaceContainerHigh)), contentAlignment = Alignment.Center) {
+                    Icon(icons.getOrElse(i) { Icons.Rounded.QuestionMark }, null, tint = c, modifier = Modifier.size(46.dp))
                 }
+                Text(stringResource(R.string.rooms_guide_step, i + 1, ts.size), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = cs.onSurfaceVariant)
+                Text(ts[i], fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+                Text(ds.getOrElse(i) { "" }, fontSize = 14.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 21.sp)
             }
         }
-        VSpace(14.dp)
-        Pill(stringResource(R.string.rooms_guide_ok), onDismiss, Modifier.fillMaxWidth())
+        StretchDots(ts.size, pager.currentPage, Modifier.align(Alignment.CenterHorizontally).padding(top = 18.dp, bottom = 14.dp), dot = 6.dp, long = 22.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (pager.currentPage > 0) Pill(stringResource(R.string.rooms_back), { scope.launch { pager.animateScrollToPage(pager.currentPage - 1) } }, Modifier.weight(1f), style = PillStyle.TONAL, big = true)
+            Pill(stringResource(if (last) R.string.rooms_guide_ok else R.string.rooms_next), {
+                if (last) onDismiss() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
+            }, Modifier.weight(2f), big = true)
+        }
     }
 }
 

@@ -912,6 +912,7 @@
     <string name="rooms_hint_mixed">Your parts are already yours; the rest are free for whoever joins.</string>
     <string name="rooms_hint_free">Everyone takes their part when they join.</string>
     <string name="rooms_go_to_room">Go to the room</string>
+    <string name="rooms_guide_step">STEP %1$d OF %2$d</string>
     <string-array name="rooms_tpl_ensayo">
         <item>Introduction</item>
         <item>Theoretical framework</item>

@@ -912,6 +912,7 @@
     <string name="rooms_hint_mixed">Tus partes ya son tuyas; el resto están libres para quien entre.</string>
     <string name="rooms_hint_free">Cada uno coge su parte al entrar.</string>
     <string name="rooms_go_to_room">Ir a la sala</string>
+    <string name="rooms_guide_step">PASO %1$d DE %2$d</string>
     <string-array name="rooms_tpl_ensayo">
         <item>Introducción</item>
         <item>Marco teórico</item>

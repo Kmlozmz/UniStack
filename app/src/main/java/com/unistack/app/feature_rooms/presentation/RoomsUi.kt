@@ -2,6 +2,11 @@
 
 package com.unistack.app.feature_rooms.presentation
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.runtime.CompositionLocalProvider
@@ -388,6 +393,23 @@ fun Block(color: Color, shape: Shape = RoundedCornerShape(24.dp), modifier: Modi
 
 @Composable
 fun Dot(color: Color, size: Dp = 8.dp) = Box(Modifier.size(size).clip(CircleShape).background(color))
+
+/**
+ * Los pasos como puntos: el actual se estira en píldora y, al avanzar, se encoge para que se
+ * estire el siguiente, con un poco de muelle (artifact «Crear sala, segunda vuelta», opción A).
+ */
+@Composable
+fun StretchDots(count: Int, current: Int, modifier: Modifier = Modifier, dot: Dp = 8.dp, long: Dp = 28.dp) {
+    val cs = MaterialTheme.colorScheme
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(count) { i ->
+            val on = i == current
+            val w by animateDpAsState(if (on) long else dot, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow), label = "paso")
+            val c by animateColorAsState(if (on) cs.primary else cs.outlineVariant, label = "paso-color")
+            Box(Modifier.width(w).height(dot).clip(CircleShape).background(c))
+        }
+    }
+}
 
 @Suppress("unused")
 @Composable
