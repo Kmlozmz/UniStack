@@ -68,9 +68,9 @@ fun InviteScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, onGoRoo
                 Text(stringResource(R.string.rooms_ready_sub), fontSize = 13.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 19.sp, modifier = Modifier.padding(top = 4.dp))
             }
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(cs.primaryContainer).padding(horizontal = 16.dp, vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(R.string.rooms_room_code), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onPrimaryContainer.copy(alpha = 0.85f))
-                Text(room.code, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 8.sp, color = cs.onPrimaryContainer, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
-                Text(stringResource(R.string.rooms_code_where), fontSize = 12.5.sp, color = cs.onPrimaryContainer.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+                Text(stringResource(R.string.rooms_room_code), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onSurface.copy(alpha = 0.85f))
+                Text(room.code, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 8.sp, color = cs.onSurface, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
+                Text(stringResource(R.string.rooms_code_where), fontSize = 12.5.sp, color = cs.onSurface.copy(alpha = 0.8f), textAlign = TextAlign.Center)
                 Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill(stringResource(R.string.rooms_copy_invite), { context.copyText("invite", text); context.roomToast(copied) }, icon = Icons.Rounded.ContentCopy, style = PillStyle.TONAL, small = true)
                     Pill(stringResource(R.string.rooms_share), { context.shareText(text) }, icon = Icons.Rounded.Share, small = true)

@@ -1198,7 +1198,26 @@ fun MainNavGraph(
                     onBack = {
                         if (!navController.navigateUp()) navController.go(AppRoutes.AcademicTemplates)
                     },
-                    onNavigate = { roomId, section, item -> navController.go(AppRoutes.room(roomId, section, item)) },
+                    /*
+                     * **Cada sección va encima de la sala, no en su lugar.** Todas comparten la misma
+                     * ruta con parámetros, y `go` (que no apila la misma pantalla dos veces) reemplazaba
+                     * la sala por el chat o el grupo: atrás sacaba de Trabajos. Aquí se apila siempre,
+                     * salvo que ya estés en esa misma sección; y volver a «sala» desde una sección que
+                     * cuelga de ella es simplemente volver atrás.
+                     */
+                    onNavigate = { roomId, section, item ->
+                        val cur = navController.currentBackStackEntry?.arguments
+                        val same = cur?.getString(AppRoutes.RoomIdArg) == roomId &&
+                            cur.getString(AppRoutes.RoomSectionArg) == section &&
+                            cur.getString(AppRoutes.RoomItemArg).orEmpty() == item
+                        val prev = navController.previousBackStackEntry?.arguments
+                        when {
+                            same -> Unit
+                            section == "sala" && prev?.getString(AppRoutes.RoomIdArg) == roomId &&
+                                prev.getString(AppRoutes.RoomSectionArg) == "sala" -> navController.navigateUp()
+                            else -> navController.navigate(AppRoutes.room(roomId, section, item))
+                        }
+                    },
                     onReplace = { roomId, section, item ->
                         navController.navigateUp()
                         navController.go(AppRoutes.room(roomId, section, item))

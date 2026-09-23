@@ -362,8 +362,8 @@ private fun RowScope.StartButton(icon: ImageVector, title: String, sub: String, 
             Icon(icon, null, tint = if (primary) cs.onPrimary else cs.onSurface, modifier = Modifier.size(21.dp))
         }
         Box(Modifier.weight(1f, fill = false).heightIn(min = 8.dp))
-        Text(title, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = if (primary) cs.onPrimaryContainer else cs.onSurface, modifier = Modifier.padding(top = 12.dp))
-        Text(sub, fontSize = 11.5.sp, color = if (primary) cs.onPrimaryContainer else cs.onSurfaceVariant, lineHeight = 15.sp)
+        Text(title, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(top = 12.dp))
+        Text(sub, fontSize = 11.5.sp, color = if (primary) cs.onSurface.copy(alpha = 0.8f) else cs.onSurfaceVariant, lineHeight = 15.sp)
     }
 }
 

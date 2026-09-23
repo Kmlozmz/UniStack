@@ -226,7 +226,9 @@ data class RoomDraft(
     val tasks: List<Pair<String, Boolean>> = emptyList(),
     val materials: List<DraftMaterial> = emptyList(),
     val rules: RoomRules = RoomRules(),
-    val entryOpen: Boolean = true
+    val entryOpen: Boolean = true,
+    /** Las preguntas de opciones que ya se contestaron: hasta entonces ninguna sale marcada. */
+    val answered: Set<String> = emptySet()
 )
 
 data class DraftPart(

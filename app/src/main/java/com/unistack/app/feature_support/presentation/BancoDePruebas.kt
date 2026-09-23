@@ -932,7 +932,8 @@ private fun seccionesDeSimular(
             color = tonos.violeta,
             cuenta = resumen.salas,
             palancas = listOf(
-                Palanca("Sala como líder", "«La ciudad como texto» con Sam, Nico y Dani: pedidos, una vencida, una libre y Vale que acaba de entrar") { vm.salaComoLider() },
+                Palanca("Simular todo el artifact", "La lista con 4 activas y 7 terminadas y «La ciudad como texto» completa, con sus materias y colores") { vm.simularTodoElArtifact() },
+                Palanca("Sala como líder","«La ciudad como texto» con Sam, Nico y Dani: pedidos, una vencida, una libre y Vale que acaba de entrar") { vm.salaComoLider() },
                 Palanca("Sala como compañero", "La misma sala vista por Dani, con un pedido suyo esperando al líder") { vm.salaComoCompanero() },
                 Palanca("Todo entregado", "Las seis secciones listas: sale «Crear trabajo» al líder") { vm.salaTodoEntregado() },
                 Palanca("Alguien entra a la sala", "Llega una persona nueva a las salas de prueba") { vm.alguienEntraALaSala() },

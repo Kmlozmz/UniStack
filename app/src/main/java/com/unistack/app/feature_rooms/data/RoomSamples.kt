@@ -106,6 +106,56 @@ object RoomSamples {
             events = base.events.filter { it.type != EventType.JOINED })
     }
 
+    /**
+     * Todo lo del artifact «pantalla principal» en estado «Con terminados»: la sala detallada
+     * de «La ciudad como texto» más las otras tres activas y los siete terminados en dos
+     * periodos, con su formato y su nota. `mat` da el id de materia para cada clave del artifact.
+     */
+    fun artifactHome(today: Long, now: Long, mat: (String) -> String?): List<WorkRoom> {
+        val alex = RoomMember("prueba-m-alex", "Alex", 0, now - 20 * DAY)
+        val sam = RoomMember("prueba-m-sam", "Sam", 1, now - 20 * DAY)
+        val nico = RoomMember("prueba-m-nico", "Nico", 2, now - 20 * DAY)
+        val dani = RoomMember("prueba-m-dani", "Dani", 3, now - 20 * DAY)
+        val who = mapOf("Alex" to alex, "Sam" to sam, "Nico" to nico, "Dani" to dani)
+        data class S(val n: String, val q: String?, val dias: Int, val ok: Boolean)
+        fun room(id: String, type: RoomType, key: String, title: String, split: SplitMode, entrega: Int, secs: List<S>, people: List<RoomMember>,
+                 closed: Boolean = false, format: String? = null, grade: Double? = null, period: String? = null): WorkRoom {
+            val parts = secs.mapIndexed { i, s ->
+                RoomPart("$id-p$i", s.n, 2, ownerIds = listOfNotNull(s.q?.let { who.getValue(it).id }), dueEpochDay = today + s.dias,
+                    state = if (s.ok) PartState.DELIVERED else PartState.PENDING, deliveredAt = if (s.ok) now - DAY else null,
+                    text = if (s.ok) "Texto entregado de ${s.n}." else "")
+            }
+            val closedAt = if (closed) now + entrega * DAY else null
+            return WorkRoom(
+                id = id, title = title, subjectId = mat(key), type = type, split = split, capacity = 6, code = "7K4P2M",
+                dueEpochDay = today + entrega, leaderId = alex.id, meId = alex.id, members = people, parts = parts,
+                entryHandledIds = people.map { it.id }, createdAt = now - 30 * DAY, updatedAt = closedAt ?: now,
+                lastSeenEventsAt = now, lastSeenChatAt = now, closedAt = closedAt, finalFormat = format, finalGrade = grade, periodLabel = period
+            )
+        }
+        fun done(n: Int) = (1..n).map { S("Sección $it", "Alex", 0, true) }
+        val ciudad = leaderRoom(today, now, mat("soc"))
+        val lab = room("$PREFIX-lab", RoomType.LAB, "fis", "Informe de laboratorio: péndulo simple", SplitMode.FREE, 9,
+            listOf(S("Objetivos", "Nico", 3, true), S("Marco teórico", null, 4, false), S("Montaje", "Nico", 5, false),
+                S("Datos y tablas", null, 6, false), S("Análisis y error", null, 7, false), S("Conclusiones", null, 8, false)), listOf(alex, nico))
+        val proyecto = room("$PREFIX-proyecto", RoomType.PROYECTO, "poo", "Proyecto final: sistema de gestión", SplitMode.ASSIGN, 14,
+            listOf(S("Problema", "Alex", 4, true), S("Alcance", "Dani", 5, true), S("Diseño", "Sam", 8, false),
+                S("Implementación", "Alex", 10, false), S("Pruebas", "Nico", 12, false), S("Manual", "Dani", 13, false)), listOf(alex, sam, nico, dani))
+        val resena = room("$PREFIX-resena", RoomType.RESENA, "eco", "Reseña: La gran transformación", SplitMode.ASSIGN, 2,
+            listOf(S("Ficha del texto", "Alex", 1, true), S("Resumen", "Alex", 1, true), S("Idea central", "Alex", 2, true),
+                S("Valoración", "Alex", 2, true), S("Cierre", "Alex", 2, true)), listOf(alex))
+        val terminados = listOf(
+            room("$PREFIX-t0", RoomType.EXPO, "bd", "Exposición: patrones de diseño", SplitMode.ASSIGN, -4, done(6), listOf(alex, sam, dani), true, "pdf", 4.6, "2026-2"),
+            room("$PREFIX-t1", RoomType.ENSAYO, "soc", "Ensayo: movimientos sociales", SplitMode.ASSIGN, -9, done(6), listOf(alex, sam, nico), true, "docx", 4.2, "2026-2"),
+            room("$PREFIX-t2", RoomType.LAB, "fis", "Informe: caída libre", SplitMode.ASSIGN, -15, done(6), listOf(alex, nico), true, "pdf", null, "2026-2"),
+            room("$PREFIX-t3", RoomType.PROYECTO, "poo", "Proyecto: agenda en consola", SplitMode.ASSIGN, -24, done(6), listOf(alex, sam, nico, dani), true, "pdf", 4.8, "2026-2"),
+            room("$PREFIX-t4", RoomType.RESENA, "eco", "Reseña: El capital en el siglo XXI", SplitMode.ASSIGN, -130, done(5), listOf(alex), true, "docx", 3.9, "2026-1"),
+            room("$PREFIX-t5", RoomType.EXPO, "calc", "Exposición: integrales de línea", SplitMode.ASSIGN, -150, done(6), listOf(alex, dani), true, "pdf", 4.5, "2026-1"),
+            room("$PREFIX-t6", RoomType.ENSAYO, "soc", "Ensayo: la escuela de Chicago", SplitMode.ASSIGN, -170, done(6), listOf(alex, sam), true, "docx", 4.0, "2026-1")
+        )
+        return listOf(ciudad, lab, proyecto, resena) + terminados
+    }
+
     /** Todas las secciones entregadas: al líder le sale «Crear trabajo». */
     fun allDelivered(room: WorkRoom, now: Long): WorkRoom = room.copy(
         requests = emptyList(),

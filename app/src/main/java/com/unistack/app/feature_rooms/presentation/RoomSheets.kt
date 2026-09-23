@@ -105,7 +105,7 @@ fun SheetRow(
 @Composable
 fun OptRow(title: String, subtitle: String? = null, on: Boolean, onClick: () -> Unit, radio: Boolean = true, leading: (@Composable () -> Unit)? = null) {
     val cs = MaterialTheme.colorScheme
-    val fg = if (on) cs.onPrimaryContainer else cs.onSurface
+    val fg = cs.onSurface
     Row(
         Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(if (on) cs.primaryContainer else cs.surfaceContainerLow)
             .cleanClickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp),
@@ -116,7 +116,7 @@ fun OptRow(title: String, subtitle: String? = null, on: Boolean, onClick: () -> 
             Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = fg)
             if (!subtitle.isNullOrBlank()) Text(subtitle, fontSize = 12.sp, color = fg.copy(alpha = 0.75f))
         }
-        if (radio) Box(Modifier.size(20.dp).clip(CircleShape).border(if (on) 6.dp else 2.dp, if (on) cs.onPrimaryContainer else cs.onSurfaceVariant, CircleShape))
+        if (radio) Box(Modifier.size(20.dp).clip(CircleShape).border(if (on) 6.dp else 2.dp, if (on) cs.primary else cs.onSurfaceVariant, CircleShape))
     }
 }
 

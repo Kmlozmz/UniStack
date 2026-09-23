@@ -327,7 +327,7 @@ private fun SmartHero(rooms: List<WorkRoom>, today: Long, subjectOf: (WorkRoom) 
         if (active.isNotEmpty()) stringResource(R.string.rooms_hero_calm_d, active.size) else stringResource(R.string.rooms_hero_calm_d0), null, null, calm = true)
     val cs = MaterialTheme.colorScheme
     val bg = when { h.alert -> cs.errorContainer; h.calm -> cs.surfaceContainer; else -> cs.primaryContainer }
-    val fg = when { h.alert -> cs.onErrorContainer; h.calm -> cs.onSurface; else -> cs.onPrimaryContainer }
+    val fg = when { h.alert -> cs.onErrorContainer; else -> cs.onSurface }
     Block(bg, RoundedCornerShape(26.dp), Modifier.padding(bottom = 14.dp), PaddingValues(17.dp)) {
         Text(h.label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = if (h.calm) cs.onSurfaceVariant else fg.copy(alpha = 0.8f))
         Text(h.title, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = fg, modifier = Modifier.padding(top = 6.dp), lineHeight = 24.sp)

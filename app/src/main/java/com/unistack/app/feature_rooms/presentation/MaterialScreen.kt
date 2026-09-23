@@ -293,7 +293,7 @@ fun MaterialRow(room: WorkRoom, m: RoomMaterial, shape: androidx.compose.ui.grap
         }
         when {
             RoomLogic.forMe(room, m) && !forMeFilter -> Text(stringResource(R.string.rooms_for_you_chip), fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp,
-                color = cs.onPrimaryContainer, modifier = Modifier.clip(CircleShape).background(cs.primaryContainer).padding(horizontal = 9.dp, vertical = 4.dp))
+                color = cs.onSurface, modifier = Modifier.clip(CircleShape).background(cs.primaryContainer).padding(horizontal = 9.dp, vertical = 4.dp))
             room.meId !in m.seenBy -> Dot(cs.primary)
         }
         Icon(Icons.Rounded.ArrowDropDown, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp).rotate(-90f))

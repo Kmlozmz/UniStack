@@ -259,8 +259,8 @@ fun EntryNotice(room: WorkRoom, memberId: String, onGive: () -> Unit) {
     ) {
         MemberFace(room, memberId, 34.dp)
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.rooms_joined, room.nameOf(memberId)), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = cs.onPrimaryContainer)
-            Text(stringResource(R.string.rooms_joined_no_part), fontSize = 12.5.sp, color = cs.onPrimaryContainer.copy(alpha = 0.85f))
+            Text(stringResource(R.string.rooms_joined, room.nameOf(memberId)), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+            Text(stringResource(R.string.rooms_joined_no_part), fontSize = 12.5.sp, color = cs.onSurface.copy(alpha = 0.85f))
         }
         Pill(stringResource(R.string.rooms_give_one), onGive, style = PillStyle.HERO, small = true)
     }
@@ -348,9 +348,9 @@ private fun YourTurn(room: WorkRoom, today: Long, go: (String, String) -> Unit, 
 private fun TocaActions(content: @Composable () -> Unit) =
     FlowRow(Modifier.padding(top = 11.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { content() }
 
-@Composable private fun TocaLabel(t: String) = Text(t.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-@Composable private fun TocaTitle(t: String) = Text(t, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
-@Composable private fun TocaBody(t: String) = Text(t, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f), lineHeight = 17.sp)
+@Composable private fun TocaLabel(t: String) = Text(t.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+@Composable private fun TocaTitle(t: String) = Text(t, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
+@Composable private fun TocaBody(t: String) = Text(t, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f), lineHeight = 17.sp)
 
 @Composable
 fun pluralText(id: Int, n: Int): String = LocalContext.current.resources.getQuantityString(id, n, n)

@@ -25,6 +25,20 @@ object RoomTemplates {
     val order = listOf(RoomType.ENSAYO, RoomType.LAB, RoomType.EXPO, RoomType.PROYECTO, RoomType.INVESTIGACION,
         RoomType.RESENA, RoomType.CAMPO, RoomType.MAQUETA, RoomType.CERO)
 
+    /** El color de cada tipo (tonal, como los tipos de material). */
+    @androidx.compose.runtime.Composable
+    fun tone(t: RoomType): androidx.compose.ui.graphics.Color = when (t) {
+        RoomType.ENSAYO -> RoomTone.INDIGO
+        RoomType.LAB -> RoomTone.VERDE
+        RoomType.EXPO -> RoomTone.NARANJA
+        RoomType.PROYECTO -> RoomTone.CIAN
+        RoomType.INVESTIGACION -> RoomTone.AZUL
+        RoomType.RESENA -> RoomTone.ROSA
+        RoomType.CAMPO -> RoomTone.AMBAR
+        RoomType.MAQUETA -> RoomTone.VIOLETA
+        RoomType.CERO -> RoomTone.GRIS
+    }.color
+
     fun icon(t: RoomType): ImageVector = when (t) {
         RoomType.ENSAYO -> Icons.Rounded.Edit
         RoomType.LAB -> Icons.Rounded.Science

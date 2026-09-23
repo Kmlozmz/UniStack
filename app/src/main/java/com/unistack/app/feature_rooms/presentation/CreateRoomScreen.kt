@@ -97,6 +97,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.R
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.unistack.app.core.utils.performSafely
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.cleanClickable
@@ -284,6 +287,20 @@ private fun splitSub(s: SplitMode) = when (s) {
     SplitMode.DRAW -> R.string.rooms_split_draw_d
     SplitMode.MIXED -> R.string.rooms_split_mixed_d
 }
+@Composable
+private fun produceTone(p: RoomProduce) = when (p) {
+    RoomProduce.DOC -> RoomTone.INDIGO
+    RoomProduce.SLIDES -> RoomTone.NARANJA
+    RoomProduce.BOTH -> RoomTone.VIOLETA
+    RoomProduce.NOTHING -> RoomTone.VERDE
+}.color
+@Composable
+private fun splitTone(s: SplitMode) = when (s) {
+    SplitMode.ASSIGN -> RoomTone.AZUL
+    SplitMode.FREE -> RoomTone.VERDE
+    SplitMode.DRAW -> RoomTone.AMBAR
+    SplitMode.MIXED -> RoomTone.ROSA
+}.color
 private fun splitIcon(s: SplitMode) = when (s) {
     SplitMode.ASSIGN -> Icons.Rounded.PanTool
     SplitMode.FREE -> Icons.Rounded.Groups
@@ -312,8 +329,9 @@ private fun QuestionCard(
     onMateria: () -> Unit, onCalendar: () -> Unit, onNext: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
-    val on = cs.onPrimaryContainer
-    val tile = mix(on, 0.08f, cs.primaryContainer)
+    val on = cs.onSurface
+    val tile = mix(on, 0.06f, cs.primaryContainer)
+    val haptic = LocalHapticFeedback.current
     Column(Modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(cs.primaryContainer).padding(horizontal = 16.dp, vertical = 18.dp)) {
         Text(questionTitle(key), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = on, lineHeight = 24.sp)
         val sub = when (key) {
@@ -356,29 +374,36 @@ private fun QuestionCard(
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             row.forEach { t ->
                                 val sel = d.type == t
+                                val tone = RoomTemplates.tone(t)
+                                // Todas iguales: alto fijo y el nombre en dos líneas como mucho.
                                 Column(
-                                    Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(if (sel) mix(cs.primary, 0.16f, tile) else tile)
-                                        .then(if (sel) Modifier.border(2.dp, cs.primary, RoundedCornerShape(18.dp)) else Modifier)
-                                        .cleanClickable { onType(t) }.padding(horizontal = 8.dp, vertical = 12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)
+                                    Modifier.weight(1f).height(112.dp).clip(RoundedCornerShape(18.dp)).background(if (sel) mix(tone, 0.20f, tile) else tile)
+                                        .then(if (sel) Modifier.border(2.dp, tone, RoundedCornerShape(18.dp)) else Modifier)
+                                        .cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onType(t) }.padding(horizontal = 8.dp, vertical = 12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
                                 ) {
-                                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(if (sel) cs.primary else cs.surfaceContainerHighest), contentAlignment = Alignment.Center) {
-                                        Icon(RoomTemplates.icon(t), null, tint = if (sel) cs.onPrimary else cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(if (sel) tone else mix(tone, 0.22f, cs.surfaceContainerHigh)), contentAlignment = Alignment.Center) {
+                                        Icon(RoomTemplates.icon(t), null, tint = if (sel) cs.background else tone, modifier = Modifier.size(21.dp))
                                     }
-                                    Text(stringResource(RoomTemplates.typeNameRes(t)), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = on, textAlign = TextAlign.Center, lineHeight = 15.sp)
+                                    Text(stringResource(RoomTemplates.typeNameRes(t)), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = on, textAlign = TextAlign.Center,
+                                        lineHeight = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }
                     }
                 }
                 Text(stringResource(R.string.rooms_type_none), color = on.copy(alpha = 0.8f), fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 10.dp).cleanClickable { onType(RoomType.CERO) }.padding(vertical = 6.dp, horizontal = 2.dp))
+                    modifier = Modifier.padding(top = 10.dp).cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onType(RoomType.CERO) }.padding(vertical = 6.dp, horizontal = 2.dp))
             }
-            "produce" -> OptionRows(RoomProduce.entries, { it == d.produces }, tile, { produceIcon(it) }, { stringResource(produceTitle(it)) }, { stringResource(produceSub(it)) }) { onPick(d.copy(produces = it)) }
-            "split" -> OptionRows(SplitMode.entries, { it == d.split }, tile, { splitIcon(it) }, { stringResource(splitTitle(it)) }, { stringResource(splitSub(it)) }) { onPick(d.copy(split = it)) }
+            "produce" -> OptionRows(RoomProduce.entries, { "produce" in d.answered && it == d.produces }, tile, { produceIcon(it) }, { produceTone(it) },
+                { stringResource(produceTitle(it)) }, { stringResource(produceSub(it)) }) { onPick(d.copy(produces = it, answered = d.answered + "produce")) }
+            "split" -> OptionRows(SplitMode.entries, { "split" in d.answered && it == d.split }, tile, { splitIcon(it) }, { splitTone(it) },
+                { stringResource(splitTitle(it)) }, { stringResource(splitSub(it)) }) { onPick(d.copy(split = it, answered = d.answered + "split")) }
             "capacity" -> FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 (2..7).forEach { n ->
-                    HeroChip(if (n == 7) stringResource(R.string.rooms_cap_more) else "$n", d.capacity == n, big = true) { onPick(d.copy(capacity = n)) }
+                    HeroChip(if (n == 7) stringResource(R.string.rooms_cap_more) else "$n", "capacity" in d.answered && d.capacity == n, big = true) {
+                        onPick(d.copy(capacity = n, answered = d.answered + "capacity"))
+                    }
                 }
             }
             else -> FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -395,26 +420,29 @@ private fun QuestionCard(
 @Composable
 private fun HeroChip(text: String, on: Boolean, big: Boolean = false, icon: ImageVector? = null, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    val fg = cs.onPrimaryContainer
+    val haptic = LocalHapticFeedback.current
+    val fg = cs.onSurface
     Row(
-        Modifier.clip(RoundedCornerShape(10.dp)).background(if (on) fg else mix(fg, 0.12f, cs.primaryContainer)).cleanClickable(onClick = onClick)
+        Modifier.clip(RoundedCornerShape(10.dp)).background(if (on) cs.primary else mix(fg, 0.10f, cs.primaryContainer)).cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onClick() }
             .heightIn(min = if (big) 44.dp else 36.dp).padding(horizontal = if (big) 16.dp else 11.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        if (icon != null) Icon(icon, null, tint = if (on) cs.primaryContainer else fg, modifier = Modifier.size(15.dp))
-        Text(text, fontSize = if (big) 15.sp else 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) cs.primaryContainer else fg)
+        if (icon != null) Icon(icon, null, tint = if (on) cs.onPrimary else fg, modifier = Modifier.size(15.dp))
+        Text(text, fontSize = if (big) 15.sp else 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) cs.onPrimary else fg)
     }
 }
 
 @Composable
-private fun <T> OptionRows(items: List<T>, sel: (T) -> Boolean, tile: Color, icon: (T) -> ImageVector, title: @Composable (T) -> String, sub: @Composable (T) -> String, onPick: (T) -> Unit) {
+private fun <T> OptionRows(items: List<T>, sel: (T) -> Boolean, tile: Color, icon: (T) -> ImageVector, tone: @Composable (T) -> Color, title: @Composable (T) -> String, sub: @Composable (T) -> String, onPick: (T) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    val on = cs.onPrimaryContainer
+    val on = cs.onSurface
+    val haptic = LocalHapticFeedback.current
     RoomGroup(items) { it, shape ->
         val s = sel(it)
-        RoomRow(shape, color = if (s) mix(cs.primary, 0.14f, tile) else tile, onClick = { onPick(it) }) {
-            Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(if (s) cs.primary else cs.surfaceContainerHighest), contentAlignment = Alignment.Center) {
-                Icon(icon(it), null, tint = if (s) cs.onPrimary else cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        val c = tone(it)
+        RoomRow(shape, color = if (s) mix(c, 0.16f, tile) else tile, onClick = { haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(it) }) {
+            Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(if (s) c else mix(c, 0.22f, cs.surfaceContainerHigh)), contentAlignment = Alignment.Center) {
+                Icon(icon(it), null, tint = if (s) cs.background else c, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(title(it), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = on)
@@ -497,8 +525,9 @@ private fun ReorderableParts(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, 
     val heights = remember { mutableMapOf<Long, Int>() }
     val cur by androidx.compose.runtime.rememberUpdatedState(d)
     val change by androidx.compose.runtime.rememberUpdatedState(onChange)
+    val haptic = LocalHapticFeedback.current
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        d.parts.forEachIndexed { i, p ->
+        d.parts.forEachIndexed { i, p -> androidx.compose.runtime.key(p.key) {
             val dragging = dragKey == p.key
             val ab = open == p.key
             Column(
@@ -513,7 +542,7 @@ private fun ReorderableParts(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, 
                     Box(
                         Modifier.width(34.dp).height(44.dp).pointerInput(p.key) {
                             detectVerticalDragGestures(
-                                onDragStart = { dragKey = p.key; dragDy = 0f },
+                                onDragStart = { dragKey = p.key; dragDy = 0f; haptic.performSafely(HapticFeedbackType.GestureThresholdActivate) },
                                 onDragEnd = { dragKey = null; dragDy = 0f },
                                 onDragCancel = { dragKey = null; dragDy = 0f },
                                 onVerticalDrag = { ch, dy ->
@@ -523,10 +552,10 @@ private fun ReorderableParts(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, 
                                     val gap = 6.dp.toPx()
                                     if (dragDy > 0 && idx < cur.parts.lastIndex) {
                                         val h = (heights[cur.parts[idx + 1].key] ?: 0) + gap
-                                        if (dragDy > h / 2) { change(cur.copy(parts = cur.parts.toMutableList().apply { add(idx + 1, removeAt(idx)) })); dragDy -= h }
+                                        if (dragDy > h / 2) { change(cur.copy(parts = cur.parts.toMutableList().apply { add(idx + 1, removeAt(idx)) })); dragDy -= h; haptic.performSafely(HapticFeedbackType.SegmentFrequentTick) }
                                     } else if (dragDy < 0 && idx > 0) {
                                         val h = (heights[cur.parts[idx - 1].key] ?: 0) + gap
-                                        if (-dragDy > h / 2) { change(cur.copy(parts = cur.parts.toMutableList().apply { add(idx - 1, removeAt(idx)) })); dragDy += h }
+                                        if (-dragDy > h / 2) { change(cur.copy(parts = cur.parts.toMutableList().apply { add(idx - 1, removeAt(idx)) })); dragDy += h; haptic.performSafely(HapticFeedbackType.SegmentFrequentTick) }
                                     }
                                 }
                             )
@@ -546,7 +575,7 @@ private fun ReorderableParts(d: RoomDraft, open: Long?, onOpen: (Long) -> Unit, 
                 }
                 AnimatedVisibility(ab) { PartEditor(p, d, unit, onChange) { onOpen(p.key) } }
             }
-        }
+        } }
     }
 }
 
@@ -614,11 +643,12 @@ fun StepBtn(t: String, enabled: Boolean, onClick: () -> Unit) {
 @Composable
 fun <T> Segmented(items: List<Pair<T, Int>>, sel: T, full: Boolean = false, onPick: (T) -> Unit) {
     val cs = MaterialTheme.colorScheme
+    val haptic = LocalHapticFeedback.current
     Row(Modifier.then(if (full) Modifier.fillMaxWidth() else Modifier).clip(CircleShape).background(cs.background).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         items.forEach { (v, r) ->
             val on = v == sel
             Text(stringResource(r), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) cs.onPrimary else cs.onSurfaceVariant, textAlign = TextAlign.Center, maxLines = 1,
-                modifier = Modifier.then(if (full) Modifier.weight(1f) else Modifier).clip(CircleShape).background(if (on) cs.primary else Color.Transparent).cleanClickable { onPick(v) }.padding(horizontal = 12.dp, vertical = 7.dp))
+                modifier = Modifier.then(if (full) Modifier.weight(1f) else Modifier).clip(CircleShape).background(if (on) cs.primary else Color.Transparent).cleanClickable { if (!on) haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(v) }.padding(horizontal = 12.dp, vertical = 7.dp))
         }
     }
 }

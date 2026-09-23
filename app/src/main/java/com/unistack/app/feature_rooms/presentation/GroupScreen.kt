@@ -210,7 +210,7 @@ fun InviteCard(room: WorkRoom, vm: RoomsViewModel, onQr: () -> Unit) {
     val context = LocalContext.current
     val free = (room.capacity - room.activeMembers.size).coerceAtLeast(0)
     val copied = stringResource(R.string.rooms_code_copied)
-    val on = cs.onPrimaryContainer
+    val on = cs.onSurface
     Column(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cs.primaryContainer).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.rooms_room_code), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = on)
         Text(room.code, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 8.sp, color = on, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp))

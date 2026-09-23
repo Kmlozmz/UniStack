@@ -3,6 +3,13 @@
 package com.unistack.app.feature_rooms.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.LocalOverscrollFactory
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -293,14 +300,28 @@ fun RoomSheet(
                     }
                 }
             }
-            Column(
-                Modifier.fillMaxWidth().then(if (tall) Modifier.weight(1f) else Modifier.weight(1f, fill = false))
-                    .verticalScroll(rememberScrollState()).padding(start = 18.dp, end = 18.dp, bottom = 22.dp),
-                content = content
-            )
+            /*
+             * **Sin estirón al llegar al final.** Lanzando el contenido con fuerza, el desplazamiento
+             * se para en el borde y el estirado llega a destiempo, porque la hoja también se arrastra.
+             * Igual que en las hojas de Notas y Tareas: sin efecto de borde dentro de la hoja, y lo que
+             * sobra del gesto se lo queda el contenido en vez de pasárselo a la hoja.
+             */
+            CompositionLocalProvider(LocalOverscrollFactory provides null) {
+                Column(
+                    Modifier.fillMaxWidth().then(if (tall) Modifier.weight(1f) else Modifier.weight(1f, fill = false))
+                        .nestedScroll(SoloElContenido).verticalScroll(rememberScrollState()).padding(start = 18.dp, end = 18.dp, bottom = 22.dp),
+                    content = content
+                )
+            }
             footer?.invoke()
         }
     }
+}
+
+/** Se queda con el desplazamiento y la inercia que sobran, para que no lleguen a la hoja. */
+private val SoloElContenido = object : NestedScrollConnection {
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset = available
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
 }
 
 /** Barra de secciones partida (`.barra`/`.partes`). */

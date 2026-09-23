@@ -1176,6 +1176,32 @@ class BancoDePruebasViewModel @Inject constructor(
         workRoomsRepository.save(com.unistack.app.feature_rooms.data.RoomSamples.leaderRoom(hoyEpoch(), System.currentTimeMillis(), materiaDePrueba()))
     }
 
+    /**
+     * Todo lo que enseñan los artifacts de Trabajos a la vez: la lista con cuatro activas y siete
+     * terminadas (dos periodos, con formato y nota) y la sala de «La ciudad como texto» completa.
+     * Crea las materias del artifact si faltan, con sus colores, para que las fichas coincidan.
+     */
+    fun simularTodoElArtifact() {
+        recogerSalas()
+        val existentes = gradesRepository.subjects.value.map { it.id }.toSet()
+        val materias = listOf(
+            Triple("soc", "${MARCA}mat-soc", "Sociología" to SubjectVisualType.YELLOW),
+            Triple("fis", "${MARCA}fis", "Física Mecánica" to SubjectVisualType.CORAL),
+            Triple("poo", "${MARCA}poo", "Programación" to SubjectVisualType.GREEN),
+            Triple("bd", "${MARCA}bd", "Bases de Datos" to SubjectVisualType.BLUE),
+            Triple("calc", "${MARCA}calc", "Cálculo Vectorial" to SubjectVisualType.PURPLE),
+            Triple("eco", "${MARCA}eco", "Economía" to SubjectVisualType.TEAL)
+        )
+        materias.forEach { (_, id, datos) ->
+            if (id !in existentes) gradesRepository.addSubject(
+                Subject(id = id, name = datos.first, targetAverage = 3.5, grades = emptyList(), visualType = datos.second)
+            )
+        }
+        val idDe = materias.associate { (k, id, _) -> k to id }
+        com.unistack.app.feature_rooms.data.RoomSamples.artifactHome(hoyEpoch(), System.currentTimeMillis()) { idDe[it] }
+            .forEach { workRoomsRepository.save(it) }
+    }
+
     fun salaComoCompanero() {
         workRoomsRepository.save(com.unistack.app.feature_rooms.data.RoomSamples.memberRoom(hoyEpoch(), System.currentTimeMillis(), materiaDePrueba()))
     }

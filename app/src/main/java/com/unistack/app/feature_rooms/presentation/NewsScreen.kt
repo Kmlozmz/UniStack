@@ -158,7 +158,7 @@ private fun WhileAway(room: WorkRoom, unseen: List<RoomEvent>) {
     }
     val due = unseen.firstOrNull { it.type == EventType.DUE_CHANGED }?.text?.toLongOrNull()
     Column(Modifier.padding(top = 10.dp, bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cs.primaryContainer).padding(horizontal = 16.dp, vertical = 14.dp)) {
-        Text(stringResource(R.string.rooms_while_away).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = cs.onPrimaryContainer.copy(alpha = 0.8f))
+        Text(stringResource(R.string.rooms_while_away).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = cs.onSurface.copy(alpha = 0.8f))
         Text(buildAnnotatedString {
             parts.forEachIndexed { i, s ->
                 if (i > 0) append(if (i == parts.lastIndex && due == null) " ${ctx.getString(R.string.rooms_and)} " else ", ")
@@ -173,7 +173,7 @@ private fun WhileAway(room: WorkRoom, unseen: List<RoomEvent>) {
             append(".")
             val mine = unseen.filter { isForMe(room, it) }
             if (mine.isNotEmpty()) append(" " + ctx.resources.getQuantityString(R.plurals.rooms_sum_for_you, mine.size, mine.size))
-        }, fontSize = 15.5.sp, fontWeight = FontWeight.Bold, color = cs.onPrimaryContainer, lineHeight = 22.sp, modifier = Modifier.padding(top = 4.dp))
+        }, fontSize = 15.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, lineHeight = 22.sp, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
