@@ -500,16 +500,21 @@ private fun MessageBubble(
     val mine = m.byId == room.meId
     val bg = if (mine) cs.primary else cs.surfaceContainer
     val fg = if (mine) cs.onPrimary else cs.onSurface
+    /*
+     * Como WhatsApp (captura del 24 sep): esquinas de 10 y, en el primero de una tanda, la esquina de
+     * arriba en punta con su colita hacia fuera; el nombre va dentro y la cara arriba a la izquierda.
+     */
+    val r10 = 10.dp
     val shape = when {
-        mine && cont -> RoundedCornerShape(18.dp, 6.dp, 6.dp, 18.dp)
-        mine -> RoundedCornerShape(18.dp, 18.dp, 6.dp, 18.dp)
-        cont -> RoundedCornerShape(6.dp, 18.dp, 18.dp, 6.dp)
-        else -> RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp)
+        cont -> RoundedCornerShape(r10)
+        mine -> RoundedCornerShape(r10, 0.dp, r10, r10)
+        else -> RoundedCornerShape(0.dp, r10, r10, r10)
     }
+    val time = (if (m.edited && !m.deleted) stringResource(R.string.rooms_edited) + " " else "") + hourOf(m.createdAt)
     var dx by remember { mutableFloatStateOf(0f) }
     var armed by remember { mutableStateOf(false) }
     var settle by remember { mutableStateOf<Job?>(null) }
-    val face = 32.dp
+    val face = 38.dp
     val triggerPx = with(androidx.compose.ui.platform.LocalDensity.current) { 56.dp.toPx() }
     Box(Modifier.fillMaxWidth().pointerInput(m.id) {
         val trigger = 56.dp.toPx()
@@ -543,49 +548,77 @@ private fun MessageBubble(
         ) { Icon(Icons.AutoMirrored.Rounded.Reply, null, tint = if (armed) cs.primary else cs.onSurfaceVariant, modifier = Modifier.size(16.dp)) }
         Row(Modifier.fillMaxWidth().offset { IntOffset(dx.roundToInt(), 0) }, horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
             Column(Modifier.fillMaxWidth(0.86f), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
-                if (!mine && !cont) Text(room.nameOf(m.byId), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = room.member(m.byId)?.let { MemberColors.of(it.colorIndex) } ?: cs.primary,
-                    modifier = Modifier.padding(start = face + 4.dp, bottom = 2.dp))
-                Row(verticalAlignment = Alignment.Bottom) {
-                    if (!mine) Box(Modifier.padding(bottom = 2.dp, end = 8.dp).alpha(if (cont) 0f else 1f)) { MemberFace(room, m.byId, 24.dp) }
+                Row(verticalAlignment = Alignment.Top) {
+                    if (!mine) Box(Modifier.padding(end = 8.dp).size(30.dp)) { if (!cont) MemberFace(room, m.byId, 30.dp) }
                     Column(
                         Modifier.onGloballyPositioned { if (selected) onBounds(it.boundsInWindow()) }
+                            .drawBehind {
+                                if (!cont) {
+                                    val w = 8.dp.toPx(); val h = 11.dp.toPx()
+                                    val tail = androidx.compose.ui.graphics.Path().apply {
+                                        if (mine) { moveTo(size.width - 1f, 0f); lineTo(size.width + w, 0f); lineTo(size.width - 1f, h) }
+                                        else { moveTo(1f, 0f); lineTo(-w, 0f); lineTo(1f, h) }
+                                        close()
+                                    }
+                                    drawPath(tail, bg)
+                                }
+                            }
                             .clip(shape).background(bg)
                             // tocar o mantener pulsado abre las opciones (las de lo tuyo incluyen editar y borrar)
                             .pointerInput(m.id, m.deleted) { detectTapGestures(onTap = { if (!m.deleted) onSelect() }, onLongPress = { if (!m.deleted) onSelect() }) }
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                            .padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 6.dp)
                     ) {
+                        if (!mine && !cont) Text(room.nameOf(m.byId), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = room.member(m.byId)?.let { MemberColors.of(it.colorIndex) } ?: cs.primary,
+                            modifier = Modifier.padding(bottom = 2.dp))
                         m.replyToId?.let { rid -> room.messages.firstOrNull { it.id == rid } }?.let { q ->
-                            Row(Modifier.padding(bottom = 5.dp).clip(RoundedCornerShape(4.dp)).background(fg.copy(alpha = 0.08f)).drawBehind {
+                            Row(Modifier.padding(top = 2.dp, bottom = 5.dp).clip(RoundedCornerShape(6.dp)).background(fg.copy(alpha = 0.08f)).drawBehind {
                                 drawRect(fg, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height))
-                            }.padding(start = 11.dp, end = 8.dp, top = 3.dp, bottom = 3.dp)) {
+                            }.padding(start = 11.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)) {
                                 Column {
-                                    Text(room.nameOf(q.byId), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = fg.copy(alpha = 0.8f))
-                                    Text(plainOf(q), fontSize = 12.sp, color = fg.copy(alpha = 0.8f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    Text(room.nameOf(q.byId), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = fg.copy(alpha = 0.85f))
+                                    Text(plainOf(q), fontSize = 12.5.sp, color = fg.copy(alpha = 0.8f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }
-                        if (m.deleted) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Rounded.Block, null, tint = fg.copy(alpha = 0.6f), modifier = Modifier.size(15.dp))
-                            Text(stringResource(if (mine) R.string.rooms_msg_deleted_mine else R.string.rooms_msg_deleted_other), fontSize = 13.5.sp, fontStyle = FontStyle.Italic, color = fg.copy(alpha = 0.7f))
-                        } else when (m.kind) {
-                            MessageKind.PHOTO -> Box(Modifier.padding(bottom = 4.dp).size(210.dp, 130.dp).clip(RoundedCornerShape(12.dp)).background(cs.surfaceContainerHigh).cleanClickable {
-                                m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
-                            }) { if (m.file != null) AsyncImage(vm.files.file(m.file), m.text, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
-                            MessageKind.FILE, MessageKind.LINK -> Row(Modifier.padding(bottom = 4.dp).widthIn(min = 200.dp).clip(RoundedCornerShape(12.dp)).background(fg.copy(alpha = 0.08f)).cleanClickable {
-                                if (m.kind == MessageKind.LINK) context.openUrl(m.text) else m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
-                            }.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Icon(if (m.kind == MessageKind.LINK) Icons.Rounded.Link else Icons.Rounded.Description, null, tint = fg, modifier = Modifier.size(22.dp))
-                                Column {
-                                    Text(if (m.kind == MessageKind.LINK) m.subtitle.ifBlank { m.text } else m.text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text(if (m.kind == MessageKind.LINK) m.text else m.subtitle, fontSize = 11.sp, color = fg.copy(alpha = 0.75f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
+                        val timeStyle = SpanStyle(fontSize = 11.sp, color = Color.Transparent)
+                        when {
+                            m.deleted -> Box {
+                                Text(buildAnnotatedString {
+                                    append(stringResource(if (mine) R.string.rooms_msg_deleted_mine else R.string.rooms_msg_deleted_other))
+                                    withStyle(timeStyle) { append("\u2003\u2002" + time) }
+                                }, fontSize = 14.sp, fontStyle = FontStyle.Italic, color = fg.copy(alpha = 0.7f), modifier = Modifier.padding(start = 20.dp))
+                                Icon(Icons.Rounded.Block, null, tint = fg.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.TopStart).padding(top = 2.dp).size(15.dp))
+                                Text(time, fontSize = 11.sp, color = fg.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.BottomEnd))
                             }
-                            MessageKind.VOICE -> VoiceBubble(room, m, mine, fg, bg, player, m.file?.let { vm.files.file(it).path })
-                            MessageKind.POLL -> PollMessage(room, m, vm, fg)
-                            MessageKind.TEXT -> Text(richText(room, m.text, mine, mat, query), fontSize = 14.sp, lineHeight = 20.sp, color = fg,
-                                modifier = Modifier.pointerInput(m.text) { detectTapGestures(onTap = { onSelect() }, onLongPress = { onSelect() }) })
+                            m.kind == MessageKind.TEXT -> Box {
+                                // la hora va en la última línea, como WhatsApp: el texto le guarda sitio con una copia invisible
+                                Text(buildAnnotatedString {
+                                    append(richText(room, m.text, mine, mat, query))
+                                    withStyle(timeStyle) { append("\u2003\u2002" + time) }
+                                }, fontSize = 14.5.sp, lineHeight = 20.sp, color = fg,
+                                    modifier = Modifier.pointerInput(m.text) { detectTapGestures(onTap = { onSelect() }, onLongPress = { onSelect() }) })
+                                Text(time, fontSize = 11.sp, color = fg.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.BottomEnd))
+                            }
+                            m.kind == MessageKind.VOICE -> VoiceBubble(room, m, mine, fg, player, m.file?.let { vm.files.file(it).path }, time)
+                            else -> {
+                                when (m.kind) {
+                                    MessageKind.PHOTO -> Box(Modifier.padding(top = 2.dp, bottom = 4.dp).size(220.dp, 140.dp).clip(RoundedCornerShape(8.dp)).background(cs.surfaceContainerHigh).cleanClickable {
+                                        m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
+                                    }) { if (m.file != null) AsyncImage(vm.files.file(m.file), m.text, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                                    MessageKind.POLL -> PollMessage(room, m, vm, fg)
+                                    else -> Row(Modifier.padding(top = 2.dp, bottom = 4.dp).widthIn(min = 210.dp).clip(RoundedCornerShape(8.dp)).background(fg.copy(alpha = 0.08f)).cleanClickable {
+                                        if (m.kind == MessageKind.LINK) context.openUrl(m.text) else m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
+                                    }.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Icon(if (m.kind == MessageKind.LINK) Icons.Rounded.Link else Icons.Rounded.Description, null, tint = fg, modifier = Modifier.size(22.dp))
+                                        Column {
+                                            Text(if (m.kind == MessageKind.LINK) m.subtitle.ifBlank { m.text } else m.text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(if (m.kind == MessageKind.LINK) m.text else m.subtitle, fontSize = 11.sp, color = fg.copy(alpha = 0.75f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                    }
+                                }
+                                Text(time, fontSize = 11.sp, color = fg.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.End))
+                            }
                         }
-                        Text((if (m.edited && !m.deleted) stringResource(R.string.rooms_edited) + " · " else "") + hourOf(m.createdAt), fontSize = 10.sp, color = fg.copy(alpha = 0.65f), modifier = Modifier.align(Alignment.End).padding(top = 2.dp))
                     }
                 }
                 val reacts = m.reactions.filterValues { it.isNotEmpty() }
@@ -805,15 +838,17 @@ private fun Composer(
     val grow by animateFloatAsState(if (recMode == RecMode.HOLD) 1.5f else 1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow), label = "micro")
     val mention = Regex("@(" + "[" + "a-zA-Z0-9_" + "]*)$").find(input)
     val sug = mention?.let { mm -> room.activeMembers.filter { it.id != room.meId && room.nameOf(it.id).startsWith(mm.groupValues[1], true) } }.orEmpty()
-    Column(Modifier.fillMaxWidth().background(cs.background).drawBehind {
-        drawLine(cs.outlineVariant.copy(alpha = 0.35f), Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
-    }.navigationBarsPadding().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 12.dp)) {
-        if (recMode == RecMode.LOCKED) {
+    if (recMode == RecMode.LOCKED) {
+        Box(Modifier.fillMaxWidth().background(cs.background).navigationBarsPadding()) {
             LockedRecordingPanel(recorder,
                 onDiscard = { recorder.cancel(); onRecMode(RecMode.IDLE); haptic.performSafely(HapticFeedbackType.Reject) },
                 onSend = { recorder.stop(label)?.let(onVoice); onRecMode(RecMode.IDLE) })
-            return@Column
         }
+        return
+    }
+    Column(Modifier.fillMaxWidth().background(cs.background).drawBehind {
+        drawLine(cs.outlineVariant.copy(alpha = 0.35f), Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
+    }.navigationBarsPadding().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 12.dp)) {
         if (replyTo != null) Row(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(cs.surfaceContainerLow).padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.AutoMirrored.Rounded.Reply, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))

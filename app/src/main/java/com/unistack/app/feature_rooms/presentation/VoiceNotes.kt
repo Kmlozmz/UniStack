@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Mic
@@ -179,7 +180,7 @@ class VoiceRecorder(private val context: Context, private val files: RoomFileSto
         if (paused) return
         elapsedMs = banked + (SystemClock.elapsedRealtime() - startedAt)
         val amp = runCatching { r.maxAmplitude }.getOrDefault(0)
-        levels.add(((ln(1.0 + amp) / ln(32768.0)) * 100).roundToInt().coerceIn(4, 100))
+        levels.add((kotlin.math.sqrt(amp / 32767.0) * 130).roundToInt().coerceIn(4, 100))
     }
 
     fun pause() {
@@ -235,33 +236,40 @@ fun WaveBar(wave: List<Int>, frac: Float, played: Color, rest: Color, knob: Colo
     }
 }
 
-/** La nota en la burbuja (opción A · como WhatsApp). */
+/**
+ * La nota en la burbuja, como la captura de WhatsApp (24 sep): el triángulo sin fondo, la bolita
+ * del acento sobre la onda, la cara grande a la derecha con el micro montado abajo a la izquierda
+ * (o la velocidad mientras suena) y debajo la duración y la hora.
+ */
 @Composable
-fun VoiceBubble(room: WorkRoom, m: ChatMessage, mine: Boolean, fg: Color, bubble: Color, player: VoicePlayer, path: String?) {
+fun VoiceBubble(room: WorkRoom, m: ChatMessage, mine: Boolean, fg: Color, player: VoicePlayer, path: String?, time: String) {
     val cs = MaterialTheme.colorScheme
     val on = player.isOn(m.id)
     val playing = on && !player.paused
     val frac = if (on) player.position / player.duration.toFloat() else 0f
     val accent = if (mine) fg else cs.primary
     val wave = m.wave.ifEmpty { fakeWave(m.id) }
-    Column(Modifier.widthIn(min = 236.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(Modifier.size(36.dp).clip(CircleShape).cleanClickable { path?.let { player.toggle(m.id, it) } }, contentAlignment = Alignment.Center) {
-                Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = fg, modifier = Modifier.size(30.dp))
-            }
-            WaveBar(wave, frac, accent, fg.copy(alpha = 0.35f), accent, Modifier.weight(1f).height(30.dp)
-                .pointerInput(m.id, path) { detectTapGestures { o -> path?.let { player.seek(m.id, it, o.x / size.width) } } }
-                .pointerInput(m.id, path) { detectHorizontalDragGestures { c, _ -> c.consume(); path?.let { player.seek(m.id, it, c.position.x / size.width) } } })
-            if (on) Text(speedLabel(player.speed), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = if (mine) cs.primary else cs.onSurface, textAlign = TextAlign.Center,
-                modifier = Modifier.width(44.dp).clip(CircleShape).background(if (mine) cs.onPrimary else fg.copy(alpha = 0.16f)).cleanClickable { player.cycleSpeed() }.padding(vertical = 4.dp))
-            else Box(Modifier.size(40.dp)) {
-                MemberFace(room, m.byId, 38.dp)
-                Box(Modifier.align(Alignment.BottomEnd).offset(x = 3.dp, y = 3.dp).size(18.dp).clip(CircleShape).background(bubble), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Mic, null, tint = accent, modifier = Modifier.size(13.dp))
+    Row(Modifier.widthIn(min = 250.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.size(36.dp).clip(CircleShape).cleanClickable { path?.let { player.toggle(m.id, it) } }, contentAlignment = Alignment.Center) {
+                    Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = fg.copy(alpha = 0.75f), modifier = Modifier.size(34.dp))
                 }
+                WaveBar(wave, frac, accent, fg.copy(alpha = 0.32f), accent, Modifier.weight(1f).height(30.dp)
+                    .pointerInput(m.id, path) { detectTapGestures { o -> path?.let { player.seek(m.id, it, o.x / size.width) } } }
+                    .pointerInput(m.id, path) { detectHorizontalDragGestures { c, _ -> c.consume(); path?.let { player.seek(m.id, it, c.position.x / size.width) } } })
+            }
+            Row(Modifier.padding(start = 42.dp, top = 2.dp)) {
+                Text(mmss(if (on) player.position / 1000 else m.seconds), fontSize = 12.sp, color = fg.copy(alpha = 0.6f), modifier = Modifier.weight(1f))
+                Text(time, fontSize = 11.sp, color = fg.copy(alpha = 0.6f))
             }
         }
-        Text(mmss(if (on) player.position / 1000 else m.seconds), fontSize = 11.sp, color = fg.copy(alpha = 0.75f), modifier = Modifier.padding(start = 42.dp))
+        if (on) Text(speedLabel(player.speed), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (mine) cs.primary else cs.onSurface, textAlign = TextAlign.Center,
+            modifier = Modifier.width(48.dp).clip(CircleShape).background(if (mine) cs.onPrimary else fg.copy(alpha = 0.16f)).cleanClickable { player.cycleSpeed() }.padding(vertical = 5.dp))
+        else Box(Modifier.size(50.dp)) {
+            MemberFace(room, m.byId, 50.dp)
+            Icon(Icons.Rounded.Mic, null, tint = accent, modifier = Modifier.align(Alignment.BottomStart).offset(x = (-8).dp, y = 2.dp).size(20.dp))
+        }
     }
 }
 
@@ -279,30 +287,63 @@ fun HoldRecordingBar(recorder: VoiceRecorder, dragX: Float, cancelPx: Float, mod
     }
 }
 
-/** El panel de cuando se queda grabando solo (como WhatsApp): tiempo, onda en vivo, borrar, pausa y enviar. */
+/**
+ * El panel de cuando se queda grabando sola, igual que el de WhatsApp (captura del 24 sep): una
+ * tarjeta con las esquinas de arriba redondas; el tiempo grande a la izquierda y la onda en vivo a
+ * la derecha (puntitos en silencio, barras al hablar, que entran por la derecha); abajo la papelera
+ * roja, «Pausa» ancho con las barras huecas y enviar (gris hasta el primer segundo).
+ */
 @Composable
 fun LockedRecordingPanel(recorder: VoiceRecorder, onDiscard: () -> Unit, onSend: () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 4.dp, top = 6.dp)) {
-        Row(Modifier.fillMaxWidth().padding(start = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(mmss((recorder.elapsedMs / 1000).toInt()), fontSize = 24.sp, fontWeight = FontWeight.Medium, color = cs.onSurface)
-            Box(Modifier.weight(1f))
-            RecDot(recorder.paused)
-            val tail = recorder.levels.takeLast(26)
-            WaveBar(List(26 - tail.size) { 6 } + tail, 1f, cs.onSurfaceVariant, cs.onSurfaceVariant, null, Modifier.width(110.dp).height(26.dp))
+    val secs = (recorder.elapsedMs / 1000).toInt()
+    val ready = secs >= 1
+    Column(Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(cs.surfaceContainerLow)
+        .padding(start = 16.dp, end = 16.dp, top = 26.dp, bottom = 16.dp)) {
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(mmss(secs), fontSize = 28.sp, fontWeight = FontWeight.Normal, color = cs.onSurface, modifier = Modifier.weight(1f))
+            LiveWave(recorder.levels, cs.onSurfaceVariant, Modifier.width(150.dp).height(28.dp))
         }
-        Row(Modifier.padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.size(52.dp).clip(CircleShape).background(mix(cs.error, 0.18f, cs.background)).cleanClickable(onClick = onDiscard), contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Delete, stringResource(R.string.rooms_delete), tint = cs.error, modifier = Modifier.size(24.dp))
+        Row(Modifier.padding(top = 26.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(56.dp).clip(CircleShape).background(mix(cs.error, 0.16f, cs.surfaceContainerLow)).cleanClickable(onClick = onDiscard), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.Delete, stringResource(R.string.rooms_delete), tint = cs.error, modifier = Modifier.size(26.dp))
             }
-            Row(Modifier.weight(1f).height(52.dp).clip(CircleShape).background(cs.surfaceContainerHigh).cleanClickable { if (recorder.paused) recorder.resume() else recorder.pause() },
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-                Icon(if (recorder.paused) Icons.Rounded.Mic else Icons.Rounded.Pause, null, tint = cs.onSurface, modifier = Modifier.size(22.dp))
-                Text(stringResource(if (recorder.paused) R.string.rooms_resume else R.string.rooms_pause), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
+            Row(Modifier.weight(1f).height(56.dp).clip(CircleShape).background(cs.surfaceContainerHighest).cleanClickable { if (recorder.paused) recorder.resume() else recorder.pause() },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+                if (recorder.paused) Icon(Icons.Rounded.Mic, null, tint = RoomTone.ROJO.color, modifier = Modifier.size(22.dp))
+                else HollowPause(cs.onSurface)
+                Text(stringResource(if (recorder.paused) R.string.rooms_resume else R.string.rooms_pause), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = cs.onSurface)
             }
-            Box(Modifier.size(52.dp).clip(CircleShape).background(cs.primary).cleanClickable(onClick = onSend), contentAlignment = Alignment.Center) {
-                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.rooms_send), tint = cs.onPrimary, modifier = Modifier.size(22.dp))
+            val sendBg by androidx.compose.animation.animateColorAsState(if (ready) cs.primary else mix(cs.onSurface, 0.72f, cs.surfaceContainerLow), label = "enviar")
+            Box(Modifier.size(56.dp).clip(CircleShape).background(sendBg).cleanClickable(enabled = ready, onClick = onSend), contentAlignment = Alignment.Center) {
+                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.rooms_send), tint = if (ready) cs.onPrimary else cs.surfaceContainerLow, modifier = Modifier.size(24.dp))
             }
+        }
+    }
+}
+
+/** Las dos barras huecas de la pausa de WhatsApp. */
+@Composable
+private fun HollowPause(color: Color) {
+    Canvas(Modifier.size(width = 20.dp, height = 22.dp)) {
+        val w = 6.dp.toPx(); val sw = 2.dp.toPx(); val gap = 4.dp.toPx()
+        val st = androidx.compose.ui.graphics.drawscope.Stroke(width = sw)
+        drawRoundRect(color, Offset(sw / 2, sw / 2), Size(w, size.height - sw), CornerRadius(w / 3), style = st)
+        drawRoundRect(color, Offset(w + gap + sw / 2, sw / 2), Size(w, size.height - sw), CornerRadius(w / 3), style = st)
+    }
+}
+
+/** La onda en vivo: lo último que se grabó entra por la derecha; el silencio son puntitos. */
+@Composable
+private fun LiveWave(levels: List<Int>, color: Color, modifier: Modifier) {
+    Canvas(modifier) {
+        val bw = 3.dp.toPx(); val step = 5.dp.toPx()
+        val n = (size.width / step).toInt()
+        val tail = levels.takeLast(n)
+        tail.forEachIndexed { k, v ->
+            val x = size.width - (tail.size - k) * step
+            val h = if (v < 22) bw else (size.height * v / 100f).coerceAtLeast(bw)
+            drawRoundRect(color, Offset(x, (size.height - h) / 2), Size(bw, h), CornerRadius(bw / 2))
         }
     }
 }
