@@ -701,7 +701,15 @@
     <string name="rooms_in_material">En Material de apoyo</string>
     <string name="rooms_tap_to_vote">toca para votar</string>
     <string name="rooms_replying_to">Respondiendo a</string>
-    <string name="rooms_write_group">Escribe al grupo…</string>
+    <string name="rooms_message_hint">Mensaje</string>
+    <string name="rooms_emoji">Emojis</string>
+    <string name="rooms_keyboard">Teclado</string>
+    <string name="rooms_camera">Cámara</string>
+    <string name="rooms_emoji_faces">Caras y emociones</string>
+    <string name="rooms_emoji_hands">Gestos y personas</string>
+    <string name="rooms_emoji_hearts">Corazones y símbolos</string>
+    <string name="rooms_emoji_study">Estudio y objetos</string>
+    <string name="rooms_emoji_nature">Actividades y naturaleza</string>
     <string name="rooms_file">Archivo</string>
     <string name="rooms_a_part">Una parte</string>
     <string name="rooms_poll">Encuesta</string>

@@ -60,6 +60,20 @@ import androidx.compose.material.icons.rounded.Poll
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Segment
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imeAnimationTarget
+import androidx.compose.material.icons.outlined.Keyboard
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -321,7 +335,7 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
         }
         Composer(room, input, { input = it }, replyTo?.let { id -> room.messages.firstOrNull { it.id == id } }, onCancelReply = { replyTo = null },
             editing = editingId?.let { id -> room.messages.firstOrNull { it.id == id } }, onCancelEdit = { editingId = null; input = "" },
-            onSend = sendText, onAttach = { sheet = "attach" }, recorder = recorder, recMode = recMode, onRecMode = { recMode = it }, onVoice = sendVoice, focus = composerFocus)
+            onSend = sendText, onAttach = { sheet = "attach" }, onCamera = { picker.takePhoto() }, recorder = recorder, recMode = recMode, onRecMode = { recMode = it }, onVoice = sendVoice, focus = composerFocus)
     }
     selected?.let { id -> room.messages.firstOrNull { it.id == id } }?.let { m ->
         selectedBounds?.let { b ->
@@ -564,8 +578,8 @@ private fun MessageBubble(
                                 }
                             }
                             .clip(shape).background(bg)
-                            // tocar o mantener pulsado abre las opciones (las de lo tuyo incluyen editar y borrar)
-                            .pointerInput(m.id, m.deleted) { detectTapGestures(onTap = { if (!m.deleted) onSelect() }, onLongPress = { if (!m.deleted) onSelect() }) }
+                            // sólo mantener pulsado abre las opciones, como en WhatsApp (las de lo tuyo incluyen editar y borrar)
+                            .pointerInput(m.id, m.deleted) { detectTapGestures(onLongPress = { if (!m.deleted) onSelect() }) }
                             .padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 6.dp)
                     ) {
                         if (!mine && !cont) Text(room.nameOf(m.byId), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = room.member(m.byId)?.let { MemberColors.of(it.colorIndex) } ?: cs.primary,
@@ -596,17 +610,17 @@ private fun MessageBubble(
                                     append(richText(room, m.text, mine, mat, query))
                                     withStyle(timeStyle) { append("\u2003\u2002" + time) }
                                 }, fontSize = 14.5.sp, lineHeight = 20.sp, color = fg,
-                                    modifier = Modifier.pointerInput(m.text) { detectTapGestures(onTap = { onSelect() }, onLongPress = { onSelect() }) })
+                                    modifier = Modifier.pointerInput(m.text) { detectTapGestures(onLongPress = { onSelect() }) })
                                 Text(time, fontSize = 11.sp, color = fg.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.BottomEnd))
                             }
                             m.kind == MessageKind.VOICE -> VoiceBubble(room, m, mine, fg, player, m.file?.let { vm.files.file(it).path }, time)
                             else -> {
                                 when (m.kind) {
-                                    MessageKind.PHOTO -> Box(Modifier.padding(top = 2.dp, bottom = 4.dp).size(220.dp, 140.dp).clip(RoundedCornerShape(8.dp)).background(cs.surfaceContainerHigh).cleanClickable {
+                                    MessageKind.PHOTO -> Box(Modifier.padding(top = 2.dp, bottom = 4.dp).size(220.dp, 140.dp).clip(RoundedCornerShape(8.dp)).background(cs.surfaceContainerHigh).combinedClickable(interactionSource = null, indication = null, onLongClick = onSelect) {
                                         m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
                                     }) { if (m.file != null) AsyncImage(vm.files.file(m.file), m.text, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
                                     MessageKind.POLL -> PollMessage(room, m, vm, fg)
-                                    else -> Row(Modifier.padding(top = 2.dp, bottom = 4.dp).widthIn(min = 210.dp).clip(RoundedCornerShape(8.dp)).background(fg.copy(alpha = 0.08f)).cleanClickable {
+                                    else -> Row(Modifier.padding(top = 2.dp, bottom = 4.dp).widthIn(min = 210.dp).clip(RoundedCornerShape(8.dp)).background(fg.copy(alpha = 0.08f)).combinedClickable(interactionSource = null, indication = null, onLongClick = onSelect) {
                                         if (m.kind == MessageKind.LINK) context.openUrl(m.text) else m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
                                     }.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                         Icon(if (m.kind == MessageKind.LINK) Icons.Rounded.Link else Icons.Rounded.Description, null, tint = fg, modifier = Modifier.size(22.dp))
@@ -810,16 +824,20 @@ private fun PollMessage(room: WorkRoom, m: ChatMessage, vm: RoomsViewModel, fg: 
 }
 
 /**
- * El compositor: respuesta o edición, sugerencias de @, campo con clip y el botón. Sin texto el
- * botón es el micrófono: mantener graba (a la izquierda cancela, hacia arriba se queda grabando
- * sola), un toque también la deja grabando sola, y entonces el compositor es el panel de WhatsApp
- * con el tiempo, la onda, borrar, pausa y enviar (24 sep).
+ * El compositor, como la barra de WhatsApp (captura del 24 sep): una pastilla de 48 con la
+ * pegatina a la izquierda, el campo, el clip y la cámara (que se va al escribir), y aparte el botón
+ * redondo gris claro. Sin texto el botón es el micrófono: mantener graba (a la izquierda cancela,
+ * hacia arriba se queda grabando sola), un toque también la deja grabando sola, y entonces el
+ * compositor es el panel de WhatsApp con el tiempo, la onda, borrar, pausa y enviar.
+ * La pegatina cambia el teclado por el panel de emojis, que mide lo mismo que el teclado: mientras
+ * uno baja el otro sube, así el chat no salta.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Composer(
     room: WorkRoom, input: String, onInput: (String) -> Unit, replyTo: ChatMessage?, onCancelReply: () -> Unit,
     editing: ChatMessage?, onCancelEdit: () -> Unit,
-    onSend: () -> Unit, onAttach: () -> Unit, recorder: VoiceRecorder, recMode: RecMode, onRecMode: (RecMode) -> Unit,
+    onSend: () -> Unit, onAttach: () -> Unit, onCamera: () -> Unit, recorder: VoiceRecorder, recMode: RecMode, onRecMode: (RecMode) -> Unit,
     onVoice: (VoiceRecorder.Result) -> Unit, focus: FocusRequester
 ) {
     val cs = MaterialTheme.colorScheme
@@ -838,6 +856,27 @@ private fun Composer(
     val grow by animateFloatAsState(if (recMode == RecMode.HOLD) 1.5f else 1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow), label = "micro")
     val mention = Regex("@(" + "[" + "a-zA-Z0-9_" + "]*)$").find(input)
     val sug = mention?.let { mm -> room.activeMembers.filter { it.id != room.meId && room.nameOf(it.id).startsWith(mm.groupValues[1], true) } }.orEmpty()
+    val keyboard = LocalSoftwareKeyboardController.current
+    val scope = rememberCoroutineScope()
+    var emoji by remember { mutableStateOf(false) }
+    var keyboardPx by rememberSaveable { mutableIntStateOf(0) }
+    val imeNow = WindowInsets.ime.getBottom(density)
+    val imeTarget = WindowInsets.imeAnimationTarget.getBottom(density)
+    val navNow = WindowInsets.navigationBars.getBottom(density)
+    // con el teclado ya arriba del todo se aprende su alto, y si el panel seguía abierto se va
+    LaunchedEffect(imeNow, imeTarget) {
+        if (imeTarget > 0 && imeNow == imeTarget) { keyboardPx = (imeNow - navNow).coerceAtLeast(0); emoji = false }
+    }
+    LaunchedEffect(recMode) { if (recMode != RecMode.IDLE) emoji = false }
+    BackHandler(emoji) { emoji = false }
+    val panelPx = if (!emoji) 0 else ((if (keyboardPx > 0) keyboardPx else with(density) { 290.dp.roundToPx() }) - (imeNow - navNow).coerceAtLeast(0)).coerceAtLeast(0)
+    val toggleEmoji: () -> Unit = {
+        if (emoji) {
+            runCatching { focus.requestFocus() }
+            keyboard?.show()
+            scope.launch { delay(700); emoji = false }
+        } else { emoji = true; keyboard?.hide() }
+    }
     if (recMode == RecMode.LOCKED) {
         Box(Modifier.fillMaxWidth().background(cs.background).navigationBarsPadding()) {
             LockedRecordingPanel(recorder,
@@ -846,9 +885,8 @@ private fun Composer(
         }
         return
     }
-    Column(Modifier.fillMaxWidth().background(cs.background).drawBehind {
-        drawLine(cs.outlineVariant.copy(alpha = 0.35f), Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
-    }.navigationBarsPadding().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 12.dp)) {
+    Column(Modifier.fillMaxWidth().background(cs.background).navigationBarsPadding()) {
+    Column(Modifier.padding(start = 8.dp, end = 8.dp, top = 5.dp, bottom = 6.dp)) {
         if (replyTo != null) Row(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(cs.surfaceContainerLow).padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.AutoMirrored.Rounded.Reply, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
@@ -877,23 +915,27 @@ private fun Composer(
                 }
             }
         }
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (recMode == RecMode.HOLD) HoldRecordingBar(recorder, drag.x, cancelPx, Modifier.weight(1f))
-            else Row(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(cs.surfaceContainer).padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f).padding(vertical = 11.dp)) {
-                    if (input.isEmpty()) Text(stringResource(R.string.rooms_write_group), fontSize = 14.sp, color = cs.onSurfaceVariant)
-                    BasicTextField(input, onInput, cursorBrush = SolidColor(cs.primary), maxLines = 5, textStyle = TextStyle(color = cs.onSurface, fontSize = 14.sp), modifier = Modifier.fillMaxWidth().focusRequester(focus))
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (recMode == RecMode.HOLD) HoldRecordingBar(recorder, drag.x, cancelPx, Modifier.weight(1f).heightIn(min = 48.dp))
+            else Row(Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(cs.surfaceContainer), verticalAlignment = Alignment.Bottom) {
+                PillIcon(if (emoji) Icons.Outlined.Keyboard else StickerSmile, stringResource(if (emoji) R.string.rooms_keyboard else R.string.rooms_emoji), onClick = toggleEmoji)
+                Box(Modifier.weight(1f).padding(vertical = 13.dp)) {
+                    if (input.isEmpty()) Text(stringResource(R.string.rooms_message_hint), fontSize = 17.sp, lineHeight = 22.sp, color = cs.onSurfaceVariant, maxLines = 1)
+                    BasicTextField(input, onInput, cursorBrush = SolidColor(cs.onSurface), maxLines = 6,
+                        textStyle = TextStyle(color = cs.onSurface, fontSize = 17.sp, lineHeight = 22.sp), modifier = Modifier.fillMaxWidth().focusRequester(focus))
                 }
-                Box(Modifier.size(34.dp).clip(CircleShape).cleanClickable(onClick = onAttach), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.AttachFile, stringResource(R.string.rooms_attach), tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                PillIcon(Icons.Rounded.AttachFile, stringResource(R.string.rooms_attach), onClick = onAttach)
+                // la cámara se aparta en cuanto hay texto, como en WhatsApp
+                AnimatedVisibility(input.isEmpty(), enter = fadeIn() + expandHorizontally(), exit = fadeOut() + shrinkHorizontally()) {
+                    PillIcon(Icons.Outlined.PhotoCamera, stringResource(R.string.rooms_camera), onClick = onCamera)
                 }
             }
             val hasText = input.isNotBlank()
-            Box(Modifier.size(44.dp)) {
+            Box(Modifier.size(48.dp)) {
                 // el candado encima mientras se mantiene: subir hasta él deja la nota grabando sola
                 if (recMode == RecMode.HOLD) Column(
-                    Modifier.align(Alignment.BottomCenter).offset { IntOffset(0, (-(64.dp.toPx()) + drag.y.coerceIn(-lockPx, 0f) / 3).roundToInt()) }
-                        .width(40.dp).clip(RoundedCornerShape(20.dp)).background(cs.surfaceContainer).padding(vertical = 10.dp),
+                    Modifier.align(Alignment.BottomCenter).offset { IntOffset(0, (-(68.dp.toPx()) + drag.y.coerceIn(-lockPx, 0f) / 3).roundToInt()) }
+                        .width(44.dp).clip(RoundedCornerShape(22.dp)).background(cs.surfaceContainer).padding(vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(Icons.Rounded.Lock, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp))
@@ -934,13 +976,23 @@ private fun Composer(
                     }.graphicsLayer {
                         scaleX = grow; scaleY = grow
                         translationX = drag.x.coerceIn(-cancelPx, 0f); translationY = drag.y.coerceIn(-lockPx, 0f)
-                    }.clip(CircleShape).background(cs.primary),
+                    }.clip(CircleShape).background(mix(cs.onSurface, 0.8f, cs.background)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(if (hasText) (if (editing != null) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.Send) else Icons.Rounded.Mic, null, tint = cs.onPrimary, modifier = Modifier.size(21.dp))
+                    Icon(if (hasText) (if (editing != null) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.Send) else Icons.Rounded.Mic, null, tint = cs.background, modifier = Modifier.size(24.dp))
                 }
             }
         }
+    }
+        if (panelPx > 0) EmojiPanel(with(density) { panelPx.toDp() }, onPick = { onInput(input + it) }, onBackspace = { onInput(input.dropLastGrapheme()) })
+    }
+}
+
+/** Un icono de la pastilla: 24 dp en gris dentro de un toque de 48, como en la barra de WhatsApp. */
+@Composable
+private fun PillIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, cd: String, onClick: () -> Unit) {
+    Box(Modifier.size(48.dp).clip(CircleShape).cleanClickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        Icon(icon, cd, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
     }
 }
 
