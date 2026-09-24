@@ -913,6 +913,16 @@
     <string name="rooms_hint_free">Cada uno coge su parte al entrar.</string>
     <string name="rooms_go_to_room">Ir a la sala</string>
     <string name="rooms_guide_step">PASO %1$d DE %2$d</string>
+    <string name="rooms_dates_none">Sin fechas internas</string>
+    <string name="rooms_field_who">Quién la hace</string>
+    <string name="rooms_field_extent_short">Extensión</string>
+    <string name="rooms_mode_strict">Estricta</string>
+    <string name="rooms_mode_strict_d">Sin cambios, sin tarde</string>
+    <string name="rooms_mode_normal">Normal</string>
+    <string name="rooms_mode_normal_d">Lo de siempre</string>
+    <string name="rooms_mode_relaxed">Relajada</string>
+    <string name="rooms_mode_relaxed_d">Libre y con margen</string>
+    <string name="rooms_rules_mode">6 reglas · modo %s</string>
     <string-array name="rooms_tpl_ensayo">
         <item>Introducción</item>
         <item>Marco teórico</item>

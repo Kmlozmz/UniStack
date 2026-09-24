@@ -913,6 +913,16 @@
     <string name="rooms_hint_free">Everyone takes their part when they join.</string>
     <string name="rooms_go_to_room">Go to the room</string>
     <string name="rooms_guide_step">STEP %1$d OF %2$d</string>
+    <string name="rooms_dates_none">No internal dates</string>
+    <string name="rooms_field_who">Who does it</string>
+    <string name="rooms_field_extent_short">Length</string>
+    <string name="rooms_mode_strict">Strict</string>
+    <string name="rooms_mode_strict_d">No swaps, no late work</string>
+    <string name="rooms_mode_normal">Normal</string>
+    <string name="rooms_mode_normal_d">The usual</string>
+    <string name="rooms_mode_relaxed">Relaxed</string>
+    <string name="rooms_mode_relaxed_d">Free, with slack</string>
+    <string name="rooms_rules_mode">6 rules · %s mode</string>
     <string-array name="rooms_tpl_ensayo">
         <item>Introduction</item>
         <item>Theoretical framework</item>
