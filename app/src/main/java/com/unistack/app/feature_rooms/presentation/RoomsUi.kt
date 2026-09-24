@@ -7,6 +7,13 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.runtime.CompositionLocalProvider
@@ -97,6 +104,35 @@ fun RoomsText(content: @Composable () -> Unit) {
         ),
         content = content
     )
+}
+
+/**
+ * Entrada escalonada: cada opción sube un poco y aparece, una detrás de otra. Da vida al pasar
+ * de carta (23 sep: «le falta vida, animaciones»); `index` marca el turno.
+ */
+@Composable
+fun Modifier.enterStagger(index: Int): Modifier {
+    val a = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(60L + 45L * index.coerceIn(0, 12))
+        a.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow))
+    }
+    return this.graphicsLayer { alpha = a.value.coerceIn(0f, 1f); translationY = (1f - a.value) * 18.dp.toPx() }
+}
+
+/** Rebote al elegir: lo tocado crece un poco y vuelve a su sitio. No rebota al aparecer ya elegido. */
+@Composable
+fun Modifier.selectPop(selected: Boolean): Modifier {
+    val a = remember { Animatable(1f) }
+    var first by remember { mutableStateOf(true) }
+    LaunchedEffect(selected) {
+        if (first) { first = false; return@LaunchedEffect }
+        if (selected) {
+            a.animateTo(1.05f, tween(90))
+            a.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMediumLow))
+        }
+    }
+    return this.graphicsLayer { scaleX = a.value; scaleY = a.value }
 }
 
 /** color-mix(in srgb, c p%, base). */
@@ -209,7 +245,8 @@ fun FaceStack(room: WorkRoom, members: List<RoomMember>, ring: Color, size: Dp =
     }
 }
 
-enum class PillStyle { FILL, TONAL, HERO, ERR, OK, GHOST }
+/** RAISED: tonal más alto, para botones dentro de una tarjeta (el TONAL se confunde con su fondo). */
+enum class PillStyle { FILL, TONAL, HERO, ERR, OK, GHOST, RAISED }
 
 /** La pastilla de acción (`.pill`). */
 @Composable
@@ -235,6 +272,7 @@ fun Pill(
         PillStyle.ERR -> cs.errorContainer to cs.onErrorContainer
         PillStyle.OK -> RoomTone.VERDE.color to cs.background
         PillStyle.GHOST -> Color.Transparent to cs.primary
+        PillStyle.RAISED -> cs.surfaceContainerHighest to cs.onSurface
     }
     /*
      * `big` es la acción principal de la pantalla y mide lo que el botón ancho de la app

@@ -10,6 +10,7 @@
     <string name="rooms_done">Listo</string>
     <string name="rooms_next">Siguiente</string>
     <string name="rooms_back">Atrás</string>
+    <string name="rooms_go_back">Volver</string>
     <string name="rooms_more">Más</string>
     <string name="rooms_help">Cómo funciona</string>
     <string name="rooms_guide_short">Guía</string>
@@ -150,6 +151,10 @@
     <string name="rooms_menu_join_d">Alguien del grupo ya la creó</string>
     <string name="rooms_join_title">Entrar a una sala</string>
     <string name="rooms_join_sub">Escribe el código de seis que te pasaron</string>
+    <string name="rooms_join_ticket_label">Tu invitación</string>
+    <string name="rooms_join_ticket_hint">El código viene en el boleto</string>
+    <string name="rooms_paste">Pegar</string>
+    <string name="rooms_paste_empty">No tienes ningún código copiado</string>
     <string name="rooms_join_name">Tu nombre en la sala</string>
     <string name="rooms_join_go">Entrar</string>
     <string name="rooms_guide_title">Cómo funciona una sala</string>
@@ -162,7 +167,6 @@
     <string name="rooms_stage_split">El reparto</string>
     <string name="rooms_stage_dates">Fechas</string>
     <string name="rooms_stage_more">Lo demás</string>
-    <string name="rooms_create_now">Crear ya</string>
     <string name="rooms_create_room_btn">Crear sala</string>
     <string name="rooms_q_name">¿Cómo se llama el trabajo?</string>
     <string name="rooms_q_name_d">Si es de una materia, añádela; si no, no hace falta.</string>
@@ -267,9 +271,8 @@
     <string name="rooms_add_if_you_want">Si quieres, añade</string>
     <string name="rooms_tasks_title">Tareas sueltas</string>
     <string name="rooms_tasks_hint">Imprimir, llevar algo, revisar…</string>
-    <string name="rooms_task_yours">la haces tú</string>
-    <string name="rooms_task_later">se asigna en la sala</string>
     <string name="rooms_me_short">Yo</string>
+    <string name="rooms_task_nobody">Nadie</string>
     <string name="rooms_task_hint">Imprimir, llevar el cartel, revisar ortografía…</string>
     <string name="rooms_task_spell">Revisar ortografía</string>
     <string name="rooms_task_print">Imprimir</string>
@@ -375,6 +378,8 @@
     <string name="rooms_no_contrib">Todavía no hay aportes en esta sección.</string>
     <string name="rooms_assign">Asignar</string>
     <string name="rooms_take_this">Coger esta parte</string>
+    <string name="rooms_take_mine">Me la quedo</string>
+    <string name="rooms_comment_action">Comentar</string>
     <string name="rooms_give_poke">Dar un toque</string>
     <string name="rooms_open_part">Abrir mi parte</string>
     <string name="rooms_add_short">Añadir</string>

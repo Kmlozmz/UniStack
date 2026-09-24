@@ -16,6 +16,27 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.PersonAdd
+import androidx.compose.material.icons.rounded.Print
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.Spellcheck
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.delay
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -170,6 +191,7 @@ fun CreateRoomScreen(
     viewModel: RoomsViewModel = hiltViewModel()
 ) {
     val subjects by viewModel.subjects.collectAsState()
+    val myName by viewModel.myName.collectAsState()
     var d by remember { mutableStateOf(RoomDraft()) }
     var step by remember { mutableIntStateOf(0) }
     var sheet by remember { mutableStateOf<String?>(null) }
@@ -177,10 +199,21 @@ fun CreateRoomScreen(
     var openMore by remember { mutableStateOf<String?>(null) }
     var keySeq by remember { mutableLongStateOf(1L) }
     val today = viewModel.today()
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
 
     fun valid(i: Int): Boolean = (FLOW[i] as? Q)?.key != "capacity" || d.split == SplitMode.DRAW
     fun advance() { var n = step + 1; while (n < FLOW.size && !valid(n)) n++; step = n.coerceAtMost(FLOW.lastIndex) }
     fun back() { if (step == 0) onBackClick() else { var n = step - 1; while (n > 0 && !valid(n)) n--; step = n } }
+    /*
+     * Al elegir una opción, primero se ve lo elegido (se ilumina y rebota) y luego pasa la carta.
+     * Avanzaba en el mismo toque y no daba tiempo a ver qué habías tocado (23 sep: «le falta vida»).
+     */
+    fun advanceSoon() {
+        if (busy) return
+        busy = true
+        scope.launch { delay(260); advance(); busy = false }
+    }
     fun useType(t: RoomType) {
         val parts = RoomTemplates.parts(t).map { (n, e) -> DraftPart(keySeq++, n, e) }
         d = d.copy(type = t, produces = RoomTemplates.produces(t), parts = parts, usedSuggestions = emptySet(),
@@ -200,7 +233,12 @@ fun CreateRoomScreen(
             UniBackButton(onClick = { back() })
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.rooms_new_room), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
-                Text(stringResource(R.string.rooms_stage_of, stringResource(stages[cur.stage]), cur.stage + 1, stages.size), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
+                AnimatedContent(cur.stage, transitionSpec = {
+                    val fwd = targetState > initialState
+                    (slideInVertically { h -> if (fwd) h else -h } + fadeIn()) togetherWith (slideOutVertically { h -> if (fwd) -h else h } + fadeOut())
+                }, label = "etapa") { st ->
+                    Text(stringResource(R.string.rooms_stage_of, stringResource(stages[st]), st + 1, stages.size), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
+                }
             }
         }
         StretchDots(stages.size, cur.stage, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp, bottom = 20.dp))
@@ -226,23 +264,35 @@ fun CreateRoomScreen(
                     }
                 }
                 val cardMod = if (behind.isEmpty()) Modifier else Modifier.offset(y = -(LAP * behind.size) - 10.dp)
-                when (cur) {
-                    is Q -> QuestionCard(cur.key, d, subjects, today,
-                        onChange = { d = it },
-                        onType = { useType(it); advance() },
-                        onPick = { d = it; advance() },
-                        onMateria = { sheet = "subject" },
-                        onCalendar = { sheet = "calendar" },
-                        onNext = { advance() },
-                        modifier = cardMod)
-                    is Panel -> StepCard(cardMod) {
-                        when (cur.key) {
-                            "parts" -> PartsPanel(d, openPart, onOpen = { openPart = if (openPart == it) null else it }, onChange = { d = it },
-                                newKey = { keySeq++ }, today = today)
-                            "mine" -> MinePanel(d) { d = it }
-                            "dates" -> DatesPanel(d, today) { d = it }
-                            else -> MorePanel(d, subjects, today, openMore, onOpen = { openMore = if (openMore == it) null else it }, onChange = { d = it },
-                                newKey = { keySeq++ }, onJump = { key -> step = FLOW.indexOfFirst { (it as? Q)?.key == key || (it as? Panel)?.key == key }.coerceAtLeast(0) })
+                /*
+                 * El paso nuevo sube desde abajo con un rebote y el que se va se encoge hacia arriba, como
+                 * si se metiera en la baraja; al volver, al revés. Antes la carta cambiaba de golpe.
+                 */
+                AnimatedContent(step, transitionSpec = {
+                    val fwd = targetState > initialState
+                    val enter = slideInVertically(spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessMediumLow)) { h -> if (fwd) h / 3 else -h / 5 } +
+                        fadeIn(tween(220)) + scaleIn(spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow), initialScale = 0.94f)
+                    val exit = slideOutVertically(tween(230)) { h -> if (fwd) -h / 6 else h / 4 } + fadeOut(tween(170)) + scaleOut(tween(230), targetScale = if (fwd) 0.88f else 1.03f)
+                    (enter togetherWith exit).using(SizeTransform(clip = false))
+                }, label = "paso") { at ->
+                    when (val c = FLOW[at]) {
+                        is Q -> QuestionCard(c.key, d, subjects, today,
+                            onChange = { d = it },
+                            onType = { useType(it); advanceSoon() },
+                            onPick = { d = it; advanceSoon() },
+                            onMateria = { sheet = "subject" },
+                            onCalendar = { sheet = "calendar" },
+                            onNext = { advance() },
+                            modifier = cardMod)
+                        is Panel -> StepCard(cardMod) {
+                            when (c.key) {
+                                "parts" -> PartsPanel(d, openPart, onOpen = { openPart = if (openPart == it) null else it }, onChange = { d = it },
+                                    newKey = { keySeq++ }, today = today)
+                                "mine" -> MinePanel(d) { d = it }
+                                "dates" -> DatesPanel(d, today) { d = it }
+                                else -> MorePanel(d, subjects, today, openMore, onOpen = { openMore = if (openMore == it) null else it }, onChange = { d = it },
+                                    newKey = { keySeq++ }, onJump = { key -> step = FLOW.indexOfFirst { (it as? Q)?.key == key || (it as? Panel)?.key == key }.coerceAtLeast(0) }, me = myName)
+                            }
                         }
                     }
                 }
@@ -255,7 +305,8 @@ fun CreateRoomScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 val panel = (cur as? Panel)?.key
-                if (panel == "mine" || panel == "dates") Pill(stringResource(R.string.rooms_create_now), { create() }, Modifier.weight(1f), style = PillStyle.TONAL, big = true)
+                // «Volver» en vez de «Crear ya» (23 sep): crear a medias se quedaba sin reglas ni fechas.
+                if (step > 0) Pill(stringResource(R.string.rooms_go_back), { back() }, Modifier.weight(1f), style = PillStyle.TONAL, big = true)
                 if (panel == "more") Pill(stringResource(R.string.rooms_create_room_btn), { create() }, Modifier.weight(1f), big = true)
                 else Pill(stringResource(R.string.rooms_next), { advance() }, Modifier.weight(1f), icon = null, big = true,
                     enabled = !(panel == "parts" && d.parts.isEmpty()))
@@ -486,12 +537,12 @@ private fun QuestionCard(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     rows.forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            row.forEach { t ->
+                            row.forEachIndexed { k, t ->
                                 val sel = d.type == t
                                 val tone = RoomTemplates.tone(t)
                                 // Todas iguales: alto fijo y el nombre en dos líneas como mucho.
                                 Column(
-                                    Modifier.weight(1f).height(112.dp).clip(RoundedCornerShape(18.dp)).background(if (sel) mix(tone, 0.20f, tile) else tile)
+                                    Modifier.weight(1f).enterStagger(rows.indexOf(row) * 3 + k).selectPop(sel).height(112.dp).clip(RoundedCornerShape(18.dp)).background(if (sel) mix(tone, 0.20f, tile) else tile)
                                         .then(if (sel) Modifier.border(2.dp, tone, RoundedCornerShape(18.dp)) else Modifier)
                                         .cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onType(t) }.padding(horizontal = 8.dp, vertical = 12.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
@@ -515,29 +566,29 @@ private fun QuestionCard(
                 { stringResource(splitTitle(it)) }, { stringResource(splitSub(it)) }) { onPick(d.copy(split = it, answered = d.answered + "split")) }
             "capacity" -> FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 (2..7).forEach { n ->
-                    HeroChip(if (n == 7) stringResource(R.string.rooms_cap_more) else "$n", "capacity" in d.answered && d.capacity == n, big = true) {
+                    HeroChip(if (n == 7) stringResource(R.string.rooms_cap_more) else "$n", "capacity" in d.answered && d.capacity == n, big = true, index = n - 2) {
                         onPick(d.copy(capacity = n, answered = d.answered + "capacity"))
                     }
                 }
             }
             else -> FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(7 to R.string.rooms_due_1w, 14 to R.string.rooms_due_2w, 21 to R.string.rooms_due_3w, 30 to R.string.rooms_due_1m).forEach { (n, r) ->
-                    HeroChip(stringResource(r), d.dueInDays == n) { onPick(d.copy(dueInDays = n)) }
+                listOf(7 to R.string.rooms_due_1w, 14 to R.string.rooms_due_2w, 21 to R.string.rooms_due_3w, 30 to R.string.rooms_due_1m).forEachIndexed { k, (n, r) ->
+                    HeroChip(stringResource(r), d.dueInDays == n, index = k) { onPick(d.copy(dueInDays = n)) }
                 }
                 val other = d.dueInDays !in listOf(7, 14, 21, 30)
-                HeroChip(if (other) shortDate(today + d.dueInDays) else stringResource(R.string.rooms_pick_date), other, icon = Icons.Rounded.CalendarMonth, onClick = onCalendar)
+                HeroChip(if (other) shortDate(today + d.dueInDays) else stringResource(R.string.rooms_pick_date), other, icon = Icons.Rounded.CalendarMonth, index = 4, onClick = onCalendar)
             }
         }
     }
 }
 
 @Composable
-private fun HeroChip(text: String, on: Boolean, big: Boolean = false, icon: ImageVector? = null, onClick: () -> Unit) {
+private fun HeroChip(text: String, on: Boolean, big: Boolean = false, icon: ImageVector? = null, index: Int = 0, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     val haptic = LocalHapticFeedback.current
     val fg = cs.onSurface
     Row(
-        Modifier.clip(RoundedCornerShape(10.dp)).background(if (on) cs.primary else mix(fg, 0.10f, cs.primaryContainer)).cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onClick() }
+        Modifier.enterStagger(index).selectPop(on).clip(RoundedCornerShape(10.dp)).background(if (on) cs.primary else mix(fg, 0.10f, cs.primaryContainer)).cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onClick() }
             .heightIn(min = if (big) 44.dp else 36.dp).padding(horizontal = if (big) 16.dp else 11.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
@@ -554,7 +605,7 @@ private fun <T> OptionRows(items: List<T>, sel: (T) -> Boolean, tile: Color, ico
     RoomGroup(items) { it, shape ->
         val s = sel(it)
         val c = tone(it)
-        RoomRow(shape, color = if (s) mix(c, 0.16f, tile) else tile, onClick = { haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(it) }) {
+        RoomRow(shape, Modifier.enterStagger(items.indexOf(it)).selectPop(s), color = if (s) mix(c, 0.16f, tile) else tile, onClick = { haptic.performSafely(HapticFeedbackType.SegmentTick); onPick(it) }) {
             Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(if (s) c else mix(c, 0.22f, cs.surfaceContainerHigh)), contentAlignment = Alignment.Center) {
                 Icon(icon(it), null, tint = if (s) cs.background else c, modifier = Modifier.size(20.dp))
             }
@@ -949,7 +1000,7 @@ fun materialName(t: MaterialType): Int = when (t) {
 }
 
 @Composable
-private fun MorePanel(d: RoomDraft, subjects: List<Subject>, today: Long, open: String?, onOpen: (String) -> Unit, onChange: (RoomDraft) -> Unit, newKey: () -> Long, onJump: (String) -> Unit) {
+private fun MorePanel(d: RoomDraft, subjects: List<Subject>, today: Long, open: String?, onOpen: (String) -> Unit, onChange: (RoomDraft) -> Unit, newKey: () -> Long, onJump: (String) -> Unit, me: String) {
     val cs = MaterialTheme.colorScheme
     StepHead(stringResource(R.string.rooms_preview_title), stringResource(R.string.rooms_preview_hint))
     RoomPreview(d, subjects.firstOrNull { it.id == d.subjectId }, today, onJump)
@@ -960,7 +1011,7 @@ private fun MorePanel(d: RoomDraft, subjects: List<Subject>, today: Long, open: 
     val mode = RULE_MODES.firstOrNull { it.rules == d.rules && it.entry == d.entryOpen }
     MoreBlock("tasks", Icons.Rounded.TaskAlt, RoomTone.VERDE.color, stringResource(R.string.rooms_tasks_title),
         if (d.tasks.isEmpty()) stringResource(R.string.rooms_tasks_hint) else d.tasks.joinToString(", ") { it.first }, open == "tasks", { onOpen("tasks") }) {
-        TasksEditor(d.tasks) { onChange(d.copy(tasks = it)) }
+        TasksEditor(d.tasks, me) { onChange(d.copy(tasks = it)) }
     }
     MoreBlock("material", Icons.Rounded.AttachFile, RoomTone.INDIGO.color, stringResource(R.string.rooms_material_title),
         if (d.materials.isEmpty()) stringResource(R.string.rooms_material_hint) else stringResource(R.string.rooms_things, d.materials.size), open == "material", { onOpen("material") }) {
@@ -989,33 +1040,66 @@ private fun MoreBlock(key: String, icon: ImageVector, tone: Color, title: String
     }
 }
 
+/**
+ * Tareas sueltas (24 sep): las tarjetas de la opción 1 unidas en lista como la 2. Cada tarea con su
+ * mosaico verde y «Yo / Nadie» (quién se encarga, o se ve luego en la sala); debajo, ideas con icono
+ * que se deslizan de lado y el campo con su flecha.
+ */
 @Composable
-private fun TasksEditor(tasks: List<Pair<String, Boolean>>, onChange: (List<Pair<String, Boolean>>) -> Unit) {
+private fun TasksEditor(tasks: List<Pair<String, Boolean>>, me: String, onChange: (List<Pair<String, Boolean>>) -> Unit) {
     val cs = MaterialTheme.colorScheme
     var input by remember { mutableStateOf("") }
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    val add = { if (input.isNotBlank()) { onChange(tasks + (input.trim() to false)); input = "" } }
+    if (tasks.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         tasks.forEachIndexed { i, (n, mine) ->
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(cs.background).padding(start = 10.dp, end = 6.dp, top = 9.dp, bottom = 9.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                Tile(Icons.Rounded.TaskAlt, RoomTone.VERDE.color, 36.dp, 11.dp)
-                Column(Modifier.weight(1f)) {
-                    Text(n, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(stringResource(if (mine) R.string.rooms_task_yours else R.string.rooms_task_later), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
+            Row(
+                Modifier.fillMaxWidth().clip(groupShape(i, tasks.size, 18.dp, 5.dp)).background(cs.background).padding(start = 10.dp, end = 4.dp, top = 9.dp, bottom = 9.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Tile(Icons.Rounded.TaskAlt, RoomTone.VERDE.color, 32.dp, 10.dp)
+                Text(n, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Row(
+                    Modifier.selectPop(mine).clip(CircleShape).background(if (mine) cs.primary else cs.surfaceContainerHigh)
+                        .cleanClickable { onChange(tasks.mapIndexed { j, t -> if (j == i) t.first to !t.second else t }) }
+                        .padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    if (mine) Box(Modifier.size(18.dp).clip(CircleShape).background(cs.onPrimary), contentAlignment = Alignment.Center) {
+                        Text(me.trim().firstOrNull()?.uppercase() ?: "?", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = cs.primary)
+                    } else Icon(Icons.Rounded.PersonAdd, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    Text(stringResource(if (mine) R.string.rooms_me_short else R.string.rooms_task_nobody), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (mine) cs.onPrimary else cs.onSurfaceVariant)
                 }
-                Text(stringResource(R.string.rooms_me_short), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (mine) cs.onPrimary else cs.onSurfaceVariant,
-                    modifier = Modifier.clip(CircleShape).background(if (mine) cs.primary else Color.Transparent).border(1.5.dp, if (mine) cs.primary else cs.outlineVariant, CircleShape)
-                        .cleanClickable { onChange(tasks.mapIndexed { j, t -> if (j == i) t.first to !t.second else t }) }.padding(horizontal = 11.dp, vertical = 5.dp))
-                Box(Modifier.size(32.dp).clip(CircleShape).cleanClickable { onChange(tasks.filterIndexed { j, _ -> j != i }) }, contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Close, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp)) }
+                Box(Modifier.size(30.dp).clip(CircleShape).cleanClickable { onChange(tasks.filterIndexed { j, _ -> j != i }) }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Close, stringResource(R.string.rooms_remove), tint = cs.onSurfaceVariant, modifier = Modifier.size(17.dp))
+                }
             }
         }
-        Row(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(cs.background).padding(horizontal = 12.dp, vertical = 10.dp)) {
-                if (input.isEmpty()) Text(stringResource(R.string.rooms_task_hint), color = cs.onSurfaceVariant, fontSize = 13.5.sp, maxLines = 1)
-                BasicTextField(input, { input = it }, singleLine = true, cursorBrush = SolidColor(cs.primary), textStyle = TextStyle(color = cs.onSurface, fontSize = 13.5.sp), modifier = Modifier.fillMaxWidth())
+    }
+    val ideas = listOf(R.string.rooms_task_spell to Icons.Rounded.Spellcheck, R.string.rooms_task_print to Icons.Rounded.Print, R.string.rooms_task_rehearse_short to Icons.Rounded.RecordVoiceOver)
+        .map { (r, ic) -> stringResource(r) to ic }.filter { (s, _) -> tasks.none { it.first == s } }
+    if (ideas.isNotEmpty()) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 10.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        ideas.forEachIndexed { k, (s, ic) ->
+            Row(
+                Modifier.enterStagger(k).clip(CircleShape).background(cs.background).cleanClickable { onChange(tasks + (s to false)) }.padding(start = 9.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(ic, null, tint = RoomTone.VERDE.color, modifier = Modifier.size(16.dp))
+                Text(s, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, maxLines = 1)
             }
-            Pill("", { if (input.isNotBlank()) { onChange(tasks + (input.trim() to false)); input = "" } }, icon = Icons.Rounded.Add, small = true)
         }
-        val sug = listOf(R.string.rooms_task_spell, R.string.rooms_task_print, R.string.rooms_task_rehearse_short).map { stringResource(it) }.filter { s -> tasks.none { it.first == s } }
-        if (sug.isNotEmpty()) SuggestionChips(sug) { onChange(tasks + (it to false)) }
+    } else VSpace(8.dp)
+    Row(Modifier.fillMaxWidth().clip(CircleShape).background(cs.background).padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            if (input.isEmpty()) Text(stringResource(R.string.rooms_task_hint), color = cs.onSurfaceVariant, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            BasicTextField(input, { input = it }, singleLine = true, cursorBrush = SolidColor(cs.primary), textStyle = TextStyle(color = cs.onSurface, fontSize = 13.5.sp),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { add() }),
+                modifier = Modifier.fillMaxWidth())
+        }
+        val ready = input.isNotBlank()
+        val bg by animateColorAsState(if (ready) cs.primary else cs.surfaceContainerHigh, label = "enviar")
+        Box(Modifier.size(36.dp).clip(CircleShape).background(bg).cleanClickable { add() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.ArrowUpward, stringResource(R.string.rooms_add_short), tint = if (ready) cs.onPrimary else cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        }
     }
 }
 
@@ -1083,12 +1167,16 @@ fun RulesEditor(
     val haptic = LocalHapticFeedback.current
     val rowBg = mix(cs.background, 0.40f, base)
     val mode = RULE_MODES.firstOrNull { it.rules == rules && (onEntry == null || it.entry == entryOpen) }
+    /*
+     * Los tres modos miden lo mismo: la línea de abajo ocupa siempre dos renglones (con uno solo,
+     * «Normal» quedaba más bajo que las otras, 23 sep). Lo elegido va relleno del acento, sin borde.
+     */
     Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        RULE_MODES.forEach { m ->
+        RULE_MODES.forEachIndexed { k, m ->
             val on = m == mode
+            val bg by animateColorAsState(if (on) mix(cs.primary, 0.26f, rowBg) else rowBg, label = "modo")
             Column(
-                Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(if (on) mix(cs.primary, 0.16f, rowBg) else rowBg)
-                    .border(2.dp, if (on) cs.primary else Color.Transparent, RoundedCornerShape(16.dp))
+                Modifier.weight(1f).enterStagger(k).selectPop(on).clip(RoundedCornerShape(16.dp)).background(bg)
                     .cleanClickable {
                         if (!on) haptic.performSafely(HapticFeedbackType.SegmentTick)
                         if (onMode != null) onMode(m) else { onRules(m.rules); onEntry?.invoke(m.entry) }
@@ -1097,8 +1185,8 @@ fun RulesEditor(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Tile(m.icon, m.tone.color, 34.dp, 11.dp)
-                Text(stringResource(m.title), fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, modifier = Modifier.padding(top = 7.dp))
-                Text(stringResource(m.sub), fontSize = 11.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 14.sp, modifier = Modifier.padding(top = 2.dp))
+                Text(stringResource(m.title), fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold, color = if (on) cs.primary else cs.onSurface, modifier = Modifier.padding(top = 7.dp))
+                Text(stringResource(m.sub), fontSize = 11.sp, color = cs.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 14.sp, minLines = 2, maxLines = 2, modifier = Modifier.padding(top = 2.dp))
             }
         }
     }

@@ -8,6 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -23,16 +27,23 @@ fun RoomRouter(
     onBack: () -> Unit,
     onNavigate: (roomId: String, section: String, item: String) -> Unit,
     onReplace: (roomId: String, section: String, item: String) -> Unit,
+    onGone: () -> Unit = onBack,
     viewModel: RoomsViewModel = hiltViewModel()
 ) {
     val rooms by viewModel.rooms.collectAsState()
     val room = rooms.firstOrNull { it.id == roomId }
+    /*
+     * **Una sala que desaparece lleva a Trabajos, no a una pantalla vacía.** Al borrarla (o salir de
+     * ella) siendo la última, la lista quedaba vacía y el «atrás» de antes esperaba a que hubiera
+     * salas: se quedaba en negro (23 sep). `seen` distingue «ya no existe» de «aún no ha cargado».
+     */
+    var seen by rememberSaveable(roomId) { mutableStateOf(false) }
     if (room == null) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
-        // Si la sala se borró (o aún no ha cargado tras borrarla), atrás.
-        LaunchedEffect(rooms.isNotEmpty()) { if (rooms.isNotEmpty()) onBack() }
+        LaunchedEffect(seen, rooms.isNotEmpty()) { if (seen || rooms.isNotEmpty()) onGone() }
         return
     }
+    SideEffect { seen = true }
     val go: (String, String) -> Unit = { s, i -> onNavigate(roomId, s, i) }
     when (section) {
         "invitar" -> InviteScreen(room, viewModel, onBack = onBack, onGoRoom = { onReplace(roomId, "sala", "-") })

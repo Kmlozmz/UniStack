@@ -1226,6 +1226,12 @@ fun MainNavGraph(
                         onReplace = { roomId, section, item ->
                             navController.navigateUp()
                             navController.go(AppRoutes.room(roomId, section, item))
+                        },
+                        // La sala ya no existe (borrada o abandonada): de un salto a Trabajos.
+                        onGone = {
+                            if (!navController.popBackStack(AppRoutes.AcademicTemplates, inclusive = false)) {
+                                navController.go(AppRoutes.AcademicTemplates)
+                            }
                         }
                     )
                 }

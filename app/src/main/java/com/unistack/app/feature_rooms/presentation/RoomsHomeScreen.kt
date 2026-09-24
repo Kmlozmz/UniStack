@@ -3,6 +3,7 @@
 package com.unistack.app.feature_rooms.presentation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
@@ -34,6 +35,19 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.unistack.app.core.utils.performSafely
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.rounded.ConfirmationNumber
+import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -825,19 +839,78 @@ private fun NewMenuSheet(onDismiss: () -> Unit, onCreate: () -> Unit, onJoin: ()
     }
 }
 
+/**
+ * Entrar con un código, en forma del boleto de la invitación (elegida la B, 24 sep): franja con
+ * el icono, muescas a los lados y el código en dos grupos de tres. Se escribe o se pega.
+ */
 @Composable
 private fun JoinSheet(onDismiss: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     var code by remember { mutableStateOf("") }
     val context = LocalContext.current
     val msg = stringResource(R.string.rooms_needs_cloud)
+    val nothing = stringResource(R.string.rooms_paste_empty)
+    val focus = remember { FocusRequester() }
+    val clean: (String) -> String = { it.uppercase().filter { c -> c.isLetterOrDigit() }.take(6) }
+    val join = { if (code.length == 6) { android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show(); onDismiss() } }
+    LaunchedEffect(Unit) { delay(250); runCatching { focus.requestFocus() } }
     RoomSheet(onDismiss, stringResource(R.string.rooms_join_title), stringResource(R.string.rooms_join_sub)) {
-        TextField(code, { code = it.uppercase().filter { c -> c.isLetterOrDigit() }.take(6) }, singleLine = true,
-            textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 8.sp, textAlign = TextAlign.Center, color = cs.onSurface),
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
-            colors = TextFieldDefaults.colors(focusedContainerColor = cs.surfaceContainerLow, unfocusedContainerColor = cs.surfaceContainerLow, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent))
-        VSpace(12.dp)
-        Pill(stringResource(R.string.rooms_join_go), { android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show(); onDismiss() }, Modifier.fillMaxWidth(), enabled = code.length == 6)
+        Box(Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cs.primaryContainer)) {
+                Row(
+                    Modifier.fillMaxWidth().height(70.dp).background(mix(cs.primary, 0.30f, cs.primaryContainer)).padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Tile(Icons.Rounded.ConfirmationNumber, cs.primary, 40.dp, 13.dp, filled = true)
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.rooms_join_ticket_label).uppercase(), fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = cs.onSurface.copy(alpha = 0.7f))
+                        Text(stringResource(R.string.rooms_join_ticket_hint), fontSize = 14.5.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                    }
+                }
+                Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        (0..2).forEach { CodeSlot(code, it) }
+                        Text("·", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface.copy(alpha = 0.35f), textAlign = TextAlign.Center,
+                            modifier = Modifier.width(14.dp).padding(bottom = 8.dp))
+                        (3..5).forEach { CodeSlot(code, it) }
+                    }
+                    // El campo de verdad, invisible encima de las casillas: toca y escribe.
+                    BasicTextField(code, { code = clean(it) }, singleLine = true, modifier = Modifier.matchParentSize().alpha(0f).focusRequester(focus),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false, keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Go),
+                        keyboardActions = KeyboardActions(onGo = { join() }))
+                }
+            }
+            // las muescas, del color de la hoja, donde acaba la franja
+            Box(Modifier.align(Alignment.TopStart).offset(x = (-11).dp, y = 59.dp).size(22.dp).clip(CircleShape).background(cs.background))
+            Box(Modifier.align(Alignment.TopEnd).offset(x = 11.dp, y = 59.dp).size(22.dp).clip(CircleShape).background(cs.background))
+        }
+        Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Pill(stringResource(R.string.rooms_paste), {
+                val p = context.pastedText()?.let(clean).orEmpty()
+                if (p.isEmpty()) context.roomToast(nothing) else code = p
+            }, Modifier.weight(1f), icon = Icons.Rounded.ContentPaste, style = PillStyle.TONAL, big = true)
+            Pill(stringResource(R.string.rooms_join_go), join, Modifier.weight(2f), big = true, enabled = code.length == 6)
+        }
+    }
+}
+
+/** Una letra del código: el carácter (o el cursor que parpadea si toca escribirla) y su raya. */
+@Composable
+private fun CodeSlot(code: String, i: Int) {
+    val cs = MaterialTheme.colorScheme
+    val ch = code.getOrNull(i)
+    val active = code.length < 6 && i == code.length
+    Column(Modifier.width(30.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(Modifier.height(34.dp), contentAlignment = Alignment.Center) {
+            if (ch != null) Text(ch.toString(), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, fontFamily = FontFamily.Monospace, modifier = Modifier.enterStagger(0))
+            else if (active) {
+                val blink by rememberInfiniteTransition(label = "cursor").animateFloat(1f, 0f,
+                    infiniteRepeatable(keyframes { durationMillis = 1000; 1f at 0; 1f at 499; 0f at 500; 0f at 999 }), label = "parpadeo")
+                Box(Modifier.size(2.dp, 28.dp).alpha(blink).background(cs.primary))
+            }
+        }
+        val line by animateColorAsState(if (ch != null) cs.primary else cs.onSurface.copy(alpha = 0.25f), label = "raya")
+        Box(Modifier.size(24.dp, 3.dp).clip(RoundedCornerShape(2.dp)).background(line))
     }
 }
 

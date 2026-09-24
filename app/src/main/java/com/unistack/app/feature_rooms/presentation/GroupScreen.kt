@@ -142,7 +142,7 @@ fun GroupScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Str
                 SheetRow(stringResource(t), stringResource(d), selected = room.notifyMode == m, onClick = { vm.setNotify(room.id, m); sheet = null })
             }
         }
-        "leave" -> LeaveSheet(room, vm, onDismiss = { sheet = null }, onLeft = onBack)
+        "leave" -> LeaveSheet(room, vm, onDismiss = { sheet = null }, onLeft = {}) // la ruta, al quedarse sin sala, lleva a Trabajos
     }
 }
 

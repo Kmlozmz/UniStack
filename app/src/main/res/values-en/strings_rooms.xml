@@ -10,6 +10,7 @@
     <string name="rooms_done">Done</string>
     <string name="rooms_next">Next</string>
     <string name="rooms_back">Back</string>
+    <string name="rooms_go_back">Back</string>
     <string name="rooms_more">More</string>
     <string name="rooms_help">How it works</string>
     <string name="rooms_guide_short">Guide</string>
@@ -150,6 +151,10 @@
     <string name="rooms_menu_join_d">Someone in the group already created it</string>
     <string name="rooms_join_title">Join a room</string>
     <string name="rooms_join_sub">Type the six-character code you were given</string>
+    <string name="rooms_join_ticket_label">Your invite</string>
+    <string name="rooms_join_ticket_hint">The code is on the ticket</string>
+    <string name="rooms_paste">Paste</string>
+    <string name="rooms_paste_empty">There\'s no code copied</string>
     <string name="rooms_join_name">Your name in the room</string>
     <string name="rooms_join_go">Join</string>
     <string name="rooms_guide_title">How a room works</string>
@@ -162,7 +167,6 @@
     <string name="rooms_stage_split">The split</string>
     <string name="rooms_stage_dates">Dates</string>
     <string name="rooms_stage_more">The rest</string>
-    <string name="rooms_create_now">Create now</string>
     <string name="rooms_create_room_btn">Create room</string>
     <string name="rooms_q_name">What\'s the work called?</string>
     <string name="rooms_q_name_d">If it\'s for a subject, add it; if not, no need.</string>
@@ -267,9 +271,8 @@
     <string name="rooms_add_if_you_want">Add if you want</string>
     <string name="rooms_tasks_title">Loose tasks</string>
     <string name="rooms_tasks_hint">Print, bring something, proofread…</string>
-    <string name="rooms_task_yours">yours</string>
-    <string name="rooms_task_later">assigned in the room</string>
     <string name="rooms_me_short">Me</string>
+    <string name="rooms_task_nobody">Nobody</string>
     <string name="rooms_task_hint">Print, bring the poster, proofread…</string>
     <string name="rooms_task_spell">Proofread</string>
     <string name="rooms_task_print">Print</string>
@@ -375,6 +378,8 @@
     <string name="rooms_no_contrib">No contributions in this section yet.</string>
     <string name="rooms_assign">Assign</string>
     <string name="rooms_take_this">Take this part</string>
+    <string name="rooms_take_mine">Take it</string>
+    <string name="rooms_comment_action">Comment</string>
     <string name="rooms_give_poke">Nudge</string>
     <string name="rooms_open_part">Open my part</string>
     <string name="rooms_add_short">Add</string>

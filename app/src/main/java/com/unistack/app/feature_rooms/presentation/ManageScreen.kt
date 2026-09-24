@@ -200,7 +200,7 @@ fun ManageScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (St
             Pill(stringResource(R.string.rooms_create_new_code), { vm.newCode(room.id); sheet = null; context.roomToast(context.getString(R.string.rooms_new_code_done)) }, Modifier.fillMaxWidth())
         }
         "rules" -> RulesSheet(room, vm) { sheet = null }
-        "delete" -> DeleteRoomSheet(room, vm, onDismiss = { sheet = null }, onDeleted = onBack)
+        "delete" -> DeleteRoomSheet(room, vm, onDismiss = { sheet = null }, onDeleted = {}) // la ruta, al quedarse sin sala, lleva a Trabajos
     }
 }
 

@@ -26,6 +26,12 @@ import com.unistack.app.feature_rooms.data.RoomStoredFile
 
 fun Context.roomToast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 
+/** Lo que hay copiado, como texto (null si no hay nada). */
+fun Context.pastedText(): String? {
+    val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return null
+    return cm.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)?.toString()
+}
+
 fun Context.copyText(label: String, text: String) {
     val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
     cm.setPrimaryClip(ClipData.newPlainText(label, text))

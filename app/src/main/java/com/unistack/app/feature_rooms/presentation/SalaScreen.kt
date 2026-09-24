@@ -33,8 +33,12 @@ import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PanTool
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.HourglassTop
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material.icons.rounded.WatchLater
 import androidx.compose.material3.Icon
@@ -110,14 +114,14 @@ fun SalaScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
 
     Box(Modifier.fillMaxSize().background(cs.background)) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            RoomTopBar(room, onBack, go)
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) { UniBackButton(onClick = onBack) }
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 120.dp)) {
-                item { RoomHeader(room, subject, today) }
+                item { SalaShortcuts(room, go) }
+                item { SalaCover(room, subject, today, go, onTake = take, onPoke = poke) }
                 val joiner = RoomLogic.pendingEntry(room)
                 if (joiner != null) item { EntryNotice(room, joiner.id) { giveSheet = joiner.id } }
                 val mine = room.requests.lastOrNull { it.fromId == room.meId && it.resolution == null }
                 if (!room.isLeader && mine != null) item { MyRequestNotice(room, mine.type) }
-                item { YourTurn(room, today, go, onTake = take, onPoke = poke) }
                 partGroups(room, today).forEach { (label, parts) ->
                     item { RoomLabel(stringResource(label), trailing = "${parts.size}", modifier = Modifier.padding(top = 2.dp)) }
                     item {
@@ -167,72 +171,63 @@ fun RoomDock(modifier: Modifier = Modifier, content: @Composable RowScope.() -> 
     }
 }
 
-/** La barra de arriba: atrás y, a la derecha, Gestionar (líder), Chat, Novedades y Grupo. */
+/**
+ * Los accesos de la sala, cuatro botones iguales en fila: Chat, Grupo, Novedades y, al líder,
+ * Gestionar en el acento (elegidos de la opción B y en ese orden, 24 sep). Antes eran pastillas
+ * sueltas apretadas a la derecha de la barra.
+ */
 @Composable
-fun RoomTopBar(room: WorkRoom, onBack: () -> Unit, go: (String, String) -> Unit) {
+private fun SalaShortcuts(room: WorkRoom, go: (String, String) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Shortcut(RoomIcons.Chat, stringResource(R.string.rooms_chat), RoomLogic.unseenChat(room)) { go("chat", "-") }
+        Shortcut(RoomIcons.People, stringResource(R.string.rooms_group), 0) { go("grupo", "-") }
+        Shortcut(RoomIcons.Bell, stringResource(R.string.rooms_news), RoomLogic.unseenEvents(room)) { go("nov", "-") }
+        if (room.isLeader) Shortcut(Icons.Rounded.Tune, stringResource(R.string.rooms_manage), RoomLogic.pendingCount(room), accent = true) { go("gest", "-") }
+    }
+}
+
+@Composable
+private fun RowScope.Shortcut(icon: ImageVector, label: String, count: Int, accent: Boolean = false, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        UniBackButton(onClick = onBack)
-        Box(Modifier.weight(1f))
-        if (room.isLeader) {
-            val pend = RoomLogic.pendingCount(room)
-            NavPill(background = cs.primary, onClick = { go("gest", "-") }) {
-                Icon(Icons.Rounded.Tune, stringResource(R.string.rooms_manage), tint = cs.onPrimary, modifier = Modifier.size(19.dp))
-                if (pend > 0) NavCount(pend, cs.error, cs.background)
-            }
+    Box(Modifier.weight(1f)) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (accent) cs.primary else cs.surfaceContainerLow)
+                .cleanClickable(onClick = onClick).padding(top = 12.dp, bottom = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(icon, null, tint = if (accent) cs.onPrimary else cs.onSurface, modifier = Modifier.size(22.dp))
+            Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (accent) cs.onPrimary else cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        val chat = RoomLogic.unseenChat(room)
-        NavPill(onClick = { go("chat", "-") }) {
-            Icon(RoomIcons.Chat, null, tint = cs.onSurface, modifier = Modifier.size(19.dp))
-            Text(stringResource(R.string.rooms_chat), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
-            if (chat > 0) NavCount(chat)
-        }
-        val nov = RoomLogic.unseenEvents(room)
-        NavPill(onClick = { go("nov", "-") }) {
-            Icon(RoomIcons.Bell, stringResource(R.string.rooms_news), tint = cs.onSurface, modifier = Modifier.size(19.dp))
-            if (nov > 0) NavCount(nov)
-        }
-        NavPill(onClick = { go("grupo", "-") }) {
-            Icon(RoomIcons.People, stringResource(R.string.rooms_group), tint = cs.onSurface, modifier = Modifier.size(19.dp))
-        }
+        if (count > 0) CountBadge(count, if (accent) cs.error else cs.primary, Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 8.dp))
     }
 }
 
-/** `.np`: pastilla de 40 de alto de la barra de la sala. */
+/**
+ * La portada de la sala (opción A, 24 sep): una tarjeta con el color de la materia que junta
+ * materia y tipo, la entrega, el título, quiénes están, el avance y, dentro, «lo que te toca».
+ */
 @Composable
-private fun NavPill(background: Color = MaterialTheme.colorScheme.surfaceContainer, onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
-    Row(
-        Modifier.height(40.dp).clip(CircleShape).background(background).cleanClickable(onClick = onClick).padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), content = content
-    )
-}
-
-/** `.np b`: el número dentro de la pastilla. */
-@Composable
-fun NavCount(n: Int, bg: Color = MaterialTheme.colorScheme.primary, fg: Color = MaterialTheme.colorScheme.onPrimary) {
-    Box(Modifier.heightIn(min = 18.dp).clip(RoundedCornerShape(9.dp)).background(bg).padding(horizontal = 5.dp), contentAlignment = Alignment.Center) {
-        Text("$n", fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, color = fg)
-    }
-}
-
-@Composable
-private fun RoomHeader(room: WorkRoom, subject: Subject?, today: Long) {
+private fun SalaCover(room: WorkRoom, subject: Subject?, today: Long, go: (String, String) -> Unit, onTake: (RoomPart) -> Unit, onPoke: (String) -> Unit) {
     val cs = MaterialTheme.colorScheme
     val mat = subjectColor(subject)
-    Column(Modifier.padding(top = 6.dp, bottom = 4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SubjectShapeIcon(mat, room.subjectId ?: "none", size = 18.dp)
-            Text(subject?.name ?: stringResource(R.string.rooms_no_subject), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, letterSpacing = 0.3.sp)
-            Text("·", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
-            Text(stringResource(RoomTemplates.typeNameRes(room.type)).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = mat, letterSpacing = 1.sp)
+    val base = mix(mat, 0.13f, cs.surfaceContainerLow)
+    Column(Modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(base).padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            SubjectShapeIcon(mat, room.subjectId ?: "none", size = 16.dp)
+            Text(subject?.name ?: stringResource(R.string.rooms_no_subject), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = mat, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            Text("·", fontSize = 12.sp, color = cs.onSurfaceVariant)
+            Text(stringResource(RoomTemplates.typeNameRes(room.type)).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurfaceVariant, letterSpacing = 0.8.sp, maxLines = 1)
+            Box(Modifier.weight(1f))
+            Text(stringResource(R.string.rooms_due_in, relDay(room.dueEpochDay - today)), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, maxLines = 1,
+                modifier = Modifier.clip(CircleShape).background(mix(cs.background, 0.55f, base)).padding(horizontal = 10.dp, vertical = 5.dp))
         }
-        Text(room.title, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, lineHeight = 29.sp, letterSpacing = (-0.3).sp, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FaceStack(room, room.activeMembers, cs.background, size = 26.dp, max = 6)
+        Text(room.title, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, lineHeight = 28.sp, letterSpacing = (-0.3).sp, modifier = Modifier.padding(top = 10.dp, bottom = 8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            FaceStack(room, room.activeMembers, base, size = 24.dp, max = 5)
             Text(buildAnnotatedString {
                 append(pluralText(R.plurals.rooms_n_members_leader, room.activeMembers.size) + " ")
                 withStyle(SpanStyle(color = cs.onSurface, fontWeight = FontWeight.Bold)) { append(room.nameOf(room.leaderId)) }
-            }, fontSize = 12.5.sp, color = cs.onSurfaceVariant)
+            }, fontSize = 12.5.sp, color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         SegmentBar(room.parts.map { p ->
             when (RoomLogic.status(room, p, today)) {
@@ -241,11 +236,9 @@ private fun RoomHeader(room: WorkRoom, subject: Subject?, today: Long) {
                 RoomLogic.Status.IN_PROGRESS -> if (room.meId in p.ownerIds) cs.primary else mix(RoomTone.VERDE.color, 0.4f, cs.surfaceContainerHighest)
                 else -> if (room.meId in p.ownerIds) cs.primary else cs.surfaceContainerHighest
             }
-        }, Modifier.padding(top = 12.dp, bottom = 6.dp), height = 8.dp)
-        Row {
-            Text(stringResource(R.string.rooms_sections_delivered, room.deliveredCount, room.parts.size), fontSize = 11.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
-            Text(stringResource(R.string.rooms_due_in, relDay(room.dueEpochDay - today)), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
-        }
+        }, Modifier.padding(top = 14.dp, bottom = 6.dp), height = 7.dp)
+        Text(stringResource(R.string.rooms_sections_delivered, room.deliveredCount, room.parts.size), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
+        TurnStrip(room, today, mix(cs.background, 0.6f, base), go, onTake, onPoke)
     }
 }
 
@@ -288,69 +281,55 @@ fun requestSentText(t: RequestType) = when (t) {
     RequestType.DROP -> R.string.rooms_req_sent_drop
 }
 
-/** El recuadro «Lo que te toca» (`.toca`). */
+/**
+ * «Lo que te toca», dentro de la portada: el mosaico con su icono, qué es y para cuándo, y la
+ * acción. Subir tu parte va a la derecha; las demás acciones, debajo.
+ */
 @Composable
-private fun YourTurn(room: WorkRoom, today: Long, go: (String, String) -> Unit, onTake: (RoomPart) -> Unit, onPoke: (String) -> Unit) {
+private fun TurnStrip(room: WorkRoom, today: Long, bg: Color, go: (String, String) -> Unit, onTake: (RoomPart) -> Unit, onPoke: (String) -> Unit) {
     val cs = MaterialTheme.colorScheme
     val mine = room.parts.filter { room.meId in it.ownerIds && it.state != PartState.DELIVERED }.sortedBy { RoomLogic.partDue(room, it) }
     val free = room.parts.firstOrNull { it.isFree && it.state != PartState.DELIVERED }
     val lateOther = room.parts.firstOrNull { RoomLogic.status(room, it, today) == RoomLogic.Status.OVERDUE && room.meId !in it.ownerIds }
-    Block(cs.primaryContainer, RoundedCornerShape(24.dp), Modifier.padding(top = 14.dp, bottom = 6.dp), PaddingValues(horizontal = 16.dp, vertical = 14.dp)) {
-        when {
-            room.allDelivered && room.isLeader -> {
-                TocaLabel(stringResource(R.string.rooms_all_delivered))
-                TocaTitle(stringResource(R.string.rooms_can_create))
-                TocaBody(stringResource(R.string.rooms_can_create_d, room.parts.size))
-                TocaActions { Pill(stringResource(R.string.rooms_create_work), { go("crear", "-") }, icon = Icons.Rounded.Build, style = PillStyle.HERO, small = true) }
+    val lateName = lateOther?.ownerIds?.firstOrNull()?.let { room.nameOf(it) }
+    class Turn(val label: String, val title: String, val body: String, val icon: ImageVector, val tone: Color)
+    val turn = when {
+        room.allDelivered && room.isLeader -> Turn(stringResource(R.string.rooms_all_delivered), stringResource(R.string.rooms_can_create), stringResource(R.string.rooms_can_create_d, room.parts.size), Icons.Rounded.Build, RoomTone.VERDE.color)
+        room.allDelivered -> Turn(stringResource(R.string.rooms_all_delivered), stringResource(R.string.rooms_nothing_left), stringResource(R.string.rooms_leader_must_create, room.nameOf(room.leaderId)), Icons.Rounded.HourglassTop, RoomTone.AMBAR.color)
+        mine.isNotEmpty() -> {
+            val p = mine.first()
+            val extra = when {
+                room.isLeader && lateOther != null && lateName != null -> stringResource(R.string.rooms_and_late, lateName, lateOther.name)
+                p.hasContent -> stringResource(R.string.rooms_toca_draft)
+                p.attachments.isNotEmpty() -> pluralText(R.plurals.rooms_toca_contribs, p.attachments.size)
+                else -> stringResource(R.string.rooms_toca_unstarted)
             }
-            room.allDelivered -> {
-                TocaLabel(stringResource(R.string.rooms_all_delivered))
-                TocaTitle(stringResource(R.string.rooms_nothing_left))
-                TocaBody(stringResource(R.string.rooms_leader_must_create, room.nameOf(room.leaderId)))
-            }
-            mine.isNotEmpty() -> {
-                val p = mine.first()
-                TocaLabel(stringResource(R.string.rooms_hero_yours))
-                TocaTitle(p.name)
-                val lateName = lateOther?.ownerIds?.firstOrNull()?.let { room.nameOf(it) }
-                val extra = when {
-                    room.isLeader && lateOther != null && lateName != null -> stringResource(R.string.rooms_and_late, lateName, lateOther.name)
-                    p.hasContent -> stringResource(R.string.rooms_toca_draft)
-                    p.attachments.isNotEmpty() -> pluralText(R.plurals.rooms_toca_contribs, p.attachments.size)
-                    else -> stringResource(R.string.rooms_toca_unstarted)
-                }
-                TocaBody(stringResource(R.string.rooms_card_for, relDay(RoomLogic.partDue(room, p) - today)) + " · " + extra)
-                TocaActions {
-                    Pill(stringResource(R.string.rooms_hero_upload), { go("parte", p.id) }, icon = Icons.Rounded.Upload, style = PillStyle.HERO, small = true)
-                    if (room.isLeader && lateOther != null && lateName != null)
-                        Pill(stringResource(R.string.rooms_poke_to, lateName), { onPoke(lateName) }, icon = Icons.Rounded.PanTool, style = PillStyle.HERO, small = true, alpha = 0.85f)
-                    else if (free != null && room.split != SplitMode.ASSIGN)
-                        Pill(stringResource(R.string.rooms_take_x, free.name), { onTake(free) }, style = PillStyle.HERO, small = true, alpha = 0.85f)
-                }
-            }
-            free != null && room.split != SplitMode.ASSIGN -> {
-                TocaLabel(stringResource(R.string.rooms_hero_no_part))
-                TocaTitle(stringResource(R.string.rooms_take_one_title))
-                TocaBody(pluralText(R.plurals.rooms_free_parts_n, room.parts.count { it.isFree }))
-                TocaActions { Pill(stringResource(R.string.rooms_take_x, free.name), { onTake(free) }, style = PillStyle.HERO, small = true) }
-            }
-            else -> {
-                TocaLabel(stringResource(R.string.rooms_hero_calm))
-                TocaTitle(if (room.partsOf(room.meId).isEmpty()) stringResource(R.string.rooms_no_part_yet) else stringResource(R.string.rooms_hero_calm_t))
-                TocaBody(stringResource(R.string.rooms_card_delivered_of, room.deliveredCount, room.parts.size))
-            }
+            Turn(stringResource(R.string.rooms_hero_yours), p.name, stringResource(R.string.rooms_card_for, relDay(RoomLogic.partDue(room, p) - today)) + " · " + extra, Icons.Rounded.EditNote, cs.primary)
         }
+        free != null && room.split != SplitMode.ASSIGN -> Turn(stringResource(R.string.rooms_hero_no_part), stringResource(R.string.rooms_take_one_title), pluralText(R.plurals.rooms_free_parts_n, room.parts.count { it.isFree }), Icons.Rounded.PanTool, RoomTone.CIAN.color)
+        else -> Turn(stringResource(R.string.rooms_hero_calm), if (room.partsOf(room.meId).isEmpty()) stringResource(R.string.rooms_no_part_yet) else stringResource(R.string.rooms_hero_calm_t),
+            stringResource(R.string.rooms_card_delivered_of, room.deliveredCount, room.parts.size), Icons.Rounded.Check, RoomTone.VERDE.color)
+    }
+    Column(Modifier.padding(top = 14.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(bg).padding(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Tile(turn.icon, turn.tone, 42.dp, 13.dp, filled = true)
+            Column(Modifier.weight(1f)) {
+                Text(turn.label.uppercase(), fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp, color = cs.onSurfaceVariant, maxLines = 1)
+                Text(turn.title, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(turn.body, fontSize = 12.sp, color = cs.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp)
+            }
+            if (mine.isNotEmpty() && !room.allDelivered) Pill(stringResource(R.string.rooms_upload), { go("parte", mine.first().id) }, small = true)
+        }
+        val second: (@Composable () -> Unit)? = when {
+            room.allDelivered && room.isLeader -> { { Pill(stringResource(R.string.rooms_create_work), { go("crear", "-") }, icon = Icons.Rounded.Build, small = true) } }
+            mine.isNotEmpty() && room.isLeader && lateOther != null && lateName != null -> { { Pill(stringResource(R.string.rooms_poke_to, lateName), { onPoke(lateName) }, icon = Icons.Rounded.PanTool, style = PillStyle.RAISED, small = true) } }
+            mine.isNotEmpty() && free != null && room.split != SplitMode.ASSIGN -> { { Pill(stringResource(R.string.rooms_take_x, free.name), { onTake(free) }, icon = Icons.Rounded.PanTool, style = PillStyle.RAISED, small = true) } }
+            mine.isEmpty() && !room.allDelivered && free != null && room.split != SplitMode.ASSIGN -> { { Pill(stringResource(R.string.rooms_take_x, free.name), { onTake(free) }, icon = Icons.Rounded.PanTool, small = true) } }
+            else -> null
+        }
+        if (second != null) Row(Modifier.padding(start = 54.dp, top = 10.dp)) { second() }
     }
 }
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TocaActions(content: @Composable () -> Unit) =
-    FlowRow(Modifier.padding(top = 11.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { content() }
-
-@Composable private fun TocaLabel(t: String) = Text(t.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
-@Composable private fun TocaTitle(t: String) = Text(t, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
-@Composable private fun TocaBody(t: String) = Text(t, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f), lineHeight = 17.sp)
 
 @Composable
 fun pluralText(id: Int, n: Int): String = LocalContext.current.resources.getQuantityString(id, n, n)
@@ -397,6 +376,7 @@ fun ownersText(room: WorkRoom, p: RoomPart): String {
 }
 
 /** La fila de una sección: igual para todas; al abrirla, texto, aportes, pie y comentarios. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PartRow(
     room: WorkRoom, p: RoomPart, today: Long, shape: Shape, open: Boolean, comsOpen: Boolean, vm: RoomsViewModel,
@@ -429,23 +409,28 @@ fun PartRow(
                 if (aportes.isNotEmpty()) Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     aportes.forEach { a -> AporteRow(room, a, today, vm, p.id) }
                 } else Text(stringResource(R.string.rooms_no_contrib), fontSize = 12.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp, start = 2.dp))
-                Row(Modifier.padding(top = 10.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                /*
+                 * Botones que se ven como botones: dentro de la tarjeta van en el tonal alto (el tonal
+                 * normal es del mismo color que la tarjeta y parecían texto suelto, 23 sep). El líder
+                 * también puede quedarse una parte libre, y los comentarios dicen «Comentar».
+                 */
+                FlowRow(Modifier.padding(top = 10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     when {
-                        p.isFree && room.isLeader -> Pill(stringResource(R.string.rooms_assign), onAssign, style = PillStyle.TONAL, small = true)
-                        p.isFree -> Pill(stringResource(R.string.rooms_take_this), onTake, small = true)
+                        p.isFree && room.isLeader -> {
+                            Pill(stringResource(R.string.rooms_take_mine), onTake, icon = Icons.Rounded.PanTool, small = true)
+                            Pill(stringResource(R.string.rooms_assign), onAssign, icon = Icons.Rounded.PersonAdd, style = PillStyle.RAISED, small = true)
+                        }
+                        p.isFree -> Pill(stringResource(R.string.rooms_take_this), onTake, icon = Icons.Rounded.PanTool, small = true)
                         st == RoomLogic.Status.OVERDUE && room.isLeader && !mine ->
                             Pill(stringResource(R.string.rooms_give_poke), { onPoke(room.nameOf(p.ownerIds.first())) }, icon = Icons.Rounded.PanTool, style = PillStyle.ERR, small = true)
                         mine && p.state != PartState.DELIVERED -> Pill(stringResource(R.string.rooms_hero_upload), { go("parte", p.id) }, icon = Icons.Rounded.Upload, small = true)
-                        mine -> Pill(stringResource(R.string.rooms_open_part), { go("parte", p.id) }, style = PillStyle.TONAL, small = true)
+                        mine -> Pill(stringResource(R.string.rooms_open_part), { go("parte", p.id) }, style = PillStyle.RAISED, small = true)
                     }
-                    Pill(stringResource(R.string.rooms_add_short), onAdd, icon = Icons.Rounded.Add, style = PillStyle.TONAL, small = true)
-                    Box(Modifier.weight(1f))
-                    Row(Modifier.clip(CircleShape).cleanClickable(onClick = onComs).padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(Icons.AutoMirrored.Rounded.Comment, stringResource(R.string.rooms_comments), tint = cs.primary, modifier = Modifier.size(16.dp))
-                        if (p.comments.isNotEmpty()) Text("${p.comments.size}", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = cs.primary)
-                    }
-                    if (!room.isLeader && mine && p.state != PartState.DELIVERED) Box(Modifier.size(32.dp).clip(CircleShape).cleanClickable(onClick = onAsk), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.MoreVert, stringResource(R.string.rooms_ask_leader), tint = cs.primary, modifier = Modifier.size(16.dp))
+                    Pill(stringResource(R.string.rooms_add_short), onAdd, icon = Icons.Rounded.Add, style = PillStyle.RAISED, small = true)
+                    Pill(if (p.comments.isEmpty()) stringResource(R.string.rooms_comment_action) else stringResource(R.string.rooms_comments) + " · ${p.comments.size}", onComs,
+                        icon = Icons.AutoMirrored.Rounded.Comment, style = if (comsOpen) PillStyle.HERO else PillStyle.RAISED, small = true)
+                    if (!room.isLeader && mine && p.state != PartState.DELIVERED) Box(Modifier.size(32.dp).clip(CircleShape).background(cs.surfaceContainerHighest).cleanClickable(onClick = onAsk), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.MoreVert, stringResource(R.string.rooms_ask_leader), tint = cs.onSurface, modifier = Modifier.size(16.dp))
                     }
                 }
                 AnimatedVisibility(comsOpen) { InlineComments(room, p.comments, stringResource(R.string.rooms_comment_in, p.name)) { vm.comment(room.id, p.id, it) } }
