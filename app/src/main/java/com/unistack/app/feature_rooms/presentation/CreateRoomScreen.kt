@@ -255,9 +255,9 @@ fun CreateRoomScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 val panel = (cur as? Panel)?.key
-                if (panel == "mine" || panel == "dates") Pill(stringResource(R.string.rooms_create_now), { create() }, Modifier.weight(1f), style = PillStyle.TONAL)
-                if (panel == "more") Pill(stringResource(R.string.rooms_create_room_btn), { create() }, Modifier.weight(1f))
-                else Pill(stringResource(R.string.rooms_next), { advance() }, Modifier.weight(1f), icon = null,
+                if (panel == "mine" || panel == "dates") Pill(stringResource(R.string.rooms_create_now), { create() }, Modifier.weight(1f), style = PillStyle.TONAL, big = true)
+                if (panel == "more") Pill(stringResource(R.string.rooms_create_room_btn), { create() }, Modifier.weight(1f), big = true)
+                else Pill(stringResource(R.string.rooms_next), { advance() }, Modifier.weight(1f), icon = null, big = true,
                     enabled = !(panel == "parts" && d.parts.isEmpty()))
             }
         }

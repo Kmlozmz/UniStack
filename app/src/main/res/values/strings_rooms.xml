@@ -12,6 +12,7 @@
     <string name="rooms_back">Atrás</string>
     <string name="rooms_more">Más</string>
     <string name="rooms_help">Cómo funciona</string>
+    <string name="rooms_guide_short">Guía</string>
     <string name="rooms_search">Buscar</string>
     <string name="rooms_copy">Copiar</string>
     <string name="rooms_share">Compartir</string>
@@ -37,8 +38,8 @@
     <string name="rooms_home_subtitle_empty">Trabajos en grupo, cada uno con su sala</string>
     <string name="rooms_home_counts_active">%d activos</string>
     <string name="rooms_home_counts_one_active">1 activo</string>
-    <string name="rooms_home_counts_done"> · %d terminados</string>
-    <string name="rooms_home_counts_one_done"> · 1 terminado</string>
+    <string name="rooms_home_counts_done">\u0020· %d terminados</string>
+    <string name="rooms_home_counts_one_done">\u0020· 1 terminado</string>
     <string name="rooms_empty_title">Todavía no hay salas</string>
     <string name="rooms_empty_body">Uno crea la sala y pasa el código. Cada quien entra, coge su parte y hace su aporte. Al final se junta todo en un documento. Así se ve una por dentro:</string>
     <string name="rooms_how_label">Cómo funciona</string>
@@ -108,7 +109,7 @@
     <string name="rooms_card_your_part">Tu parte: %s</string>
     <string name="rooms_card_was_for">Era para %s</string>
     <string name="rooms_card_for">Para %s</string>
-    <string name="rooms_card_and_more"> · y %d más</string>
+    <string name="rooms_card_and_more">\u0020· y %d más</string>
     <string name="rooms_card_invite">Falta invitar al grupo</string>
     <string name="rooms_card_invite_d">Entra y pásales el código</string>
     <string name="rooms_card_take">Coge una parte</string>
@@ -132,10 +133,8 @@
     <string name="rooms_period_first">Primer semestre</string>
     <string name="rooms_period_second">Segundo semestre</string>
     <string name="rooms_period_now">En curso</string>
-    <string name="rooms_period_works">%d trabajos</string>
     <string name="rooms_average">promedio</string>
-    <string name="rooms_folder_sub">%d trabajos</string>
-    <string name="rooms_folder_avg"> · promedio %s</string>
+    <string name="rooms_folder_avg">\u0020· promedio %s</string>
     <string name="rooms_no_grade">sin nota</string>
     <string name="rooms_closed_title">Este trabajo está cerrado</string>
     <string name="rooms_closed_body">%s se entregó. Ya no se puede subir ni cambiar nada; solo ver el documento final.</string>
@@ -209,7 +208,7 @@
     <string name="rooms_due_1m">1 mes</string>
     <string name="rooms_pick_date">Elegir fecha</string>
     <string name="rooms_parts_title">Las partes del trabajo</string>
-    <string name="rooms_parts_hint_type">Un punto de partida para %s. </string>
+    <string name="rooms_parts_hint_type">Un punto de partida para %s.\u0020</string>
     <string name="rooms_parts_hint">Arrastra para ordenar, toca una para ajustarla.</string>
     <string name="rooms_parts_word">partes</string>
     <string name="rooms_parts_total">%ss en total</string>
@@ -1086,6 +1085,10 @@
     <plurals name="rooms_n_people">
         <item quantity="one">%d persona</item>
         <item quantity="other">%d personas</item>
+    </plurals>
+    <plurals name="rooms_n_works">
+        <item quantity="one">1 trabajo</item>
+        <item quantity="other">%d trabajos</item>
     </plurals>
     <plurals name="rooms_n_votes">
         <item quantity="one">%d voto</item>

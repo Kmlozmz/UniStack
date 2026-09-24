@@ -96,6 +96,44 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.IntOffset
+import com.unistack.app.core.design.components.UniDropdownMenu
+import com.unistack.app.core.utils.performSafely
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import coil.compose.AsyncImage
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniBackButton
@@ -126,21 +164,29 @@ private val CHAT_REACTIONS = listOf("👍", "❤️", "😂", "🔥", "👀")
 fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (String, String) -> Unit, prefill: String = "") {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     var input by remember { mutableStateOf(if (prefill.isNotBlank()) "$prefill " else "") }
     var selected by remember { mutableStateOf<String?>(null) }
+    var selectedBounds by remember { mutableStateOf<Rect?>(null) }
     var replyTo by remember { mutableStateOf<String?>(null) }
     var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var sheet by remember { mutableStateOf<String?>(null) }
+    var menu by remember { mutableStateOf(false) }
+    val composerFocus = remember { FocusRequester() }
     val subjects by vm.subjects.collectAsState()
     val mat = subjectColor(subjects.firstOrNull { it.id == room.subjectId })
     val list = rememberLazyListState()
     val msgs = room.messages.filter { m -> query.isBlank() || m.systemType != null || listOf(m.text, m.subtitle).any { it.contains(query, true) } || m.pollOptions.any { it.label.contains(query, true) } }
 
+    /*
+     * La lista va al revés, con lo último abajo y anclado al borde: cuando sube el teclado y la
+     * pantalla se encoge, lo que se esconde es lo de arriba y el último mensaje sube con el
+     * teclado, como en cualquier chat. Al derecho se quedaba debajo del teclado (23 sep).
+     */
     LaunchedEffect(room.messages.size) {
         vm.markChatSeen(room.id)
-        val n = list.layoutInfo.totalItemsCount
-        if (n > 0) list.scrollToItem(n - 1)
+        if (list.layoutInfo.totalItemsCount > 0) list.scrollToItem(0)
     }
 
     val sendText = {
@@ -150,10 +196,12 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
             input = ""; replyTo = null
         }
     }
+    val replyWith: (String) -> Unit = { id -> replyTo = id; selected = null; selectedBounds = null; runCatching { composerFocus.requestFocus() } }
     val sendFile: (MessageKind, RoomStoredFile) -> Unit = { k, f -> vm.sendFile(room.id, k, f, fileSubtitle(f.mimeType, f.sizeBytes)) }
     val picker = rememberRoomPicker(vm) { f -> sendFile(if (f.mimeType.startsWith("image/")) MessageKind.PHOTO else MessageKind.FILE, f) }
 
-    Column(Modifier.fillMaxSize().background(cs.background).statusBarsPadding().imePadding()) {
+    Box(Modifier.fillMaxSize().background(cs.background)) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().drawBehind {
             drawLine(cs.outlineVariant.copy(alpha = 0.35f), Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
         }.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -166,7 +214,31 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
                 Text(pluralText(R.plurals.rooms_n_people, room.activeMembers.size), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
             }
             PlainIcon(Icons.Rounded.Search, stringResource(R.string.rooms_search)) { searching = !searching; query = "" }
-            PlainIcon(Icons.Rounded.MoreVert, stringResource(R.string.rooms_more)) { sheet = "more" }
+            // Los tres puntos abren un menú que cuelga del botón, no una hoja (23 sep: «estamos abusando de los sheets»).
+            Box {
+                PlainIcon(Icons.Rounded.MoreVert, stringResource(R.string.rooms_more)) { menu = true }
+                UniDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(if (room.chatMuted) R.string.rooms_unmute_chat else R.string.rooms_mute_chat)) },
+                        leadingIcon = { Icon(Icons.Rounded.NotificationsOff, null) },
+                        onClick = {
+                            menu = false
+                            vm.update(room.id) { it.copy(chatMuted = !it.chatMuted) }
+                            context.roomToast(context.getString(if (room.chatMuted) R.string.rooms_notifs_on else R.string.rooms_chat_muted_toast))
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.rooms_search_chat)) },
+                        leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                        onClick = { menu = false; searching = true }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.rooms_chat_media)) },
+                        leadingIcon = { Icon(Icons.Rounded.Photo, null) },
+                        onClick = { menu = false; sheet = "media" }
+                    )
+                }
+            }
         }
         if (searching) Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f).clip(CircleShape).background(cs.surfaceContainer).padding(horizontal = 14.dp, vertical = 10.dp)) {
@@ -187,43 +259,60 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
                 }
             }
         }
-        selected?.let { id -> room.messages.firstOrNull { it.id == id } }?.let { m ->
-            Row(Modifier.fillMaxWidth().background(cs.surfaceContainerHigh).padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    CHAT_REACTIONS.forEach { e -> Text(e, fontSize = 19.sp, lineHeight = 1.2.em, modifier = Modifier.clip(CircleShape).cleanClickable { vm.reactMessage(room.id, m.id, e); selected = null }.padding(horizontal = 5.dp, vertical = 4.dp)) }
-                }
-                PlainIcon(Icons.AutoMirrored.Rounded.Reply, stringResource(R.string.rooms_reply), 36) { replyTo = m.id; selected = null }
-                PlainIcon(Icons.Rounded.PushPin, stringResource(R.string.rooms_pin), 36) { vm.pin(room.id, m.id); selected = null; context.roomToast(context.getString(R.string.rooms_pinned_for_all)) }
-                if (m.kind == MessageKind.PHOTO || m.kind == MessageKind.FILE || m.kind == MessageKind.LINK) PlainIcon(Icons.Rounded.BookmarkAdd, stringResource(R.string.rooms_save_material), 36) {
-                    vm.saveMessageToMaterial(room.id, m.id); selected = null; context.roomToast(context.getString(R.string.rooms_saved_material))
-                }
-                PlainIcon(Icons.Rounded.Close, stringResource(R.string.rooms_close), 36) { selected = null }
-            }
-        }
         if (room.chatMuted) Row(Modifier.fillMaxWidth().background(cs.surfaceContainerLow).padding(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.NotificationsOff, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(14.dp))
             Text(stringResource(R.string.rooms_chat_muted), fontSize = 11.5.sp, color = cs.onSurfaceVariant)
         }
-        LazyColumn(Modifier.weight(1f), state = list, contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        LazyColumn(
+            Modifier.weight(1f), state = list, reverseLayout = true,
+            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.Bottom)
+        ) {
             if (msgs.isEmpty()) item {
                 Text(stringResource(R.string.rooms_chat_empty), fontSize = 12.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.fillMaxWidth().padding(30.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
-            itemsIndexed(msgs, key = { _, m -> m.id }) { i, m ->
+            // Al revés: el índice 0 es el último mensaje, que queda abajo.
+            items(msgs.size, key = { msgs[msgs.lastIndex - it].id }) { r ->
+                val i = msgs.lastIndex - r
+                val m = msgs[i]
                 val prev = msgs.getOrNull(i - 1)
                 val day = epochDayOf(m.createdAt)
-                if (prev == null || epochDayOf(prev.createdAt) != day) DaySeparator(day, vm.today())
-                if (m.systemType != null) SystemNotice(room, m)
-                else {
-                    val cont = prev != null && prev.systemType == null && prev.byId == m.byId && epochDayOf(prev.createdAt) == day
-                    MessageBubble(room, m, cont, m.id == selected, mat, vm, query,
-                        onSelect = { selected = if (selected == m.id) null else m.id },
-                        onPart = { pid -> go("parte", pid) })
+                Column {
+                    if (prev == null || epochDayOf(prev.createdAt) != day) DaySeparator(day, vm.today())
+                    if (m.systemType != null) SystemNotice(room, m)
+                    else {
+                        val cont = prev != null && prev.systemType == null && prev.byId == m.byId && epochDayOf(prev.createdAt) == day
+                        MessageBubble(room, m, cont, m.id == selected, mat, vm, query,
+                            onSelect = {
+                                selectedBounds = null
+                                selected = if (selected == m.id) null else m.id
+                                focusManager.clearFocus()
+                            },
+                            onReply = { replyWith(m.id) },
+                            onBounds = { selectedBounds = it },
+                            onPart = { pid -> go("parte", pid) })
+                    }
                 }
             }
-            item { Box(Modifier.height(1.dp)) }
         }
         Composer(room, vm, input, { input = it }, replyTo?.let { id -> room.messages.firstOrNull { it.id == id } }, onCancelReply = { replyTo = null },
-            onSend = sendText, onAttach = { sheet = "attach" }, onVoice = { f, secs -> vm.sendFile(room.id, MessageKind.VOICE, f, "", secs) })
+            onSend = sendText, onAttach = { sheet = "attach" }, onVoice = { f, secs -> vm.sendFile(room.id, MessageKind.VOICE, f, "", secs) }, focus = composerFocus)
+    }
+    selected?.let { id -> room.messages.firstOrNull { it.id == id } }?.let { m ->
+        selectedBounds?.let { b ->
+            MessageMenu(room, m, b,
+                onReact = { e -> vm.reactMessage(room.id, m.id, e); selected = null; selectedBounds = null },
+                onReply = { replyWith(m.id) },
+                onCopy = { context.copyText(context.getString(R.string.rooms_group_chat), m.text.replace("[[", "").replace("]]", "")); context.roomToast(context.getString(R.string.rooms_copied)); selected = null },
+                onPin = {
+                    val pinning = room.pinnedMessageId != m.id
+                    vm.pin(room.id, if (pinning) m.id else null); selected = null
+                    if (pinning) context.roomToast(context.getString(R.string.rooms_pinned_for_all))
+                },
+                onSave = { vm.saveMessageToMaterial(room.id, m.id); selected = null; context.roomToast(context.getString(R.string.rooms_saved_material)) },
+                onDismiss = { selected = null; selectedBounds = null })
+        }
+    }
     }
 
     when (sheet) {
@@ -256,15 +345,6 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
                 Pill(stringResource(R.string.rooms_send_poll), { if (ok) { vm.send(room.id, q.trim(), kind = MessageKind.POLL, poll = opts.map { it.trim() }.filter { it.isNotBlank() }); sheet = null } },
                     Modifier.fillMaxWidth().padding(top = 6.dp), enabled = ok)
             }
-        }
-        "more" -> RoomSheet({ sheet = null }, stringResource(R.string.rooms_group_chat)) {
-            SheetRow(stringResource(if (room.chatMuted) R.string.rooms_unmute_chat else R.string.rooms_mute_chat), stringResource(if (room.chatMuted) R.string.rooms_unmute_chat_d else R.string.rooms_mute_chat_d),
-                Icons.Rounded.NotificationsOff, onClick = {
-                    vm.update(room.id) { it.copy(chatMuted = !it.chatMuted) }; sheet = null
-                    context.roomToast(context.getString(if (room.chatMuted) R.string.rooms_notifs_on else R.string.rooms_chat_muted_toast))
-                })
-            SheetRow(stringResource(R.string.rooms_search_chat), icon = Icons.Rounded.Search, onClick = { searching = true; sheet = null })
-            SheetRow(stringResource(R.string.rooms_chat_media), stringResource(R.string.rooms_chat_media_d), Icons.Rounded.Photo, onClick = { sheet = "media" })
         }
         "media" -> RoomSheet({ sheet = null }, stringResource(R.string.rooms_chat_media), tall = true) {
             val media = room.messages.filter { it.kind == MessageKind.PHOTO || it.kind == MessageKind.FILE || it.kind == MessageKind.LINK || it.kind == MessageKind.VOICE }.reversed()
@@ -354,11 +434,24 @@ private fun SystemNotice(room: WorkRoom, m: ChatMessage) {
     }
 }
 
+/**
+ * Un mensaje. Se arrastra hacia la derecha para responderlo, como en WhatsApp: asoma la flecha,
+ * al pasar el umbral vibra y al soltar vuelve a su sitio con el mensaje ya citado abajo.
+ *
+ * La cara va pegada al pie de la burbuja, no al de las reacciones: con reacciones la burbuja
+ * quedaba más alta que la cara y las demás no (lo notó el 23 sep). Las reacciones montan medio
+ * cuerpo sobre el borde de la burbuja y no empujan al mensaje siguiente.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MessageBubble(room: WorkRoom, m: ChatMessage, cont: Boolean, selected: Boolean, mat: Color, vm: RoomsViewModel, query: String, onSelect: () -> Unit, onPart: (String) -> Unit) {
+private fun MessageBubble(
+    room: WorkRoom, m: ChatMessage, cont: Boolean, selected: Boolean, mat: Color, vm: RoomsViewModel, query: String,
+    onSelect: () -> Unit, onReply: () -> Unit, onBounds: (Rect) -> Unit, onPart: (String) -> Unit
+) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
     val mine = m.byId == room.meId
     val bg = if (mine) cs.primary else cs.surfaceContainer
     val fg = if (mine) cs.onPrimary else cs.onSurface
@@ -368,45 +461,91 @@ private fun MessageBubble(room: WorkRoom, m: ChatMessage, cont: Boolean, selecte
         cont -> RoundedCornerShape(6.dp, 18.dp, 18.dp, 6.dp)
         else -> RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp)
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
-        Row(Modifier.fillMaxWidth(0.86f).then(Modifier), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Bottom) {
-            if (!mine) Box(Modifier.padding(bottom = 2.dp, end = 8.dp).alpha(if (cont) 0f else 1f)) { MemberFace(room, m.byId, 24.dp) }
-            Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
+    var dx by remember { mutableFloatStateOf(0f) }
+    var armed by remember { mutableStateOf(false) }
+    var settle by remember { mutableStateOf<Job?>(null) }
+    val face = 32.dp
+    val triggerPx = with(androidx.compose.ui.platform.LocalDensity.current) { 56.dp.toPx() }
+    Box(Modifier.fillMaxWidth().pointerInput(m.id) {
+        val trigger = 56.dp.toPx()
+        val limit = 84.dp.toPx()
+        val release = {
+            if (dx >= trigger) onReply()
+            armed = false
+            settle = scope.launch { animate(dx, 0f, animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)) { v, _ -> dx = v } }
+        }
+        detectHorizontalDragGestures(
+            onDragStart = { settle?.cancel() },
+            onDragEnd = { release() },
+            onDragCancel = { release() },
+            onHorizontalDrag = { change, amount ->
+                // Pasado el umbral cuesta más estirarlo: se nota que ya «enganchó».
+                val next = (dx + amount * (if (dx > trigger) 0.3f else 1f)).coerceIn(0f, limit)
+                if (next != dx) change.consume()
+                dx = next
+                val now = dx >= trigger
+                if (now && !armed) haptic.performSafely(HapticFeedbackType.GestureThresholdActivate)
+                armed = now
+            }
+        )
+    }) {
+        val p = (dx / triggerPx).coerceIn(0f, 1f)
+        Box(
+            Modifier.align(Alignment.CenterStart).padding(start = 2.dp).size(30.dp)
+                .graphicsLayer { alpha = p; scaleX = 0.5f + 0.5f * p; scaleY = 0.5f + 0.5f * p }
+                .clip(CircleShape).background(if (armed) mix(cs.primary, 0.22f, cs.surfaceContainerHigh) else cs.surfaceContainerHigh),
+            contentAlignment = Alignment.Center
+        ) { Icon(Icons.AutoMirrored.Rounded.Reply, null, tint = if (armed) cs.primary else cs.onSurfaceVariant, modifier = Modifier.size(16.dp)) }
+        Row(Modifier.fillMaxWidth().offset { IntOffset(dx.roundToInt(), 0) }, horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
+            Column(Modifier.fillMaxWidth(0.86f), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
                 if (!mine && !cont) Text(room.nameOf(m.byId), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = room.member(m.byId)?.let { MemberColors.of(it.colorIndex) } ?: cs.primary,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
-                Column(Modifier.clip(shape).then(if (selected) Modifier.border(2.dp, cs.primary, shape) else Modifier).background(bg).cleanClickable(onClick = onSelect).padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    m.replyToId?.let { rid -> room.messages.firstOrNull { it.id == rid } }?.let { q ->
-                        Row(Modifier.padding(bottom = 5.dp).clip(RoundedCornerShape(4.dp)).background(fg.copy(alpha = 0.08f)).drawBehind {
-                            drawRect(fg, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height))
-                        }.padding(start = 11.dp, end = 8.dp, top = 3.dp, bottom = 3.dp)) {
-                            Column {
-                                Text(room.nameOf(q.byId), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = fg.copy(alpha = 0.8f))
-                                Text(plainOf(q), fontSize = 12.sp, color = fg.copy(alpha = 0.8f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    modifier = Modifier.padding(start = face + 4.dp, bottom = 2.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    if (!mine) Box(Modifier.padding(bottom = 2.dp, end = 8.dp).alpha(if (cont) 0f else 1f)) { MemberFace(room, m.byId, 24.dp) }
+                    Column(
+                        Modifier.onGloballyPositioned { if (selected) onBounds(it.boundsInWindow()) }
+                            .clip(shape).background(bg).cleanClickable(onClick = onSelect).padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        m.replyToId?.let { rid -> room.messages.firstOrNull { it.id == rid } }?.let { q ->
+                            Row(Modifier.padding(bottom = 5.dp).clip(RoundedCornerShape(4.dp)).background(fg.copy(alpha = 0.08f)).drawBehind {
+                                drawRect(fg, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height))
+                            }.padding(start = 11.dp, end = 8.dp, top = 3.dp, bottom = 3.dp)) {
+                                Column {
+                                    Text(room.nameOf(q.byId), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = fg.copy(alpha = 0.8f))
+                                    Text(plainOf(q), fontSize = 12.sp, color = fg.copy(alpha = 0.8f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                }
                             }
                         }
-                    }
-                    when (m.kind) {
-                        MessageKind.PHOTO -> Box(Modifier.padding(bottom = 4.dp).size(210.dp, 130.dp).clip(RoundedCornerShape(12.dp)).background(cs.surfaceContainerHigh).cleanClickable {
-                            m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
-                        }) { if (m.file != null) AsyncImage(vm.files.file(m.file), m.text, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
-                        MessageKind.FILE, MessageKind.LINK -> Row(Modifier.padding(bottom = 4.dp).widthIn(min = 200.dp).clip(RoundedCornerShape(12.dp)).background(fg.copy(alpha = 0.08f)).cleanClickable {
-                            if (m.kind == MessageKind.LINK) context.openUrl(m.text) else m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
-                        }.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Icon(if (m.kind == MessageKind.LINK) Icons.Rounded.Link else Icons.Rounded.Description, null, tint = fg, modifier = Modifier.size(22.dp))
-                            Column {
-                                Text(if (m.kind == MessageKind.LINK) m.subtitle.ifBlank { m.text } else m.text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(if (m.kind == MessageKind.LINK) m.text else m.subtitle, fontSize = 11.sp, color = fg.copy(alpha = 0.75f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        when (m.kind) {
+                            MessageKind.PHOTO -> Box(Modifier.padding(bottom = 4.dp).size(210.dp, 130.dp).clip(RoundedCornerShape(12.dp)).background(cs.surfaceContainerHigh).cleanClickable {
+                                m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
+                            }) { if (m.file != null) AsyncImage(vm.files.file(m.file), m.text, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                            MessageKind.FILE, MessageKind.LINK -> Row(Modifier.padding(bottom = 4.dp).widthIn(min = 200.dp).clip(RoundedCornerShape(12.dp)).background(fg.copy(alpha = 0.08f)).cleanClickable {
+                                if (m.kind == MessageKind.LINK) context.openUrl(m.text) else m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
+                            }.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Icon(if (m.kind == MessageKind.LINK) Icons.Rounded.Link else Icons.Rounded.Description, null, tint = fg, modifier = Modifier.size(22.dp))
+                                Column {
+                                    Text(if (m.kind == MessageKind.LINK) m.subtitle.ifBlank { m.text } else m.text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(if (m.kind == MessageKind.LINK) m.text else m.subtitle, fontSize = 11.sp, color = fg.copy(alpha = 0.75f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
                             }
+                            MessageKind.VOICE -> VoiceMessage(m, vm, fg)
+                            MessageKind.POLL -> PollMessage(room, m, vm, fg)
+                            MessageKind.TEXT -> Text(richText(room, m.text, mine, mat, query), fontSize = 14.sp, lineHeight = 20.sp, color = fg,
+                                modifier = Modifier.pointerInput(m.text) { detectTapGestures(onTap = { onSelect() }) })
                         }
-                        MessageKind.VOICE -> VoiceMessage(m, vm, fg)
-                        MessageKind.POLL -> PollMessage(room, m, vm, fg)
-                        MessageKind.TEXT -> Text(richText(room, m.text, mine, mat, query), fontSize = 14.sp, lineHeight = 20.sp, color = fg,
-                            modifier = Modifier.pointerInput(m.text) { detectTapGestures(onTap = { onSelect() }) })
+                        Text(hourOf(m.createdAt), fontSize = 10.sp, color = fg.copy(alpha = 0.65f), modifier = Modifier.align(Alignment.End).padding(top = 2.dp))
                     }
-                    Text(hourOf(m.createdAt), fontSize = 10.sp, color = fg.copy(alpha = 0.65f), modifier = Modifier.align(Alignment.End).padding(top = 2.dp))
                 }
                 val reacts = m.reactions.filterValues { it.isNotEmpty() }
-                if (reacts.isNotEmpty()) Row(Modifier.offset(y = (-6).dp).padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                if (reacts.isNotEmpty()) Row(
+                    Modifier.padding(start = if (mine) 0.dp else face + 8.dp, end = if (mine) 8.dp else 0.dp).layout { measurable, c ->
+                        val pl = measurable.measure(c)
+                        val up = 7.dp.roundToPx()
+                        layout(pl.width, (pl.height - up).coerceAtLeast(0)) { pl.place(0, -up) }
+                    },
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
                     reacts.forEach { (e, who) ->
                         val yo = room.meId in who
                         Row(Modifier.clip(CircleShape).background(cs.background).padding(1.5.dp).clip(CircleShape).background(if (yo) mix(cs.primary, 0.25f, cs.surfaceContainerHigh) else cs.surfaceContainerHigh)
@@ -417,14 +556,118 @@ private fun MessageBubble(room: WorkRoom, m: ChatMessage, cont: Boolean, selecte
                     }
                 }
                 if (m.kind == MessageKind.PHOTO || m.kind == MessageKind.FILE || m.kind == MessageKind.LINK) {
-                    if (m.savedToMaterial) Text("✓ " + stringResource(R.string.rooms_in_material), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoomTone.VERDE.color, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    val pad = Modifier.padding(start = if (mine) 6.dp else face + 6.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)
+                    if (m.savedToMaterial) Text("✓ " + stringResource(R.string.rooms_in_material), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoomTone.VERDE.color, modifier = pad)
                     else Text(stringResource(R.string.rooms_save_material), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = cs.primary,
-                        modifier = Modifier.cleanClickable { vm.saveMessageToMaterial(room.id, m.id); context.roomToast(context.getString(R.string.rooms_saved_material)) }.padding(horizontal = 6.dp, vertical = 2.dp))
+                        modifier = Modifier.cleanClickable { vm.saveMessageToMaterial(room.id, m.id); context.roomToast(context.getString(R.string.rooms_saved_material)) }.then(pad))
                 }
             }
         }
     }
     @Suppress("UNUSED_EXPRESSION") onPart
+}
+
+/**
+ * Lo que sale al tocar un mensaje, ahí mismo y flotando, como en Telegram o WhatsApp: el resto
+ * del chat se apaga menos el mensaje, encima brotan las reacciones rápidas y debajo el menú
+ * (responder, copiar, destacar, guardar en material). Si abajo no cabe, todo va encima.
+ * Sustituye a la barra que se abría arriba del chat (23 sep).
+ */
+@Composable
+private fun MessageMenu(
+    room: WorkRoom, m: ChatMessage, bubble: Rect,
+    onReact: (String) -> Unit, onReply: () -> Unit, onCopy: () -> Unit, onPin: () -> Unit, onSave: () -> Unit, onDismiss: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val haptic = LocalHapticFeedback.current
+    val mine = m.byId == room.meId
+    var origin by remember { mutableStateOf(Offset.Zero) }
+    val shown = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        haptic.performSafely(HapticFeedbackType.LongPress)
+        shown.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow))
+    }
+    val topInset = WindowInsets.statusBars.getTop(androidx.compose.ui.platform.LocalDensity.current)
+    val bottomInset = WindowInsets.navigationBars.getBottom(androidx.compose.ui.platform.LocalDensity.current)
+    val hole = bubble.translate(-origin)
+    var menuAbove by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionInWindow() }) {
+        Canvas(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { onDismiss() } }) {
+            val r = 20.dp.toPx()
+            val path = Path().apply {
+                fillType = PathFillType.EvenOdd
+                addRect(androidx.compose.ui.geometry.Rect(Offset.Zero, size))
+                addRoundRect(RoundRect(hole.inflate(3.dp.toPx()), CornerRadius(r, r)))
+            }
+            drawPath(path, Color.Black.copy(alpha = 0.55f * shown.value.coerceIn(0f, 1f)))
+        }
+        Layout(content = {
+            // las reacciones rápidas, en una pastilla
+            Row(
+                Modifier.graphicsLayer {
+                    val v = shown.value
+                    alpha = v.coerceIn(0f, 1f); scaleX = 0.6f + 0.4f * v; scaleY = 0.6f + 0.4f * v
+                    transformOrigin = TransformOrigin(if (mine) 1f else 0f, 1f)
+                }.shadow(10.dp, CircleShape).clip(CircleShape).background(cs.surfaceContainerHigh).padding(horizontal = 6.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically
+            ) {
+                CHAT_REACTIONS.forEachIndexed { i, e ->
+                    val pop = remember { Animatable(0f) }
+                    LaunchedEffect(Unit) { delay(40L * i); pop.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMedium)) }
+                    val yo = room.meId in m.reactions[e].orEmpty()
+                    Text(e, fontSize = 24.sp, lineHeight = 1.15.em, modifier = Modifier
+                        .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+                        .clip(CircleShape).background(if (yo) mix(cs.primary, 0.28f, cs.surfaceContainerHigh) else Color.Transparent)
+                        .cleanClickable { onReact(e) }.padding(horizontal = 6.dp, vertical = 4.dp))
+                }
+            }
+            // el menú
+            Column(
+                Modifier.width(220.dp).graphicsLayer {
+                    val v = shown.value
+                    alpha = v.coerceIn(0f, 1f); scaleX = 0.85f + 0.15f * v; scaleY = 0.85f + 0.15f * v
+                    transformOrigin = TransformOrigin(if (mine) 1f else 0f, if (menuAbove) 1f else 0f)
+                }.shadow(10.dp, RoundedCornerShape(18.dp)).clip(RoundedCornerShape(18.dp)).background(cs.surfaceContainerHigh).padding(vertical = 6.dp)
+            ) {
+                MenuRow(Icons.AutoMirrored.Rounded.Reply, stringResource(R.string.rooms_reply), onReply)
+                if (m.kind == MessageKind.TEXT || m.kind == MessageKind.LINK || m.kind == MessageKind.POLL) MenuRow(Icons.Rounded.ContentCopy, stringResource(R.string.rooms_copy), onCopy)
+                MenuRow(Icons.Rounded.PushPin, stringResource(if (room.pinnedMessageId == m.id) R.string.rooms_unpin else R.string.rooms_pin), onPin)
+                if ((m.kind == MessageKind.PHOTO || m.kind == MessageKind.FILE || m.kind == MessageKind.LINK) && !m.savedToMaterial)
+                    MenuRow(Icons.Rounded.BookmarkAdd, stringResource(R.string.rooms_save_material), onSave)
+            }
+        }) { measurables, constraints ->
+            val loose = constraints.copy(minWidth = 0, minHeight = 0)
+            val pill = measurables[0].measure(loose)
+            val box = measurables[1].measure(loose)
+            val w = constraints.maxWidth; val h = constraints.maxHeight
+            val gap = 8.dp.roundToPx(); val margin = 12.dp.roundToPx()
+            val top = topInset + margin; val bottom = h - bottomInset - margin
+            fun x(width: Int) = (if (mine) hole.right.roundToInt() - width else hole.left.roundToInt()).coerceIn(margin, (w - margin - width).coerceAtLeast(margin))
+            val below = hole.bottom.roundToInt() + gap + box.height <= bottom
+            menuAbove = !below
+            val boxY: Int; val pillY: Int
+            if (below) {
+                boxY = hole.bottom.roundToInt() + gap
+                pillY = (hole.top.roundToInt() - gap - pill.height).coerceAtLeast(top)
+            } else {
+                boxY = (hole.top.roundToInt() - gap - box.height).coerceAtLeast(top + pill.height + gap)
+                pillY = (boxY - gap - pill.height).coerceAtLeast(top)
+            }
+            layout(w, h) {
+                pill.place(x(pill.width), pillY)
+                box.place(x(box.width), boxY)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Row(Modifier.fillMaxWidth().cleanClickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Icon(icon, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        Text(text, fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = cs.onSurface, maxLines = 1)
+    }
 }
 
 /** @menciones en negrita y [[partes]] como pastilla del color de la materia. */
@@ -507,7 +750,7 @@ private fun PollMessage(room: WorkRoom, m: ChatMessage, vm: RoomsViewModel, fg: 
 @Composable
 private fun Composer(
     room: WorkRoom, vm: RoomsViewModel, input: String, onInput: (String) -> Unit, replyTo: ChatMessage?, onCancelReply: () -> Unit,
-    onSend: () -> Unit, onAttach: () -> Unit, onVoice: (RoomStoredFile, Int) -> Unit
+    onSend: () -> Unit, onAttach: () -> Unit, onVoice: (RoomStoredFile, Int) -> Unit, focus: FocusRequester = remember { FocusRequester() }
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -550,7 +793,7 @@ private fun Composer(
             } else Row(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(cs.surfaceContainer).padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 11.dp)) {
                     if (input.isEmpty()) Text(stringResource(R.string.rooms_write_group), fontSize = 14.sp, color = cs.onSurfaceVariant)
-                    BasicTextField(input, onInput, cursorBrush = SolidColor(cs.primary), maxLines = 5, textStyle = TextStyle(color = cs.onSurface, fontSize = 14.sp), modifier = Modifier.fillMaxWidth())
+                    BasicTextField(input, onInput, cursorBrush = SolidColor(cs.primary), maxLines = 5, textStyle = TextStyle(color = cs.onSurface, fontSize = 14.sp), modifier = Modifier.fillMaxWidth().focusRequester(focus))
                 }
                 Box(Modifier.size(34.dp).clip(CircleShape).cleanClickable(onClick = onAttach), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.AttachFile, stringResource(R.string.rooms_attach), tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))

@@ -236,19 +236,26 @@ fun Pill(
         PillStyle.OK -> RoomTone.VERDE.color to cs.background
         PillStyle.GHOST -> Color.Transparent to cs.primary
     }
+    /*
+     * `big` es la acción principal de la pantalla y mide lo que el botón ancho de la app
+     * (`UniStackButton`): 56 de alto y letra de 16. Se quedaba en 48 con letra de 13,5 y al lado
+     * de los botones de Notas o Tareas se veía flaco (lo notó el 23 sep en «Crear una sala»).
+     */
+    val iconSize = if (small) 15.dp else if (big) 20.dp else 17.dp
     Row(
         modifier = modifier
             .graphicsLayer { this.alpha = alpha }
+            .then(if (big) Modifier.heightIn(min = 56.dp) else Modifier)
             .clip(CircleShape)
             .background(bg.copy(alpha = if (enabled) bg.alpha else bg.alpha * 0.5f))
             .then(if (enabled) Modifier.cleanClickable(onClick = onClick) else Modifier)
-            .padding(horizontal = if (small) 12.dp else if (big) 14.dp else 17.dp, vertical = if (small) 7.dp else if (big) 14.dp else 12.dp),
+            .padding(horizontal = if (small) 12.dp else if (big) 18.dp else 17.dp, vertical = if (small) 7.dp else if (big) 10.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(if (big) 8.dp else 7.dp, Alignment.CenterHorizontally)
     ) {
-        if (icon != null) Icon(icon, null, tint = fg, modifier = Modifier.size(if (small) 15.dp else 17.dp))
-        Text(text, color = fg.copy(alpha = if (enabled) 1f else 0.6f), fontSize = if (small) 12.sp else 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (trailingIcon != null) Icon(trailingIcon, null, tint = fg, modifier = Modifier.size(if (small) 15.dp else 17.dp))
+        if (icon != null) Icon(icon, null, tint = fg, modifier = Modifier.size(iconSize))
+        Text(text, color = fg.copy(alpha = if (enabled) 1f else 0.6f), fontSize = if (small) 12.sp else if (big) 16.sp else 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (trailingIcon != null) Icon(trailingIcon, null, tint = fg, modifier = Modifier.size(iconSize))
     }
 }
 

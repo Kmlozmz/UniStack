@@ -34,6 +34,17 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.unistack.app.core.utils.performSafely
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.lerp
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,6 +57,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
@@ -162,24 +174,24 @@ fun RoomsHomeScreen(
             modifier = Modifier.fillMaxSize().statusBarsPadding(),
             contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 110.dp)
         ) {
+            /*
+             * Cabecera en una sola fila: atrás, el título con su línea debajo y la ayuda en la
+             * esquina. Antes el título iba en otra fila bajo el botón y la ayuda flotaba a media
+             * altura (23 sep: «encájalo arriba al lado del back»).
+             */
             item {
-                Column(Modifier.padding(top = 10.dp, bottom = 12.dp)) {
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     UniBackButton(onClick = onBackClick)
-                    VSpace(9.dp)
-                    Row(verticalAlignment = Alignment.Top) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.rooms_title), fontSize = 29.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, letterSpacing = (-0.4).sp)
-                            val sub = if (rooms.isEmpty()) stringResource(R.string.rooms_home_subtitle_empty) else {
-                                val a = rooms.count { !it.isClosed }; val d = rooms.count { it.isClosed }
-                                (if (a == 1) stringResource(R.string.rooms_home_counts_one_active) else stringResource(R.string.rooms_home_counts_active, a)) +
-                                    (if (d == 0) "" else if (d == 1) stringResource(R.string.rooms_home_counts_one_done) else stringResource(R.string.rooms_home_counts_done, d))
-                            }
-                            Text(sub, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.rooms_title), fontSize = 22.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, letterSpacing = (-0.3).sp, maxLines = 1)
+                        val sub = if (rooms.isEmpty()) stringResource(R.string.rooms_home_subtitle_empty) else {
+                            val a = rooms.count { !it.isClosed }; val d = rooms.count { it.isClosed }
+                            (if (a == 1) stringResource(R.string.rooms_home_counts_one_active) else stringResource(R.string.rooms_home_counts_active, a)) +
+                                (if (d == 0) "" else if (d == 1) stringResource(R.string.rooms_home_counts_one_done) else stringResource(R.string.rooms_home_counts_done, d))
                         }
-                        Box(Modifier.padding(top = 4.dp)) {
-                            RoundButton(Icons.Rounded.QuestionMark, stringResource(R.string.rooms_help), { guide = true }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        Text(sub, fontSize = 12.5.sp, lineHeight = 1.3.em, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
+                    HelpButton { guide = true }
                 }
             }
             if (rooms.isEmpty()) {
@@ -359,6 +371,14 @@ private fun SmartHero(rooms: List<WorkRoom>, today: Long, subjectOf: (WorkRoom) 
 
 // ---------------------------------------------------------------- herramientas
 
+/**
+ * Ordenar, filtrar y buscar. La lupa **se estira hasta ser la barra**: nace en su sitio, crece
+ * hacia la izquierda por encima de los chips (que se apagan) y al cerrar se recoge en el botón.
+ * Antes la fila entera se deslizaba a la izquierda y la barra entraba después (23 sep).
+ *
+ * El filtro vive con «Ordenar» en su propio tramo: repartía el hueco con el separador y se
+ * quedaba en «…» (23 sep).
+ */
 @Composable
 private fun Tools(
     sort: Sort, sortOpen: Boolean, onSortToggle: () -> Unit, onSort: (Sort) -> Unit,
@@ -366,39 +386,50 @@ private fun Tools(
     searchOpen: Boolean, query: String, onQuery: (String) -> Unit, onSearch: () -> Unit, onCloseSearch: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
+    val focusManager = LocalFocusManager.current
+    val focus = remember { FocusRequester() }
     val sortLabels = mapOf(Sort.URGENCY to R.string.rooms_sort_urgency, Sort.DATE to R.string.rooms_sort_date, Sort.SUBJECT to R.string.rooms_sort_subject, Sort.MINE to R.string.rooms_sort_mine)
+    val open by animateFloatAsState(if (searchOpen) 1f else 0f, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow), label = "lupa")
+    LaunchedEffect(searchOpen) { if (searchOpen) { delay(160); runCatching { focus.requestFocus() } } }
     Column(Modifier.padding(bottom = 10.dp)) {
-        Box(Modifier.fillMaxWidth()) {
-            androidx.compose.animation.AnimatedVisibility(!searchOpen, enter = fadeIn() + expandHorizontally(), exit = fadeOut() + shrinkHorizontally()) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    ToolChip(Icons.AutoMirrored.Rounded.Sort, stringResource(sortLabels.getValue(sort)), onClick = onSortToggle)
+        BoxWithConstraints(Modifier.fillMaxWidth().height(42.dp)) {
+            val full = maxWidth
+            Row(
+                Modifier.fillMaxSize().graphicsLayer { alpha = (1f - open * 1.6f).coerceIn(0f, 1f) },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    ToolChip(Icons.AutoMirrored.Rounded.Sort, stringResource(sortLabels.getValue(sort)), onClick = { if (!searchOpen) onSortToggle() })
                     val parts = listOfNotNull(
                         when (stateFilter) { StateFilter.ACTIVE -> stringResource(R.string.rooms_filter_active); StateFilter.DONE -> stringResource(R.string.rooms_filter_done); else -> null },
                         subject?.name
                     )
                     val on = parts.isNotEmpty()
                     val fc = if (subject != null) subjectColor(subject) else cs.primary
-                    ToolChip(Icons.Rounded.FilterList, if (on) parts.joinToString(" · ") else stringResource(R.string.rooms_filter), onClick = onFilter,
+                    ToolChip(Icons.Rounded.FilterList, if (on) parts.joinToString(" · ") else stringResource(R.string.rooms_filter), onClick = { if (!searchOpen) onFilter() },
                         bg = if (on) mix(fc, 0.2f, cs.background) else cs.surfaceContainer, fg = if (on) fc else cs.onSurface,
                         modifier = Modifier.weight(1f, fill = false))
-                    Box(Modifier.weight(1f))
-                    Box(Modifier.size(42.dp).clip(CircleShape).background(cs.surfaceContainer).cleanClickable(onClick = onSearch), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Search, stringResource(R.string.rooms_search), tint = cs.onSurface, modifier = Modifier.size(19.dp))
-                    }
                 }
+                Box(Modifier.size(42.dp))
             }
-            androidx.compose.animation.AnimatedVisibility(searchOpen, enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End), exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End)) {
-                Row(
-                    Modifier.fillMaxWidth().clip(CircleShape).background(cs.surfaceContainer).padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)
-                ) {
-                    Icon(Icons.Rounded.Search, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(19.dp))
-                    Box(Modifier.weight(1f)) {
-                        if (query.isEmpty()) Text(stringResource(R.string.rooms_search_hint), color = cs.onSurfaceVariant, fontSize = 14.5.sp)
-                        BasicTextField(query, onQuery, singleLine = true, textStyle = TextStyle(color = cs.onSurface, fontSize = 14.5.sp, fontWeight = FontWeight.Medium), cursorBrush = SolidColor(cs.primary), modifier = Modifier.fillMaxWidth())
+            Row(
+                Modifier.align(Alignment.CenterEnd).width(lerp(42.dp, full, open.coerceAtLeast(0f))).fillMaxHeight()
+                    .clip(CircleShape).background(cs.surfaceContainer)
+                    .then(if (!searchOpen) Modifier.cleanClickable(onClick = onSearch) else Modifier),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Search, stringResource(R.string.rooms_search), tint = lerp(cs.onSurface, cs.onSurfaceVariant, open.coerceIn(0f, 1f)), modifier = Modifier.size(19.dp))
+                }
+                if (open > 0.02f) {
+                    val late = ((open - 0.45f) / 0.55f).coerceIn(0f, 1f)
+                    Box(Modifier.weight(1f).graphicsLayer { alpha = late }) {
+                        if (query.isEmpty()) Text(stringResource(R.string.rooms_search_hint), color = cs.onSurfaceVariant, fontSize = 14.5.sp, maxLines = 1)
+                        BasicTextField(query, onQuery, singleLine = true, textStyle = TextStyle(color = cs.onSurface, fontSize = 14.5.sp, fontWeight = FontWeight.Medium), cursorBrush = SolidColor(cs.primary), modifier = Modifier.fillMaxWidth().focusRequester(focus))
                     }
-                    Box(Modifier.size(26.dp).clip(CircleShape).background(cs.surfaceContainerHighest).cleanClickable(onClick = onCloseSearch), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Close, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(13.dp))
+                    Box(Modifier.padding(start = 6.dp, end = 8.dp).size(26.dp).graphicsLayer { alpha = late; scaleX = 0.6f + 0.4f * late; scaleY = 0.6f + 0.4f * late }
+                        .clip(CircleShape).background(cs.surfaceContainerHighest).cleanClickable { focusManager.clearFocus(); onCloseSearch() }, contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Close, stringResource(R.string.rooms_close), tint = cs.onSurfaceVariant, modifier = Modifier.size(13.dp))
                     }
                 }
             }
@@ -418,6 +449,22 @@ private fun Tools(
                 }
             }
         }
+    }
+}
+
+/**
+ * La ayuda de la esquina: una pastilla «Guía» con el libro en el acento, que abre «Cómo
+ * funciona». Sustituye al (?) redondo, que no le convencía; elegida la B de cuatro (23 sep).
+ */
+@Composable
+private fun HelpButton(onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        Modifier.height(40.dp).clip(CircleShape).background(cs.surfaceContainer).cleanClickable(onClick = onClick).padding(start = 11.dp, end = 15.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Icon(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.rooms_help), tint = cs.primary, modifier = Modifier.size(19.dp))
+        Text(stringResource(R.string.rooms_guide_short), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, maxLines = 1)
     }
 }
 
@@ -565,9 +612,9 @@ private fun EmptyState(onCreate: () -> Unit, onJoin: () -> Unit) {
             FlowStep(Icons.Rounded.PanTool, MemberColors.of(10), stringResource(R.string.rooms_flow_start), Modifier.weight(1f))
         }
         VSpace(18.dp)
-        Pill(stringResource(R.string.rooms_create_room), onCreate, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add)
+        Pill(stringResource(R.string.rooms_create_room), onCreate, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add, big = true)
         VSpace(10.dp)
-        Pill(stringResource(R.string.rooms_have_code), onJoin, Modifier.fillMaxWidth(), icon = Icons.Rounded.Key, style = PillStyle.TONAL)
+        Pill(stringResource(R.string.rooms_have_code), onJoin, Modifier.fillMaxWidth(), icon = Icons.Rounded.Key, style = PillStyle.TONAL, big = true)
     }
 }
 
@@ -648,15 +695,16 @@ private fun PeriodBlock(per: String, current: Boolean, ws: List<WorkRoom>, subje
                 Text(year, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (current) cs.onPrimary else cs.onSurfaceVariant, letterSpacing = 0.5.sp)
                 Text(sem, fontSize = 24.sp, lineHeight = 1.2.em, fontWeight = FontWeight.ExtraBold, color = if (current) cs.onPrimary else cs.onSurface)
             }
+            /*
+             * «En curso» va encima del nombre, en letra pequeña del acento. Al lado del nombre no
+             * cabía con el promedio y la flecha, y se partía en sílabas hacia abajo (23 sep).
+             */
             Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    Text(stringResource(if (sem == "1") R.string.rooms_period_first else R.string.rooms_period_second), fontSize = 15.5.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
-                    if (current) Text(stringResource(R.string.rooms_period_now).uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp, color = cs.primary,
-                        modifier = Modifier.clip(CircleShape).background(mix(cs.primary, 0.16f, Color.Transparent)).padding(horizontal = 8.dp, vertical = 3.dp))
-                }
-                Row(Modifier.padding(top = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    mats.take(5).forEach { id -> val s = subjects.firstOrNull { it.id == id }; Box(Modifier.padding(end = 3.dp)) { SubjectShapeIcon(subjectColor(s), id ?: "none", size = 20.dp) } }
-                    Text(stringResource(R.string.rooms_period_works, ws.size), fontSize = 12.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp), maxLines = 1)
+                if (current) Text(stringResource(R.string.rooms_period_now).uppercase(), fontSize = 10.sp, lineHeight = 1.3.em, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp, color = cs.primary, maxLines = 1, softWrap = false)
+                Text(stringResource(if (sem == "1") R.string.rooms_period_first else R.string.rooms_period_second), fontSize = 15.5.sp, lineHeight = 1.25.em, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    mats.take(4).forEach { id -> val s = subjects.firstOrNull { it.id == id }; Box(Modifier.padding(end = 3.dp)) { SubjectShapeIcon(subjectColor(s), id ?: "none", size = 17.dp) } }
+                    Text(pluralText(R.plurals.rooms_n_works, ws.size), fontSize = 12.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(start = 5.dp).weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (avg != null) Column(horizontalAlignment = Alignment.End) {
@@ -679,7 +727,7 @@ private fun PeriodBlock(per: String, current: Boolean, ws: List<WorkRoom>, subje
                             SubjectShapeIcon(c, id ?: "none", size = 34.dp)
                             Column(Modifier.weight(1f)) {
                                 Text(s?.name ?: stringResource(R.string.rooms_no_subject), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
-                                Text(stringResource(R.string.rooms_folder_sub, wm.size) + (pm?.let { stringResource(R.string.rooms_folder_avg, it) } ?: ""), fontSize = 12.sp, color = cs.onSurfaceVariant)
+                                Text(pluralText(R.plurals.rooms_n_works, wm.size) + (pm?.let { stringResource(R.string.rooms_folder_avg, it) } ?: ""), fontSize = 12.sp, color = cs.onSurfaceVariant)
                             }
                             Chevron(ab)
                         }

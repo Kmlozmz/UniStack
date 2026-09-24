@@ -12,6 +12,7 @@
     <string name="rooms_back">Back</string>
     <string name="rooms_more">More</string>
     <string name="rooms_help">How it works</string>
+    <string name="rooms_guide_short">Guide</string>
     <string name="rooms_search">Search</string>
     <string name="rooms_copy">Copy</string>
     <string name="rooms_share">Share</string>
@@ -37,8 +38,8 @@
     <string name="rooms_home_subtitle_empty">Group work, each with its own room</string>
     <string name="rooms_home_counts_active">%d active</string>
     <string name="rooms_home_counts_one_active">1 active</string>
-    <string name="rooms_home_counts_done"> · %d finished</string>
-    <string name="rooms_home_counts_one_done"> · 1 finished</string>
+    <string name="rooms_home_counts_done">\u0020· %d finished</string>
+    <string name="rooms_home_counts_one_done">\u0020· 1 finished</string>
     <string name="rooms_empty_title">No rooms yet</string>
     <string name="rooms_empty_body">Someone creates the room and shares the code. Everyone joins, takes a part and adds their work. At the end it all comes together in one document. This is what one looks like inside:</string>
     <string name="rooms_how_label">How it works</string>
@@ -108,7 +109,7 @@
     <string name="rooms_card_your_part">Your part: %s</string>
     <string name="rooms_card_was_for">Was due %s</string>
     <string name="rooms_card_for">Due %s</string>
-    <string name="rooms_card_and_more"> · and %d more</string>
+    <string name="rooms_card_and_more">\u0020· and %d more</string>
     <string name="rooms_card_invite">Invite the group</string>
     <string name="rooms_card_invite_d">Open it and share the code</string>
     <string name="rooms_card_take">Take a part</string>
@@ -132,10 +133,8 @@
     <string name="rooms_period_first">First semester</string>
     <string name="rooms_period_second">Second semester</string>
     <string name="rooms_period_now">Current</string>
-    <string name="rooms_period_works">%d works</string>
     <string name="rooms_average">average</string>
-    <string name="rooms_folder_sub">%d works</string>
-    <string name="rooms_folder_avg"> · average %s</string>
+    <string name="rooms_folder_avg">\u0020· average %s</string>
     <string name="rooms_no_grade">no grade</string>
     <string name="rooms_closed_title">This work is closed</string>
     <string name="rooms_closed_body">%s was delivered. Nothing can be uploaded or changed anymore; you can only see the final document.</string>
@@ -209,7 +208,7 @@
     <string name="rooms_due_1m">1 month</string>
     <string name="rooms_pick_date">Pick date</string>
     <string name="rooms_parts_title">The parts of the work</string>
-    <string name="rooms_parts_hint_type">A starting point for %s. </string>
+    <string name="rooms_parts_hint_type">A starting point for %s.\u0020</string>
     <string name="rooms_parts_hint">Drag to reorder, tap one to adjust it.</string>
     <string name="rooms_parts_word">parts</string>
     <string name="rooms_parts_total">%ss in total</string>
@@ -1086,6 +1085,10 @@
     <plurals name="rooms_n_people">
         <item quantity="one">%d person</item>
         <item quantity="other">%d people</item>
+    </plurals>
+    <plurals name="rooms_n_works">
+        <item quantity="one">1 work</item>
+        <item quantity="other">%d works</item>
     </plurals>
     <plurals name="rooms_n_votes">
         <item quantity="one">%d vote</item>

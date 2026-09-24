@@ -93,6 +93,8 @@ import com.unistack.app.feature_rooms.domain.RoomProduce
 import com.unistack.app.feature_rooms.domain.SharedMode
 import com.unistack.app.feature_rooms.domain.WorkRoom
 import kotlinx.coroutines.delay
+import androidx.compose.material3.DropdownMenuItem
+import com.unistack.app.core.design.components.UniDropdownMenu
 
 /**
  * Mi parte — artifact «mi parte», cerrado el 23 sep: la franja de materia arriba, a la derecha la
@@ -112,6 +114,7 @@ fun PartScreen(room: WorkRoom, partId: String, vm: RoomsViewModel, onBack: () ->
     val slides = room.produces == RoomProduce.SLIDES
     var editing by rememberSaveable { mutableStateOf(false) }
     var sheet by remember { mutableStateOf<String?>(null) }
+    var menu by remember { mutableStateOf(false) }
     val subjects by vm.subjects.collectAsState()
     val subject = subjects.firstOrNull { it.id == room.subjectId }
     val hasContent = if (slides) p.slides > 0 || p.file != null else p.hasContent
@@ -144,7 +147,10 @@ fun PartScreen(room: WorkRoom, partId: String, vm: RoomsViewModel, onBack: () ->
                 Text(stringResource(if (mine) R.string.rooms_my_part else R.string.rooms_the_part), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
                 ReviewButton(p) { if (!hasContent && p.review == null) context.roomToast(firstMsg) else sheet = "review" }
                 IconCircle(Icons.AutoMirrored.Rounded.Comment, stringResource(R.string.rooms_comments), badge = p.comments.size) { sheet = "coms" }
-                if (mine) IconCircle(Icons.Rounded.MoreVert, stringResource(R.string.rooms_more)) { sheet = "more" }
+                if (mine) Box {
+                    IconCircle(Icons.Rounded.MoreVert, stringResource(R.string.rooms_more)) { menu = true }
+                    PartMoreMenu(menu, room, p, vm, onAssign = { sheet = "assign" }, onLeft = { go("sala", "-") }) { menu = false }
+                }
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 104.dp)) {
                 PartHero(room, p, subjectColor(subject), subject?.name ?: stringResource(R.string.rooms_no_subject), today)
@@ -175,7 +181,7 @@ fun PartScreen(room: WorkRoom, partId: String, vm: RoomsViewModel, onBack: () ->
     when (sheet) {
         "review" -> ReviewSheet(room, p, vm) { sheet = null }
         "coms" -> PartCommentsSheet(room, p, vm) { sheet = null }
-        "more" -> PartMoreSheet(room, p, vm, go) { sheet = null }
+        "assign" -> AssignSheet(room, p.id, vm) { sheet = null }
         "attach" -> AttachSheet(room, p, vm) { sheet = null }
     }
 }
@@ -576,7 +582,7 @@ private fun PartEditor(room: WorkRoom, p: RoomPart, vm: RoomsViewModel, onDone: 
                 BarButton(Icons.Rounded.AttachFile, stringResource(R.string.rooms_attachments), p.attachments.size) { save(); onSheet("attach") }
                 BarButton(Icons.AutoMirrored.Rounded.Comment, stringResource(R.string.rooms_notes), p.comments.size) { onSheet("coms") }
                 BarButton(Icons.Rounded.Visibility, stringResource(R.string.rooms_review), 0) { save(); onSheet("review") }
-                Pill(stringResource(R.string.rooms_deliver), { save(); onDeliver() }, Modifier.padding(start = 2.dp), big = true)
+                Pill(stringResource(R.string.rooms_deliver), { save(); onDeliver() }, Modifier.padding(start = 2.dp))
             }
         }
     }
@@ -663,30 +669,48 @@ private fun PartCommentsSheet(room: WorkRoom, p: RoomPart, vm: RoomsViewModel, o
     }
 }
 
+/**
+ * El ⋮ de tu parte: un menú que cuelga del botón, no una hoja (23 sep: «estamos abusando de los
+ * sheets»). Soltar la parte pide un segundo toque sin cerrar el menú.
+ */
 @Composable
-private fun PartMoreSheet(room: WorkRoom, p: RoomPart, vm: RoomsViewModel, go: (String, String) -> Unit, onDismiss: () -> Unit) {
+private fun PartMoreMenu(expanded: Boolean, room: WorkRoom, p: RoomPart, vm: RoomsViewModel, onAssign: () -> Unit, onLeft: () -> Unit, onDismiss: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
-    var assign by remember { mutableStateOf(false) }
-    var confirmDrop by remember { mutableStateOf(false) }
-    if (assign) return AssignSheet(room, p.id, vm) { assign = false; onDismiss() }
+    var confirmDrop by remember(expanded) { mutableStateOf(false) }
     val helpSent = stringResource(R.string.rooms_help_sent)
     val sentLeader = stringResource(R.string.rooms_sent_to, room.nameOf(room.leaderId))
-    RoomSheet(onDismiss, p.name) {
-        SheetRow(stringResource(R.string.rooms_ask_help), stringResource(R.string.rooms_ask_help_group_d), leading = { TypeIcon(Icons.Rounded.PanTool, cs.primary) }, onClick = {
-            vm.send(room.id, context.getString(R.string.rooms_help_chat, p.name))
-            if (!room.isLeader) vm.request(room.id, RequestType.HELP, p.id)
-            context.roomToast(helpSent); onDismiss()
-        })
-        SheetRow(stringResource(R.string.rooms_ask_swap), stringResource(if (room.isLeader) R.string.rooms_swap_leader_d else R.string.rooms_swap_rule_d), leading = { TypeIcon(Icons.Rounded.SwapHoriz, cs.primary) }, onClick = {
-            if (room.isLeader) assign = true else { vm.request(room.id, RequestType.SWAP, p.id); context.roomToast(sentLeader); onDismiss() }
-        })
-        SheetRow(if (confirmDrop) stringResource(R.string.rooms_drop_confirm) else stringResource(R.string.rooms_drop_part), stringResource(R.string.rooms_drop_part_d),
-            leading = { TypeIcon(Icons.Rounded.Close, cs.error) }, danger = confirmDrop, onClick = {
+    UniDropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.rooms_ask_help)) },
+            leadingIcon = { Icon(Icons.Rounded.PanTool, null) },
+            onClick = {
+                onDismiss()
+                vm.send(room.id, context.getString(R.string.rooms_help_chat, p.name))
+                if (!room.isLeader) vm.request(room.id, RequestType.HELP, p.id)
+                context.roomToast(helpSent)
+            }
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.rooms_ask_swap)) },
+            leadingIcon = { Icon(Icons.Rounded.SwapHoriz, null) },
+            onClick = {
+                onDismiss()
+                if (room.isLeader) onAssign() else { vm.request(room.id, RequestType.SWAP, p.id); context.roomToast(sentLeader) }
+            }
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(if (confirmDrop) R.string.rooms_drop_confirm else R.string.rooms_drop_part), color = cs.error) },
+            leadingIcon = { Icon(Icons.Rounded.Close, null, tint = cs.error) },
+            onClick = {
                 if (!confirmDrop) confirmDrop = true
-                else if (room.isLeader) { vm.updatePart(room.id, p.id) { it.copy(ownerIds = it.ownerIds - room.meId) }; onDismiss(); go("sala", "-") }
-                else { vm.request(room.id, RequestType.DROP, p.id); context.roomToast(sentLeader); onDismiss() }
-            })
+                else {
+                    onDismiss()
+                    if (room.isLeader) { vm.updatePart(room.id, p.id) { it.copy(ownerIds = it.ownerIds - room.meId) }; onLeft() }
+                    else { vm.request(room.id, RequestType.DROP, p.id); context.roomToast(sentLeader) }
+                }
+            }
+        )
     }
 }
 
