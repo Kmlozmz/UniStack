@@ -337,7 +337,7 @@ private fun DoneCard(room: WorkRoom, f: WorkFormat, doc: WorkDoc) {
         f == WorkFormat.TXT -> pluralText(R.plurals.rooms_n_sections, doc.sections.size)
         else -> pluralText(R.plurals.rooms_n_sections, doc.sections.size)
     }
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(cs.surfaceContainerLow).padding(horizontal = 18.dp, vertical = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.popIn().fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(cs.surfaceContainerLow).padding(horizontal = 18.dp, vertical = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         FormatLogo(f, 64.dp)
         Text(fileTitle(room, f), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp))
         Text("${stringResource(f.title)} · $detail · ${stringResource(R.string.rooms_approved)}", fontSize = 12.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))

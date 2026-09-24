@@ -176,7 +176,6 @@
     <string name="rooms_no_subject_d">Un trabajo suelto, de un club, un curso libre…</string>
     <string name="rooms_q_type">¿A qué se parece?</string>
     <string name="rooms_q_type_d">Sólo para sugerirte partes. Después lo cambias todo.</string>
-    <string name="rooms_type_none">No se parece a nada, lo armo yo →</string>
     <string name="rooms_q_produce">¿Qué van a entregar al final?</string>
     <string name="rooms_q_produce_d">Así sabremos cómo juntarlo cuando terminen.</string>
     <string name="rooms_produce_doc">Un documento</string>
@@ -491,6 +490,15 @@
     <string name="rooms_notify">Avisar a</string>
     <string name="rooms_notify_d">le llega un aviso y le sale en «Para mí»</string>
     <string name="rooms_voice_note">Nota de voz</string>
+    <string name="rooms_editing">Editando mensaje</string>
+    <string name="rooms_edited">editado</string>
+    <string name="rooms_msg_deleted_mine">Borraste este mensaje</string>
+    <string name="rooms_msg_deleted_other">Se borró este mensaje</string>
+    <string name="rooms_delete_msg_q">¿Borrar el mensaje?</string>
+    <string name="rooms_delete_msg_d">Se borra para todo el grupo.</string>
+    <string name="rooms_slide_cancel">Desliza para cancelar</string>
+    <string name="rooms_pause">Pausa</string>
+    <string name="rooms_resume">Seguir</string>
     <string name="rooms_voice_note_len">Nota de voz · %1$d:%2$02d</string>
     <string name="rooms_whole_work">Todo el trabajo</string>
     <string name="rooms_nobody_yet">nadie aún</string>
@@ -693,9 +701,7 @@
     <string name="rooms_in_material">En Material de apoyo</string>
     <string name="rooms_tap_to_vote">toca para votar</string>
     <string name="rooms_replying_to">Respondiendo a</string>
-    <string name="rooms_recording">Grabando… suelta para enviar</string>
     <string name="rooms_write_group">Escribe al grupo…</string>
-    <string name="rooms_hold_to_record">Mantén pulsado el micrófono para grabar una nota de voz</string>
     <string name="rooms_file">Archivo</string>
     <string name="rooms_a_part">Una parte</string>
     <string name="rooms_poll">Encuesta</string>

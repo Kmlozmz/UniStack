@@ -176,7 +176,6 @@
     <string name="rooms_no_subject_d">A standalone work, a club, a free course…</string>
     <string name="rooms_q_type">What is it like?</string>
     <string name="rooms_q_type_d">Only to suggest parts. You can change everything later.</string>
-    <string name="rooms_type_none">It\'s not like any of these, I\'ll build it →</string>
     <string name="rooms_q_produce">What will you hand in at the end?</string>
     <string name="rooms_q_produce_d">So we know how to put it together when you\'re done.</string>
     <string name="rooms_produce_doc">A document</string>
@@ -491,6 +490,15 @@
     <string name="rooms_notify">Notify</string>
     <string name="rooms_notify_d">they get a notice and it shows in “For me”</string>
     <string name="rooms_voice_note">Voice note</string>
+    <string name="rooms_editing">Editing message</string>
+    <string name="rooms_edited">edited</string>
+    <string name="rooms_msg_deleted_mine">You deleted this message</string>
+    <string name="rooms_msg_deleted_other">This message was deleted</string>
+    <string name="rooms_delete_msg_q">Delete the message?</string>
+    <string name="rooms_delete_msg_d">It\'s deleted for the whole group.</string>
+    <string name="rooms_slide_cancel">Slide to cancel</string>
+    <string name="rooms_pause">Pause</string>
+    <string name="rooms_resume">Resume</string>
     <string name="rooms_voice_note_len">Voice note · %1$d:%2$02d</string>
     <string name="rooms_whole_work">The whole work</string>
     <string name="rooms_nobody_yet">nobody yet</string>
@@ -693,9 +701,7 @@
     <string name="rooms_in_material">In Support material</string>
     <string name="rooms_tap_to_vote">tap to vote</string>
     <string name="rooms_replying_to">Replying to</string>
-    <string name="rooms_recording">Recording… release to send</string>
     <string name="rooms_write_group">Write to the group…</string>
-    <string name="rooms_hold_to_record">Hold the mic to record a voice note</string>
     <string name="rooms_file">File</string>
     <string name="rooms_a_part">A part</string>
     <string name="rooms_poll">Poll</string>

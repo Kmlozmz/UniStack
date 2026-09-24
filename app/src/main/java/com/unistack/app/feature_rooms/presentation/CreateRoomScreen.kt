@@ -16,6 +16,10 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -268,12 +272,15 @@ fun CreateRoomScreen(
                  * El paso nuevo sube desde abajo con un rebote y el que se va se encoge hacia arriba, como
                  * si se metiera en la baraja; al volver, al revés. Antes la carta cambiaba de golpe.
                  */
+                // Como la réplica: la nueva sube 26 dp con rebote desde casi transparente (al volver baja
+                // 22 dp y encoge un poco) y la anterior se va sin más, que ya entró en la baraja.
+                val rise = with(LocalDensity.current) { 26.dp.roundToPx() }
+                val drop = with(LocalDensity.current) { 22.dp.roundToPx() }
                 AnimatedContent(step, transitionSpec = {
                     val fwd = targetState > initialState
-                    val enter = slideInVertically(spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessMediumLow)) { h -> if (fwd) h / 3 else -h / 5 } +
-                        fadeIn(tween(220)) + scaleIn(spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow), initialScale = 0.94f)
-                    val exit = slideOutVertically(tween(230)) { h -> if (fwd) -h / 6 else h / 4 } + fadeOut(tween(170)) + scaleOut(tween(230), targetScale = if (fwd) 0.88f else 1.03f)
-                    (enter togetherWith exit).using(SizeTransform(clip = false))
+                    val enter = if (fwd) slideInVertically(spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)) { rise } + fadeIn(tween(260), initialAlpha = 0.2f)
+                    else slideInVertically(spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow)) { -drop } + scaleIn(spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow), initialScale = 1.03f) + fadeIn(tween(260), initialAlpha = 0.2f)
+                    (enter togetherWith ExitTransition.None).using(SizeTransform(clip = false) { _, _ -> snap() })
                 }, label = "paso") { at ->
                     when (val c = FLOW[at]) {
                         is Q -> QuestionCard(c.key, d, subjects, today,
@@ -448,7 +455,13 @@ private fun Behind(label: String, value: String, stage: Boolean, depth: Int, lif
     val cs = MaterialTheme.colorScheme
     val haptic = LocalHapticFeedback.current
     val seen = remember { MutableTransitionState(false).apply { targetState = true } }
-    AnimatedVisibility(seen, enter = expandVertically(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn()) {
+    /*
+     * La carta nueva se mete en la baraja desde abajo (sube 34 dp y se encoge de 1,04), como la
+     * réplica. Antes crecía desde cero recortada y se veía cortada un momento (24 sep).
+     */
+    val tuck = with(LocalDensity.current) { 34.dp.roundToPx() }
+    AnimatedVisibility(seen, enter = slideInVertically(spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)) { tuck } +
+        scaleIn(spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow), initialScale = 1.04f) + fadeIn(tween(250), initialAlpha = 0.5f)) {
         Row(
             Modifier.offset(y = -lift).padding(horizontal = 8.dp * depth.coerceAtMost(3)).fillMaxWidth()
                 .clip(RoundedCornerShape(22.dp)).background(mix(cs.background, (0.22f * depth).coerceAtMost(0.55f), cs.primaryContainer))
@@ -557,8 +570,6 @@ private fun QuestionCard(
                         }
                     }
                 }
-                Text(stringResource(R.string.rooms_type_none), color = on.copy(alpha = 0.8f), fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 10.dp).cleanClickable { haptic.performSafely(HapticFeedbackType.SegmentTick); onType(RoomType.CERO) }.padding(vertical = 6.dp, horizontal = 2.dp))
             }
             "produce" -> OptionRows(RoomProduce.entries, { "produce" in d.answered && it == d.produces }, tile, { produceIcon(it) }, { produceTone(it) },
                 { stringResource(produceTitle(it)) }, { stringResource(produceSub(it)) }) { onPick(d.copy(produces = it, answered = d.answered + "produce")) }
@@ -904,8 +915,12 @@ private val SLIDE = spring<Float>(dampingRatio = 0.55f, stiffness = Spring.Stiff
 @Composable
 fun Switchy(on: Boolean, tone: Color? = null) {
     val cs = MaterialTheme.colorScheme
-    Box(Modifier.width(44.dp).height(26.dp).clip(CircleShape).background(if (on) tone ?: cs.primary else cs.surfaceContainerHighest).padding(4.dp), contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart) {
-        Box(Modifier.size(18.dp).clip(CircleShape).background(if (on) (if (tone != null) cs.background else cs.onPrimary) else cs.onSurfaceVariant))
+    // La bolita viaja con muelle y el fondo se funde, como `.sw` en la réplica.
+    val x by animateDpAsState(if (on) 18.dp else 0.dp, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow), label = "bolita")
+    val bg by animateColorAsState(if (on) tone ?: cs.primary else cs.surfaceContainerHighest, label = "fondo")
+    val knob by animateColorAsState(if (on) (if (tone != null) cs.background else cs.onPrimary) else cs.onSurfaceVariant, label = "bolita-color")
+    Box(Modifier.width(44.dp).height(26.dp).clip(CircleShape).background(bg).padding(4.dp), contentAlignment = Alignment.CenterStart) {
+        Box(Modifier.offset(x = x).size(18.dp).clip(CircleShape).background(knob))
     }
 }
 

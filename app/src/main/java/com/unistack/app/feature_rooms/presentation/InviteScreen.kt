@@ -127,7 +127,7 @@ private fun InviteTicket(room: WorkRoom, stripe: Color, onCopy: () -> Unit, onSh
         room.type.takeIf { it != RoomType.CERO }?.let { stringResource(RoomTemplates.typeNameRes(it)) },
         room.parts.size.takeIf { it > 0 }?.let { pluralText(R.plurals.rooms_parts_n, it) }
     ).joinToString(" · ")
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(cs.primaryContainer)) {
+    Column(Modifier.popIn().fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(cs.primaryContainer)) {
         Box(Modifier.fillMaxWidth().height(8.dp).background(stripe))
         Row(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Column(Modifier.weight(1f)) {

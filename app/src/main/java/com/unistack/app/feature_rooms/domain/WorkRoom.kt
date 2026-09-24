@@ -191,7 +191,13 @@ data class ChatMessage(
     val file: String? = null,
     val mime: String? = null,
     /** Aviso automático: sólo entregas y cambios de fecha (opción c). */
-    val systemType: String? = null
+    val systemType: String? = null,
+    /** Lo cambió quien lo mandó: sale «editado» junto a la hora. */
+    val edited: Boolean = false,
+    /** Borrado para todos: queda el hueco «Se borró este mensaje». */
+    val deleted: Boolean = false,
+    /** La onda de una nota de voz (0-100), unas 40 muestras. */
+    val wave: List<Int> = emptyList()
 )
 
 data class PollOption(val label: String, val voters: List<String> = emptyList())

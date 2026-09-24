@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,7 +23,9 @@ import com.unistack.app.R
 import com.unistack.app.core.utils.Textos
 import com.unistack.app.feature_rooms.data.RoomStoredFile
 
-fun Context.roomToast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+/** Aviso de Trabajos: la pastilla de [RoomToasts] (el `Context` queda por comodidad de las llamadas). */
+@Suppress("UnusedReceiverParameter")
+fun Context.roomToast(text: String) = RoomToasts.show(text)
 
 /** Lo que hay copiado, como texto (null si no hay nada). */
 fun Context.pastedText(): String? {

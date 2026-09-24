@@ -194,6 +194,9 @@ object WorkRoomJson {
         put("poll", arr(m.pollOptions) { JSONObject().put("label", it.label).put("voters", JSONArray(it.voters)) })
         put("seconds", m.seconds); put("subtitle", m.subtitle); put("saved", m.savedToMaterial); putOpt("system", m.systemType)
         putOpt("file", m.file); putOpt("mime", m.mime)
+        if (m.edited) put("edited", true)
+        if (m.deleted) put("deleted", true)
+        if (m.wave.isNotEmpty()) put("wave", JSONArray(m.wave))
     }
 
     private fun decodeMessage(o: JSONObject) = ChatMessage(
@@ -201,7 +204,9 @@ object WorkRoomJson {
         createdAt = o.optLong("createdAt"), replyToId = o.optStr("replyToId"), reactions = reactions(o.optJSONObject("reactions")),
         pollOptions = list(o.optJSONArray("poll")) { PollOption(it.optString("label"), strings(it.optJSONArray("voters"))) },
         seconds = o.optInt("seconds"), subtitle = o.optString("subtitle"), savedToMaterial = o.optBoolean("saved"), systemType = o.optStr("system"),
-        file = o.optStr("file"), mime = o.optStr("mime")
+        file = o.optStr("file"), mime = o.optStr("mime"),
+        edited = o.optBoolean("edited"), deleted = o.optBoolean("deleted"),
+        wave = o.optJSONArray("wave")?.let { a -> List(a.length()) { a.optInt(it) } } ?: emptyList()
     )
 
     private fun reactions(map: Map<String, List<String>>) = JSONObject().apply { map.forEach { (k, v) -> put(k, JSONArray(v)) } }

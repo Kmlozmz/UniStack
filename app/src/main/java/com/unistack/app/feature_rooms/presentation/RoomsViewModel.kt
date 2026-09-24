@@ -151,6 +151,24 @@ class RoomsViewModel @Inject constructor(
 
     fun pin(roomId: String, msgId: String?) = update(roomId) { it.copy(pinnedMessageId = msgId) }
 
+    /** Sólo lo tuyo: cambia el texto y queda marcado «editado». */
+    fun editMessage(roomId: String, msgId: String, text: String) = update(roomId) { r ->
+        r.copy(messages = r.messages.map { if (it.id == msgId && it.byId == r.meId && !it.deleted) it.copy(text = text, edited = true) else it })
+    }
+
+    /** Borra lo tuyo para todos: queda el hueco y se va el archivo (salvo que esté guardado en material). */
+    fun deleteMessage(roomId: String, msgId: String) {
+        val m = rooms.value.firstOrNull { it.id == roomId }?.messages?.firstOrNull { it.id == msgId } ?: return
+        if (!m.savedToMaterial) m.file?.let { files.delete(it) }
+        update(roomId) { r ->
+            r.copy(pinnedMessageId = r.pinnedMessageId.takeUnless { it == msgId },
+                messages = r.messages.map {
+                    if (it.id == msgId && it.byId == r.meId) it.copy(deleted = true, text = "", subtitle = "", reactions = emptyMap(), pollOptions = emptyList(),
+                        file = null, mime = null, wave = emptyList(), seconds = 0) else it
+                })
+        }
+    }
+
     fun saveMessageToMaterial(roomId: String, msgId: String) = update(roomId) { r ->
         val m = r.messages.firstOrNull { it.id == msgId } ?: return@update r
         val type = when (m.kind) { MessageKind.PHOTO -> MaterialType.PHOTO; MessageKind.LINK -> MaterialType.LINK; MessageKind.VOICE -> MaterialType.AUDIO; else -> MaterialType.DOC }
@@ -199,10 +217,10 @@ class RoomsViewModel @Inject constructor(
     fun setCapacity(roomId: String, capacity: Int) = update(roomId) { it.copy(capacity = capacity.coerceIn(2, 12)) }
     fun setEntryOpen(roomId: String, open: Boolean) = update(roomId) { it.copy(entryOpen = open) }
     fun leave(roomId: String) = update(roomId) { r -> RoomLogic.remove(r, r.meId) }
-    fun sendFile(roomId: String, kind: MessageKind, stored: com.unistack.app.feature_rooms.data.RoomStoredFile, subtitle: String, seconds: Int = 0) =
+    fun sendFile(roomId: String, kind: MessageKind, stored: com.unistack.app.feature_rooms.data.RoomStoredFile, subtitle: String, seconds: Int = 0, wave: List<Int> = emptyList()) =
         update(roomId) {
             RoomLogic.send(it, ChatMessage(RoomLogic.newId("msg"), it.meId, kind, stored.displayName, now(), subtitle = subtitle, seconds = seconds,
-                file = stored.storedName, mime = stored.mimeType))
+                file = stored.storedName, mime = stored.mimeType, wave = wave))
         }
 
     fun newMaterial(room: WorkRoom, type: MaterialType, name: String, subtitle: String, note: String, partId: String?, tagged: List<String>,

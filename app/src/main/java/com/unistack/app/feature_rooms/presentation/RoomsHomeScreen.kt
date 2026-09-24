@@ -377,7 +377,7 @@ private fun SmartHero(rooms: List<WorkRoom>, today: Long, subjectOf: (WorkRoom) 
         if (h.cta != null && h.roomId != null) {
             VSpace(14.dp)
             Pill(h.cta, { onOpen(h.roomId) }, icon = Icons.Rounded.PanTool, style = PillStyle.HERO,
-                heroBase = if (h.alert) cs.onErrorContainer else if (h.calm) cs.primary else cs.onPrimaryContainer,
+                heroBase = if (h.alert) cs.onErrorContainer else if (h.calm) cs.primary else heroWhite(),
                 heroOn = if (h.alert) cs.errorContainer else if (h.calm) cs.onPrimary else cs.primaryContainer)
         }
     }
@@ -852,7 +852,7 @@ private fun JoinSheet(onDismiss: () -> Unit) {
     val nothing = stringResource(R.string.rooms_paste_empty)
     val focus = remember { FocusRequester() }
     val clean: (String) -> String = { it.uppercase().filter { c -> c.isLetterOrDigit() }.take(6) }
-    val join = { if (code.length == 6) { android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show(); onDismiss() } }
+    val join = { if (code.length == 6) { context.roomToast(msg); onDismiss() } }
     LaunchedEffect(Unit) { delay(250); runCatching { focus.requestFocus() } }
     RoomSheet(onDismiss, stringResource(R.string.rooms_join_title), stringResource(R.string.rooms_join_sub)) {
         Box(Modifier.fillMaxWidth()) {
@@ -920,6 +920,7 @@ private fun ClosedDialog(r: WorkRoom, asked: Boolean, onDismiss: () -> Unit, onR
     val leader = r.nameOf(r.leaderId)
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.popIn(),
         containerColor = cs.background,
         shape = RoundedCornerShape(28.dp),
         icon = { Box(Modifier.size(52.dp).clip(RoundedCornerShape(17.dp)).background(cs.surfaceContainerHighest), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Lock, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(26.dp)) } },

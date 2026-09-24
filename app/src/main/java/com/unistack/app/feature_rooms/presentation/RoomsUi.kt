@@ -7,6 +7,9 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.draw.shadow
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
@@ -101,9 +104,46 @@ fun RoomsText(content: @Composable () -> Unit) {
         LocalTextStyle provides base.copy(
             letterSpacing = 0.sp, lineHeight = 1.45.em,
             lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
-        ),
-        content = content
-    )
+        )
+    ) {
+        Box {
+            content()
+            RoomToastHost()
+        }
+    }
+}
+
+/**
+ * Los avisos de Trabajos: una pastilla clara abajo que sube, se queda un momento y se apaga, como
+ * en la réplica (antes era el aviso gris de Android). Va en su propia ventanita para verse
+ * también por encima de las hojas.
+ */
+object RoomToasts {
+    val current = kotlinx.coroutines.flow.MutableStateFlow<Pair<Long, String>?>(null)
+    fun show(text: String) { current.value = System.nanoTime() to text }
+}
+
+@Composable
+private fun RoomToastHost() {
+    val toast by RoomToasts.current.collectAsState()
+    val t = toast ?: return
+    val shown = remember(t.first) { Animatable(0f) }
+    LaunchedEffect(t.first) {
+        shown.animateTo(1f, tween(220))
+        kotlinx.coroutines.delay(2100)
+        shown.animateTo(0f, tween(300))
+        if (RoomToasts.current.value?.first == t.first) RoomToasts.current.value = null
+    }
+    val lift = with(androidx.compose.ui.platform.LocalDensity.current) { 86.dp.roundToPx() }
+    androidx.compose.ui.window.Popup(alignment = Alignment.BottomCenter, offset = androidx.compose.ui.unit.IntOffset(0, -lift),
+        properties = androidx.compose.ui.window.PopupProperties(focusable = false, clippingEnabled = false)) {
+        Text(
+            t.second, color = Color(0xFF1B1B1F), fontSize = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.graphicsLayer { alpha = shown.value; translationY = (1f - shown.value) * 10.dp.toPx() }
+                .widthIn(max = 320.dp).shadow(6.dp, RoundedCornerShape(22.dp)).clip(RoundedCornerShape(22.dp)).background(Color(0xFFE6E6EA))
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+        )
+    }
 }
 
 /**
@@ -119,6 +159,21 @@ fun Modifier.enterStagger(index: Int): Modifier {
     }
     return this.graphicsLayer { alpha = a.value.coerceIn(0f, 1f); translationY = (1f - a.value) * 18.dp.toPx() }
 }
+
+/**
+ * Aparecer con un salto: de 0,9 a su tamaño con muelle, como las ventanas y el boleto de la
+ * réplica (`.pop-in`, `.dialog`).
+ */
+@Composable
+fun Modifier.popIn(): Modifier {
+    val a = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { a.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)) }
+    return this.graphicsLayer { val v = a.value; alpha = v.coerceIn(0f, 1f); scaleX = 0.9f + 0.1f * v; scaleY = 0.9f + 0.1f * v }
+}
+
+/** El blanco de los botones sobre tarjetas del acento («Escoger una», «Darle una»), como en la réplica. */
+@Composable
+fun heroWhite(): Color = mix(MaterialTheme.colorScheme.primary, 0.10f, Color.White)
 
 /** Rebote al elegir: lo tocado crece un poco y vuelve a su sitio. No rebota al aparecer ya elegido. */
 @Composable
@@ -258,7 +313,7 @@ fun Pill(
     style: PillStyle = PillStyle.FILL,
     small: Boolean = false,
     enabled: Boolean = true,
-    heroBase: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    heroBase: Color = heroWhite(),
     heroOn: Color = MaterialTheme.colorScheme.primaryContainer,
     big: Boolean = false,
     alpha: Float = 1f,

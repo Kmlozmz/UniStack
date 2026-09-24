@@ -96,6 +96,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
@@ -189,11 +200,24 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
         if (list.layoutInfo.totalItemsCount > 0) list.scrollToItem(0)
     }
 
+    var editingId by remember { mutableStateOf<String?>(null) }
+    var confirmDelete by remember { mutableStateOf<String?>(null) }
+    val player = remember { VoicePlayer() }
+    val recorder = remember { VoiceRecorder(context, vm.files) }
+    var recMode by remember { mutableStateOf(RecMode.IDLE) }
+    DisposableEffect(Unit) { onDispose { player.release(); if (recorder.active) recorder.cancel() } }
+    LaunchedEffect(player.playingId, player.paused) { while (player.playingId != null && !player.paused) { player.tick(); delay(50) } }
+    LaunchedEffect(recorder.active) { while (recorder.active) { recorder.sample(); delay(90) } }
+    LaunchedEffect(recMode) { if (recMode != RecMode.IDLE) player.release() }
+    val sendVoice: (VoiceRecorder.Result) -> Unit = { res -> vm.sendFile(room.id, MessageKind.VOICE, res.file, "", res.seconds, res.wave) }
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok && recorder.start()) recMode = RecMode.LOCKED }
+
     val sendText = {
         val t = input.trim()
         if (t.isNotEmpty()) {
-            vm.send(room.id, linkParts(room, t), replyTo)
-            input = ""; replyTo = null
+            val e = editingId
+            if (e != null) vm.editMessage(room.id, e, linkParts(room, t)) else vm.send(room.id, linkParts(room, t), replyTo)
+            input = ""; replyTo = null; editingId = null
         }
     }
     val replyWith: (String) -> Unit = { id -> replyTo = id; selected = null; selectedBounds = null; runCatching { composerFocus.requestFocus() } }
@@ -282,7 +306,7 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
                     if (m.systemType != null) SystemNotice(room, m)
                     else {
                         val cont = prev != null && prev.systemType == null && prev.byId == m.byId && epochDayOf(prev.createdAt) == day
-                        MessageBubble(room, m, cont, m.id == selected, mat, vm, query,
+                        MessageBubble(room, m, cont, m.id == selected, mat, vm, query, player,
                             onSelect = {
                                 selectedBounds = null
                                 selected = if (selected == m.id) null else m.id
@@ -295,8 +319,9 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
                 }
             }
         }
-        Composer(room, vm, input, { input = it }, replyTo?.let { id -> room.messages.firstOrNull { it.id == id } }, onCancelReply = { replyTo = null },
-            onSend = sendText, onAttach = { sheet = "attach" }, onVoice = { f, secs -> vm.sendFile(room.id, MessageKind.VOICE, f, "", secs) }, focus = composerFocus)
+        Composer(room, input, { input = it }, replyTo?.let { id -> room.messages.firstOrNull { it.id == id } }, onCancelReply = { replyTo = null },
+            editing = editingId?.let { id -> room.messages.firstOrNull { it.id == id } }, onCancelEdit = { editingId = null; input = "" },
+            onSend = sendText, onAttach = { sheet = "attach" }, recorder = recorder, recMode = recMode, onRecMode = { recMode = it }, onVoice = sendVoice, focus = composerFocus)
     }
     selected?.let { id -> room.messages.firstOrNull { it.id == id } }?.let { m ->
         selectedBounds?.let { b ->
@@ -310,14 +335,33 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
                     if (pinning) context.roomToast(context.getString(R.string.rooms_pinned_for_all))
                 },
                 onSave = { vm.saveMessageToMaterial(room.id, m.id); selected = null; context.roomToast(context.getString(R.string.rooms_saved_material)) },
+                onEdit = if (m.byId == room.meId && m.kind == MessageKind.TEXT) { {
+                    editingId = m.id; replyTo = null; input = m.text.replace("[[", "").replace("]]", ""); selected = null; selectedBounds = null
+                    runCatching { composerFocus.requestFocus() }
+                } } else null,
+                onDelete = if (m.byId == room.meId) { { confirmDelete = m.id; selected = null; selectedBounds = null } } else null,
                 onDismiss = { selected = null; selectedBounds = null })
         }
+    }
+    confirmDelete?.let { id ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null }, modifier = Modifier.popIn(), containerColor = cs.background, shape = RoundedCornerShape(28.dp),
+            title = { Text(stringResource(R.string.rooms_delete_msg_q), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold) },
+            text = { Text(stringResource(R.string.rooms_delete_msg_d), fontSize = 13.5.sp, color = cs.onSurfaceVariant) },
+            confirmButton = { Pill(stringResource(R.string.rooms_delete), { vm.deleteMessage(room.id, id); if (editingId == id) { editingId = null; input = "" }; confirmDelete = null }, style = PillStyle.ERR) },
+            dismissButton = { Pill(stringResource(R.string.rooms_cancel), { confirmDelete = null }, style = PillStyle.TONAL) }
+        )
     }
     }
 
     when (sheet) {
         "attach" -> AttachToChatSheet(room, mat, onDismiss = { sheet = null }, onPhoto = { sheet = null; picker.pickImage() }, onFile = { sheet = null; picker.pickFile(ANY_TYPES) },
-            onLink = { sheet = "link" }, onPart = { sheet = "part" }, onPoll = { sheet = "poll" }, onVoice = { sheet = null; context.roomToast(context.getString(R.string.rooms_hold_to_record)) })
+            onLink = { sheet = "link" }, onPart = { sheet = "part" }, onPoll = { sheet = "poll" }, onVoice = {
+                // la nota desde «Mandar al chat» se queda grabando sola, con su panel
+                sheet = null
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) micPermission.launch(Manifest.permission.RECORD_AUDIO)
+                else if (recorder.start()) recMode = RecMode.LOCKED
+            })
         "part" -> RoomSheet({ sheet = null }, stringResource(R.string.rooms_link_part), stringResource(R.string.rooms_link_part_d)) {
             room.parts.forEach { p -> SheetRow(p.name, onClick = { vm.send(room.id, context.getString(R.string.rooms_look_part, "[[${p.name}]]")); sheet = null }) }
         }
@@ -347,7 +391,7 @@ fun ChatScreen(room: WorkRoom, vm: RoomsViewModel, onBack: () -> Unit, go: (Stri
             }
         }
         "media" -> RoomSheet({ sheet = null }, stringResource(R.string.rooms_chat_media), tall = true) {
-            val media = room.messages.filter { it.kind == MessageKind.PHOTO || it.kind == MessageKind.FILE || it.kind == MessageKind.LINK || it.kind == MessageKind.VOICE }.reversed()
+            val media = room.messages.filter { !it.deleted }.filter { it.kind == MessageKind.PHOTO || it.kind == MessageKind.FILE || it.kind == MessageKind.LINK || it.kind == MessageKind.VOICE }.reversed()
             if (media.isEmpty()) Text(stringResource(R.string.rooms_chat_media_empty), fontSize = 12.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.padding(4.dp))
             media.forEach { m ->
                 SheetRow(m.text, listOf(room.nameOf(m.byId), m.subtitle).filter { it.isNotBlank() }.joinToString(" · "), leading = { TypeIcon(kindIcon(m.kind), kindTone(m.kind)) }, onClick = {
@@ -378,8 +422,9 @@ fun kindTone(k: MessageKind) = when (k) {
 
 /** Lo que dice un mensaje en una línea (para el fijado y la respuesta). */
 @Composable
-fun plainOf(m: ChatMessage): String = when (m.kind) {
-    MessageKind.VOICE -> stringResource(R.string.rooms_voice_note)
+fun plainOf(m: ChatMessage): String = when {
+    m.deleted -> stringResource(R.string.rooms_msg_deleted_other)
+    m.kind == MessageKind.VOICE -> stringResource(R.string.rooms_voice_note)
     else -> m.text.replace("[[", "").replace("]]", "")
 }
 
@@ -445,7 +490,7 @@ private fun SystemNotice(room: WorkRoom, m: ChatMessage) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MessageBubble(
-    room: WorkRoom, m: ChatMessage, cont: Boolean, selected: Boolean, mat: Color, vm: RoomsViewModel, query: String,
+    room: WorkRoom, m: ChatMessage, cont: Boolean, selected: Boolean, mat: Color, vm: RoomsViewModel, query: String, player: VoicePlayer,
     onSelect: () -> Unit, onReply: () -> Unit, onBounds: (Rect) -> Unit, onPart: (String) -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
@@ -470,7 +515,7 @@ private fun MessageBubble(
         val trigger = 56.dp.toPx()
         val limit = 84.dp.toPx()
         val release = {
-            if (dx >= trigger) onReply()
+            if (dx >= trigger && !m.deleted) onReply()
             armed = false
             settle = scope.launch { animate(dx, 0f, animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)) { v, _ -> dx = v } }
         }
@@ -504,7 +549,10 @@ private fun MessageBubble(
                     if (!mine) Box(Modifier.padding(bottom = 2.dp, end = 8.dp).alpha(if (cont) 0f else 1f)) { MemberFace(room, m.byId, 24.dp) }
                     Column(
                         Modifier.onGloballyPositioned { if (selected) onBounds(it.boundsInWindow()) }
-                            .clip(shape).background(bg).cleanClickable(onClick = onSelect).padding(horizontal = 12.dp, vertical = 8.dp)
+                            .clip(shape).background(bg)
+                            // tocar o mantener pulsado abre las opciones (las de lo tuyo incluyen editar y borrar)
+                            .pointerInput(m.id, m.deleted) { detectTapGestures(onTap = { if (!m.deleted) onSelect() }, onLongPress = { if (!m.deleted) onSelect() }) }
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         m.replyToId?.let { rid -> room.messages.firstOrNull { it.id == rid } }?.let { q ->
                             Row(Modifier.padding(bottom = 5.dp).clip(RoundedCornerShape(4.dp)).background(fg.copy(alpha = 0.08f)).drawBehind {
@@ -516,7 +564,10 @@ private fun MessageBubble(
                                 }
                             }
                         }
-                        when (m.kind) {
+                        if (m.deleted) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Rounded.Block, null, tint = fg.copy(alpha = 0.6f), modifier = Modifier.size(15.dp))
+                            Text(stringResource(if (mine) R.string.rooms_msg_deleted_mine else R.string.rooms_msg_deleted_other), fontSize = 13.5.sp, fontStyle = FontStyle.Italic, color = fg.copy(alpha = 0.7f))
+                        } else when (m.kind) {
                             MessageKind.PHOTO -> Box(Modifier.padding(bottom = 4.dp).size(210.dp, 130.dp).clip(RoundedCornerShape(12.dp)).background(cs.surfaceContainerHigh).cleanClickable {
                                 m.file?.let { context.openRoomFile(vm, it, m.mime, m.text) }
                             }) { if (m.file != null) AsyncImage(vm.files.file(m.file), m.text, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
@@ -529,16 +580,16 @@ private fun MessageBubble(
                                     Text(if (m.kind == MessageKind.LINK) m.text else m.subtitle, fontSize = 11.sp, color = fg.copy(alpha = 0.75f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
-                            MessageKind.VOICE -> VoiceMessage(m, vm, fg)
+                            MessageKind.VOICE -> VoiceBubble(room, m, mine, fg, bg, player, m.file?.let { vm.files.file(it).path })
                             MessageKind.POLL -> PollMessage(room, m, vm, fg)
                             MessageKind.TEXT -> Text(richText(room, m.text, mine, mat, query), fontSize = 14.sp, lineHeight = 20.sp, color = fg,
-                                modifier = Modifier.pointerInput(m.text) { detectTapGestures(onTap = { onSelect() }) })
+                                modifier = Modifier.pointerInput(m.text) { detectTapGestures(onTap = { onSelect() }, onLongPress = { onSelect() }) })
                         }
-                        Text(hourOf(m.createdAt), fontSize = 10.sp, color = fg.copy(alpha = 0.65f), modifier = Modifier.align(Alignment.End).padding(top = 2.dp))
+                        Text((if (m.edited && !m.deleted) stringResource(R.string.rooms_edited) + " · " else "") + hourOf(m.createdAt), fontSize = 10.sp, color = fg.copy(alpha = 0.65f), modifier = Modifier.align(Alignment.End).padding(top = 2.dp))
                     }
                 }
                 val reacts = m.reactions.filterValues { it.isNotEmpty() }
-                if (reacts.isNotEmpty()) Row(
+                if (reacts.isNotEmpty() && !m.deleted) Row(
                     Modifier.padding(start = if (mine) 0.dp else face + 8.dp, end = if (mine) 8.dp else 0.dp).layout { measurable, c ->
                         val pl = measurable.measure(c)
                         val up = 7.dp.roundToPx()
@@ -555,7 +606,7 @@ private fun MessageBubble(
                         }
                     }
                 }
-                if (m.kind == MessageKind.PHOTO || m.kind == MessageKind.FILE || m.kind == MessageKind.LINK) {
+                if (!m.deleted && (m.kind == MessageKind.PHOTO || m.kind == MessageKind.FILE || m.kind == MessageKind.LINK)) {
                     val pad = Modifier.padding(start = if (mine) 6.dp else face + 6.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)
                     if (m.savedToMaterial) Text("✓ " + stringResource(R.string.rooms_in_material), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoomTone.VERDE.color, modifier = pad)
                     else Text(stringResource(R.string.rooms_save_material), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = cs.primary,
@@ -576,7 +627,8 @@ private fun MessageBubble(
 @Composable
 private fun MessageMenu(
     room: WorkRoom, m: ChatMessage, bubble: Rect,
-    onReact: (String) -> Unit, onReply: () -> Unit, onCopy: () -> Unit, onPin: () -> Unit, onSave: () -> Unit, onDismiss: () -> Unit
+    onReact: (String) -> Unit, onReply: () -> Unit, onCopy: () -> Unit, onPin: () -> Unit, onSave: () -> Unit,
+    onEdit: (() -> Unit)?, onDelete: (() -> Unit)?, onDismiss: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     val haptic = LocalHapticFeedback.current
@@ -631,9 +683,11 @@ private fun MessageMenu(
             ) {
                 MenuRow(Icons.AutoMirrored.Rounded.Reply, stringResource(R.string.rooms_reply), onReply)
                 if (m.kind == MessageKind.TEXT || m.kind == MessageKind.LINK || m.kind == MessageKind.POLL) MenuRow(Icons.Rounded.ContentCopy, stringResource(R.string.rooms_copy), onCopy)
+                if (onEdit != null) MenuRow(Icons.Rounded.Edit, stringResource(R.string.rooms_edit), onEdit)
                 MenuRow(Icons.Rounded.PushPin, stringResource(if (room.pinnedMessageId == m.id) R.string.rooms_unpin else R.string.rooms_pin), onPin)
                 if ((m.kind == MessageKind.PHOTO || m.kind == MessageKind.FILE || m.kind == MessageKind.LINK) && !m.savedToMaterial)
                     MenuRow(Icons.Rounded.BookmarkAdd, stringResource(R.string.rooms_save_material), onSave)
+                if (onDelete != null) MenuRow(Icons.Rounded.Delete, stringResource(R.string.rooms_delete), onDelete, danger = true)
             }
         }) { measurables, constraints ->
             val loose = constraints.copy(minWidth = 0, minHeight = 0)
@@ -662,11 +716,11 @@ private fun MessageMenu(
 }
 
 @Composable
-private fun MenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
+private fun MenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit, danger: Boolean = false) {
     val cs = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().cleanClickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Icon(icon, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
-        Text(text, fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = cs.onSurface, maxLines = 1)
+        Icon(icon, null, tint = if (danger) cs.error else cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        Text(text, fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = if (danger) cs.error else cs.onSurface, maxLines = 1)
     }
 }
 
@@ -700,30 +754,6 @@ private fun AnnotatedString.Builder.appendHighlighted(s: String, q: String, c: C
 }
 
 @Composable
-private fun VoiceMessage(m: ChatMessage, vm: RoomsViewModel, fg: Color) {
-    var playing by remember { mutableStateOf(false) }
-    val player = remember(m.id) { android.media.MediaPlayer() }
-    DisposableEffect(m.id) { onDispose { runCatching { player.release() } } }
-    Row(Modifier.widthIn(min = 190.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.size(30.dp).clip(CircleShape).background(fg.copy(alpha = 0.18f)).cleanClickable {
-            val f = m.file ?: return@cleanClickable
-            runCatching {
-                if (playing) { player.pause(); playing = false }
-                else {
-                    if (player.currentPosition == 0) { player.reset(); player.setDataSource(vm.files.file(f).path); player.prepare() }
-                    player.setOnCompletionListener { playing = false; it.seekTo(0) }
-                    player.start(); playing = true
-                }
-            }
-        }, contentAlignment = Alignment.Center) { Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = fg, modifier = Modifier.size(16.dp)) }
-        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
-            listOf(4, 9, 14, 7, 12, 18, 10, 6, 13, 8, 15, 5, 11, 7).forEach { h -> Box(Modifier.width(3.dp).height(h.dp).clip(RoundedCornerShape(2.dp)).background(fg.copy(alpha = 0.6f))) }
-        }
-        Text("%d:%02d".format(m.seconds / 60, m.seconds % 60), fontSize = 11.sp, color = fg)
-    }
-}
-
-@Composable
 private fun PollMessage(room: WorkRoom, m: ChatMessage, vm: RoomsViewModel, fg: Color) {
     val total = m.pollOptions.sumOf { it.voters.size }
     Column(Modifier.widthIn(min = 230.dp)) {
@@ -746,23 +776,44 @@ private fun PollMessage(room: WorkRoom, m: ChatMessage, vm: RoomsViewModel, fg: 
     }
 }
 
-/** El compositor: respuesta, sugerencias de @, campo con clip y el botón (micrófono o enviar). */
+/**
+ * El compositor: respuesta o edición, sugerencias de @, campo con clip y el botón. Sin texto el
+ * botón es el micrófono: mantener graba (a la izquierda cancela, hacia arriba se queda grabando
+ * sola), un toque también la deja grabando sola, y entonces el compositor es el panel de WhatsApp
+ * con el tiempo, la onda, borrar, pausa y enviar (24 sep).
+ */
 @Composable
 private fun Composer(
-    room: WorkRoom, vm: RoomsViewModel, input: String, onInput: (String) -> Unit, replyTo: ChatMessage?, onCancelReply: () -> Unit,
-    onSend: () -> Unit, onAttach: () -> Unit, onVoice: (RoomStoredFile, Int) -> Unit, focus: FocusRequester = remember { FocusRequester() }
+    room: WorkRoom, input: String, onInput: (String) -> Unit, replyTo: ChatMessage?, onCancelReply: () -> Unit,
+    editing: ChatMessage?, onCancelEdit: () -> Unit,
+    onSend: () -> Unit, onAttach: () -> Unit, recorder: VoiceRecorder, recMode: RecMode, onRecMode: (RecMode) -> Unit,
+    onVoice: (VoiceRecorder.Result) -> Unit, focus: FocusRequester
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
-    var recording by remember { mutableStateOf<Pair<String, MediaRecorder>?>(null) }
-    var startedAt by remember { mutableStateOf(0L) }
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    val onVoiceNow by rememberUpdatedState(onVoice)
-    val mention = Regex("@(\\w*)$").find(input)
+    val mode by rememberUpdatedState(recMode)
+    val setMode by rememberUpdatedState(onRecMode)
+    val sendVoice by rememberUpdatedState(onVoice)
+    val sendNow by rememberUpdatedState(onSend)
+    val label = stringResource(R.string.rooms_voice_note)
+    var drag by remember { mutableStateOf(Offset.Zero) }
+    val cancelPx = with(density) { 110.dp.toPx() }
+    val lockPx = with(density) { 90.dp.toPx() }
+    val grow by animateFloatAsState(if (recMode == RecMode.HOLD) 1.5f else 1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow), label = "micro")
+    val mention = Regex("@(" + "[" + "a-zA-Z0-9_" + "]*)$").find(input)
     val sug = mention?.let { mm -> room.activeMembers.filter { it.id != room.meId && room.nameOf(it.id).startsWith(mm.groupValues[1], true) } }.orEmpty()
     Column(Modifier.fillMaxWidth().background(cs.background).drawBehind {
         drawLine(cs.outlineVariant.copy(alpha = 0.35f), Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
     }.navigationBarsPadding().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 12.dp)) {
+        if (recMode == RecMode.LOCKED) {
+            LockedRecordingPanel(recorder,
+                onDiscard = { recorder.cancel(); onRecMode(RecMode.IDLE); haptic.performSafely(HapticFeedbackType.Reject) },
+                onSend = { recorder.stop(label)?.let(onVoice); onRecMode(RecMode.IDLE) })
+            return@Column
+        }
         if (replyTo != null) Row(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(cs.surfaceContainerLow).padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.AutoMirrored.Rounded.Reply, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
@@ -773,9 +824,18 @@ private fun Composer(
             }, fontSize = 12.sp, color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             Box(Modifier.clip(CircleShape).cleanClickable(onClick = onCancelReply)) { Icon(Icons.Rounded.Close, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp)) }
         }
+        if (editing != null) Row(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(cs.surfaceContainerLow).padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Rounded.Edit, null, tint = cs.primary, modifier = Modifier.size(16.dp))
+            Text(buildAnnotatedString {
+                withStyle(SpanStyle(color = cs.primary, fontWeight = FontWeight.Bold)) { append(stringResource(R.string.rooms_editing)) }
+                append(" · " + plainOf(editing))
+            }, fontSize = 12.sp, color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Box(Modifier.clip(CircleShape).cleanClickable(onClick = onCancelEdit)) { Icon(Icons.Rounded.Close, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp)) }
+        }
         if (sug.isNotEmpty()) FlowRow(Modifier.padding(start = 2.dp, end = 2.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             sug.forEach { mem ->
-                Row(Modifier.clip(CircleShape).background(cs.surfaceContainerLow).cleanClickable { onInput(input.replace(Regex("@\\w*$"), "@" + room.nameOf(mem.id).substringBefore(' ') + " ")) }
+                Row(Modifier.clip(CircleShape).background(cs.surfaceContainerLow).cleanClickable { onInput(input.substring(0, mention!!.range.first) + "@" + room.nameOf(mem.id).substringBefore(' ') + " ") }
                     .padding(start = 5.dp, end = 10.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     MemberFace(room, mem.id, 22.dp)
                     Text(room.nameOf(mem.id), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
@@ -783,14 +843,8 @@ private fun Composer(
             }
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (recording != null) {
-                val pulse by rememberInfiniteTransition(label = "rec").animateFloat(1f, 0.3f, infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "p")
-                Row(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(cs.surfaceContainer).padding(horizontal = 14.dp, vertical = 11.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(Modifier.size(10.dp).alpha(pulse).clip(CircleShape).background(RoomTone.ROJO.color))
-                    Text(stringResource(R.string.rooms_recording), fontSize = 13.sp, color = cs.onSurface)
-                }
-            } else Row(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(cs.surfaceContainer).padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (recMode == RecMode.HOLD) HoldRecordingBar(recorder, drag.x, cancelPx, Modifier.weight(1f))
+            else Row(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(cs.surfaceContainer).padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 11.dp)) {
                     if (input.isEmpty()) Text(stringResource(R.string.rooms_write_group), fontSize = 14.sp, color = cs.onSurfaceVariant)
                     BasicTextField(input, onInput, cursorBrush = SolidColor(cs.primary), maxLines = 5, textStyle = TextStyle(color = cs.onSurface, fontSize = 14.sp), modifier = Modifier.fillMaxWidth().focusRequester(focus))
@@ -800,44 +854,60 @@ private fun Composer(
                 }
             }
             val hasText = input.isNotBlank()
-            val holdHint = stringResource(R.string.rooms_hold_to_record)
-            Box(Modifier.size(44.dp).clip(CircleShape).background(if (recording != null) RoomTone.ROJO.color else cs.primary).pointerInput(hasText) {
-                detectTapGestures(
-                    onTap = { if (hasText) onSend() else context.roomToast(holdHint) },
-                    onPress = {
-                        if (hasText) return@detectTapGestures
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                            permission.launch(Manifest.permission.RECORD_AUDIO); return@detectTapGestures
+            Box(Modifier.size(44.dp)) {
+                // el candado encima mientras se mantiene: subir hasta él deja la nota grabando sola
+                if (recMode == RecMode.HOLD) Column(
+                    Modifier.align(Alignment.BottomCenter).offset { IntOffset(0, (-(64.dp.toPx()) + drag.y.coerceIn(-lockPx, 0f) / 3).roundToInt()) }
+                        .width(40.dp).clip(RoundedCornerShape(20.dp)).background(cs.surfaceContainer).padding(vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Rounded.Lock, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Rounded.KeyboardArrowUp, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                }
+                Box(
+                    Modifier.matchParentSize().pointerInput(hasText) {
+                        if (hasText) detectTapGestures(onTap = { sendNow() })
+                        else awaitEachGesture {
+                            val down = awaitFirstDown()
+                            if (mode != RecMode.IDLE) return@awaitEachGesture
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                                permission.launch(Manifest.permission.RECORD_AUDIO); return@awaitEachGesture
+                            }
+                            if (!recorder.start()) return@awaitEachGesture
+                            haptic.performSafely(HapticFeedbackType.LongPress)
+                            setMode(RecMode.HOLD)
+                            var outcome = 0 // 0 enviar, 1 cancelar, 2 dejarla grabando sola
+                            while (true) {
+                                val c = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                                if (!c.pressed) {
+                                    val quick = c.uptimeMillis - down.uptimeMillis < 350 && drag.getDistance() < 24.dp.toPx()
+                                    outcome = if (quick) 2 else 0
+                                    break
+                                }
+                                drag = c.position - down.position
+                                c.consume()
+                                if (drag.x < -cancelPx) { outcome = 1; break }
+                                if (drag.y < -lockPx) { outcome = 2; break }
+                            }
+                            drag = Offset.Zero
+                            when (outcome) {
+                                1 -> { recorder.cancel(); setMode(RecMode.IDLE); haptic.performSafely(HapticFeedbackType.Reject) }
+                                2 -> { setMode(RecMode.LOCKED); haptic.performSafely(HapticFeedbackType.GestureThresholdActivate) }
+                                else -> { recorder.stop(label)?.let { sendVoice(it) }; setMode(RecMode.IDLE) }
+                            }
                         }
-                        val (name, file) = vm.files.newFileFor("m4a")
-                        val rec = startRecorder(context, file)
-                        if (rec == null) { vm.files.delete(name); return@detectTapGestures }
-                        recording = name to rec; startedAt = System.currentTimeMillis()
-                        val released = tryAwaitRelease()
-                        val secs = ((System.currentTimeMillis() - startedAt) / 1000).toInt()
-                        val ok = runCatching { rec.stop() }.isSuccess
-                        rec.release(); recording = null
-                        if (released && ok && secs >= 1) onVoiceNow(RoomStoredFile(name, context.getString(R.string.rooms_voice_note), "audio/mp4", file.length()), secs)
-                        else vm.files.delete(name)
-                    }
-                )
-            }, contentAlignment = Alignment.Center) {
-                Icon(if (hasText) Icons.AutoMirrored.Rounded.Send else Icons.Rounded.Mic, null, tint = cs.onPrimary, modifier = Modifier.size(21.dp))
+                    }.graphicsLayer {
+                        scaleX = grow; scaleY = grow
+                        translationX = drag.x.coerceIn(-cancelPx, 0f); translationY = drag.y.coerceIn(-lockPx, 0f)
+                    }.clip(CircleShape).background(cs.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(if (hasText) (if (editing != null) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.Send) else Icons.Rounded.Mic, null, tint = cs.onPrimary, modifier = Modifier.size(21.dp))
+                }
             }
         }
     }
 }
-
-private fun startRecorder(context: android.content.Context, file: File): MediaRecorder? = runCatching {
-    val r = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaRecorder(context) else @Suppress("DEPRECATION") MediaRecorder()
-    r.setAudioSource(MediaRecorder.AudioSource.MIC)
-    r.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-    r.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-    r.setAudioEncodingBitRate(96_000)
-    r.setAudioSamplingRate(44_100)
-    r.setOutputFile(file.absolutePath)
-    r.prepare(); r.start(); r
-}.getOrNull()
 
 /** «Mandar al chat»: foto, archivo, enlace, una parte, encuesta o nota de voz. */
 @Composable
