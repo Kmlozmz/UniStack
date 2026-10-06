@@ -439,6 +439,10 @@ abstract class CopyChangelogAsset : DefaultTask() {
     @get:InputFile
     abstract val changelog: RegularFileProperty
 
+    @get:InputFile
+    @get:Optional
+    abstract val changelogEn: RegularFileProperty
+
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
@@ -447,20 +451,33 @@ abstract class CopyChangelogAsset : DefaultTask() {
         val target = outputDirectory.get().asFile
         target.mkdirs()
         /*
-         * La sección «Sin publicar» se queda fuera del APK.
+         * La sección «Sin publicar» / «Unreleased» se queda fuera del APK.
          *
          * La app ya no la enseña, pero el archivo viaja dentro y cualquiera puede abrirlo: lo
          * que todavía no ha salido no tiene por qué ir dentro de algo que se publica.
          */
-        val lines = changelog.get().asFile.readLines()
-        val start = lines.indexOfFirst { it.trimStart().startsWith("## [Sin publicar]") }
-        val filtered = if (start < 0) {
-            lines
-        } else {
-            val end = lines.drop(start + 1).indexOfFirst { it.trimStart().startsWith("## [") }
-            if (end < 0) lines.take(start) else lines.take(start) + lines.drop(start + 1 + end)
+        fun filterChangelog(file: File): List<String> {
+            val lines = file.readLines()
+            val start = lines.indexOfFirst {
+                val trimmed = it.trimStart()
+                trimmed.startsWith("## [Sin publicar]") || trimmed.startsWith("## [Unreleased]")
+            }
+            return if (start < 0) {
+                lines
+            } else {
+                val end = lines.drop(start + 1).indexOfFirst { it.trimStart().startsWith("## [") }
+                if (end < 0) lines.take(start) else lines.take(start) + lines.drop(start + 1 + end)
+            }
         }
+
+        val filtered = filterChangelog(changelog.get().asFile)
         File(target, "changelog.md").writeText(filtered.joinToString(System.lineSeparator()))
+
+        val enFile = changelogEn.orNull?.asFile
+        if (enFile != null && enFile.exists()) {
+            val filteredEn = filterChangelog(enFile)
+            File(target, "changelog_en.md").writeText(filteredEn.joinToString(System.lineSeparator()))
+        }
     }
 }
 
@@ -470,6 +487,7 @@ androidComponents {
             "copyChangelogAsset${variant.name.replaceFirstChar { it.uppercase() }}"
         ) {
             changelog.set(rootProject.file("CHANGELOG.md"))
+            changelogEn.set(rootProject.file("CHANGELOG_EN.md"))
         }
         variant.sources.assets?.addGeneratedSourceDirectory(
             copyTask,
@@ -863,30 +881,44 @@ fun githubReleaseSnapshotFile(): File =
  * publicarse, y un texto de relleno generado automáticamente es peor que no publicar.
  */
 fun changelogBodyFor(versionName: String): String {
-    val file = rootProject.file("CHANGELOG.md")
-    if (!file.exists()) {
+    fun extractBody(file: File, version: String): String {
+        if (!file.exists()) return ""
+        val lines = file.readLines()
+        val heading = "## [$version]"
+        val start = lines.indexOfFirst { it.trimStart().startsWith(heading) }
+        if (start < 0) return ""
+        val rest = lines.drop(start + 1)
+        val end = rest.indexOfFirst { it.trimStart().startsWith("## [") }
+        return (if (end < 0) rest else rest.take(end))
+            .joinToString(System.lineSeparator())
+            .trim()
+            .removeSuffix("---")
+            .trim()
+    }
+
+    val esFile = rootProject.file("CHANGELOG.md")
+    if (!esFile.exists()) {
         throw GradleException("Falta CHANGELOG.md en la raiz del proyecto.")
     }
-    val lines = file.readLines()
-    val heading = "## [$versionName]"
-    val start = lines.indexOfFirst { it.trimStart().startsWith(heading) }
-    if (start < 0) {
+    val esBody = extractBody(esFile, versionName)
+    if (esBody.isBlank()) {
         throw GradleException(
-            "CHANGELOG.md no tiene seccion para $versionName. Anade '$heading - <fecha>' con lo que " +
+            "CHANGELOG.md no tiene seccion para $versionName. Anade '## [$versionName] - <fecha>' con lo que " +
                 "cambia para quien usa la app, y vuelve a publicar."
         )
     }
-    val rest = lines.drop(start + 1)
-    val end = rest.indexOfFirst { it.trimStart().startsWith("## [") }
-    val body = (if (end < 0) rest else rest.take(end))
-        .joinToString(System.lineSeparator())
-        .trim()
-        .removeSuffix("---")
-        .trim()
-    if (body.isBlank()) {
-        throw GradleException("La seccion de $versionName en CHANGELOG.md esta vacia.")
+
+    val enFile = rootProject.file("CHANGELOG_EN.md")
+    val enBody = if (enFile.exists()) extractBody(enFile, versionName) else ""
+
+    return if (enBody.isNotBlank()) {
+        esBody.unwrapMarkdownLines() + System.lineSeparator() + System.lineSeparator() +
+            "---" + System.lineSeparator() + System.lineSeparator() +
+            "### English" + System.lineSeparator() + System.lineSeparator() +
+            enBody.unwrapMarkdownLines()
+    } else {
+        esBody.unwrapMarkdownLines()
     }
-    return body.unwrapMarkdownLines()
 }
 
 /**

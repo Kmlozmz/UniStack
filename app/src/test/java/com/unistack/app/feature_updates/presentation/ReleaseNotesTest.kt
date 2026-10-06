@@ -74,4 +74,37 @@ class ReleaseNotesTest {
         val texto = markdownInline("un **aviso a medias que nadie cerró")
         assertEquals("un **aviso a medias que nadie cerró", texto.text)
     }
+
+    @Test
+    fun `filtra notas bilingues segun el idioma activo`() {
+        val bilingue = """
+            Notas en español para la versión.
+
+            - Primer arreglo en español.
+
+            ---
+
+            ### English
+
+            English release notes for this version.
+
+            - First fix in English.
+        """.trimIndent()
+
+        val enEspanol = filterReleaseNotesByLanguage(bilingue, isEnglish = false)
+        assertTrue("Debe contener las notas en español", enEspanol.contains("Notas en español para la versión."))
+        assertTrue(!enEspanol.contains("English release notes"))
+        assertTrue(!enEspanol.contains("---"))
+
+        val enIngles = filterReleaseNotesByLanguage(bilingue, isEnglish = true)
+        assertTrue("Debe contener las notas en inglés", enIngles.contains("English release notes for this version."))
+        assertTrue(!enIngles.contains("Notas en español"))
+    }
+
+    @Test
+    fun `notas monolingues se conservan íntegras independientemente del idioma`() {
+        val soloEspanol = "Notas únicas sin bloque de inglés."
+        assertEquals(soloEspanol, filterReleaseNotesByLanguage(soloEspanol, isEnglish = false))
+        assertEquals(soloEspanol, filterReleaseNotesByLanguage(soloEspanol, isEnglish = true))
+    }
 }

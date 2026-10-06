@@ -1646,6 +1646,8 @@
     <string name="support_published_badge">Publicada</string>
     <string name="support_no_published">Todavía no hay nada publicado para esta versión.</string>
     <string name="support_no_date">Sin fecha</string>
+    <string name="changelog_asset_name">changelog.md</string>
+    <string name="release_notes_lang_code">es</string>
     <string name="support_resources_title">Recursos</string>
     <string name="support_resources_subtitle">Sitios web útiles</string>
     <string name="support_res_sec_search">BUSCAR</string>

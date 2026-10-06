@@ -76,4 +76,10 @@ class LocalizationEnglishTest {
         val text = Textos.get(R.string.support_faq_a_floor_ceiling)
         assertTrue(text.contains("100% on everything left"))
     }
+
+    @Test
+    fun changelogAssetResolvesEnglishInEnglishLocale() {
+        assertEquals("changelog_en.md", Textos.get(R.string.changelog_asset_name))
+        assertEquals("en", Textos.get(R.string.release_notes_lang_code))
+    }
 }

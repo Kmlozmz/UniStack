@@ -221,7 +221,9 @@ internal fun TarjetaDeVersion(
  */
 @Composable
 internal fun NotasAgrupadas(markdown: String, modifier: Modifier = Modifier) {
-    val blocks = remember(markdown) { parseReleaseNotes(markdown) }
+    val isEnglish = stringResource(R.string.release_notes_lang_code) == "en"
+    val localizedMarkdown = remember(markdown, isEnglish) { filterReleaseNotesByLanguage(markdown, isEnglish) }
+    val blocks = remember(localizedMarkdown) { parseReleaseNotes(localizedMarkdown) }
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,

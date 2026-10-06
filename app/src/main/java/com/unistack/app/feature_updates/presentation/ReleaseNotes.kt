@@ -13,12 +13,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.unistack.app.R
+
 /**
  * Las notas de una versión, escritas en Markdown y leídas como tales.
  *
@@ -35,7 +38,9 @@ fun ReleaseNotes(
     markdown: String,
     modifier: Modifier = Modifier
 ) {
-    val blocks = remember(markdown) { parseReleaseNotes(markdown) }
+    val isEnglish = stringResource(R.string.release_notes_lang_code) == "en"
+    val localizedMarkdown = remember(markdown, isEnglish) { filterReleaseNotesByLanguage(markdown, isEnglish) }
+    val blocks = remember(localizedMarkdown) { parseReleaseNotes(localizedMarkdown) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         blocks.forEach { block ->
@@ -79,6 +84,22 @@ internal sealed interface NotesBlock {
     data class Bullet(val text: AnnotatedString) : NotesBlock
     data class Paragraph(val text: AnnotatedString) : NotesBlock
     data object Divider : NotesBlock
+}
+
+/**
+ * Si las notas contienen secciones por idioma (ej. encabezado `### English` o `## English`),
+ * devuelve únicamente el bloque correspondiente al idioma activo.
+ * Si no hay diferenciación de idioma, devuelve el texto íntegro.
+ */
+internal fun filterReleaseNotesByLanguage(markdown: String, isEnglish: Boolean): String {
+    val englishHeadingRegex = Regex("""(?mi)^#{2,3}\s+English\s*$""")
+    val match = englishHeadingRegex.find(markdown) ?: return markdown
+
+    return if (isEnglish) {
+        markdown.substring(match.range.last + 1).trim()
+    } else {
+        markdown.substring(0, match.range.first).trim().removeSuffix("---").trim()
+    }
 }
 
 /**

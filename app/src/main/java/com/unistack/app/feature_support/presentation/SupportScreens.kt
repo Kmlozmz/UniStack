@@ -133,8 +133,11 @@ fun WhatsNewScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val sections = remember {
+    val assetName = stringResource(R.string.changelog_asset_name)
+    val sections = remember(assetName) {
         val markdown = runCatching {
+            context.assets.open(assetName).bufferedReader().use { it.readText() }
+        }.recoverCatching {
             context.assets.open("changelog.md").bufferedReader().use { it.readText() }
         }.getOrNull().orEmpty()
         changelogFor(markdown, BuildConfig.VERSION_NAME)

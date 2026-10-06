@@ -117,4 +117,18 @@ class ChangelogTest {
     fun `un archivo sin versiones publicadas no rompe nada`() {
         assertEquals(emptyList<ChangelogSection>(), changelogFor("## [Sin publicar]\n\n- nada", "1.0.0"))
     }
+
+    @Test
+    fun `el changelog en ingles se parsea correctamente`() {
+        val rootEn = java.io.File("../../CHANGELOG_EN.md").takeIf { it.exists() }
+            ?: java.io.File("CHANGELOG_EN.md").takeIf { it.exists() }
+            ?: java.io.File("../CHANGELOG_EN.md")
+        if (rootEn.exists()) {
+            val sections = parseChangelog(rootEn.readText())
+            val versions = sections.map { it.version }
+            assertTrue(versions.contains("1.0.2"))
+            assertTrue(versions.contains("1.0.1"))
+            assertTrue(versions.contains("1.0.0"))
+        }
+    }
 }

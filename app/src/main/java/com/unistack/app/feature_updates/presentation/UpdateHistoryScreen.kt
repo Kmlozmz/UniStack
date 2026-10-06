@@ -228,10 +228,14 @@ fun UpdateVersionScreen(
     val entry = history.firstOrNull { it.versionName == versionName }
     val release = releases.firstOrNull { it.versionName == versionName }
 
-    val notas = remember(versionName, release) {
+    val assetName = stringResource(R.string.changelog_asset_name)
+    val isEnglish = stringResource(R.string.release_notes_lang_code) == "en"
+    val notas = remember(versionName, release, assetName, isEnglish) {
         release?.releaseNotes?.takeIf { it.isNotBlank() }
+            ?.let { filterReleaseNotesByLanguage(it, isEnglish) }
             ?: if (actual) {
-                runCatching { context.assets.open("changelog.md").bufferedReader().use { it.readText() } }
+                runCatching { context.assets.open(assetName).bufferedReader().use { it.readText() } }
+                    .recoverCatching { context.assets.open("changelog.md").bufferedReader().use { it.readText() } }
                     .getOrNull()
                     ?.let { markdown -> changelogFor(markdown, versionName).joinToString("\n\n") { it.body } }
                     ?.takeIf { it.isNotBlank() }
