@@ -1614,6 +1614,8 @@ private fun NavHostController.navigateIfModuleEnabled(
  */
 private val UnfinishedRoutes = setOf(
     AppRoutes.AcademicTemplates,
+    AppRoutes.RoomsCreate,
+    AppRoutes.Room,
     AppRoutes.AiAssistant,
     AppRoutes.Labs
 )

@@ -1672,7 +1672,7 @@
     <string name="support_faq_q_gpa">How does the app calculate my GPA?</string>
     <string name="support_faq_a_gpa">Based strictly on evaluated coursework: sums confirmed points and divides by evaluated weight. It never invents future grades.</string>
     <string name="support_faq_q_floor_ceiling">What are the floor and ceiling of a course?</string>
-    <string name="support_faq_a_floor_ceiling">The floor is your final grade if you score 0 on remaining coursework, and the ceiling is your grade if you score 100% on everything left. Your target is plotted between these two bounds.</string>
+    <string name="support_faq_a_floor_ceiling" formatted="false">The floor is your final grade if you score 0 on remaining coursework, and the ceiling is your grade if you score 100% on everything left. Your target is plotted between these two bounds.</string>
     <string name="support_faq_q_scale_reset">I changed the grading scale and lost my grades</string>
     <string name="support_faq_a_scale_reset">Changing the scale clears registered grades because 4.5 out of 5 doesn\'t equate directly to a 100 scale. The app warns twice and shows how many grades will be affected.</string>
     <string name="support_faq_q_missing_schedule">Why does my course not appear on the schedule?</string>

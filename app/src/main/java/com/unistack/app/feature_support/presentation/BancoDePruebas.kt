@@ -3,6 +3,7 @@
 package com.unistack.app.feature_support.presentation
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
@@ -10,6 +11,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +49,7 @@ import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.HowToReg
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.Search
@@ -64,10 +67,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -134,6 +139,9 @@ fun BancoDePruebas(
     if (etapa != BuildStage.DEV && etapa != BuildStage.ALPHA) return
 
     var abierto by remember { mutableStateOf(false) }
+    var modoScreenshot by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
 
     BoxWithConstraints(modifier = modifier) {
         val densidad = LocalDensity.current
@@ -142,13 +150,52 @@ fun BancoDePruebas(
         val margen = with(densidad) { 14.dp.toPx() }
         val fondo = with(densidad) { insetInferior.toPx() }
 
-        if (!abierto) {
+        if (modoScreenshot) {
+            /*
+             * Modo captura: esconde el botón flotante para no manchar las capturas de pantalla.
+             * Tocar tres veces o mantener pulsada la esquina superior derecha lo vuelve a traer.
+             */
+            var toques by remember { mutableIntStateOf(0) }
+            var ultimoToque by remember { mutableLongStateOf(0L) }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(56.dp)
+                    .combinedClickable(
+                        interactionSource = null,
+                        indication = null,
+                        onClick = {
+                            val ahora = System.currentTimeMillis()
+                            if (ahora - ultimoToque < 600) {
+                                toques++
+                            } else {
+                                toques = 1
+                            }
+                            ultimoToque = ahora
+                            if (toques >= 3) {
+                                haptics.performSafely(HapticFeedbackType.SegmentTick)
+                                modoScreenshot = false
+                                Toast.makeText(context, "Panel de pruebas restaurado", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onLongClick = {
+                            haptics.performSafely(HapticFeedbackType.LongPress)
+                            modoScreenshot = false
+                            Toast.makeText(context, "Panel de pruebas restaurado", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+            )
+        } else if (!abierto) {
             BurbujaDePruebas(
                 ancho = ancho,
                 alto = alto,
                 margen = margen,
                 fondo = fondo,
-                onAbrir = { abierto = true }
+                onAbrir = { abierto = true },
+                onModoScreenshot = {
+                    modoScreenshot = true
+                    Toast.makeText(context, "Modo screenshot: botón oculto. Toca 3 veces o mantén pulsada la esquina superior derecha para restaurarlo.", Toast.LENGTH_LONG).show()
+                }
             )
         } else {
             VentanaDePruebas(
@@ -157,6 +204,11 @@ fun BancoDePruebas(
                 margen = margen,
                 fondo = fondo,
                 onCerrar = { abierto = false },
+                onModoScreenshot = {
+                    abierto = false
+                    modoScreenshot = true
+                    Toast.makeText(context, "Modo screenshot: botón oculto. Toca 3 veces o mantén pulsada la esquina superior derecha para restaurarlo.", Toast.LENGTH_LONG).show()
+                },
                 onAbrirMovimiento = onAbrirMovimiento,
                 onNavegar = onNavegar
             )
@@ -173,7 +225,8 @@ private fun BurbujaDePruebas(
     alto: Float,
     margen: Float,
     fondo: Float,
-    onAbrir: () -> Unit
+    onAbrir: () -> Unit,
+    onModoScreenshot: () -> Unit
 ) {
     val haptics = LocalHapticFeedback.current
     val alcance = rememberCoroutineScope()
@@ -217,10 +270,16 @@ private fun BurbujaDePruebas(
                     }
                 )
             }
-            .clickable {
-                haptics.performSafely(HapticFeedbackType.SegmentTick)
-                onAbrir()
-            },
+            .combinedClickable(
+                onClick = {
+                    haptics.performSafely(HapticFeedbackType.SegmentTick)
+                    onAbrir()
+                },
+                onLongClick = {
+                    haptics.performSafely(HapticFeedbackType.LongPress)
+                    onModoScreenshot()
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -304,6 +363,7 @@ private fun VentanaDePruebas(
     margen: Float,
     fondo: Float,
     onCerrar: () -> Unit,
+    onModoScreenshot: () -> Unit,
     onAbrirMovimiento: () -> Unit,
     onNavegar: (String) -> Unit
 ) {
@@ -333,7 +393,7 @@ private fun VentanaDePruebas(
         }
     }
 
-    val secciones = seccionesDeSimular(vm, pulsaciones, onAbrirMovimiento, onNavegar)
+    val secciones = seccionesDeSimular(vm, pulsaciones, onAbrirMovimiento, onNavegar, onModoScreenshot)
     val filtro = busqueda.trim()
     val visibles = if (filtro.isBlank()) secciones else secciones.mapNotNull { sec ->
         val coinciden = sec.palancas.filter {
@@ -406,6 +466,21 @@ private fun VentanaDePruebas(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .clickable { onModoScreenshot() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.PhotoCamera,
+                        contentDescription = "Modo captura (ocultar botón)",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
                 Box(
                     modifier = Modifier
                         .size(32.dp)
@@ -680,7 +755,8 @@ private fun seccionesDeSimular(
     vm: BancoDePruebasViewModel,
     pulsaciones: Int,
     onAbrirMovimiento: () -> Unit,
-    onNavegar: (String) -> Unit
+    onNavegar: (String) -> Unit,
+    onModoScreenshot: () -> Unit
 ): List<Seccion> {
     val tonos = tonosDeAjustes
     val resumen = remember(pulsaciones) { vm.cuantasDePrueba() }
@@ -693,6 +769,10 @@ private fun seccionesDeSimular(
             color = tonos.violeta,
             cuenta = 0,
             palancas = listOf(
+                Palanca(
+                    "Modo screenshot (ocultar botón)",
+                    "Oculta la burbuja flotante para que no salga en las capturas. Para volver a mostrarla, mantén pulsada o toca 3 veces la esquina superior derecha"
+                ) { onModoScreenshot() },
                 Palanca(
                     "Simular actividad completa",
                     "Llena TODA la app a la vez —materias, horario, tareas, gastos, notas, asistencias— como si llevaras semanas usándola"

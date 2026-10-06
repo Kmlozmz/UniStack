@@ -58,7 +58,10 @@ object Textos {
                 app.createConfigurationContext(config).also { cache = idioma to it }
             }
         }
-        proveedor = { id, args -> contexto().getString(id, *args) }
+        proveedor = { id, args ->
+            if (args.isEmpty()) contexto().getString(id)
+            else contexto().getString(id, *args)
+        }
         proveedorDeListas = { id -> contexto().resources.getStringArray(id).toList() }
     }
 }

@@ -1,5 +1,6 @@
 package com.unistack.app
 
+import com.unistack.app.core.utils.Textos
 import com.unistack.app.feature_support.domain.TicketContext
 import com.unistack.app.feature_support.domain.TicketKind
 import com.unistack.app.feature_support.domain.buildTicket
@@ -68,5 +69,11 @@ class LocalizationEnglishTest {
         val template = AcademicTemplateLibrary.essayTemplates.first()
         val exported = template.exportText(completedChecklistIds = listOf("topic"))
         assertTrue(exported.contains("Structure") || exported.contains("Estructura"))
+    }
+
+    @Test
+    fun supportFaqFloorCeilingResolvesWithoutFormatException() {
+        val text = Textos.get(R.string.support_faq_a_floor_ceiling)
+        assertTrue(text.contains("100% on everything left"))
     }
 }

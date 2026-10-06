@@ -28,7 +28,7 @@ object TextosDePrueba {
             .firstOrNull { it.isDirectory }
             ?: File(System.getProperty("user.dir"), "src/main/res")
         val xml = File(raiz, "$carpeta/strings.xml").readText()
-        Regex("""<string name="([^"]+)">(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)
+        Regex("""<string\s+[^>]*?name="([^"]+)"[^>]*?>(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)
             .findAll(xml)
             .associate { it.groupValues[1] to desescapar(it.groupValues[2]) }
     }
