@@ -13,7 +13,7 @@ UniStack is a native Android application designed to organize college life witho
   <br>
   <a href="https://developer.android.com/about/versions/13"><img src="https://img.shields.io/badge/ANDROID-13%2B%20(API%2033%2B)-3CDB88?style=for-the-badge&logo=android&logoColor=white" alt="Android: 13+ (API 33+)"></a>
   <br>
-  <a href="https://github.com/Kmlozmz/UniStack-releases/releases"><img src="https://img.shields.io/github/downloads/Kmlozmz/UniStack-releases/total?style=for-the-badge&color=4088F2&label=DOWNLOADS" alt="Downloads"></a>
+  <a href="https://github.com/Kmlozmz/UniStack/releases"><img src="https://img.shields.io/github/downloads/Kmlozmz/UniStack/total?style=for-the-badge&color=4088F2&label=DOWNLOADS" alt="Downloads"></a>
   <br>
   <img src="https://img.shields.io/badge/STATUS-ACTIVE%20DEVELOPMENT-F29A13?style=for-the-badge" alt="Status: Active Development">
 </p>
@@ -69,11 +69,9 @@ UniStack is a native Android application built with modern architecture standard
 
 ## Releases
 
-Production and pre-release APK builds, along with full release notes, are available in the releases repository:
+Production and pre-release APK builds, along with full release notes, are available under GitHub Releases:
 
-**[Download UniStack](https://github.com/Kmlozmz/UniStack-releases)**
-
-This repository contains the source code for the application.
+**[Download UniStack APK](https://github.com/Kmlozmz/UniStack/releases/latest/download/UniStack.apk)** · **[View Releases](https://github.com/Kmlozmz/UniStack/releases)**
 
 ## Project Status
 

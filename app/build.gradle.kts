@@ -215,16 +215,10 @@ val generatedVersionCode = (
     ?: versionCodeFor(generatedVersionName)
 
 /*
- * El código vive en un repositorio privado y las publicaciones en uno público aparte.
- *
- * Tienen que estar separados: las publicaciones de un repositorio privado devuelven 404 a
- * quien no ha iniciado sesión, así que ni el actualizador de la app ni el botón de descarga
- * de la web podrían llegar a ellas. La alternativa —incrustar un token en el APK— no sirve:
- * se extrae del paquete en un momento y daría acceso de escritura al código.
- *
- * Este repositorio solo aloja etiquetas y APK; el código fuente no se publica.
+ * Las publicaciones de GitHub Releases y descargas de APK se alojan directamente
+ * en el repositorio principal público `Kmlozmz/UniStack`.
  */
-val githubReleasesSlug = "Kmlozmz/UniStack-releases"
+val githubReleasesSlug = "Kmlozmz/UniStack"
 val roomVersion = "2.8.4"
 
 android {
