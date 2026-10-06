@@ -524,7 +524,7 @@ private fun TarjetaDeEstado(
     val support = when (state) {
         is UpdateState.Ahead -> stringResource(R.string.updates_ahead_desc)
         UpdateState.NoReleases -> stringResource(R.string.updates_nothing_to_install_desc)
-        is UpdateState.Error -> stringResource(R.string.updates_could_not_check_desc)
+        is UpdateState.Error -> state.message.ifBlank { stringResource(R.string.updates_could_not_check_desc) }
         else -> null
     }
     val tinted = state == UpdateState.UpToDate || state is UpdateState.Ahead || state == UpdateState.NoReleases

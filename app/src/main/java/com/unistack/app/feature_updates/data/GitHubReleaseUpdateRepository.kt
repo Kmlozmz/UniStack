@@ -245,6 +245,7 @@ class GitHubReleaseUpdateRepository(
         connection.connectTimeout = 10_000
         connection.readTimeout = 10_000
         connection.setRequestProperty("Accept", "application/vnd.github+json")
+        connection.setRequestProperty("User-Agent", "UniStack/${BuildConfig.VERSION_NAME}")
         try {
             /* Antes cualquier respuesta que no fuera 200 se convertía en null, y el
                llamador entiende null como «estás al día». Es decir: sin conexión, con la
