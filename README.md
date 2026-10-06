@@ -1,8 +1,8 @@
 # UniStack
 
-> Tu semestre, en un solo lugar.
+> Your entire semester, all in one place.
 
-UniStack es una aplicación Android para organizar la vida universitaria sin repartirla entre hojas de cálculo, calendarios y notas sueltas. Reúne tus materias, calificaciones, entregas, horario, asistencia, apuntes, gastos y periodos académicos en una experiencia coherente, clara y pensada para el día a día.
+UniStack is a native Android application designed to organize college life without scattering it across spreadsheets, calendars, and fragmented note apps. It unifies your courses, grades, deadlines, schedule, attendance, lecture notes, student expenses, and academic history into a coherent, focused tool built for everyday student life.
 
 <p align="center">
   <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/LANGUAGE-KOTLIN-7D57EA?style=for-the-badge&logo=kotlin&logoColor=white" alt="Language: Kotlin"></a>
@@ -13,75 +13,73 @@ UniStack es una aplicación Android para organizar la vida universitaria sin rep
   <br>
   <a href="https://developer.android.com/about/versions/13"><img src="https://img.shields.io/badge/ANDROID-13%2B%20(API%2033%2B)-3CDB88?style=for-the-badge&logo=android&logoColor=white" alt="Android: 13+ (API 33+)"></a>
   <br>
-  <img src="https://img.shields.io/badge/STATUS-ACTIVO%20EN%20DESARROLLO-F29A13?style=for-the-badge" alt="Status: Activo en Desarrollo">
+  <img src="https://img.shields.io/badge/STATUS-ACTIVE%20DEVELOPMENT-F29A13?style=for-the-badge" alt="Status: Active Development">
 </p>
 
-## Por qué existe
+## Why UniStack?
 
-La universidad no ocurre en una sola aplicación. UniStack conecta las piezas que normalmente terminan dispersas:
+Student life rarely fits into a single app. Most students end up juggling disconnected tools just to get through the week. UniStack brings those pieces together:
 
-- **Entender tus calificaciones:** registra notas por cortes y consulta un rango honesto de resultado mínimo y máximo posible.
-- **Llegar a tiempo:** organiza tu horario, agenda, evaluaciones y tareas pendientes.
-- **Saber cómo va tu semestre:** revisa periodos actuales y anteriores desde un mismo lugar.
-- **Tomar mejores decisiones:** controla gastos y presupuesto junto con tus responsabilidades académicas.
-- **Guardar lo importante:** escribe apuntes, conserva adjuntos y crea copias de seguridad de tus datos.
+- **Know where you stand academically:** Log grades across weighted grading periods and view an honest range of your guaranteed minimum (*floor*) and highest achievable mark (*ceiling*) — no speculative projections.
+- **Never miss a deadline or class:** Keep your weekly timetable, upcoming exams, assignment checklists, and classroom locations organized in one place.
+- **Keep your academic history intact:** Seamlessly transition between semesters without losing track of past coursework, grades, and records.
+- **Manage student finances:** Track day-to-day expenses and manage weekly or monthly spending limits right alongside your academic commitments.
+- **Capture notes with context:** Take quick lecture notes, attach photos and audio recordings, and maintain complete offline backups of your data.
 
-## Todo tu semestre, conectado
+## Features
 
-### Calificaciones
+### Honest Grade Tracking
+Track courses, weighted terms, and individual assessments with crystal-clear visibility. Instead of speculative grade projections, UniStack calculates your mathematically guaranteed floor and highest possible ceiling based on what has already been graded and what is still to come.
 
-Registra materias, cortes y notas con una visión clara de tu progreso. El cálculo muestra el suelo y el techo alcanzables según lo que ya está evaluado y lo que falta por completar.
+### Assignments & Tasks
+Manage coursework, readings, and exams with due dates, estimated effort, subtask checklists, file attachments, and distinct grading statuses (from pending submission to awaiting marks).
 
-### Tareas y entregas
+### Timetable & Attendance
+Navigate your week with timetable and agenda views, complete with classroom locations and professor details. Log attendance per class and receive timely post-class reminders to keep your records up to date.
 
-Organiza trabajos, lecturas y evaluaciones con fechas, dificultad, tiempo estimado, subtareas, adjuntos y estado de calificación.
+### Semester Continuity & Archiving
+Close completed terms with confidence. UniStack archives your academic history so your cumulative journey is never wiped when a new semester begins.
 
-### Horario y asistencia
+### Quick & Structured Notes
+Capture thoughts and lecture notes with a fast, distraction-free markdown editor supporting checklists, course tagging, and multimedia attachments.
 
-Consulta tus clases en una vista semanal o de agenda, con aulas, profesores y registro de asistencia.
+### Student Budgeting
+Keep campus spending in check. Log daily expenses, monitor weekly or monthly budgets, and analyze spending breakdowns without needing a separate personal finance app.
 
-### Periodos académicos
+### Customization & Offline Backup
+Tailor the experience to your study style with expressive themes and deep accessibility options (OpenDyslexic typography, high contrast, colorblind palettes, and motion controls). Your data stays strictly on your device and can be backed up to a single local file anytime, including all attachments.
 
-Cierra cada periodo y conserva su histórico para que tu recorrido universitario no se pierda al comenzar un nuevo semestre.
+## Product Principles
 
-### Apuntes
+- **Clarity over clutter:** Every screen is designed around your next immediate priority, not decorative noise.
+- **Truth in numbers:** Academic progress is presented through honest ranges (floor and ceiling), never false predictions.
+- **Academic continuity:** Starting a new term doesn't mean wiping your past achievements.
+- **Local-first privacy:** Your personal and academic data belongs to you. Complete offline backups ensure full data ownership without cloud lock-in.
+- **Accessibility by default:** Dynamic sizing, high contrast, dyslexia-friendly typography, and tailored motion physics are core design pillars, not afterthoughts.
 
-Guarda apuntes rápidos y estructurados con una experiencia ligera, inspirada en las mejores aplicaciones de notas.
+## Tech Stack
 
-### Gastos
+UniStack is a native Android application built with modern architecture standards:
+- **Language:** [Kotlin](https://kotlinlang.org/)
+- **UI Toolkit:** [Jetpack Compose](https://developer.android.com/compose) with Material 3 Expressive
+- **Local Persistence:** [Room Database](https://developer.android.com/training/data-storage/room) & Preferences DataStore
+- **Architecture:** Feature-first modular pattern with unidirectional data flow (UDF) and local-first persistence
 
-Registra gastos, consulta lecturas y mantén tu presupuesto bajo control desde el mismo espacio donde planificas tu semestre.
+## Releases
 
-### Personalización y respaldo
+Production and pre-release APK builds, along with full release notes, are available in the releases repository:
 
-Adapta la apariencia y la accesibilidad a tu forma de estudiar. Tus datos pueden respaldarse en un archivo local, incluidos los adjuntos.
+**[Download UniStack](https://github.com/Kmlozmz/UniStack-releases)**
 
-## Principios del producto
+This repository contains the source code for the application.
 
-- **Claridad antes que ruido:** cada pantalla debe ayudarte a decidir qué hacer después.
-- **Datos que puedes entender:** los resultados académicos se presentan como rangos honestos, no como falsas certezas.
-- **Continuidad:** cambiar de periodo no significa perder tu historia.
-- **Privacidad práctica:** la información personal permanece bajo tu control y el respaldo local es una parte central de la experiencia.
-- **Accesibilidad:** tamaño de texto, contraste y navegación se consideran desde el diseño, no al final.
+## Project Status
 
-## Tecnología
+UniStack is under active development. Preview and alpha builds may introduce UI refinements and new features as the product continues to mature.
 
-UniStack está construida para Android con Kotlin y Jetpack Compose, usando Material 3 Expressive para la interfaz. La información se guarda localmente con Room y DataStore; la arquitectura se organiza por funcionalidades para que cada área del producto pueda evolucionar sin perder consistencia.
+## License
 
-## Versiones
+The source code in this repository is proprietary to Kmlozmz. All rights reserved.  
+Public access to this repository on GitHub does not grant permission to redistribute, modify, or commercially use the application without express written consent.
 
-Las versiones instalables y sus notas de publicación están disponibles en el repositorio de releases:
-
-**[Descargar UniStack](https://github.com/Kmlozmz/UniStack-releases)**
-
-Este repositorio contiene el código fuente de la aplicación.
-
-## Estado del proyecto
-
-UniStack se encuentra en desarrollo activo. Las versiones de prueba pueden incorporar cambios de interfaz y nuevas funciones mientras el producto continúa madurando.
-
-## Licencia
-
-El código fuente de este repositorio es propiedad de Kmlozmz. Su publicación en GitHub no concede permiso para redistribuir, modificar o comercializar la aplicación sin autorización expresa.
-
-© 2026 Kmlozmz. Todos los derechos reservados.
+© 2026 Kmlozmz. All rights reserved.
