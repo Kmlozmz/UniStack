@@ -102,6 +102,33 @@ class ReleaseNotesTest {
     }
 
     @Test
+    fun `filtra notas en formato EN y ES segun el idioma activo`() {
+        val bilingueEnEs = """
+            English release notes first.
+
+            - First bullet in English.
+
+            ---
+
+            ### Español
+
+            Notas en español a continuación.
+
+            - Primer punto en español.
+        """.trimIndent()
+
+        val enEspanol = filterReleaseNotesByLanguage(bilingueEnEs, isEnglish = false)
+        assertTrue("Debe contener las notas en español", enEspanol.contains("Notas en español a continuación."))
+        assertTrue(!enEspanol.contains("English release notes"))
+        assertTrue(!enEspanol.contains("---"))
+
+        val enIngles = filterReleaseNotesByLanguage(bilingueEnEs, isEnglish = true)
+        assertTrue("Debe contener las notas en inglés", enIngles.contains("English release notes first."))
+        assertTrue(!enIngles.contains("Notas en español"))
+        assertTrue(!enIngles.contains("---"))
+    }
+
+    @Test
     fun `notas monolingues se conservan íntegras independientemente del idioma`() {
         val soloEspanol = "Notas únicas sin bloque de inglés."
         assertEquals(soloEspanol, filterReleaseNotesByLanguage(soloEspanol, isEnglish = false))

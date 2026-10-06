@@ -92,14 +92,39 @@ internal sealed interface NotesBlock {
  * Si no hay diferenciación de idioma, devuelve el texto íntegro.
  */
 internal fun filterReleaseNotesByLanguage(markdown: String, isEnglish: Boolean): String {
-    val englishHeadingRegex = Regex("""(?mi)^#{2,3}\s+English\s*$""")
-    val match = englishHeadingRegex.find(markdown) ?: return markdown
+    val spanishHeadingRegex = Regex("""(?mi)^#{2,3}\s+(?:Español|Spanish|En español)\s*$""")
+    val englishHeadingRegex = Regex("""(?mi)^#{2,3}\s+(?:English|Inglés|In english)\s*$""")
 
-    return if (isEnglish) {
-        markdown.substring(match.range.last + 1).trim()
-    } else {
-        markdown.substring(0, match.range.first).trim().removeSuffix("---").trim()
+    val spanishMatch = spanishHeadingRegex.find(markdown)
+    val englishMatch = englishHeadingRegex.find(markdown)
+
+    if (spanishMatch != null) {
+        val beforeSpanish = markdown.substring(0, spanishMatch.range.first).trim().removeSuffix("---").trim()
+        val afterSpanish = markdown.substring(spanishMatch.range.last + 1).trim()
+
+        return if (isEnglish) {
+            if (englishMatch != null && englishMatch.range.first < spanishMatch.range.first) {
+                beforeSpanish.substring(englishMatch.range.last + 1).trim()
+            } else {
+                beforeSpanish
+            }
+        } else {
+            afterSpanish
+        }
     }
+
+    if (englishMatch != null) {
+        val beforeEnglish = markdown.substring(0, englishMatch.range.first).trim().removeSuffix("---").trim()
+        val afterEnglish = markdown.substring(englishMatch.range.last + 1).trim()
+
+        return if (isEnglish) {
+            afterEnglish
+        } else {
+            beforeEnglish
+        }
+    }
+
+    return markdown
 }
 
 /**

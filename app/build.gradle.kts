@@ -912,10 +912,10 @@ fun changelogBodyFor(versionName: String): String {
     val enBody = if (enFile.exists()) extractBody(enFile, versionName) else ""
 
     return if (enBody.isNotBlank()) {
-        esBody.unwrapMarkdownLines() + System.lineSeparator() + System.lineSeparator() +
+        enBody.unwrapMarkdownLines() + System.lineSeparator() + System.lineSeparator() +
             "---" + System.lineSeparator() + System.lineSeparator() +
-            "### English" + System.lineSeparator() + System.lineSeparator() +
-            enBody.unwrapMarkdownLines()
+            "### Español" + System.lineSeparator() + System.lineSeparator() +
+            esBody.unwrapMarkdownLines()
     } else {
         esBody.unwrapMarkdownLines()
     }
