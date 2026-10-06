@@ -9,6 +9,24 @@ no va aquí: para eso está el historial de git.
 Lo anterior a esta versión está en `docs/changelog-historico.md`, fuera del APK. La app solo
 enseña la versión que tienes puesta.
 
+## [1.0.2] — 2026-10-06
+
+**Ponerse al día con la asistencia.** Al registrar las clases atrasadas que tenías pendientes,
+ahora puedes elegir directamente cualquiera de los cuatro estados (asistida, falta justificada,
+falta injustificada o cancelada), sin tener que entrar a editarlas después.
+
+**Acerca de y soporte.** Se rediseñó la pantalla de información para explicar con total claridad
+que tus datos se quedan exclusivamente en tu teléfono. Se añadió una fila para consultar las
+novedades de la versión instalada y un acceso directo a la comunidad de soporte en Telegram.
+
+**Actualizaciones y estabilidad.** Se corrigió el cuelgue al abrir la lista de licencias y el
+botón de instalación que a veces se quedaba bloqueado al actualizar. También se solucionó un
+cierre inesperado al abrir las preguntas frecuentes (FAQ) cuando el teléfono está configurado en
+inglés.
+
+**Nueva vía de actualizaciones.** Esta entrega enlaza las actualizaciones directamente con el
+repositorio principal de UniStack para descargas y comprobaciones más directas.
+
 ## [1.0.1] — 2026-09-20
 
 **Actualizaciones, rehechas.** Se rediseñó toda la interfaz y el flujo del apartado de
